@@ -4,7 +4,7 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react"
 
 export function GlobalLoadingStage() {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-sop-neutral-whitealpha-400 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-sop-primary-100 backdrop-blur-sm">
       <div className="flex flex-col items-center">
         <DotLottieReact
           className="w-65.5 h-32.75"

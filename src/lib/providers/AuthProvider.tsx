@@ -1,0 +1,170 @@
+'use client';
+
+import { useApolloClient } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  MeDocument,
+  ReactivateAccountDocument,
+  SendCustomerOtpDocument,
+  VerifyCustomerOtpDocument,
+  type CustomerAuthPayload,
+  type CustomerProfile,
+  type MessagePayload,
+} from '@/lib/graphql/generated/graphql';
+import {
+  clearTokens,
+  getAccessToken,
+  setOnAuthFailure,
+  setTokens,
+} from '@/lib/graphql/authLink';
+import { getSessionId } from '@/lib/session';
+
+export type AuthContextValue = {
+  customer: CustomerProfile | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  pendingDeletion: boolean;
+  sendOtp: (phone: string) => Promise<MessagePayload>;
+  verifyOtp: (phone: string, code: string) => Promise<CustomerAuthPayload>;
+  reactivateAccount: (token: string) => Promise<void>;
+  logout: () => Promise<void>;
+};
+
+export const AuthContext = createContext<AuthContextValue | null>(null);
+
+function hasStoredAccessToken(): boolean {
+  return Boolean(getAccessToken());
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const apolloClient = useApolloClient();
+  const [hasToken, setHasToken] = useState(hasStoredAccessToken);
+  const [pendingDeletion, setPendingDeletion] = useState(false);
+
+  const { data, loading, refetch } = useQuery(MeDocument, {
+    skip: !hasToken,
+  });
+
+  const [sendOtpMutation] = useMutation(SendCustomerOtpDocument);
+  const [verifyOtpMutation] = useMutation(VerifyCustomerOtpDocument);
+  const [reactivateAccountMutation] = useMutation(ReactivateAccountDocument);
+
+  const customer = data?.me?.customer ?? null;
+  const isAuthenticated = hasToken;
+  const isLoading = hasToken && loading;
+
+  const logout = useCallback(async () => {
+    clearTokens();
+    setHasToken(false);
+    setPendingDeletion(false);
+    await apolloClient.clearStore();
+  }, [apolloClient]);
+
+  useEffect(() => {
+    setOnAuthFailure(() => {
+      void logout();
+    });
+
+    return () => {
+      setOnAuthFailure(() => {
+        clearTokens();
+      });
+    };
+  }, [logout]);
+
+  const sendOtp = useCallback(
+    async (phone: string): Promise<MessagePayload> => {
+      const result = await sendOtpMutation({
+        variables: { input: { phone } },
+      });
+
+      if (!result.data?.sendCustomerOtp) {
+        throw new Error('ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      }
+
+      return result.data.sendCustomerOtp;
+    },
+    [sendOtpMutation],
+  );
+
+  const verifyOtp = useCallback(
+    async (phone: string, code: string): Promise<CustomerAuthPayload> => {
+      const sessionId = getSessionId() ?? undefined;
+      const result = await verifyOtpMutation({
+        variables: { input: { phone, code, sessionId } },
+      });
+
+      const payload = result.data?.verifyCustomerOtp;
+      if (!payload) {
+        throw new Error('รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      }
+
+      if (payload.pendingDeletion) {
+        setPendingDeletion(true);
+        return payload;
+      }
+
+      if (payload.tokens) {
+        setTokens(payload.tokens.accessToken, payload.tokens.refreshToken);
+        setHasToken(true);
+        setPendingDeletion(false);
+        await refetch();
+      }
+
+      return payload;
+    },
+    [verifyOtpMutation, refetch],
+  );
+
+  const reactivateAccount = useCallback(
+    async (token: string): Promise<void> => {
+      const result = await reactivateAccountMutation({
+        variables: { input: { reactivationToken: token } },
+      });
+
+      const payload = result.data?.reactivateAccount;
+      if (!payload?.tokens) {
+        throw new Error('ไม่สามารถเปิดใช้งานบัญชีได้ กรุณาลองใหม่อีกครั้ง');
+      }
+
+      setTokens(payload.tokens.accessToken, payload.tokens.refreshToken);
+      setHasToken(true);
+      setPendingDeletion(false);
+      await refetch();
+    },
+    [reactivateAccountMutation, refetch],
+  );
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      customer,
+      isAuthenticated,
+      isLoading,
+      pendingDeletion,
+      sendOtp,
+      verifyOtp,
+      reactivateAccount,
+      logout,
+    }),
+    [
+      customer,
+      isAuthenticated,
+      isLoading,
+      pendingDeletion,
+      sendOtp,
+      verifyOtp,
+      reactivateAccount,
+      logout,
+    ],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}

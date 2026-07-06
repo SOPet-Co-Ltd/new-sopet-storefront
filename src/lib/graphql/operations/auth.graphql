@@ -4,3 +4,42 @@ mutation RefreshToken($input: RefreshTokenInput!) {
     refreshToken
   }
 }
+
+mutation SendCustomerOtp($input: SendCustomerOtpInput!) {
+  sendCustomerOtp(input: $input) {
+    message
+  }
+}
+
+mutation VerifyCustomerOtp($input: VerifyCustomerOtpInput!) {
+  verifyCustomerOtp(input: $input) {
+    customer {
+      id
+      phone
+      email
+      fullName
+    }
+    pendingDeletion
+    reactivationToken
+    tokens {
+      accessToken
+      refreshToken
+    }
+  }
+}
+
+mutation ReactivateAccount($input: ReactivateAccountInput!) {
+  reactivateAccount(input: $input) {
+    customer {
+      id
+      phone
+      email
+      fullName
+    }
+    pendingDeletion
+    tokens {
+      accessToken
+      refreshToken
+    }
+  }
+}

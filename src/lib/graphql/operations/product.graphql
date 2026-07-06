@@ -1,70 +1,50 @@
-# Spike operations for P0-T9 slug resolution — consolidate into P1-T1 product.graphql
+fragment ProductDetailFields on ProductType {
+  id
+  slug
+  storeId
+  name
+  description
+  basePrice
+  compareAtPrice
+  thumbnailUrl
+  averageRating
+  reviewCount
+  soldCount
+  status
+  category
+  tags
+  warning
+  store {
+    id
+    name
+    slug
+    logoUrl
+    bannerUrl
+    description
+  }
+  images {
+    id
+    imageUrl
+    isThumbnail
+    sortOrder
+  }
+  variants {
+    id
+    sku
+    price
+    stockQuantity
+    optionsJson
+  }
+}
+
 query ProductBySlug($slug: String!, $storeId: String!) {
   productBySlug(slug: $slug, storeId: $storeId) {
-    id
-    slug
-    storeId
-    name
-    description
-    basePrice
-    compareAtPrice
-    thumbnailUrl
-    averageRating
-    reviewCount
-    soldCount
-    status
-    store {
-      id
-      name
-      slug
-    }
-    images {
-      id
-      imageUrl
-      isThumbnail
-      sortOrder
-    }
-    variants {
-      id
-      sku
-      price
-      stockQuantity
-      optionsJson
-    }
+    ...ProductDetailFields
   }
 }
 
 query ProductById($id: String!) {
   product(id: $id) {
-    id
-    slug
-    storeId
-    name
-    description
-    basePrice
-    compareAtPrice
-    thumbnailUrl
-    averageRating
-    reviewCount
-    soldCount
-    status
-    store {
-      id
-      name
-      slug
-    }
-    images {
-      id
-      imageUrl
-      isThumbnail
-      sortOrder
-    }
-    variants {
-      id
-      sku
-      price
-      stockQuantity
-      optionsJson
-    }
+    ...ProductDetailFields
   }
 }

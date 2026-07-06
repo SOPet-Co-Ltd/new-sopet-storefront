@@ -1,0 +1,46 @@
+query PlatformBanners {
+  platformBanners {
+    id
+    title
+    imageUrl
+    linkUrl
+    sortOrder
+    isActive
+    startsAt
+    endsAt
+  }
+}
+
+query PlatformAds {
+  platformAds {
+    id
+    title
+    imageUrl
+    linkUrl
+    sortOrder
+    isActive
+    startsAt
+    endsAt
+  }
+}
+
+query PlatformSponsors {
+  platformSponsors {
+    id
+    name
+    imageUrl
+    linkUrl
+    sortOrder
+    isActive
+    startsAt
+    endsAt
+  }
+}
+
+query PlatformSettings {
+  platformSettings {
+    currency
+    storefrontUrl
+    supportEmail
+  }
+}

@@ -1,0 +1,14 @@
+import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+
+export type MenuNavIconProps = Omit<FilledIconProps, "children">
+
+export function MenuNavIcon({ color = "currentColor", ...props }: MenuNavIconProps) {
+  return (
+    <FilledIcon viewBox="0 0 24 24" color={color} {...props}>
+      <path
+        d="M21.8876 16.8643C22.5018 16.8643 22.9997 17.3426 23 17.9322C23 18.5219 22.502 19 21.8876 19H2.11238C1.49803 19 1 18.5219 1 17.9322C1.00026 17.3426 1.49819 16.8643 2.11238 16.8643H21.8876ZM21.8876 10.9329C22.502 10.9329 23 11.4109 23 12.0007C22.9997 12.5902 22.5018 13.0685 21.8876 13.0685H2.11238C1.49819 13.0685 1.00026 12.5902 1 12.0007C1 11.4109 1.49803 10.9329 2.11238 10.9329H21.8876ZM21.8876 5C22.502 5 23 5.47808 23 6.06783C23 6.65758 22.502 7.13566 21.8876 7.13566H2.11238C1.49803 7.13566 1 6.65758 1 6.06783C1 5.47808 1.49803 5 2.11238 5H21.8876Z"
+       
+      />
+    </FilledIcon>
+  )
+}

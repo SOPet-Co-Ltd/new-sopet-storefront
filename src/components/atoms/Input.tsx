@@ -1,37 +1,58 @@
 "use client"
+
 import { cn } from "@/lib/utils"
-import { useState, useCallback, useId } from "react"
+import { useMemo, useState, useCallback, useId } from "react"
 import { EyeIcon, EyeSlashIcon } from "./icons/inline"
+
+type InputState =
+  | "default"
+  | "hover"
+  | "hovered"
+  | "filled"
+  | "selected"
+  | "disabled"
+  | "error"
 
 export interface InputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   "size"
 > {
   size?: "md" | "sm"
-  state?: "default" | "hover" | "filled" | "disabled" | "error"
+  state?: InputState
   variant?: "flat" | "bordered" | "underlined"
+  textSize?: "sm" | "xs"
 
-  // Title props
   title?: string
+  hasTitle?: boolean
   isRequire?: boolean
+  isRequired?: boolean
 
-  // Icon props
   startIcon?: React.ReactNode
   endIcon?: React.ReactNode
+  hasStartIcon?: boolean
+  hasEndIcon?: boolean
 
-  // Description props
   description?: string
+  descriptionText?: string
+  withDescription?: boolean
 }
 
 export function Input({
   size = "md",
   state = "default",
   variant = "flat",
+  textSize = "sm",
   title,
+  hasTitle,
   isRequire = false,
+  isRequired = false,
   startIcon,
   endIcon,
+  hasStartIcon,
+  hasEndIcon,
   description,
+  descriptionText,
+  withDescription = false,
   className,
   id,
   type = "text",
@@ -43,80 +64,93 @@ export function Input({
   const inputId = useId()
   const finalId = id || inputId
 
-  // Compute derived values
-  const isError = state === "error"
-  const isDisabled = disabled || state === "disabled"
+  const resolvedState = state === "hover" ? "hovered" : state
+  const isError = resolvedState === "error"
+  const isDisabled = disabled || resolvedState === "disabled"
   const isPassword = type === "password"
   const actualType = isPassword ? (showPassword ? "text" : "password") : type
+  const required = isRequired || isRequire
 
-  // Check if icons should be displayed
-  const showStartIcon = !!startIcon
-  const showEndIcon = !!endIcon && !isPassword
+  const resolvedTitle = title
+  const showTitle =
+    hasTitle !== false && (resolvedTitle !== undefined || hasTitle === true)
 
-  // Compute padding classes
-  const paddingLeft = showStartIcon ? "pl-10" : "pl-3"
-  const paddingRight = showEndIcon || isPassword ? "pr-10" : "pr-3"
+  const showStartIcon =
+    !!startIcon && (hasStartIcon !== false || hasStartIcon === undefined)
+  const showEndIcon =
+    !!endIcon && !isPassword && (hasEndIcon !== false || hasEndIcon === undefined)
 
-  // Size variants
+  const resolvedDescription = description ?? descriptionText
+  const showDescription =
+    withDescription || resolvedDescription !== undefined
+
+  const paddingClasses = useMemo(() => {
+    const left = showStartIcon ? "pl-10" : "pl-3"
+    const right = showEndIcon || isPassword ? "pr-10" : "pr-3"
+    return { left, right }
+  }, [showStartIcon, showEndIcon, isPassword])
+
   const sizeClasses = {
-    sm: "sop-body-sm-regular h-[44px]",
-    md: "sop-body-sm-regular h-[48px]",
+    sm: "text-xs h-8",
+    md: "text-sm h-10",
   } as const
 
-  // Variant styles
+  const textSizeClasses = {
+    sm: "sop-body-sm-regular",
+    xs: "sop-body-xs-regular",
+  } as const
+
   const variantClasses = {
     flat: "bg-sop-neutral-gray-500 border border-solid border-sop-neutral-gray-500",
     bordered:
-      "bg-sop-neutral-gray-600 border border-solid border-sop-neutral-grayalpha-100",
+      "bg-transparent border border-solid border-sop-neutral-gray-400",
     underlined:
-      "bg-transparent border-b border-solid border-sop-neutral-grayalpha-100 rounded-none",
+      "bg-transparent border-b border-solid border-sop-neutral-gray-400 rounded-none",
   } as const
 
-  // State styles
   const stateClasses = {
     default: "",
-    hover: "border-sop-neutral-grayalpha-300",
+    hovered: "border-sop-neutral-grayalpha-300",
     filled: "border-sop-neutral-grayalpha-300",
+    selected: "border-sop-primary-500 ring-1 ring-sop-primary-500",
     disabled:
       "bg-sop-neutral-grayalpha-200 cursor-not-allowed text-sop-neutral-gray-400 border-sop-neutral-grayalpha-300",
     error: "border-sop-system-error-400 ring-1 ring-sop-system-error-400",
   } as const
 
-  // Toggle password visibility
   const togglePasswordVisibility = useCallback(() => {
     setShowPassword((prev) => !prev)
   }, [])
 
-  // Build input className
   const inputClassName = cn(
     "w-full p-2 rounded-[8px]",
-    "sop-body-sm-regular",
-    "text-sop-neutral-gray-200",
+    textSizeClasses[textSize],
+    "text-sop-base-black",
     "focus:border-sop-primary-500 focus:outline-none focus:ring-1 focus:ring-sop-primary-500",
     "placeholder:text-sop-neutral-gray-400",
     "transition-all duration-150",
     sizeClasses[size],
     variantClasses[variant],
-    stateClasses[state],
+    stateClasses[resolvedState],
     isError &&
-    !isDisabled &&
-    "border-sop-system-error-400 ring-1 ring-sop-system-error-400",
+      !isDisabled &&
+      "border-sop-system-error-400 ring-1 ring-sop-system-error-400",
     isDisabled &&
-    "bg-sop-neutral-grayalpha-200 cursor-not-allowed text-sop-neutral-gray-400 border-sop-neutral-grayalpha-300",
-    paddingLeft,
-    paddingRight,
+      "bg-sop-neutral-grayalpha-200 cursor-not-allowed text-sop-neutral-gray-400 border-sop-neutral-grayalpha-300",
+    paddingClasses.left,
+    paddingClasses.right,
     className
   )
 
   return (
-    <div className="">
-      {title !== undefined && (
+    <div className="w-full">
+      {showTitle && resolvedTitle && (
         <label
           htmlFor={finalId}
           className="sop-body-xs-medium text-sop-neutral-gray-300 flex items-center gap-1 mb-2"
         >
-          {title}
-          {isRequire && <span className="text-sop-system-error-400">*</span>}
+          {resolvedTitle}
+          {required && <span className="text-sop-system-error-400">*</span>}
         </label>
       )}
 
@@ -155,12 +189,15 @@ export function Input({
         )}
       </div>
 
-      {description !== undefined && (
+      {showDescription && resolvedDescription && (
         <p
           id={`${finalId}-description`}
-          className="sop-body-xs-regular text-sop-system-error-400 mt-1"
+          className={cn(
+            "text-xs mt-1",
+            isError ? "text-sop-system-error-400" : "text-sop-neutral-gray-400"
+          )}
         >
-          {description}
+          {resolvedDescription}
         </p>
       )}
     </div>

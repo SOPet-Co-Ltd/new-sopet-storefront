@@ -1,0 +1,21 @@
+query Orders {
+  orders {
+    id
+    orderNumber
+    status
+    subtotal
+    shippingFee
+    discountAmount
+    total
+    paymentMethod
+    items {
+      id
+      storeId
+      productName
+      unitPrice
+      quantity
+      subtotal
+      fulfillmentStatus
+    }
+  }
+}

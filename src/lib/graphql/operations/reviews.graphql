@@ -1,0 +1,40 @@
+query ProductReviews($productId: String!) {
+  productReviews(productId: $productId) {
+    id
+    productId
+    rating
+    comment
+    status
+    createdAt
+    customerName
+    images {
+      id
+      url
+    }
+  }
+}
+
+query StoreProductReviews($storeId: String!) {
+  storeProductReviews(storeId: $storeId) {
+    id
+    productId
+    productName
+    rating
+    comment
+    createdAt
+    customerName
+  }
+}
+
+query StoreReviewSummary($storeId: String!) {
+  storeReviewSummary(storeId: $storeId) {
+    averageRating
+    totalCount
+    productBreakdown {
+      productId
+      productName
+      averageRating
+      reviewCount
+    }
+  }
+}

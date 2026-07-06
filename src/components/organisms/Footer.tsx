@@ -1,6 +1,13 @@
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import { FacebookIcon, FooterMailIcon, LineIcon, QrAddLineOAIcon } from "../atoms/icons";
+import Link from "next/link"
+
+import { cn } from "@/lib/utils"
+
+import {
+  FacebookIcon,
+  FooterMailIcon,
+  LineIcon,
+  QrAddLineOAIcon,
+} from "../atoms/icons"
 
 const COMPANY_INFO = {
   name: "บริษัท เอสโอเพ็ท จำกัด",
@@ -8,28 +15,40 @@ const COMPANY_INFO = {
   district: "เขตวัฒนา กรุงเทพมหานคร 10110",
   email: "sopetofficial@gmail.com",
   copyright: "Copyright © 2025 SOpet All right reserved",
-};
+}
 
 const SOCIAL_LINKS = [
-  { name: "Facebook", href: "https://www.facebook.com/sopetofficial", Icon: FacebookIcon },
-  { name: "Line", href: "https://line.me/R/ti/p/@131skdjz", Icon: LineIcon },
-];
-
-const LINE_OA_TITLE = ["ปรึกษาสัตว​์แพทย์ฟรี !", "ผ่าน LINE OA"];
+  {
+    name: "Facebook",
+    href: "https://www.facebook.com/sopetofficial",
+    Icon: FacebookIcon,
+  },
+  {
+    name: "Line",
+    href: "https://line.me/R/ti/p/@131skdjz",
+    Icon: LineIcon,
+  },
+]
 
 const FOOTER_LINKS = [
   { label: "นโยบายการใช้งาน", href: "/policy/terms-of-service" },
   { label: "นโยบายการคืนเงิน", href: "/policy/refund-policy" },
   { label: "นโยบายความเป็นส่วนตัว", href: "/policy/privacy-policy" },
-];
+]
+
+const LINE_OA_TITLE = ["ปรึกษาสัตว​์แพทย์ฟรี !", "ผ่าน LINE OA"]
+
+function FooterSectionHeading({ children }: { children: string }) {
+  return <h4 className="sop-body-lg-medium text-sop-base-black">{children}</h4>
+}
 
 export function Footer() {
   return (
-    <footer className="bg-sop-base-white w-full" aria-label="Site footer">
+    <footer className="w-full bg-sop-base-white" aria-label="Site footer">
       <div
         className={cn(
-          "bg-sop-base-white bg-pattern-dog-paw relative w-full",
-          "px-sop-16px py-sop-48px md:px-sop-32px md:py-sop-40px lg:px-sop-80px lg:py-sop-48px"
+          "relative w-full bg-sop-base-white bg-pattern-dog-paw",
+          "px-sop-16px py-sop-48px md:px-sop-32px md:py-sop-40px lg:px-sop-80px lg:py-sop-48px",
         )}
       >
         <div className="grid gap-sop-20px sm:grid-cols-1 lg:grid-cols-[1fr_auto]">
@@ -41,29 +60,39 @@ export function Footer() {
               <br />
               {COMPANY_INFO.district}
             </p>
-            <Link href={`mailto:${COMPANY_INFO.email}`} className="flex items-center gap-2">
-              <FooterMailIcon size={{ desktop: 21, mobile: 21 }} />
-              <p className="sop-body-md-medium text-sop-base-black">{COMPANY_INFO.email}</p>
+            <Link href={`mailto:${COMPANY_INFO.email}`}>
+              <div className="flex items-center gap-2">
+                <FooterMailIcon size={{ desktop: 21, mobile: 21 }} />
+                <p className="sop-body-md-medium text-sop-base-black">
+                  {COMPANY_INFO.email}
+                </p>
+              </div>
             </Link>
             <div className="flex items-center gap-sop-16px">
               {SOCIAL_LINKS.map(({ name, href, Icon }) => (
-                <Link key={name} href={href} target="_blank" rel="noopener noreferrer">
+                <Link
+                  key={name}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Icon size={{ mobile: 24, desktop: 24 }} />
                 </Link>
               ))}
             </div>
           </div>
 
-          <div className="flex flex-col">
+          <div className="col-span-1 flex flex-col">
             <div className="mb-sop-24px flex flex-col">
               {LINE_OA_TITLE.map((line) => (
-                <h4 key={line} className="sop-body-lg-medium text-sop-base-black">
-                  {line}
-                </h4>
+                <FooterSectionHeading key={line}>{line}</FooterSectionHeading>
               ))}
             </div>
             <div className="flex w-fit items-center justify-center rounded-[14px] border border-sop-system-success-400 px-sop-20px py-sop-24px">
-              <QrAddLineOAIcon size={{ desktop: 128, mobile: 128 }} color="#05D35E" />
+              <QrAddLineOAIcon
+                size={{ desktop: 128, mobile: 128 }}
+                color="#05D35E"
+              />
             </div>
           </div>
         </div>
@@ -73,14 +102,14 @@ export function Footer() {
         className={cn(
           "flex w-full items-center",
           "px-sop-16px py-sop-16px md:px-sop-32px lg:px-sop-80px",
-          "flex-col gap-sop-12px md:flex-row md:justify-between"
+          "flex-col gap-sop-12px md:flex-row md:justify-between",
         )}
         style={{
           backgroundImage:
             "linear-gradient(90deg, var(--color-sop-primary-500) 0%, var(--color-sop-secondary-500) 100%)",
         }}
       >
-        <p className="sop-body-xs-regular text-sop-base-white text-center md:text-left">
+        <p className="sop-body-xs-regular text-center text-sop-base-white md:text-left">
           {COMPANY_INFO.copyright}
         </p>
         <div className="flex items-center gap-sop-12px">
@@ -100,5 +129,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  );
+  )
 }

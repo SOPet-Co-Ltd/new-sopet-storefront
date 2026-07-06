@@ -11,7 +11,7 @@ import { GRAPHQL_URL } from '@/lib/config';
 import { createAuthLink } from '@/lib/graphql/authLink';
 import { typePolicies } from '@/lib/graphql/cachePolicies';
 
-let apolloClient: ApolloClient | null = null;
+let browserApolloClient: ApolloClient | null = null;
 
 function createApolloClient(): ApolloClient {
   const httpLink = new HttpLink({
@@ -26,10 +26,14 @@ function createApolloClient(): ApolloClient {
 }
 
 export function getApolloClient(): ApolloClient {
-  if (!apolloClient) {
-    apolloClient = createApolloClient();
+  if (typeof window === 'undefined') {
+    return createApolloClient();
   }
-  return apolloClient;
+
+  if (!browserApolloClient) {
+    browserApolloClient = createApolloClient();
+  }
+  return browserApolloClient;
 }
 
 export async function executeQuery<TData, TVariables extends OperationVariables>(

@@ -68,17 +68,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await apolloClient.clearStore();
   }, [apolloClient]);
 
+  const handleAuthFailure = useCallback(() => {
+    clearTokens();
+    setHasToken(false);
+    setPendingDeletion(false);
+  }, []);
+
   useEffect(() => {
-    setOnAuthFailure(() => {
-      void logout();
-    });
+    setOnAuthFailure(handleAuthFailure);
 
     return () => {
       setOnAuthFailure(() => {
         clearTokens();
       });
     };
-  }, [logout]);
+  }, [handleAuthFailure]);
 
   const sendOtp = useCallback(
     async (phone: string): Promise<MessagePayload> => {

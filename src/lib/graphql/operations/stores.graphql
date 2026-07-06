@@ -1,0 +1,27 @@
+fragment StoreFields on StoreType {
+  id
+  name
+  slug
+  logoUrl
+  bannerUrl
+  description
+  status
+}
+
+query Store($id: String!) {
+  store(id: $id) {
+    ...StoreFields
+  }
+}
+
+query StoreBySlug($slug: String!) {
+  storeBySlug(slug: $slug) {
+    ...StoreFields
+  }
+}
+
+query Stores {
+  stores {
+    ...StoreFields
+  }
+}

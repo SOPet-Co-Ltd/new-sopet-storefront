@@ -35,15 +35,7 @@ export default function ThankYouRecommendedProductSection() {
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {products.map((product: RecommendedProductsQuery["recommendedProducts"][number]) => (
-          <ProductCard
-            key={product.id}
-            image={product.thumbnailUrl || "/placeholder-product.jpg"}
-            title={product.name}
-            price={product.basePrice}
-            rating={product.averageRating}
-            ratingCount={product.reviewCount}
-            saleCount={product.soldCount}
-          />
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
     </div>

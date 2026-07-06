@@ -1,4 +1,15 @@
 import { graphql, HttpResponse } from 'msw';
+import {
+  defaultProductsPagination,
+  sampleCategories,
+  samplePlatformBanners,
+  samplePlatformSettings,
+  sampleProductCard,
+  sampleProductDetail,
+  sampleProductReview,
+  sampleStore,
+  sampleStoreReviewSummary,
+} from './fixtures/catalog';
 
 /**
  * Default MSW handlers for Vitest. Phase-specific handlers are added per test
@@ -12,6 +23,77 @@ export const handlers = [
           customer: null,
         },
       },
+    });
+  }),
+
+  graphql.query('Products', () => {
+    return HttpResponse.json({
+      data: {
+        products: {
+          items: [sampleProductCard],
+          pagination: defaultProductsPagination,
+        },
+      },
+    });
+  }),
+
+  graphql.query('ProductBySlug', () => {
+    return HttpResponse.json({
+      data: { productBySlug: sampleProductDetail },
+    });
+  }),
+
+  graphql.query('ProductById', () => {
+    return HttpResponse.json({
+      data: { product: sampleProductDetail },
+    });
+  }),
+
+  graphql.query('ApprovedCategories', () => {
+    return HttpResponse.json({
+      data: { approvedCategories: sampleCategories },
+    });
+  }),
+
+  graphql.query('StoreBySlug', () => {
+    return HttpResponse.json({
+      data: { storeBySlug: sampleStore },
+    });
+  }),
+
+  graphql.query('ProductReviews', () => {
+    return HttpResponse.json({
+      data: { productReviews: [sampleProductReview] },
+    });
+  }),
+
+  graphql.query('StoreReviewSummary', () => {
+    return HttpResponse.json({
+      data: { storeReviewSummary: sampleStoreReviewSummary },
+    });
+  }),
+
+  graphql.query('PlatformBanners', () => {
+    return HttpResponse.json({
+      data: { platformBanners: samplePlatformBanners },
+    });
+  }),
+
+  graphql.query('PlatformAds', () => {
+    return HttpResponse.json({
+      data: { platformAds: [] },
+    });
+  }),
+
+  graphql.query('PlatformSponsors', () => {
+    return HttpResponse.json({
+      data: { platformSponsors: [] },
+    });
+  }),
+
+  graphql.query('PlatformSettings', () => {
+    return HttpResponse.json({
+      data: { platformSettings: samplePlatformSettings },
     });
   }),
 ];

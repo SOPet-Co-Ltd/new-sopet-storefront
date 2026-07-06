@@ -26,7 +26,7 @@ export default function RootLayout({
       lang="en"
       className={`${mitr.variable} ${mitr.className} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-sop-primary-100">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

@@ -1,0 +1,12 @@
+query RecommendedProducts($limit: Int) {
+  recommendedProducts(limit: $limit) {
+    id
+    name
+    slug
+    basePrice
+    thumbnailUrl
+    averageRating
+    reviewCount
+    soldCount
+  }
+}

@@ -1,0 +1,10 @@
+query Me {
+  me {
+    customer {
+      id
+      phone
+      email
+      fullName
+    }
+  }
+}

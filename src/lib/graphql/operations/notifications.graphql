@@ -1,0 +1,23 @@
+query Notifications($unreadOnly: Boolean) {
+  notifications(unreadOnly: $unreadOnly) {
+    id
+    type
+    title
+    message
+    metadata
+    isRead
+    createdAt
+  }
+}
+
+query UnreadCount {
+  unreadNotificationsCount
+}
+
+mutation MarkNotificationRead($id: String!) {
+  markNotificationRead(id: $id)
+}
+
+mutation MarkAllNotificationsRead {
+  markAllNotificationsRead
+}

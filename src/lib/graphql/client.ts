@@ -6,17 +6,22 @@ import {
   type OperationVariables,
   type TypedDocumentNode,
 } from '@apollo/client';
+import { from } from '@apollo/client/link';
 import { GRAPHQL_URL } from '@/lib/config';
+import { createAuthLink } from '@/lib/graphql/authLink';
+import { typePolicies } from '@/lib/graphql/cachePolicies';
 
 let apolloClient: ApolloClient | null = null;
 
 function createApolloClient(): ApolloClient {
+  const httpLink = new HttpLink({
+    uri: GRAPHQL_URL,
+    credentials: 'include',
+  });
+
   return new ApolloClient({
-    link: new HttpLink({
-      uri: GRAPHQL_URL,
-      credentials: 'include',
-    }),
-    cache: new InMemoryCache(),
+    link: from([createAuthLink(), httpLink]),
+    cache: new InMemoryCache({ typePolicies }),
   });
 }
 

@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -23,7 +22,9 @@ export type CheckoutState = {
   shippingByStoreId: Record<string, ShippingSelection>;
   selectedAddressId: string | null;
   promotionCode: string | null;
+  promotionDiscount: number;
   paymentMethod: PaymentMethod | null;
+  requiredStoreIds: string[];
 };
 
 function createInitialCheckoutState(): CheckoutState {
@@ -32,7 +33,9 @@ function createInitialCheckoutState(): CheckoutState {
     shippingByStoreId: {},
     selectedAddressId: null,
     promotionCode: null,
+    promotionDiscount: 0,
     paymentMethod: null,
+    requiredStoreIds: [],
   };
 }
 
@@ -41,11 +44,28 @@ export type CheckoutContextValue = CheckoutState & {
   setShipping: (storeId: string, selection: ShippingSelection) => void;
   setAddress: (addressId: string | null) => void;
   setPromotion: (code: string | null) => void;
+  setPromotionDiscount: (amount: number) => void;
   setPaymentMethod: (method: PaymentMethod | null) => void;
+  setRequiredStoreIds: (storeIds: string[]) => void;
+  canAdvanceToPayment: () => boolean;
+  canAdvanceToReview: () => boolean;
   reset: () => void;
 };
 
 const CheckoutContext = createContext<CheckoutContextValue | null>(null);
+
+function hasShippingForAllStores(
+  requiredStoreIds: string[],
+  shippingByStoreId: Record<string, ShippingSelection>,
+): boolean {
+  if (requiredStoreIds.length === 0) {
+    return false;
+  }
+
+  return requiredStoreIds.every(
+    (storeId) => Boolean(shippingByStoreId[storeId]?.shippingOptionId),
+  );
+}
 
 export function CheckoutProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<CheckoutState>(createInitialCheckoutState);
@@ -54,14 +74,26 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     setState(createInitialCheckoutState());
   }, []);
 
-  useEffect(() => {
-    return () => {
-      reset();
-    };
-  }, [reset]);
+  const canAdvanceToPayment = useCallback(() => {
+    return hasShippingForAllStores(state.requiredStoreIds, state.shippingByStoreId);
+  }, [state.requiredStoreIds, state.shippingByStoreId]);
+
+  const canAdvanceToReview = useCallback(() => {
+    return state.paymentMethod !== null;
+  }, [state.paymentMethod]);
 
   const setStep = useCallback((step: CheckoutStep) => {
-    setState((prev) => ({ ...prev, step }));
+    setState((prev) => {
+      if (step === 'payment' && !hasShippingForAllStores(prev.requiredStoreIds, prev.shippingByStoreId)) {
+        return prev;
+      }
+
+      if (step === 'review' && prev.paymentMethod === null) {
+        return prev;
+      }
+
+      return { ...prev, step };
+    });
   }, []);
 
   const setShipping = useCallback(
@@ -82,11 +114,23 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setPromotion = useCallback((code: string | null) => {
-    setState((prev) => ({ ...prev, promotionCode: code }));
+    setState((prev) => ({
+      ...prev,
+      promotionCode: code,
+      promotionDiscount: code ? prev.promotionDiscount : 0,
+    }));
+  }, []);
+
+  const setPromotionDiscount = useCallback((amount: number) => {
+    setState((prev) => ({ ...prev, promotionDiscount: amount }));
   }, []);
 
   const setPaymentMethod = useCallback((method: PaymentMethod | null) => {
     setState((prev) => ({ ...prev, paymentMethod: method }));
+  }, []);
+
+  const setRequiredStoreIds = useCallback((storeIds: string[]) => {
+    setState((prev) => ({ ...prev, requiredStoreIds: storeIds }));
   }, []);
 
   const value = useMemo<CheckoutContextValue>(
@@ -96,7 +140,11 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setShipping,
       setAddress,
       setPromotion,
+      setPromotionDiscount,
       setPaymentMethod,
+      setRequiredStoreIds,
+      canAdvanceToPayment,
+      canAdvanceToReview,
       reset,
     }),
     [
@@ -105,7 +153,11 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setShipping,
       setAddress,
       setPromotion,
+      setPromotionDiscount,
       setPaymentMethod,
+      setRequiredStoreIds,
+      canAdvanceToPayment,
+      canAdvanceToReview,
       reset,
     ],
   );

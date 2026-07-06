@@ -1,6 +1,6 @@
 import type {
-  CartItemType,
   CartType,
+  CartQuery,
   CreateOrderInput,
   ShippingAddressInput,
 } from '@/lib/graphql/generated/graphql';
@@ -172,7 +172,7 @@ function mapShippingAddress(formState: GuestCheckoutFormState): ShippingAddressI
   };
 }
 
-function mapCartItems(items: CartItemType[]): CreateOrderInput['items'] {
+function mapCartItems(items: CartQuery['cart']['items']): CreateOrderInput['items'] {
   return items.map((item) => {
     const productId = item.productVariant?.product?.id;
     const price = item.productVariant?.price;
@@ -203,7 +203,7 @@ function mapStoreShipping(
 
 export function toCreateOrderInput(
   formState: GuestCheckoutFormState | null,
-  cart: Pick<CartType, 'items'>,
+  cart: { items: CartQuery['cart']['items'] },
   checkoutContext: CreateOrderCheckoutContext,
 ): CreateOrderInput {
   if (!checkoutContext.paymentMethod) {

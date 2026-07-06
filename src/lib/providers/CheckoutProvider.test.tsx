@@ -23,6 +23,7 @@ function CheckoutProbe({
       data-promotion={context.promotionCode ?? ''}
       data-payment={context.paymentMethod ?? ''}
       data-shipping-count={Object.keys(context.shippingByStoreId).length}
+      data-required-stores={context.requiredStoreIds.length}
     />
   );
 }
@@ -71,9 +72,10 @@ describe('CheckoutProvider', () => {
     expect(context!.selectedAddressId).toBeNull();
     expect(context!.promotionCode).toBeNull();
     expect(context!.paymentMethod).toBeNull();
+    expect(context!.requiredStoreIds).toEqual([]);
   });
 
-  it('updates step via setStep', () => {
+  it('updates step via setStep when shipping is complete for all stores', () => {
     let context: CheckoutContextValue | null = null;
     const { container, root } = renderCheckoutProbe((value) => {
       context = value;
@@ -81,12 +83,73 @@ describe('CheckoutProvider', () => {
     roots.push(root);
 
     act(() => {
+      context!.setRequiredStoreIds(['store-1']);
+      context!.setShipping('store-1', { shippingOptionId: 'ship-opt-1' });
       context!.setStep('payment');
     });
 
     expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe(
       'payment',
     );
+  });
+
+  it('blocks advancing to payment when one store lacks shipping selection', () => {
+    let context: CheckoutContextValue | null = null;
+    const { container, root } = renderCheckoutProbe((value) => {
+      context = value;
+    });
+    roots.push(root);
+
+    act(() => {
+      context!.setRequiredStoreIds(['store-1', 'store-2']);
+      context!.setShipping('store-1', { shippingOptionId: 'ship-opt-1' });
+      context!.setStep('payment');
+    });
+
+    expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe(
+      'shipping',
+    );
+    expect(context!.canAdvanceToPayment()).toBe(false);
+  });
+
+  it('allows advancing to payment when every required store has shipping', () => {
+    let context: CheckoutContextValue | null = null;
+    const { root } = renderCheckoutProbe((value) => {
+      context = value;
+    });
+    roots.push(root);
+
+    act(() => {
+      context!.setRequiredStoreIds(['store-1', 'store-2']);
+      context!.setShipping('store-1', { shippingOptionId: 'ship-opt-1' });
+      context!.setShipping('store-2', { shippingOptionId: 'ship-opt-2' });
+    });
+
+    expect(context!.canAdvanceToPayment()).toBe(true);
+
+    act(() => {
+      context!.setStep('payment');
+    });
+
+    expect(context!.step).toBe('payment');
+  });
+
+  it('blocks advancing to review without a payment method', () => {
+    let context: CheckoutContextValue | null = null;
+    const { root } = renderCheckoutProbe((value) => {
+      context = value;
+    });
+    roots.push(root);
+
+    act(() => {
+      context!.setRequiredStoreIds(['store-1']);
+      context!.setShipping('store-1', { shippingOptionId: 'ship-opt-1' });
+      context!.setStep('payment');
+      context!.setStep('review');
+    });
+
+    expect(context!.step).toBe('payment');
+    expect(context!.canAdvanceToReview()).toBe(false);
   });
 
   it('stores per-store shipping via setShipping', () => {
@@ -116,6 +179,7 @@ describe('CheckoutProvider', () => {
     roots.push(root);
 
     act(() => {
+      context!.setRequiredStoreIds(['store-1']);
       context!.setStep('review');
       context!.setShipping('store-1', { shippingOptionId: 'ship-opt-1' });
       context!.setAddress('addr-1');
@@ -132,6 +196,7 @@ describe('CheckoutProvider', () => {
     expect(context!.selectedAddressId).toBeNull();
     expect(context!.promotionCode).toBeNull();
     expect(context!.paymentMethod).toBeNull();
+    expect(context!.requiredStoreIds).toEqual([]);
     expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe(
       'shipping',
     );

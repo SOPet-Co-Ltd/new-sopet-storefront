@@ -6,6 +6,10 @@ vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }));
 
+vi.mock('@/lib/providers/CartProvider', () => ({
+  useCart: vi.fn(),
+}));
+
 vi.mock('../molecules/UnreadBadge', () => ({
   UnreadBadge: () => null,
 }));
@@ -15,8 +19,10 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useCart } from '@/lib/providers/CartProvider';
 
 const mockedUseAuth = vi.mocked(useAuth);
+const mockedUseCart = vi.mocked(useCart);
 
 describe('Navbar', () => {
   beforeEach(() => {
@@ -29,6 +35,19 @@ describe('Navbar', () => {
       verifyOtp: vi.fn(),
       reactivateAccount: vi.fn(),
       logout: vi.fn(),
+    });
+    mockedUseCart.mockReturnValue({
+      cart: null,
+      items: [],
+      itemsByStore: [],
+      itemCount: 0,
+      subtotal: 0,
+      loading: false,
+      error: undefined,
+      addItem: vi.fn(),
+      updateItem: vi.fn(),
+      removeItem: vi.fn(),
+      refetch: vi.fn(),
     });
   });
   it('links cart to /cart and omits /coupons links', () => {

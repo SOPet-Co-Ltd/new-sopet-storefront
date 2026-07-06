@@ -14,19 +14,30 @@ import {
 import { NavbarSearch } from "../molecules/NavbarSearch"
 import { NavbarUserMenu } from "../molecules/NavbarUserMenu"
 import { UnreadBadge } from "../molecules/UnreadBadge"
+import { useCart } from "@/lib/providers/CartProvider"
 
 function NavbarCartButton() {
+  const { itemCount } = useCart()
+
   return (
     <Link
       href="/cart"
       className="relative inline-flex"
-      aria-label="ตะกร้าสินค้า"
+      aria-label={itemCount > 0 ? `ตะกร้าสินค้า ${itemCount} ชิ้น` : "ตะกร้าสินค้า"}
     >
       <UserManagementShoppingBagIcon
         size={{ mobile: 18, desktop: 18 }}
         color="#454547"
         aria-hidden="true"
       />
+      {itemCount > 0 && (
+        <span
+          className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-sop-primary-500 px-1 sop-body-2xs-regular text-sop-base-white"
+          data-testid="cart-badge-count"
+        >
+          {itemCount > 99 ? "99+" : itemCount}
+        </span>
+      )}
     </Link>
   )
 }

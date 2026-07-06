@@ -91,6 +91,9 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
   const defaultVariant = product?.variants?.[0];
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [selectedStock, setSelectedStock] = useState<number | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    defaultVariant?.id ?? null,
+  );
 
   const footerPrice = selectedPrice ?? product?.basePrice ?? 0;
   const footerDisabled = (selectedStock ?? defaultVariant?.stockQuantity ?? 0) <= 0;
@@ -141,7 +144,8 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
 
           <ProductDetailsVariantSelection
             product={product}
-            onVariantChange={(_variantId, price, stockQuantity) => {
+            onVariantChange={(variantId, price, stockQuantity) => {
+              setSelectedVariantId(variantId);
               setSelectedPrice(price);
               setSelectedStock(stockQuantity);
             }}
@@ -167,7 +171,11 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
         loading={reviewsLoading}
       />
 
-      <ProductDetailsFooter price={footerPrice} disabled={footerDisabled} />
+      <ProductDetailsFooter
+        price={footerPrice}
+        disabled={footerDisabled}
+        variantId={selectedVariantId}
+      />
     </div>
   );
 }

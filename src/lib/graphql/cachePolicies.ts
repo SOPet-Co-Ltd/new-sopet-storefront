@@ -6,6 +6,9 @@ export const typePolicies: TypePolicies = {
       me: {
         merge: (_existing, incoming) => incoming,
       },
+      cart: {
+        merge: (_existing, incoming) => incoming,
+      },
     },
   },
 };

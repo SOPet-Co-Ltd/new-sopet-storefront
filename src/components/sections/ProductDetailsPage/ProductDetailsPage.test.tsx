@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ProductDetailsPage from '@/components/sections/ProductDetailsPage';
 import { getApolloClient } from '@/lib/graphql/client';
+import { CartProvider } from '@/lib/providers/CartProvider';
 import { server } from '@/test/mocks/server';
 
 const STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
@@ -106,10 +107,27 @@ vi.mock('next/image', () => ({
   ),
 }));
 
+vi.mock('@/lib/hooks/useAuth', () => ({
+  useAuth: vi.fn(() => ({
+    customer: null,
+    isAuthenticated: false,
+    isLoading: false,
+    pendingDeletion: false,
+    sendOtp: vi.fn(),
+    verifyOtp: vi.fn(),
+    reactivateAccount: vi.fn(),
+    logout: vi.fn(),
+  })),
+}));
+
 function createWrapper() {
   const client = getApolloClient();
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <ApolloProvider client={client}>{children}</ApolloProvider>;
+    return (
+      <ApolloProvider client={client}>
+        <CartProvider>{children}</CartProvider>
+      </ApolloProvider>
+    );
   };
 }
 

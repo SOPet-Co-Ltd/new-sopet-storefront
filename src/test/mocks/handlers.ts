@@ -10,6 +10,7 @@ import {
   sampleStore,
   sampleStoreReviewSummary,
 } from './fixtures/catalog';
+import { sampleCart, sampleEmptyCart } from './fixtures/cart';
 
 /**
  * Default MSW handlers for Vitest. Phase-specific handlers are added per test
@@ -94,6 +95,36 @@ export const handlers = [
   graphql.query('PlatformSettings', () => {
     return HttpResponse.json({
       data: { platformSettings: samplePlatformSettings },
+    });
+  }),
+
+  graphql.query('Cart', () => {
+    return HttpResponse.json({
+      data: { cart: sampleEmptyCart },
+    });
+  }),
+
+  graphql.mutation('AddToCart', () => {
+    return HttpResponse.json({
+      data: { addToCart: sampleCart },
+    });
+  }),
+
+  graphql.mutation('UpdateCartItem', () => {
+    return HttpResponse.json({
+      data: { updateCartItem: sampleCart },
+    });
+  }),
+
+  graphql.mutation('RemoveCartItem', () => {
+    return HttpResponse.json({
+      data: { removeCartItem: sampleEmptyCart },
+    });
+  }),
+
+  graphql.mutation('MergeCart', () => {
+    return HttpResponse.json({
+      data: { mergeCart: sampleCart },
     });
   }),
 ];

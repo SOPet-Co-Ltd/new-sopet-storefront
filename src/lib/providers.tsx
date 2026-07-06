@@ -5,6 +5,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { getApolloClient } from '@/lib/graphql/client';
 import { AuthProvider } from '@/lib/providers/AuthProvider';
+import { CartProvider } from '@/lib/providers/CartProvider';
 import { CheckoutProvider } from '@/lib/providers/CheckoutProvider';
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -13,10 +14,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ApolloProvider client={client}>
       <AuthProvider>
-        <CheckoutProvider>
-          {children}
-          <Toaster position="top-right" />
-        </CheckoutProvider>
+        <CartProvider>
+          <CheckoutProvider>
+            {children}
+            <Toaster position="top-right" />
+          </CheckoutProvider>
+        </CartProvider>
       </AuthProvider>
     </ApolloProvider>
   );

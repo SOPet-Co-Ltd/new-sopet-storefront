@@ -1,0 +1,62 @@
+fragment CartItemFields on CartItemType {
+  id
+  quantity
+  variantId
+  productVariant {
+    id
+    price
+    sku
+    optionsJson
+    product {
+      id
+      name
+      slug
+      storeId
+      thumbnailUrl
+      store {
+        id
+        name
+        slug
+      }
+    }
+  }
+}
+
+fragment CartFields on CartType {
+  id
+  sessionId
+  customerId
+  items {
+    ...CartItemFields
+  }
+}
+
+query Cart($sessionId: String) {
+  cart(sessionId: $sessionId) {
+    ...CartFields
+  }
+}
+
+mutation AddToCart($input: AddToCartInput!) {
+  addToCart(input: $input) {
+    ...CartFields
+  }
+}
+
+mutation UpdateCartItem($input: UpdateCartItemInput!) {
+  updateCartItem(input: $input) {
+    ...CartFields
+  }
+}
+
+mutation RemoveCartItem($input: RemoveCartItemInput!) {
+  removeCartItem(input: $input) {
+    ...CartFields
+  }
+}
+
+mutation MergeCart($sessionId: String!) {
+  mergeCart(sessionId: $sessionId) {
+    ...CartFields
+  }
+}

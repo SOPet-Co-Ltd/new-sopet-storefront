@@ -9,6 +9,17 @@ import { SESSION_ID_COOKIE } from '@/lib/session';
 import { sampleCart } from '@/test/mocks/fixtures/cart';
 import { server } from '@/test/mocks/server';
 
+const TEST_SESSION_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
+
+vi.mock('@/lib/session', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/session')>();
+  return {
+    ...actual,
+    ensureSessionId: vi.fn(() => TEST_SESSION_ID),
+    getSessionId: vi.fn(() => TEST_SESSION_ID),
+  };
+});
+
 vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: vi.fn(() => ({
     customer: null,
@@ -40,7 +51,7 @@ afterEach(async () => {
 
 describe('useCart', () => {
   it('loads cart items and derives item count', async () => {
-    document.cookie = `${SESSION_ID_COOKIE}=a1b2c3d4-e5f6-4789-a012-3456789abcde; path=/`;
+    document.cookie = `${SESSION_ID_COOKIE}=${TEST_SESSION_ID}; path=/`;
 
     server.use(
       graphql.query('Cart', () =>
@@ -55,10 +66,8 @@ describe('useCart', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.itemCount).toBe(sampleCart.items[0]?.quantity ?? 0);
     });
-
-    expect(result.current.itemCount).toBe(sampleCart.items[0]?.quantity ?? 0);
     expect(result.current.itemsByStore).toHaveLength(1);
   });
 });

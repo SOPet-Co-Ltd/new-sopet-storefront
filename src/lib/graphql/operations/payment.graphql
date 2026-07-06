@@ -1,0 +1,22 @@
+fragment PaymentFields on PaymentType {
+  id
+  orderId
+  amount
+  currency
+  status
+  paymentMethod
+  authorizeUri
+  qrCodeUrl
+}
+
+query Payment($id: String!) {
+  payment(id: $id) {
+    ...PaymentFields
+  }
+}
+
+query PaymentByOrderId($orderId: String!) {
+  paymentByOrderId(orderId: $orderId) {
+    ...PaymentFields
+  }
+}

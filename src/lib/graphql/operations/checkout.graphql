@@ -1,0 +1,71 @@
+fragment OrderItemFields on OrderItemType {
+  id
+  variantId
+  storeId
+  productName
+  quantity
+  unitPrice
+  subtotal
+  fulfillmentStatus
+}
+
+fragment OrderStoreShippingFields on OrderStoreShippingType {
+  storeId
+  optionName
+  shippingFee
+}
+
+fragment OrderShippingAddressFields on OrderShippingAddressType {
+  fullName
+  phone
+  addressLine1
+  addressLine2
+  amphoe
+  tumbon
+  province
+  postalCode
+}
+
+fragment OrderFields on OrderType {
+  id
+  orderNumber
+  status
+  createdAt
+  paymentMethod
+  subtotal
+  shippingFee
+  discountAmount
+  total
+  guestEmail
+  guestName
+  guestPhone
+  items {
+    ...OrderItemFields
+  }
+  storeShippings {
+    ...OrderStoreShippingFields
+  }
+  shippingAddress {
+    ...OrderShippingAddressFields
+  }
+}
+
+query ValidatePromotion($input: ValidatePromotionInput!) {
+  validatePromotion(input: $input) {
+    code
+    name
+    discountAmount
+  }
+}
+
+mutation CreateOrder($input: CreateOrderInput!) {
+  createOrder(input: $input) {
+    ...OrderFields
+  }
+}
+
+mutation CreatePayment($input: CreatePaymentInput!) {
+  createPayment(input: $input) {
+    ...PaymentFields
+  }
+}

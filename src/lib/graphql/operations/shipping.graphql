@@ -1,0 +1,16 @@
+fragment StoreShippingOptionFields on StoreShippingOptionType {
+  id
+  storeId
+  name
+  description
+  price
+  isActive
+  sortOrder
+  providerId
+}
+
+query StoreShippingOptions($storeId: String!) {
+  storeShippingOptions(storeId: $storeId) {
+    ...StoreShippingOptionFields
+  }
+}

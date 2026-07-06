@@ -1,0 +1,41 @@
+fragment SavedAddressFields on SavedAddressType {
+  id
+  fullName
+  phone
+  addressLine1
+  addressLine2
+  amphoe
+  tumbon
+  province
+  postalCode
+  label
+  isDefault
+}
+
+query Addresses {
+  addresses {
+    ...SavedAddressFields
+  }
+}
+
+mutation CreateAddress($input: CreateAddressInput!) {
+  createAddress(input: $input) {
+    ...SavedAddressFields
+  }
+}
+
+mutation UpdateAddress($id: String!, $input: UpdateAddressInput!) {
+  updateAddress(id: $id, input: $input) {
+    ...SavedAddressFields
+  }
+}
+
+mutation DeleteAddress($id: String!) {
+  deleteAddress(id: $id)
+}
+
+mutation SetDefaultAddress($id: String!) {
+  setDefaultAddress(id: $id) {
+    ...SavedAddressFields
+  }
+}

@@ -1,0 +1,245 @@
+import type {
+  CartItemType,
+  CartType,
+  CreateOrderInput,
+  ShippingAddressInput,
+} from '@/lib/graphql/generated/graphql';
+import { isValidThaiPhoneNumber, normalizeThaiPhoneNumber } from '@/lib/helpers/phone';
+import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
+
+export type GuestCheckoutFormState = {
+  contactPhone: string;
+  recipientFullName: string;
+  recipientPhone: string;
+  address: string;
+  district: string;
+  subDistrict?: string;
+  province: string;
+  postalCode: string;
+  addressLine2?: string;
+  email?: string;
+  notes?: string;
+};
+
+export type GuestCheckoutField =
+  | 'guestPhone'
+  | 'recipientPhone'
+  | 'recipientName'
+  | 'address'
+  | 'district'
+  | 'province'
+  | 'postalCode'
+  | 'email';
+
+export type GuestCheckoutValidationResult = {
+  valid: boolean;
+  errors: Partial<Record<GuestCheckoutField, string>>;
+};
+
+export type CreateOrderCheckoutContext = {
+  isAuthenticated: boolean;
+  shippingByStoreId: Record<string, { shippingOptionId: string }>;
+  selectedAddressId: string | null;
+  promotionCode: string | null;
+  paymentMethod: PaymentMethod | null;
+};
+
+const GUEST_PHONE_REQUIRED_MESSAGE = 'กรุณากรอกเบอร์โทรศัพท์ของคุณ';
+const INVALID_PHONE_MESSAGE = 'กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง';
+const RECIPIENT_PHONE_REQUIRED_MESSAGE = 'กรุณากรอกเบอร์โทรศัพท์ (ผู้รับสินค้า)';
+const RECIPIENT_NAME_REQUIRED_MESSAGE = 'กรุณากรอกชื่อ / นามสกุล (ผู้รับสินค้า)';
+const ADDRESS_REQUIRED_MESSAGE = 'กรุณากรอกที่อยู่ของคุณ';
+const DISTRICT_REQUIRED_MESSAGE = 'กรุณาเลือกเขต/อำเภอของคุณ';
+const PROVINCE_REQUIRED_MESSAGE = 'กรุณาเลือกจังหวัดของคุณ';
+const POSTAL_CODE_REQUIRED_MESSAGE = 'กรุณาเลือกรหัสไปรษณีย์ของคุณ';
+const INVALID_EMAIL_MESSAGE = 'รูปแบบอีเมลไม่ถูกต้อง';
+
+function toE164ThaiPhone(phone: string): string {
+  const normalized = normalizeThaiPhoneNumber(phone);
+
+  if (normalized.startsWith('0')) {
+    return `+66${normalized.slice(1)}`;
+  }
+
+  return phone;
+}
+
+function validatePhoneField(
+  value: string,
+  requiredMessage: string,
+): string | undefined {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return requiredMessage;
+  }
+
+  if (!isValidThaiPhoneNumber(trimmed)) {
+    return INVALID_PHONE_MESSAGE;
+  }
+
+  return undefined;
+}
+
+function validateRequiredText(value: string, requiredMessage: string): string | undefined {
+  return value.trim() ? undefined : requiredMessage;
+}
+
+function validateOptionalEmail(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailPattern.test(trimmed) ? undefined : INVALID_EMAIL_MESSAGE;
+}
+
+export function validateGuestCheckoutForm(
+  formState: GuestCheckoutFormState,
+): GuestCheckoutValidationResult {
+  const errors: Partial<Record<GuestCheckoutField, string>> = {};
+
+  const guestPhoneError = validatePhoneField(
+    formState.contactPhone,
+    GUEST_PHONE_REQUIRED_MESSAGE,
+  );
+  if (guestPhoneError) {
+    errors.guestPhone = guestPhoneError;
+  }
+
+  const recipientPhoneError = validatePhoneField(
+    formState.recipientPhone,
+    RECIPIENT_PHONE_REQUIRED_MESSAGE,
+  );
+  if (recipientPhoneError) {
+    errors.recipientPhone = recipientPhoneError;
+  }
+
+  const recipientNameError = validateRequiredText(
+    formState.recipientFullName,
+    RECIPIENT_NAME_REQUIRED_MESSAGE,
+  );
+  if (recipientNameError) {
+    errors.recipientName = recipientNameError;
+  }
+
+  const addressError = validateRequiredText(formState.address, ADDRESS_REQUIRED_MESSAGE);
+  if (addressError) {
+    errors.address = addressError;
+  }
+
+  const districtError = validateRequiredText(formState.district, DISTRICT_REQUIRED_MESSAGE);
+  if (districtError) {
+    errors.district = districtError;
+  }
+
+  const provinceError = validateRequiredText(formState.province, PROVINCE_REQUIRED_MESSAGE);
+  if (provinceError) {
+    errors.province = provinceError;
+  }
+
+  const postalCodeError = validateRequiredText(
+    formState.postalCode,
+    POSTAL_CODE_REQUIRED_MESSAGE,
+  );
+  if (postalCodeError) {
+    errors.postalCode = postalCodeError;
+  }
+
+  const emailError = validateOptionalEmail(formState.email);
+  if (emailError) {
+    errors.email = emailError;
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+  };
+}
+
+function mapShippingAddress(formState: GuestCheckoutFormState): ShippingAddressInput {
+  return {
+    recipientName: formState.recipientFullName.trim(),
+    recipientPhone: toE164ThaiPhone(formState.recipientPhone),
+    addressLine1: formState.address.trim(),
+    addressLine2: formState.addressLine2?.trim() || undefined,
+    tumbon: formState.subDistrict?.trim() || undefined,
+    amphoe: formState.district.trim(),
+    province: formState.province.trim(),
+    postalCode: formState.postalCode.trim(),
+  };
+}
+
+function mapCartItems(items: CartItemType[]): CreateOrderInput['items'] {
+  return items.map((item) => {
+    const productId = item.productVariant?.product?.id;
+    const price = item.productVariant?.price;
+
+    if (!productId || price == null) {
+      throw new Error('Cart item is missing product or price data required for createOrder');
+    }
+
+    return {
+      productId,
+      variantId: item.variantId,
+      quantity: item.quantity,
+      price,
+    };
+  });
+}
+
+function mapStoreShipping(
+  shippingByStoreId: CreateOrderCheckoutContext['shippingByStoreId'],
+): CreateOrderInput['storeShipping'] {
+  const selections = Object.entries(shippingByStoreId).map(([storeId, selection]) => ({
+    storeId,
+    shippingOptionId: selection.shippingOptionId,
+  }));
+
+  return selections.length > 0 ? selections : undefined;
+}
+
+export function toCreateOrderInput(
+  formState: GuestCheckoutFormState | null,
+  cart: Pick<CartType, 'items'>,
+  checkoutContext: CreateOrderCheckoutContext,
+): CreateOrderInput {
+  if (!checkoutContext.paymentMethod) {
+    throw new Error('paymentMethod is required to create an order');
+  }
+
+  const input: CreateOrderInput = {
+    items: mapCartItems(cart.items),
+    paymentMethod: checkoutContext.paymentMethod,
+    storeShipping: mapStoreShipping(checkoutContext.shippingByStoreId),
+  };
+
+  if (checkoutContext.promotionCode?.trim()) {
+    input.platformPromotionCode = checkoutContext.promotionCode.trim();
+  }
+
+  if (checkoutContext.isAuthenticated) {
+    if (checkoutContext.selectedAddressId) {
+      input.savedAddressId = checkoutContext.selectedAddressId;
+    }
+
+    return input;
+  }
+
+  if (!formState) {
+    throw new Error('Guest checkout requires form state');
+  }
+
+  const trimmedEmail = formState.email?.trim();
+
+  return {
+    ...input,
+    guestPhone: toE164ThaiPhone(formState.contactPhone),
+    guestName: formState.recipientFullName.trim(),
+    guestEmail: trimmedEmail || undefined,
+    notes: formState.notes?.trim() || undefined,
+    shippingAddress: mapShippingAddress(formState),
+  };
+}

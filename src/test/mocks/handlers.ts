@@ -11,6 +11,14 @@ import {
   sampleStoreReviewSummary,
 } from './fixtures/catalog';
 import { sampleCart, sampleEmptyCart } from './fixtures/cart';
+import {
+  sampleOrder,
+  samplePaidPayment,
+  samplePendingPayment,
+  samplePromotionValidation,
+  sampleSavedAddress,
+  sampleShippingOption,
+} from './fixtures/checkout';
 
 /**
  * Default MSW handlers for Vitest. Phase-specific handlers are added per test
@@ -125,6 +133,72 @@ export const handlers = [
   graphql.mutation('MergeCart', () => {
     return HttpResponse.json({
       data: { mergeCart: sampleCart },
+    });
+  }),
+
+  graphql.query('Addresses', () => {
+    return HttpResponse.json({
+      data: { addresses: [sampleSavedAddress] },
+    });
+  }),
+
+  graphql.mutation('CreateAddress', () => {
+    return HttpResponse.json({
+      data: { createAddress: sampleSavedAddress },
+    });
+  }),
+
+  graphql.mutation('UpdateAddress', () => {
+    return HttpResponse.json({
+      data: { updateAddress: sampleSavedAddress },
+    });
+  }),
+
+  graphql.mutation('DeleteAddress', () => {
+    return HttpResponse.json({
+      data: { deleteAddress: true },
+    });
+  }),
+
+  graphql.mutation('SetDefaultAddress', () => {
+    return HttpResponse.json({
+      data: { setDefaultAddress: sampleSavedAddress },
+    });
+  }),
+
+  graphql.query('StoreShippingOptions', () => {
+    return HttpResponse.json({
+      data: { storeShippingOptions: [sampleShippingOption] },
+    });
+  }),
+
+  graphql.query('ValidatePromotion', () => {
+    return HttpResponse.json({
+      data: { validatePromotion: samplePromotionValidation },
+    });
+  }),
+
+  graphql.mutation('CreateOrder', () => {
+    return HttpResponse.json({
+      data: { createOrder: sampleOrder },
+    });
+  }),
+
+  graphql.mutation('CreatePayment', () => {
+    return HttpResponse.json({
+      data: { createPayment: samplePendingPayment },
+    });
+  }),
+
+  graphql.query('Payment', () => {
+    return HttpResponse.json({
+      data: { payment: samplePendingPayment },
+    });
+  }),
+
+  graphql.query('PaymentByOrderId', () => {
+    return HttpResponse.json({
+      data: { paymentByOrderId: samplePendingPayment },
     });
   }),
 ];

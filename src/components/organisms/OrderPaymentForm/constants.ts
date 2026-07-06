@@ -1,0 +1,2 @@
+export const PAYMENT_POLL_INTERVAL_MS = 2_000;
+export const PAYMENT_POLL_MAX_ATTEMPTS = 30;

@@ -47,6 +47,7 @@ describe('usePayment', () => {
 
   it('poll returns pending then paid and stops', async () => {
     let pollCount = 0;
+    const statusTrail: string[] = [];
 
     server.use(
       graphql.query('Payment', () => {
@@ -67,11 +68,16 @@ describe('usePayment', () => {
       id: CHECKOUT_PAYMENT_ID,
       intervalMs: 10,
       maxAttempts: 5,
+      onStatus: (status) => {
+        statusTrail.push(status);
+      },
     });
 
     expect(pollResult.status).toBe('paid');
     expect(pollResult.payment.id).toBe(CHECKOUT_PAYMENT_ID);
     expect(pollCount).toBeGreaterThanOrEqual(2);
+    expect(statusTrail).toContain('pending');
+    expect(statusTrail.at(-1)).toBe('paid');
   });
 
   it('poll resolves payment by order id', async () => {

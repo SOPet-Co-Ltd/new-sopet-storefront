@@ -8,6 +8,11 @@ import { CheckoutPaymentSelection } from '@/components/molecules/CheckoutPayment
 import { CheckoutSummarySection } from '@/components/molecules/CheckoutSummarySection/CheckoutSummarySection';
 import { CheckoutPromotionSection } from '@/components/sections/CheckoutPromotionSection/CheckoutPromotionSection';
 import { CheckoutSection } from '@/components/sections/CheckoutSection/CheckoutSection';
+import {
+  GuestCheckoutOtpProvider,
+  GuestOTPDialog,
+  useGuestCheckoutOtp,
+} from '@/components/organisms/GuestOTPDialog';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
@@ -34,6 +39,38 @@ function CheckoutPageReset() {
   return null;
 }
 
+function CheckoutGuestOtpDialog({
+  guestForm,
+}: {
+  guestForm: GuestCheckoutFormState;
+}) {
+  const {
+    isDialogOpen,
+    closeDialog,
+    markPhoneVerified,
+    consumeQueuedSubmit,
+  } = useGuestCheckoutOtp();
+
+  const handleVerified = async () => {
+    markPhoneVerified();
+    closeDialog();
+    const submitFn = consumeQueuedSubmit();
+    if (submitFn) {
+      await submitFn();
+    }
+  };
+
+  return (
+    <GuestOTPDialog
+      isOpen={isDialogOpen}
+      initialPhone={guestForm.contactPhone}
+      onVerified={() => {
+        void handleVerified();
+      }}
+    />
+  );
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { itemCount, loading } = useCart();
@@ -54,23 +91,26 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div data-testid="checkout-page">
-      <CheckoutPageReset />
-      <CheckoutErrorToast />
-      <div className="lg:px-sop-80px flex flex-col gap-4 px-0 lg:pb-sop-80px lg:pt-sop-20px">
-        <div className="flex flex-col gap-1 md:gap-5 xl:flex-row">
-          <div className="flex-1 xl:min-w-112.5">
-            <CheckoutSection guestForm={guestForm} onGuestFormChange={handleGuestFormChange} />
-          </div>
+    <GuestCheckoutOtpProvider>
+      <div data-testid="checkout-page">
+        <CheckoutPageReset />
+        <CheckoutErrorToast />
+        <div className="lg:px-sop-80px flex flex-col gap-4 px-0 lg:pb-sop-80px lg:pt-sop-20px">
+          <div className="flex flex-col gap-1 md:gap-5 xl:flex-row">
+            <div className="flex-1 xl:min-w-112.5">
+              <CheckoutSection guestForm={guestForm} onGuestFormChange={handleGuestFormChange} />
+            </div>
 
-          <div className="w-full p-4 lg:mt-19 lg:p-0 xl:max-w-105">
-            <CheckoutPromotionSection />
-            <CheckoutPaymentSelection />
-            <CheckoutSummarySection guestForm={guestForm} />
+            <div className="w-full p-4 lg:mt-19 lg:p-0 xl:max-w-105">
+              <CheckoutPromotionSection />
+              <CheckoutPaymentSelection />
+              <CheckoutSummarySection guestForm={guestForm} />
+            </div>
           </div>
         </div>
+        <CheckoutMobileBottomBar guestForm={guestForm} />
+        <CheckoutGuestOtpDialog guestForm={guestForm} />
       </div>
-      <CheckoutMobileBottomBar guestForm={guestForm} />
-    </div>
+    </GuestCheckoutOtpProvider>
   );
 }

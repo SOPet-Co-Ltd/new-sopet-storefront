@@ -1,21 +1,38 @@
+fragment OrderConfirmationFields on OrderType {
+  id
+  orderNumber
+  status
+  createdAt
+  subtotal
+  shippingFee
+  discountAmount
+  total
+  paymentMethod
+  items {
+    id
+    variantId
+    storeId
+    productName
+    unitPrice
+    quantity
+    subtotal
+    fulfillmentStatus
+  }
+  storeShippings {
+    storeId
+    optionName
+    shippingFee
+  }
+}
+
 query Orders {
   orders {
-    id
-    orderNumber
-    status
-    subtotal
-    shippingFee
-    discountAmount
-    total
-    paymentMethod
-    items {
-      id
-      storeId
-      productName
-      unitPrice
-      quantity
-      subtotal
-      fulfillmentStatus
-    }
+    ...OrderConfirmationFields
+  }
+}
+
+query Order($id: String!) {
+  order(id: $id) {
+    ...OrderConfirmationFields
   }
 }

@@ -1,4 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { ApolloProvider } from '@apollo/client/react';
+import { renderHook } from '@testing-library/react';
+import { graphql, HttpResponse } from 'msw';
+import { createElement, type ReactNode } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getApolloClient } from '@/lib/graphql/client';
+import { useCheckout } from '@/lib/hooks/useCheckout';
+import { server } from '@/test/mocks/server';
 import { CATALOG_STORE_ID } from '@/test/mocks/fixtures/catalog';
 import { sampleCart } from '@/test/mocks/fixtures/cart';
 import {
@@ -254,5 +261,66 @@ describe('submitCheckout', () => {
     await expect(
       submitCheckout(createSubmitParams({ step: 'shipping' })),
     ).rejects.toBeInstanceOf(SubmitCheckoutError);
+  });
+});
+
+function createApolloWrapper() {
+  const client = getApolloClient();
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return createElement(ApolloProvider, { client }, children);
+  };
+}
+
+afterEach(async () => {
+  await getApolloClient().clearStore();
+});
+
+describe('submitCheckout MSW integration', () => {
+  it('submits checkout end-to-end using useCheckout with MSW handlers', async () => {
+    server.use(
+      graphql.query('ValidatePromotion', ({ variables }) => {
+        expect(variables).toMatchObject({
+          input: { code: 'SAVE10', subtotal: 890 },
+        });
+        return HttpResponse.json({
+          data: { validatePromotion: samplePromotionValidation },
+        });
+      }),
+      graphql.mutation('CreateOrder', () =>
+        HttpResponse.json({ data: { createOrder: sampleOrder } }),
+      ),
+      graphql.mutation('CreatePayment', () =>
+        HttpResponse.json({ data: { createPayment: samplePendingPayment } }),
+      ),
+    );
+
+    const { result } = renderHook(() => useCheckout(), {
+      wrapper: createApolloWrapper(),
+    });
+
+    const params = createSubmitParams({
+      checkoutContext: {
+        isAuthenticated: false,
+        shippingByStoreId: {
+          [CATALOG_STORE_ID]: { shippingOptionId: SHIPPING_OPTION_ID },
+        },
+        selectedAddressId: null,
+        promotionCode: 'SAVE10',
+        paymentMethod: 'promptpay',
+      },
+      checkoutHook: {
+        validatePromotion: result.current.validatePromotion,
+        createOrder: result.current.createOrder,
+        createPayment: result.current.createPayment,
+      },
+    });
+
+    const submitResult = await submitCheckout(params, createSubmitCheckoutGuard());
+
+    expect(submitResult).toEqual({
+      redirectPath: `/payment/${CHECKOUT_PAYMENT_ID}`,
+      paymentId: CHECKOUT_PAYMENT_ID,
+      orderId: CHECKOUT_ORDER_ID,
+    });
   });
 });

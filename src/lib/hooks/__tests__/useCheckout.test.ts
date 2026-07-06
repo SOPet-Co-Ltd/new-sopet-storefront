@@ -177,4 +177,66 @@ describe('useCheckout', () => {
     expect(order?.orderNumber).toBe('ORD-1001');
     expect(payment?.status).toBe('pending');
   });
+
+  it('integrates addresses, shipping, and checkout mutations via MSW', async () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: true });
+
+    server.use(
+      graphql.query('Addresses', () =>
+        HttpResponse.json({ data: { addresses: [sampleSavedAddress] } }),
+      ),
+      graphql.query('StoreShippingOptions', () =>
+        HttpResponse.json({ data: { storeShippingOptions: [sampleShippingOption] } }),
+      ),
+      graphql.query('ValidatePromotion', () =>
+        HttpResponse.json({ data: { validatePromotion: samplePromotionValidation } }),
+      ),
+      graphql.mutation('CreateOrder', () =>
+        HttpResponse.json({ data: { createOrder: sampleOrder } }),
+      ),
+      graphql.mutation('CreatePayment', () =>
+        HttpResponse.json({ data: { createPayment: samplePaidPayment } }),
+      ),
+    );
+
+    const addressesHook = renderHook(() => useAddresses(), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => {
+      expect(addressesHook.result.current.addresses[0]?.id).toBe(sampleSavedAddress.id);
+    });
+
+    const shippingHook = renderHook(() => useShippingOptions(CHECKOUT_STORE_ID), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => {
+      expect(shippingHook.result.current.options[0]?.id).toBe(sampleShippingOption.id);
+    });
+
+    const checkoutHook = renderHook(() => useCheckout(), {
+      wrapper: createWrapper(),
+    });
+
+    const validation = await checkoutHook.result.current.validatePromotion({
+      code: 'SAVE10',
+      subtotal: sampleOrder.subtotal,
+    });
+    const order = await checkoutHook.result.current.createOrder({
+      paymentMethod: 'promptpay',
+      savedAddressId: sampleSavedAddress.id,
+      items: sampleOrder.items.map((item) => ({
+        variantId: item.variantId,
+        quantity: item.quantity,
+      })),
+    });
+    const payment = await checkoutHook.result.current.createPayment({
+      orderId: order?.id ?? '',
+      amount: order?.total ?? 0,
+      paymentMethod: 'promptpay',
+    });
+
+    expect(validation?.discountAmount).toBe(10);
+    expect(order?.orderNumber).toBe('ORD-1001');
+    expect(payment?.status).toBe('paid');
+  });
 });

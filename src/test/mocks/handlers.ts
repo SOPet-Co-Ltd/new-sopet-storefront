@@ -201,4 +201,15 @@ export const handlers = [
       data: { paymentByOrderId: samplePendingPayment },
     });
   }),
+
+  graphql.query('Order', ({ variables }) => {
+    return HttpResponse.json({
+      data: {
+        order: {
+          ...sampleOrder,
+          id: variables.id ?? sampleOrder.id,
+        },
+      },
+    });
+  }),
 ];

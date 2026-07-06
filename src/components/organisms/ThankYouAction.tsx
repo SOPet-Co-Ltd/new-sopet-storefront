@@ -13,13 +13,11 @@ const LINE_ID = "@sopet"
 
 type ThankYouActionsProps = {
   isGuest: boolean
-  locale: string
   orderId: string
 }
 
 export function ThankYouAction({
   isGuest,
-  locale,
   orderId,
 }: ThankYouActionsProps) {
   const [signupModalOpen, setSignupModalOpen] = useState(false)
@@ -40,7 +38,7 @@ export function ThankYouAction({
   }, [signupModalOpen, lineModalOpen])
 
   const handleSignupRedirect = () => {
-    window.location.href = `/${locale}/login`
+    window.location.href = '/login'
   }
 
   const handleLineRedirect = () => {

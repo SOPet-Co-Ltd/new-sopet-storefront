@@ -16,6 +16,8 @@ import {
   validateGuestCheckoutForm,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import { prepareCardPaymentToken } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
+import { useGuestCheckoutOtp } from '@/components/organisms/GuestOTPDialog';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useCart } from '@/lib/providers/CartProvider';
@@ -26,6 +28,11 @@ export function useCheckoutSubmit(guestForm: GuestCheckoutFormState | null) {
   const { isAuthenticated } = useAuth();
   const { items, subtotal } = useCart();
   const checkoutMutations = useCheckoutMutations();
+  const {
+    isPhoneVerified,
+    openDialog,
+    queueSubmit,
+  } = useGuestCheckoutOtp();
   const {
     step,
     shippingByStoreId,
@@ -50,46 +57,42 @@ export function useCheckoutSubmit(guestForm: GuestCheckoutFormState | null) {
     }
   }, [canAdvanceToReview, setStep, step]);
 
+  const isGuestCheckout = Boolean(guestForm?.contactPhone?.trim());
+
   const checkoutContext = useMemo(
     () => ({
-      isAuthenticated,
+      isAuthenticated: isAuthenticated && !isGuestCheckout,
       shippingByStoreId,
       selectedAddressId,
       promotionCode,
       paymentMethod,
     }),
-    [isAuthenticated, paymentMethod, promotionCode, selectedAddressId, shippingByStoreId],
+    [
+      isAuthenticated,
+      isGuestCheckout,
+      paymentMethod,
+      promotionCode,
+      selectedAddressId,
+      shippingByStoreId,
+    ],
   );
 
   const canSubmit = step === 'review' && paymentMethod !== null && items.length > 0;
 
-  const handleSubmit = useCallback(async () => {
-    if (!canSubmit) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      if (!guestForm) {
-        toast.error('กรุณากรอกข้อมูลการจัดส่ง');
-        return;
-      }
-
-      const validation = validateGuestCheckoutForm(guestForm);
-      if (!validation.valid) {
-        toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
-        return;
-      }
-    }
-
+  const executeSubmit = useCallback(async () => {
     try {
+      const omiseToken =
+        paymentMethod === 'card' ? await prepareCardPaymentToken() : undefined;
+
       const result = await submitCheckout(
         {
           step,
           checkoutContext,
           cart: { items },
-          guestForm: isAuthenticated ? null : guestForm,
+          guestForm: isGuestCheckout ? guestForm : null,
           subtotal,
           checkoutHook: checkoutMutations,
+          omiseToken,
         },
         submitGuardRef.current,
       );
@@ -106,15 +109,55 @@ export function useCheckoutSubmit(guestForm: GuestCheckoutFormState | null) {
       toast.error(message);
     }
   }, [
-    canSubmit,
-    items,
     checkoutContext,
     checkoutMutations,
     guestForm,
-    isAuthenticated,
+    isGuestCheckout,
+    items,
+    paymentMethod,
     router,
     step,
     subtotal,
+  ]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!canSubmit) {
+      return;
+    }
+
+    if (isGuestCheckout || !isAuthenticated) {
+      if (!guestForm) {
+        toast.error('กรุณากรอกข้อมูลการจัดส่ง');
+        return;
+      }
+
+      const validation = validateGuestCheckoutForm(guestForm);
+      if (!validation.valid) {
+        toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
+        return;
+      }
+    }
+
+    if (isGuestCheckout && !isPhoneVerified) {
+      queueSubmit(() => executeSubmit());
+      openDialog();
+      return;
+    }
+
+    try {
+      await executeSubmit();
+    } catch {
+      // executeSubmit already surfaces toast errors
+    }
+  }, [
+    canSubmit,
+    executeSubmit,
+    guestForm,
+    isAuthenticated,
+    isGuestCheckout,
+    isPhoneVerified,
+    openDialog,
+    queueSubmit,
   ]);
 
   return {

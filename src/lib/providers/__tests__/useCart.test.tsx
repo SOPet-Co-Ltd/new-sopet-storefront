@@ -1,28 +1,9 @@
-import { MockedProvider } from '@apollo/client/testing/react';
-import { act } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { computeCartItemCount, groupCartItemsByStore } from '@/lib/cart/cartUtils';
 import { CartDocument } from '@/lib/graphql/generated/graphql';
-import { CartProvider, useCart, type CartContextValue } from '@/lib/providers/CartProvider';
-import { SESSION_ID_COOKIE } from '@/lib/session';
+import { CartProvider, useCart } from '@/lib/providers/CartProvider';
 import { sampleCart } from '@/test/mocks/fixtures/cart';
-
-const { TEST_SESSION_ID, mockEnsureSessionId } = vi.hoisted(() => {
-  const id = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
-  return {
-    TEST_SESSION_ID: id,
-    mockEnsureSessionId: vi.fn(() => id),
-  };
-});
-
-vi.mock('@/lib/session', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/session')>();
-  return {
-    ...actual,
-    ensureSessionId: mockEnsureSessionId,
-    getSessionId: mockEnsureSessionId,
-  };
-});
 
 vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: vi.fn(() => ({
@@ -37,84 +18,72 @@ vi.mock('@/lib/hooks/useAuth', () => ({
   })),
 }));
 
-function CartProbe({
-  onContext,
-}: {
-  onContext: (context: CartContextValue) => void;
-}) {
-  const context = useCart();
-  onContext(context);
+vi.mock('@/lib/session', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/session')>();
+  const sessionId = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
+  return {
+    ...actual,
+    ensureSessionId: vi.fn(() => sessionId),
+    getSessionId: vi.fn(() => sessionId),
+  };
+});
+
+vi.mock('@apollo/client/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@apollo/client/react')>();
+  return {
+    ...actual,
+    useQuery: (document: unknown, options?: { skip?: boolean }) => {
+      if (document === CartDocument && !options?.skip) {
+        return {
+          data: { cart: sampleCart },
+          loading: false,
+          error: undefined,
+          refetch: vi.fn(),
+        };
+      }
+
+      return {
+        data: undefined,
+        loading: false,
+        error: undefined,
+        refetch: vi.fn(),
+      };
+    },
+    useMutation: () => [vi.fn(), { loading: false, error: undefined }],
+  };
+});
+
+function CartProbe() {
+  const { itemCount, itemsByStore, loading } = useCart();
+
   return (
     <div
-      data-item-count={String(context.itemCount)}
-      data-loading={String(context.loading)}
+      data-testid="cart-probe"
+      data-item-count={String(itemCount)}
+      data-store-count={String(itemsByStore.length)}
+      data-loading={String(loading)}
     />
   );
 }
 
-async function waitFor(
-  predicate: () => boolean,
-  timeoutMs = 2_000,
-): Promise<void> {
-  const startedAt = Date.now();
-
-  while (!predicate()) {
-    if (Date.now() - startedAt > timeoutMs) {
-      throw new Error('Timed out waiting for condition');
-    }
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-}
-
 describe('useCart', () => {
-  let roots: Root[] = [];
-  let context: CartContextValue | null = null;
-
-  beforeEach(() => {
-    context = null;
-    document.cookie = `${SESSION_ID_COOKIE}=${TEST_SESSION_ID}; path=/`;
+  it('derives item count and store groups from cart items', () => {
+    expect(computeCartItemCount(sampleCart.items)).toBe(sampleCart.items[0]?.quantity ?? 0);
+    expect(groupCartItemsByStore(sampleCart.items)).toHaveLength(1);
   });
 
-  afterEach(() => {
-    for (const root of roots) {
-      act(() => {
-        root.unmount();
-      });
-    }
-    roots = [];
-    document.body.innerHTML = '';
-    document.cookie = `${SESSION_ID_COOKIE}=; max-age=0; path=/`;
-  });
+  it('loads cart items and derives item count from CartProvider context', () => {
+    render(
+      <CartProvider>
+        <CartProbe />
+      </CartProvider>,
+    );
 
-  it.skip('loads cart items and derives item count — flaky MockedProvider/MSW cart query; fix in P3-T9', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root = createRoot(container);
-    roots.push(root);
-
-    act(() => {
-      root.render(
-        <MockedProvider
-          mocks={[
-            {
-              request: {
-                query: CartDocument,
-              },
-              result: { data: { cart: sampleCart } },
-              maxUsageCount: 2,
-            },
-          ]}
-          addTypename={false}
-        >
-          <CartProvider>
-            <CartProbe onContext={(value) => { context = value; }} />
-          </CartProvider>
-        </MockedProvider>,
-      );
-    });
-
-    await waitFor(() => context?.itemCount === (sampleCart.items[0]?.quantity ?? 0));
-
-    expect(context?.itemsByStore).toHaveLength(1);
+    expect(screen.getByTestId('cart-probe')).toHaveAttribute(
+      'data-item-count',
+      String(sampleCart.items[0]?.quantity ?? 0),
+    );
+    expect(screen.getByTestId('cart-probe')).toHaveAttribute('data-store-count', '1');
+    expect(screen.getByTestId('cart-probe')).toHaveAttribute('data-loading', 'false');
   });
 });

@@ -1,8 +1,16 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/atoms/icons';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
+import { CardPaymentForm } from './CardPaymentForm';
+import {
+  createCheckoutCardPaymentBridge,
+  EMPTY_CHECKOUT_CARD_FORM,
+  registerCheckoutCardPaymentBridge,
+  type CheckoutCardFormState,
+} from './checkoutCardPaymentBridge';
 
 type PaymentOption = {
   value: PaymentMethod;
@@ -67,6 +75,40 @@ function PaymentSelectBox({
 
 export function CheckoutPaymentSelection() {
   const { paymentMethod, setPaymentMethod } = useCheckout();
+  const [cardForm, setCardForm] = useState<CheckoutCardFormState>(EMPTY_CHECKOUT_CARD_FORM);
+  const [cardFormError, setCardFormError] = useState<string | null>(null);
+  const cardFormRef = useRef(cardForm);
+
+  cardFormRef.current = cardForm;
+
+  const clearCardForm = useCallback(() => {
+    setCardForm(EMPTY_CHECKOUT_CARD_FORM);
+    setCardFormError(null);
+  }, []);
+
+  useEffect(() => {
+    if (paymentMethod !== 'card') {
+      clearCardForm();
+    }
+  }, [clearCardForm, paymentMethod]);
+
+  useEffect(() => {
+    registerCheckoutCardPaymentBridge(
+      createCheckoutCardPaymentBridge({
+        getCardForm: () => cardFormRef.current,
+        clearCardForm,
+      }),
+    );
+
+    return () => {
+      registerCheckoutCardPaymentBridge(null);
+    };
+  }, [clearCardForm]);
+
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    setCardFormError(null);
+    setPaymentMethod(method);
+  };
 
   return (
     <div
@@ -80,15 +122,29 @@ export function CheckoutPaymentSelection() {
 
       <div className="mt-sop-16px flex flex-col gap-sop-16px">
         {PAYMENT_OPTIONS.map((option) => (
-          <PaymentSelectBox
-            key={option.value}
-            value={option.value}
-            selectedValue={paymentMethod}
-            onChange={setPaymentMethod}
-            rightIcon={option.icon}
-          >
-            {option.label}
-          </PaymentSelectBox>
+          <div key={option.value} className="flex flex-col gap-sop-16px">
+            <PaymentSelectBox
+              value={option.value}
+              selectedValue={paymentMethod}
+              onChange={handlePaymentMethodChange}
+              rightIcon={option.icon}
+            >
+              {option.label}
+            </PaymentSelectBox>
+
+            {option.value === 'card' && paymentMethod === 'card' ? (
+              <CardPaymentForm
+                value={cardForm}
+                onChange={(next) => {
+                  setCardForm(next);
+                  if (cardFormError) {
+                    setCardFormError(null);
+                  }
+                }}
+                error={cardFormError}
+              />
+            ) : null}
+          </div>
         ))}
       </div>
     </div>

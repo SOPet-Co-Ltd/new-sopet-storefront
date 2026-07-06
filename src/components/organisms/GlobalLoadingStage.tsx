@@ -7,7 +7,7 @@ export function GlobalLoadingStage() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-sop-primary-100 backdrop-blur-sm">
       <div className="flex flex-col items-center">
         <DotLottieReact
-          className="w-65.5 h-32.75"
+          style={{ width: 262, height: 131 }}
           src="/runningDog.lottie"
           loop
           autoplay

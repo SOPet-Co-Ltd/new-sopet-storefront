@@ -1,7 +1,5 @@
 'use client';
 
-import Image from 'next/image';
-import { Fragment } from 'react';
 import { cn } from '@/lib/utils';
 import {
   buildOptionGroups,
@@ -17,13 +15,6 @@ type ProductVariantsProps = {
   findVariantStock: (candidateOptions: VariantOptions) => number;
 };
 
-function resolveVariantThumbnail(product: ProductDetail): string | null {
-  if (product.thumbnailUrl) return product.thumbnailUrl;
-
-  const sortedImages = [...(product.images ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
-  return sortedImages[0]?.imageUrl ?? null;
-}
-
 export function ProductVariants({
   product,
   selectedOptions,
@@ -31,7 +22,6 @@ export function ProductVariants({
   findVariantStock,
 }: ProductVariantsProps) {
   const optionGroups = buildOptionGroups(product.variants);
-  const variantThumbnail = resolveVariantThumbnail(product);
 
   return (
     <div className="flex flex-col gap-4">
@@ -62,7 +52,7 @@ export function ProductVariants({
                     key={value}
                     htmlFor={inputId}
                     className={cn(
-                      'inline-flex min-h-[46px] cursor-pointer items-center gap-2 rounded-sop-36 border px-4 py-2 shadow-xs sop-body-xs-regular',
+                      'inline-flex min-h-[36px] cursor-pointer items-center gap-2 rounded-sop-36 border px-4 py-1 shadow-xs sop-body-xs-regular',
                       isSelected
                         ? 'border-sop-secondary-500 bg-sop-base-white text-sop-secondary-500'
                         : 'border-sop-neutral-grayalpha-100 bg-sop-neutral-gray-500 text-sop-neutral-gray-200',
@@ -80,16 +70,6 @@ export function ProductVariants({
                       className="sr-only"
                       aria-label={`${formatOptionLabel(optionKey)}: ${value}`}
                     />
-                    {variantThumbnail ? (
-                      <Image
-                        src={variantThumbnail}
-                        alt=""
-                        width={30}
-                        height={30}
-                        className="size-[30px] shrink-0 object-cover"
-                        aria-hidden
-                      />
-                    ) : null}
                     <span>{value}</span>
                   </label>
                 );

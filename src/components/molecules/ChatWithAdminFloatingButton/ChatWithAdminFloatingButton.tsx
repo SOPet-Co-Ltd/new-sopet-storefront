@@ -192,12 +192,12 @@ export function ChatWithAdminFloatingButton() {
               )}
             >
               <div className="flex items-center gap-2">
-                <span className="sop-body-md-medium line-clamp-1 text-sop-neutral-gray-200">
+                <span className="sop-body-md-medium whitespace-nowrap text-sop-neutral-gray-200">
                   ติดต่อแอดมิน
                 </span>
                 {statusDot()}
               </div>
-              <span className="sop-body-md-light line-clamp-1 text-sop-neutral-gray-200">
+              <span className="sop-body-md-light whitespace-nowrap text-sop-neutral-gray-200">
                 ผ่านช่องทาง LINE OA
               </span>
             </div>

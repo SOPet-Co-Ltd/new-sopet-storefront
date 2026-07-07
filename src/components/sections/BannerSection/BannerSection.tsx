@@ -26,6 +26,7 @@ export function BannerSection() {
     .map((banner) => ({
       id: banner.id,
       image_url: banner.imageUrl,
+      mobile_image_url: banner.mobileImageUrl ?? undefined,
       name: banner.title,
       href: banner.linkUrl ?? undefined,
       order: banner.sortOrder,
@@ -104,17 +105,32 @@ export function BannerSection() {
           {loopedBanners.map((banner, index) => {
             const key = `${banner.id}-${index}`;
             const isFirstVisibleBanner = index === (hasLoop ? 1 : 0);
+            const hasMobileImage = Boolean(banner.mobile_image_url);
             const image = (
-              <Image
-                priority={isFirstVisibleBanner}
-                fetchPriority={isFirstVisibleBanner ? 'high' : 'auto'}
-                src={banner.image_url}
-                alt={banner.name || 'แบนเนอร์'}
-                width={1440}
-                height={480}
-                sizes="100vw"
-                className="h-full w-full object-cover"
-              />
+              <>
+                <Image
+                  priority={isFirstVisibleBanner}
+                  fetchPriority={isFirstVisibleBanner ? 'high' : 'auto'}
+                  src={banner.image_url}
+                  alt={banner.name || 'แบนเนอร์'}
+                  width={1440}
+                  height={480}
+                  sizes="100vw"
+                  className={`h-full w-full object-cover ${hasMobileImage ? 'hidden md:block' : ''}`}
+                />
+                {hasMobileImage ? (
+                  <Image
+                    priority={isFirstVisibleBanner}
+                    fetchPriority={isFirstVisibleBanner ? 'high' : 'auto'}
+                    src={banner.mobile_image_url as string}
+                    alt={banner.name || 'แบนเนอร์'}
+                    width={768}
+                    height={768}
+                    sizes="100vw"
+                    className="h-full w-full object-cover md:hidden"
+                  />
+                ) : null}
+              </>
             );
 
             if (!banner.href) {

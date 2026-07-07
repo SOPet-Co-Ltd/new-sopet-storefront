@@ -109,6 +109,7 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
           heading="สินค้าจากร้านเดียวกัน"
           storeId={product.storeId}
           excludeProductId={product.id}
+          layout="grid"
         />
 
         <HomeProductSection

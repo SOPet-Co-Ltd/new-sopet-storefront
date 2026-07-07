@@ -3,6 +3,7 @@ query PlatformBanners {
     id
     title
     imageUrl
+    mobileImageUrl
     linkUrl
     sortOrder
     isActive

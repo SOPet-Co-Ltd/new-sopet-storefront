@@ -242,12 +242,14 @@ export default function ProductDetailsVariantSelection({
   const hasAnyPrice = variantPrice > 0;
   const isOutOfStock = variantStock <= 0;
 
+  const safeQuantity = Math.min(Math.max(productQuantity, 1), Math.max(variantStock, 1));
+
   const findVariantStock = (candidateOptions: VariantOptions) =>
     findVariantByOptions(product.variants, candidateOptions)?.stockQuantity ?? 0;
 
   useEffect(() => {
-    onVariantChange?.(variantId, variantPrice, variantStock, productQuantity);
-  }, [onVariantChange, productQuantity, variantId, variantPrice, variantStock]);
+    onVariantChange?.(variantId, variantPrice, variantStock, safeQuantity);
+  }, [onVariantChange, safeQuantity, variantId, variantPrice, variantStock]);
 
   const syncOptionsToUrl = (nextOptions: VariantOptions) => {
     if (typeof window === 'undefined') return;
@@ -279,18 +281,18 @@ export default function ProductDetailsVariantSelection({
 
     try {
       setIsAddingToCart(true);
-      await addItem(variantId, productQuantity);
+      await addItem(variantId, safeQuantity);
     } finally {
       setIsAddingToCart(false);
     }
   };
 
   const handleBuyNow = async () => {
-    if (!variantId || isOutOfStock || !hasAnyPrice || productQuantity < 1) return;
+    if (!variantId || isOutOfStock || !hasAnyPrice || safeQuantity < 1) return;
 
     try {
       setIsBuyingNow(true);
-      await addItem(variantId, productQuantity);
+      await addItem(variantId, safeQuantity);
       router.push('/checkout');
     } finally {
       setIsBuyingNow(false);
@@ -318,12 +320,12 @@ export default function ProductDetailsVariantSelection({
 
       <ProductDetailQuantitySelection
         variantStock={variantStock}
-        productQuantity={productQuantity}
+        productQuantity={safeQuantity}
         setProductQuantity={setProductQuantity}
       />
 
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:gap-[18px]">
+        <div className="flex flex-nowrap items-center gap-2 lg:gap-[18px]">
           <Button
             type="button"
             onClick={() => void handleAddToCart()}
@@ -331,7 +333,7 @@ export default function ProductDetailsVariantSelection({
             loading={isAddingToCart}
             size="xl"
             variant="secondary"
-            className="h-12 w-full border-sop-secondary-500 bg-sop-secondary-100 text-sop-secondary-500 lg:min-w-0 lg:flex-1"
+            className="h-12 min-w-0 flex-1 border-sop-secondary-500 bg-sop-secondary-100 text-sop-secondary-500"
             aria-busy={isAddingToCart}
             aria-label={
               isAddingToCart
@@ -351,7 +353,7 @@ export default function ProductDetailsVariantSelection({
             loading={isBuyingNow}
             size="xl"
             variant="primary"
-            className="h-12 w-full lg:min-w-0 lg:flex-1"
+            className="h-12 min-w-0 flex-1"
             aria-busy={isBuyingNow}
             aria-label={
               isBuyingNow

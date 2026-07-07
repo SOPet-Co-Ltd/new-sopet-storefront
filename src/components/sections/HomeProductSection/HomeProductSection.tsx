@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/atoms/Button';
 import { RightArrowLineIcon } from '@/components/atoms/icons/filled/RightArrowLineIcon';
 import { useProducts } from '@/lib/hooks/useProducts';
-import { HomeSectionProductCard } from './HomeSectionProductCard';
+import ProductCard from '@/components/organisms/ProductCard';
 
 function ProductSkeletonRow() {
   return (
@@ -69,14 +69,14 @@ export function HomeProductSection({
       {layout === 'grid' ? (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 lg:px-0 px-4">
           {displayProducts.map((product) => (
-            <HomeSectionProductCard key={product.id} product={product} compact />
+            <ProductCard key={product.id} product={product} compact />
           ))}
         </div>
       ) : (
         <div className="flex gap-1 overflow-x-auto lg:grid md:grid-cols-5 md:gap-4 lg:px-0 px-4">
           {displayProducts.map((product) => (
             <div key={product.id} className="shrink-0 md:w-auto flex">
-              <HomeSectionProductCard product={product} />
+              <ProductCard product={product} />
             </div>
           ))}
         </div>

@@ -3,7 +3,7 @@
 import { useQuery } from '@apollo/client/react';
 import { OrdersDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { HomeSectionProductCard } from '@/components/sections/HomeProductSection/HomeSectionProductCard';
+import ProductCard from '@/components/organisms/ProductCard';
 
 function RecentOrdersSkeleton() {
   return (
@@ -91,7 +91,7 @@ export function HomeRecentOrdersSection() {
                 zoom: 0.6,
               }}
             >
-              <HomeSectionProductCard product={product} compact />
+              <ProductCard product={product} compact />
             </li>
           ))}
         </ul>

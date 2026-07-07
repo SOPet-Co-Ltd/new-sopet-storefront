@@ -2,7 +2,7 @@
 
 import { useQuery } from '@apollo/client/react';
 import { RecommendedProductsDocument } from '@/lib/graphql/generated/graphql';
-import { HomeSectionProductCard } from '@/components/sections/HomeProductSection/HomeSectionProductCard';
+import ProductCard from '@/components/organisms/ProductCard';
 
 function RecommendedSkeletonGrid() {
   return (
@@ -59,7 +59,7 @@ export function HomeRecommendedProductSection({
         <ul className="grid grid-cols-[repeat(auto-fit,minmax(165px,1fr))] gap-2 justify-items-center md:grid-cols-[repeat(auto-fit,minmax(223px,1fr))] md:gap-4">
           {products.map((product) => (
             <li key={product.id}>
-              <HomeSectionProductCard product={product} />
+              <ProductCard product={product} />
             </li>
           ))}
         </ul>

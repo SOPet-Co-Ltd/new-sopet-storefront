@@ -1,3 +1,3 @@
 export { HomeProductSection } from './HomeProductSection';
-export { HomeSectionProductCard } from './HomeSectionProductCard';
-export type { HomeSectionProduct } from './HomeSectionProductCard';
+export { default as ProductCard, buildProductHref } from '@/components/organisms/ProductCard';
+export type { ProductCardProduct } from '@/components/organisms/ProductCard';

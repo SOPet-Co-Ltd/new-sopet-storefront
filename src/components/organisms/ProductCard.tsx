@@ -8,32 +8,93 @@ export type ProductCardProduct = Pick<
   | 'id'
   | 'name'
   | 'slug'
-  | 'storeId'
   | 'basePrice'
   | 'compareAtPrice'
   | 'thumbnailUrl'
   | 'averageRating'
   | 'reviewCount'
   | 'soldCount'
->;
+> & {
+  storeId?: string;
+};
 
 type ProductCardProps = {
   product: ProductCardProduct;
+  compact?: boolean;
+  className?: string;
 };
 
 function buildProductHref(productId: string): string {
   return `/product/${productId}`;
 }
 
+function formatPrice(amount: number): string {
+  return `฿${amount.toLocaleString('th-TH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 function formatSoldCount(count: number): string {
   if (count < 1000) return count.toString();
 
-  const units = ['', 'K', 'M', 'B', 'T'];
+  const units = ['', 'k', 'm', 'b', 't'];
   const magnitude = Math.floor(Math.log10(count) / 3);
   const scaled = count / 10 ** (magnitude * 3);
   const formatted = scaled % 1 === 0 ? scaled.toFixed(0) : scaled.toFixed(1);
 
   return `${formatted}${units[magnitude]}`;
+}
+
+function getDiscountPercent(basePrice: number, compareAtPrice: number | null | undefined): number {
+  if (compareAtPrice == null || compareAtPrice <= basePrice) return 0;
+
+  return Math.round(((compareAtPrice - basePrice) / compareAtPrice) * 100);
+}
+
+function ProductCardImage({
+  product,
+  discountPercent,
+  compact,
+}: {
+  product: ProductCardProduct;
+  discountPercent: number;
+  compact: boolean;
+}) {
+  const imageContainerClass = compact
+    ? 'relative aspect-square w-full shrink-0 overflow-hidden bg-sop-additionalblue-300'
+    : 'relative h-[168px] w-[168px] shrink-0 overflow-hidden bg-sop-additionalblue-300 md:h-sop-224px md:w-sop-224px';
+
+  return (
+    <div className={imageContainerClass}>
+      {product.thumbnailUrl ? (
+        <Image
+          fetchPriority="auto"
+          src={product.thumbnailUrl}
+          alt={product.name}
+          fill
+          quality={85}
+          sizes={compact ? '(max-width: 768px) 50vw, 20vw' : '(max-width: 768px) 168px, 224px'}
+          className="pointer-events-none object-cover object-center select-none"
+          draggable={false}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <p className="sop-body-xs-regular px-4 text-center text-sop-base-white md:sop-body-sm-regular">
+            ไม่มีรูปภาพ
+          </p>
+        </div>
+      )}
+
+      {discountPercent > 0 && (
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-end py-1 pl-2 pr-1 md:pl-4 md:pr-2">
+          <span className="rounded-sop-16px bg-sop-system-error-400 px-2.5 py-0.5 sop-body-sm-medium text-sop-neutral-grayfixed-600">
+            -{discountPercent}%
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function ProductCardPrice({ product }: { product: ProductCardProduct }) {
@@ -46,13 +107,11 @@ function ProductCardPrice({ product }: { product: ProductCardProduct }) {
   }
 
   return (
-    <div className="flex gap-2 items-center">
-      <span className="text-sop-secondary-500 rounded-sop-8px md:sop-body-lg-medium sop-body-lg-medium">
-        ฿{product.basePrice.toLocaleString('th-TH')}
-      </span>
+    <div className="flex items-baseline gap-1">
+      <span className="sop-body-lg-bold text-sop-secondary-500">{formatPrice(product.basePrice)}</span>
       {product.compareAtPrice != null && product.compareAtPrice > product.basePrice && (
-        <span className="text-sop-neutral-grayalpha-400 md:sop-strike-sm-regular sop-strike-sm-regular">
-          ฿{product.compareAtPrice.toLocaleString('th-TH')}
+        <span className="sop-strike-sm-regular text-sop-neutral-grayalpha-400">
+          {formatPrice(product.compareAtPrice)}
         </span>
       )}
     </div>
@@ -65,60 +124,37 @@ function ProductCardReviewStars({ product }: { product: ProductCardProduct }) {
   const soldCount = product.soldCount ?? 0;
 
   return (
-    <div className="grid grid-cols-[auto_1fr] gap-1 justify-center items-center">
-      <div className="md:flex gap-2 hidden">
-        <StarIcon color="#ffb514" size={{ mobile: 16, desktop: 16 }} />
-      </div>
-      <div className="flex gap-2 md:hidden">
-        <StarIcon color="#ffb514" size={{ mobile: 14, desktop: 14 }} />
-      </div>
-      <div className="flex items-center justify-between">
-        <p className="md:sop-body-sm-regular sop-body-xs-regular text-sop-neutral-gray-400">
-          {averageRating} ({totalReviews} รีวิว)
-        </p>
-        <p className="md:sop-body-xs-regular sop-body-xs-regular text-sop-neutral-gray-400">
-          ขายแล้ว {formatSoldCount(soldCount)} ชิ้น
-        </p>
-      </div>
+    <div className="flex w-full items-center">
+      <StarIcon color="#ffb514" size={{ mobile: 16, desktop: 20 }} />
+      <p className="min-w-0 flex-1 pl-1 sop-body-xs-regular text-sop-neutral-gray-400 md:sop-body-sm-regular">
+        {averageRating} ({totalReviews})
+      </p>
+      <p className="sop-body-xs-medium text-sop-neutral-gray-400">ขายแล้ว {formatSoldCount(soldCount)}</p>
     </div>
   );
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, compact = false, className }: ProductCardProps) {
   const href = buildProductHref(product.id);
+  const discountPercent = getDiscountPercent(product.basePrice, product.compareAtPrice);
+
+  const cardWidthClass = compact
+    ? 'w-full max-w-full'
+    : 'w-[168px] max-w-[168px] md:w-sop-224px md:max-w-sop-224px';
 
   return (
     <Link
       href={href}
       aria-label={`ดู ${product.name}`}
       title={`ดู ${product.name}`}
-      className="block"
+      className={['block shrink-0', className].filter(Boolean).join(' ')}
     >
-      <div className="md:w-[223px] w-[168px] md:max-w-[223px] max-w-[168px] md:rounded-sop-24px rounded-sop-16px overflow-hidden bg-sop-base-white">
-        <div className="md:w-[223px] w-[168px] md:h-[223px] h-[168px]">
-          {product.thumbnailUrl ? (
-            <Image
-              fetchPriority="auto"
-              src={product.thumbnailUrl}
-              alt={product.name}
-              width={223}
-              height={223}
-              quality={85}
-              className="w-full h-auto aspect-square object-cover object-center pointer-events-none select-none"
-              draggable={false}
-            />
-          ) : (
-            <div className="w-full h-full flex justify-center items-center bg-sop-additionalblue-300">
-              <p className="md:sop-body-sm-regular sop-body-xs-regular text-sop-base-white line-clamp-2 h-sop-40px">
-                ไม่มีรูปภาพ
-              </p>
-            </div>
-          )}
-        </div>
-        <div className="py-2 md:px-3 px-2 pb-5 flex flex-col gap-1">
-          <p className="sop-body-sm-regular text-sop-neutral-gray-300 line-clamp-2 h-sop-40px">
-            {product.name}
-          </p>
+      <div
+        className={`flex flex-col gap-2 overflow-hidden rounded-sop-16px bg-sop-base-white pb-4 md:rounded-sop-24px md:pb-5 ${cardWidthClass}`}
+      >
+        <ProductCardImage product={product} discountPercent={discountPercent} compact={compact} />
+        <div className="flex flex-col gap-2 px-2 md:px-3">
+          <p className="line-clamp-2 sop-body-sm-medium text-sop-neutral-gray-300">{product.name}</p>
           <ProductCardPrice product={product} />
           <ProductCardReviewStars product={product} />
         </div>

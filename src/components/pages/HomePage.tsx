@@ -6,6 +6,7 @@ import { HomeFaqSection, type HomeFaqItem } from '@/components/sections/HomeFaqS
 import { HomeProductSection } from '@/components/sections/HomeProductSection';
 import { HomeRecentOrdersSection } from '@/components/sections/HomeRecentOrdersSection';
 import { HomeRecommendedProductSection } from '@/components/sections/HomeRecommendedProductSection';
+import { ChatWithAdminFloatingButton } from '@/components/molecules/ChatWithAdminFloatingButton/ChatWithAdminFloatingButton';
 import { HomeSponsorsSection } from '@/components/sections/HomeSponsorsSection';
 
 export const HOME_FAQ_ITEMS: HomeFaqItem[] = [
@@ -43,6 +44,7 @@ export default function HomePage() {
       </header>
 
       <section className="relative w-full">
+        <ChatWithAdminFloatingButton />
         <section className="flex flex-col gap-5 md:gap-10 w-full p-4 lg:py-10 lg:px-20">
           <div className="w-full">
             <HomeCategories />

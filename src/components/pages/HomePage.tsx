@@ -46,16 +46,13 @@ export default function HomePage() {
       <section className="relative w-full">
         <ChatWithAdminFloatingButton />
         <section className="flex flex-col gap-5 md:gap-10 w-full p-4 lg:py-10 lg:px-20">
-          <div className="w-full">
-            <HomeCategories />
-          </div>
-
-          <div className="w-full">
-            <HomeProductSection />
-          </div>
 
           <div className="w-full">
             <HomeRecentOrdersSection />
+          </div>
+
+          <div className="w-full">
+            <HomeCategories />
           </div>
 
           <div className="w-full">

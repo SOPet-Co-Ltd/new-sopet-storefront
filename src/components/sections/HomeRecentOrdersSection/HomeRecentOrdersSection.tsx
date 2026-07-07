@@ -1,24 +1,33 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
 import { OrdersDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 import ProductCard from '@/components/organisms/ProductCard';
 
+const SECTION_HEADING_CLASS = 'sop-body-lg-medium text-sop-neutral-gray-200';
+
 function RecentOrdersSkeleton() {
   return (
-    <div className="flex gap-3 lg:gap-4 pb-2 min-w-max" aria-hidden="true">
+    <div className="flex min-w-max gap-5 pb-2" aria-hidden="true">
       {Array.from({ length: 4 }).map((_, index) => (
         <div
           key={index}
-          className="shrink-0 w-[168px] h-[200px] rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse"
+          className="h-[216px] w-[136px] shrink-0 rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse"
         />
       ))}
     </div>
   );
 }
 
-export function HomeRecentOrdersSection() {
+type HomeRecentOrdersSectionProps = {
+  viewAllHref?: string;
+};
+
+export function HomeRecentOrdersSection({
+  viewAllHref = '/user/orders',
+}: HomeRecentOrdersSectionProps) {
   const { isAuthenticated } = useAuth();
   const { data, loading, error } = useQuery(OrdersDocument, {
     skip: !isAuthenticated,
@@ -31,7 +40,9 @@ export function HomeRecentOrdersSection() {
   if (loading) {
     return (
       <section className="w-full" aria-busy="true" data-testid="home-recent-orders">
-        <h2 className="mb-5 sop-body-lg-medium text-sop-neutral-gray-200">ซื้อล่าสุด</h2>
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <h2 className={SECTION_HEADING_CLASS}>ซื้อล่าสุด</h2>
+        </div>
         <div className="w-full overflow-x-auto">
           <RecentOrdersSkeleton />
         </div>
@@ -81,17 +92,20 @@ export function HomeRecentOrdersSection() {
 
   return (
     <section className="w-full" data-testid="home-recent-orders">
-      <h2 className="mb-5 sop-body-lg-medium text-sop-neutral-gray-200">ซื้อล่าสุด</h2>
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <h2 className={SECTION_HEADING_CLASS}>ซื้อล่าสุด</h2>
+        <Link
+          href={viewAllHref}
+          className="shrink-0 sop-link-md-regular text-sop-neutral-gray-300 underline"
+        >
+          ดูทั้งหมด
+        </Link>
+      </div>
       <div className="w-full overflow-x-auto">
-        <ul className="flex gap-3 lg:gap-4 pb-2 min-w-max">
+        <ul className="flex min-w-max gap-5 pb-2">
           {recentProducts.map((product) => (
-            <li
-              key={product.id}
-              style={{
-                zoom: 0.6,
-              }}
-            >
-              <ProductCard product={product} compact />
+            <li key={product.id} className="shrink-0">
+              <ProductCard product={product} compact compactLayout="recent" />
             </li>
           ))}
         </ul>

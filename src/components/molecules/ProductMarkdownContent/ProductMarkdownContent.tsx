@@ -1,85 +1,49 @@
-type ProductMarkdownContentProps = {
-  source: string;
+import type { Components } from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+
+const productMarkdownComponents: Components = {
+  h2: ({ children }) => (
+    <h2 className="sop-headline-sm-medium text-sop-primary-700 mb-4 mt-8">{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="sop-headline-xs-medium text-sop-primary-700 mb-4 mt-6">{children}</h3>
+  ),
+  p: ({ children }) => (
+    <p className="mb-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300">{children}</p>
+  ),
+  ul: ({ children }) => (
+    <ul className="list-disc pl-4 list-outside mb-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="list-decimal pl-4 list-outside mb-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300">
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => (
+    <li className="mb-2 sop-body-md-regular text-sop-neutral-gray-300">{children}</li>
+  ),
+  strong: ({ children }) => (
+    <strong className="sop-body-md-medium text-sop-neutral-gray-300">{children}</strong>
+  ),
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      className="text-sop-primary-700 underline"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {children}
+    </a>
+  ),
 };
 
-function ProductMarkdownContent({ source }: ProductMarkdownContentProps) {
-  const lines = source.trim().split('\n');
-  const nodes: React.ReactNode[] = [];
-  let listItems: string[] = [];
-  let key = 0;
-
-  const flushList = () => {
-    if (listItems.length === 0) {
-      return;
-    }
-
-    nodes.push(
-      <ul
-        key={key++}
-        className="list-disc pl-4 list-outside mb-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300"
-      >
-        {listItems.map((item, index) => (
-          <li key={index} className="mb-2 sop-body-md-regular text-sop-neutral-gray-300">
-            {item}
-          </li>
-        ))}
-      </ul>,
-    );
-    listItems = [];
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    if (!trimmed) {
-      flushList();
-      continue;
-    }
-
-    if (trimmed.startsWith('## ')) {
-      flushList();
-      nodes.push(
-        <h2 key={key++} className="sop-headline-sm-medium text-sop-primary-700 mb-4 mt-8">
-          {trimmed.slice(3)}
-        </h2>,
-      );
-      continue;
-    }
-
-    if (trimmed.startsWith('### ')) {
-      flushList();
-      nodes.push(
-        <h3 key={key++} className="sop-headline-xs-medium text-sop-primary-700 mb-4 mt-6">
-          {trimmed.slice(4)}
-        </h3>,
-      );
-      continue;
-    }
-
-    if (trimmed.startsWith('-')) {
-      listItems.push(trimmed.replace(/^-\s?/, ''));
-      continue;
-    }
-
-    flushList();
-    nodes.push(
-      <p key={key++} className="mb-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300">
-        {trimmed}
-      </p>,
-    );
-  }
-
-  flushList();
-
-  return <>{nodes}</>;
-}
-
-function sanitizeHtml(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
-    .replace(/\son\w+="[^"]*"/gi, '')
-    .replace(/\son\w+='[^']*'/gi, '');
+function hasHtmlMarkup(source: string): boolean {
+  return /<[^>]+>/.test(source);
 }
 
 type ProductDescriptionContentProps = {
@@ -87,16 +51,15 @@ type ProductDescriptionContentProps = {
 };
 
 export function ProductDescriptionContent({ description }: ProductDescriptionContentProps) {
-  const hasHtml = /<[^>]+>/.test(description);
-
-  if (hasHtml) {
-    return (
-      <div
-        className="prose prose-sm max-w-none sop-body-md-regular text-sop-neutral-gray-300 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
-      />
-    );
-  }
-
-  return <ProductMarkdownContent source={description} />;
+  return (
+    <div data-testid="product-markdown-content">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={hasHtmlMarkup(description) ? [rehypeRaw, rehypeSanitize] : [rehypeSanitize]}
+        components={productMarkdownComponents}
+      >
+        {description}
+      </ReactMarkdown>
+    </div>
+  );
 }

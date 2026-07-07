@@ -10,6 +10,13 @@ type ProductShowPriceProps = {
   selectedOptions: VariantOptions;
 };
 
+function formatPrice(value: number): string {
+  return value.toLocaleString('th-TH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 export function ProductShowPrice({ product, selectedOptions }: ProductShowPriceProps) {
   const selectedVariant = findVariantByOptions(product.variants, selectedOptions);
   const displayPrice = selectedVariant?.price ?? product.basePrice;
@@ -22,18 +29,18 @@ export function ProductShowPrice({ product, selectedOptions }: ProductShowPriceP
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-baseline gap-1">
         {hasPrice ? (
           <>
             <span
-              className="md:sop-headline-md-medium sop-headline-sm-medium md:bg-transparent md:text-sop-secondary-500 md:px-0 text-sop-base-white bg-sop-secondary-500 px-2 py-0.5 rounded-sop-8px"
+              className="rounded-sop-8 bg-sop-secondary-500 px-2 py-0 text-sop-base-white sop-headline-sm-medium lg:sop-headline-md-medium"
               data-testid="variant-price"
             >
-              ฿{displayPrice.toLocaleString('th-TH')}
+              ฿{formatPrice(displayPrice)}
             </span>
             {hasDiscount && (
-              <span className="md:sop-strike-lg-regular sop-strike-md-regular text-sop-neutral-grayalpha-400">
-                ฿{compareAtPrice.toLocaleString('th-TH')}
+              <span className="sop-strike-md-regular text-sop-neutral-grayalpha-400 lg:sop-strike-lg-regular">
+                ฿{formatPrice(compareAtPrice)}
               </span>
             )}
           </>

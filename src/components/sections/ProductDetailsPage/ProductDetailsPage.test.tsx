@@ -241,12 +241,12 @@ describe('ProductDetailsPage', () => {
       wrapper: createWrapper(),
     });
 
-    expect(await screen.findByTestId('variant-price')).toHaveTextContent('฿890');
+    expect(await screen.findByTestId('variant-price')).toHaveTextContent('฿890.00');
     expect(screen.getByTestId('variant-stock')).toHaveTextContent('เหลือสินค้า 10 ชิ้น');
 
     await user.click(screen.getByRole('radio', { name: 'Size: L' }));
 
-    expect(screen.getByTestId('variant-price')).toHaveTextContent('฿990');
+    expect(screen.getByTestId('variant-price')).toHaveTextContent('฿990.00');
     expect(screen.getByTestId('variant-stock')).toHaveTextContent('เหลือสินค้า 5 ชิ้น');
   });
 

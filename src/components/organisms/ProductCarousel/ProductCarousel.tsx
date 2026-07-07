@@ -2,11 +2,12 @@
 
 import Image from 'next/image';
 import useEmblaCarousel from 'embla-carousel-react';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CloseIcon } from '@/components/atoms/icons/filled/CloseIcon';
 import { LeftArrowIcon } from '@/components/atoms/icons/filled/LeftArrowIcon';
 import { RightArrowIcon } from '@/components/atoms/icons/filled/RightArrowIcon';
 import { ProductCarouselIndicator } from '@/components/molecules/ProductCarouselIndicator/ProductCarouselIndicator';
+import { ProductGalleryTrustBadges } from '@/components/molecules/ProductGalleryTrustBadges/ProductGalleryTrustBadges';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 
 type ProductImage = NonNullable<ProductDetail['images']>[number];
@@ -42,11 +43,6 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    axis: 'x',
-    loop: true,
-    align: 'start',
-  });
 
   const [lightboxEmblaRef, lightboxEmblaApi] = useEmblaCarousel({
     axis: 'x',
@@ -60,21 +56,11 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
   const [canScrollNext, setCanScrollNext] = useState(false);
 
   const gallerySlides = resolveSlides(slides, thumbnailUrl);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-
-    const onSelect = () => {
-      setSelectedIndex(emblaApi.selectedScrollSnap());
-    };
-
-    emblaApi.on('select', onSelect);
-    onSelect();
-
-    return () => {
-      emblaApi.off('select', onSelect);
-    };
-  }, [emblaApi]);
+  const activeIndex =
+    gallerySlides.length === 0
+      ? 0
+      : Math.min(selectedIndex, gallerySlides.length - 1);
+  const currentSlide = gallerySlides[activeIndex];
 
   useEffect(() => {
     if (!lightboxEmblaApi) return;
@@ -99,11 +85,17 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
     }
   }, [isLightboxOpen, lightboxEmblaApi, lightboxStartIndex]);
 
+  const handlePrev = useCallback(() => {
+    setSelectedIndex((index) => (index - 1 + gallerySlides.length) % gallerySlides.length);
+  }, [gallerySlides.length]);
+
+  const handleNext = useCallback(() => {
+    setSelectedIndex((index) => (index + 1) % gallerySlides.length);
+  }, [gallerySlides.length]);
+
   const handleImageClick = (index: number) => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      setLightboxStartIndex(index);
-      setIsLightboxOpen(true);
-    }
+    setLightboxStartIndex(index);
+    setIsLightboxOpen(true);
   };
 
   const handleCloseLightbox = () => {
@@ -138,7 +130,7 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
   if (gallerySlides.length === 0) {
     return (
       <div
-        className="w-full aspect-square flex items-center justify-center bg-sop-additionalblue-300 rounded-sop-16px"
+        className="relative w-full aspect-square flex items-center justify-center bg-sop-additionalblue-300 rounded-sop-16px"
         data-testid="product-gallery-empty"
       >
         <p className="sop-body-sm-regular text-sop-base-white">ไม่มีรูปภาพ</p>
@@ -148,48 +140,34 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
 
   return (
     <>
-      <div className="w-full relative" data-testid="product-gallery">
-        <div
-          className="overflow-hidden"
-          aria-roledescription="carousel"
-          aria-label="Product images"
-          ref={emblaRef}
-        >
-          <div className="flex">
-            {gallerySlides.map((slide, index) => (
-              <Fragment key={slide.id}>
-                <div className="flex-[0_0_100%] min-w-0 relative">
-                  <Image
-                    priority={index === 0}
-                    src={slide.imageUrl}
-                    alt="Product image"
-                    width={700}
-                    height={700}
-                    sizes="(min-width: 1024px) 50vw, 100vw"
-                    className="w-full h-auto aspect-square object-cover object-center lg:cursor-pointer cursor-default select-none pointer-events-none lg:pointer-events-auto"
-                    draggable={false}
-                    onClick={() => handleImageClick(index)}
-                  />
-                </div>
-              </Fragment>
-            ))}
-          </div>
+      <div className="relative mx-auto w-full max-w-[500px]" data-testid="product-gallery">
+        <div className="flex flex-col items-center gap-[18px]">
+          <button
+            type="button"
+            className="relative aspect-square w-full max-h-[500px] max-w-[500px] cursor-pointer overflow-hidden border-0 bg-transparent p-0"
+            onClick={() => handleImageClick(activeIndex)}
+            aria-label="ดูรูปภาพขนาดใหญ่"
+            data-testid="product-gallery-hero"
+          >
+            <Image
+              priority
+              src={currentSlide.imageUrl}
+              alt="Product image"
+              width={500}
+              height={500}
+              sizes="(min-width: 1024px) 500px, 100vw"
+              className="size-full object-cover object-center select-none"
+              draggable={false}
+            />
+          </button>
+          <ProductCarouselIndicator
+            slides={gallerySlides}
+            selectedIndex={activeIndex}
+            onSelectIndex={setSelectedIndex}
+            onPrev={handlePrev}
+            onNext={handleNext}
+          />
         </div>
-
-        {gallerySlides.length > 1 && (
-          <>
-            <div className="md:block hidden">
-              <ProductCarouselIndicator slides={gallerySlides} embla={emblaApi} />
-            </div>
-            <div className="block md:hidden">
-              <div className="absolute bottom-4 right-2 bg-sop-neutral-whitealpha-800 rounded-sop-12px px-sop-16px py-1.5">
-                <span className="sop-body-xs-regular">
-                  {selectedIndex + 1}/{gallerySlides.length}
-                </span>
-              </div>
-            </div>
-          </>
-        )}
       </div>
 
       {isLightboxOpen && (

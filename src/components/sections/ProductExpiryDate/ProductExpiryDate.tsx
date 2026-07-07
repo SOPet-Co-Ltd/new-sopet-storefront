@@ -9,9 +9,9 @@ export function ProductExpiryDate({ expiryDate }: ProductExpiryDateProps) {
 
   return (
     <div className="flex w-full">
-      <div className="flex items-center gap-2 bg-sop-primary-100 p-2 rounded-sop-8px w-full">
+      <div className="flex w-full items-center gap-2 rounded-sop-8 bg-sop-primary-100 px-2 py-[9px]">
         <JarOfPillsIcon size={{ mobile: 24, desktop: 24 }} />
-        <p className="md:sop-body-lg-medium sop-body-md-medium text-sop-primary-700">
+        <p className="sop-body-md-medium text-sop-primary-700 lg:sop-body-lg-medium">
           วันหมดอายุ : {expiryDate}
         </p>
       </div>

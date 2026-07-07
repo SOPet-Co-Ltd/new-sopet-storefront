@@ -20,7 +20,7 @@ export function ProductShareWishlistActions({
   className,
 }: ProductShareWishlistActionsProps) {
   return (
-    <div className={cn('flex items-center gap-4', className)}>
+    <div className={cn('flex items-center gap-[18px]', className)}>
       <button
         type="button"
         onClick={onShare}
@@ -28,7 +28,11 @@ export function ProductShareWishlistActions({
         className="cursor-pointer disabled:opacity-40"
         aria-label={`แชร์ ${productName}`}
       >
-        <ShareIcon size={{ mobile: 24, desktop: 24 }} color="#9c6ade" aria-hidden="true" />
+        <ShareIcon
+          size={{ mobile: 24, desktop: 32 }}
+          color="#9c6ade"
+          aria-hidden="true"
+        />
       </button>
       <button
         type="button"
@@ -36,7 +40,7 @@ export function ProductShareWishlistActions({
         className="cursor-pointer"
         aria-label={`เพิ่ม ${productName} ในรายการโปรด`}
       >
-        <WishListHeartIcon size={{ mobile: 24, desktop: 24 }} />
+        <WishListHeartIcon size={{ mobile: 24, desktop: 36 }}/>
       </button>
     </div>
   );

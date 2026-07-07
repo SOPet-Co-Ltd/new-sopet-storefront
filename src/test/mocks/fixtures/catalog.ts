@@ -55,8 +55,20 @@ export const sampleStore = {
 };
 
 export const sampleCategories = [
-  { __typename: 'CategoryType' as const, id: 'cat-1', name: 'Dog Food', slug: 'dog-food' },
-  { __typename: 'CategoryType' as const, id: 'cat-2', name: 'Cat Food', slug: 'cat-food' },
+  {
+    __typename: 'CategoryType' as const,
+    id: 'cat-1',
+    name: 'Dog Food',
+    slug: 'dog-food',
+    imageUrl: 'https://example.com/dog-food-category.jpg',
+  },
+  {
+    __typename: 'CategoryType' as const,
+    id: 'cat-2',
+    name: 'Cat Food',
+    slug: 'cat-food',
+    imageUrl: 'https://example.com/cat-food-category.jpg',
+  },
 ];
 
 export const sampleProductReview = {

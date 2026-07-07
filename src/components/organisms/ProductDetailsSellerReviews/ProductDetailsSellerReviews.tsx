@@ -121,7 +121,7 @@ function ProductDetailsSellerReviewsContent({
   if (loading) {
     return (
       <div
-        className="bg-sop-base-white p-4 md:rounded-lg rounded-none md:mt-5 mt-2"
+        className="-mx-4 bg-sop-base-white p-4 rounded-none md:mx-0 md:rounded-sop-16px"
         data-testid="product-reviews-loading"
       >
         <div className="h-6 w-40 animate-pulse rounded bg-sop-neutral-gray-500" />
@@ -131,7 +131,7 @@ function ProductDetailsSellerReviewsContent({
 
   return (
     <div
-      className="bg-sop-base-white gap-4 p-4 md:rounded-sop-16px rounded-none md:mt-5 mt-2"
+      className="-mx-4 bg-sop-base-white p-4 rounded-none md:mx-0 md:rounded-sop-16px"
       data-testid="product-reviews"
     >
       <div className="border-b mb-4 py-2 border-sop-primary-500">

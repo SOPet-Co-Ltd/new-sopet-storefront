@@ -3,5 +3,6 @@ query ApprovedCategories {
     id
     name
     slug
+    imageUrl
   }
 }

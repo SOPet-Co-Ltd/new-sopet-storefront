@@ -8,7 +8,7 @@ export function ProductDetailDescription({ description }: ProductDetailDescripti
   if (!description) return null;
 
   return (
-    <div className="bg-sop-base-white gap-4 p-4 md:rounded-sop-16px rounded-none md:mt-5 mt-2">
+    <div className="-mx-4 bg-sop-base-white p-4 rounded-none md:mx-0 md:rounded-sop-16px">
       <div className="border-b mb-4 py-2 border-sop-primary-500">
         <p className="md:sop-headline-md-medium sop-body-lg-medium text-sop-primary-700">
           รายละเอียดสินค้า

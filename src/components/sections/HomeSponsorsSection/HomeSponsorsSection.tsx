@@ -4,13 +4,18 @@ import { useQuery } from '@apollo/client/react';
 import Image from 'next/image';
 import { PlatformSponsorsDocument } from '@/lib/graphql/generated/graphql';
 
+const sponsorItemClassName = 'block w-[150px] shrink-0';
+
 function SponsorsSkeleton() {
   return (
-    <div className="grid w-full grid-cols-2 items-center justify-center gap-4 md:grid-cols-6" aria-hidden="true">
+    <div
+      className="flex w-full flex-wrap items-center justify-center gap-4"
+      aria-hidden="true"
+    >
       {Array.from({ length: 6 }).map((_, index) => (
         <div
           key={index}
-          className="aspect-2/1 w-full max-w-[150px] bg-sop-neutral-gray-600 animate-pulse rounded-sop-8px"
+          className={`aspect-2/1 ${sponsorItemClassName} bg-sop-neutral-gray-600 animate-pulse rounded-sop-8px`}
         />
       ))}
     </div>
@@ -52,12 +57,12 @@ export function HomeSponsorsSection({ heading = 'แบรนด์ที่เ�
           {heading}
         </h2>
       </div>
-      <div className="grid w-full grid-cols-2 items-center justify-center gap-4 md:grid-cols-6">
+      <div className="flex w-full flex-wrap items-center justify-center gap-4">
         {sponsors.map((sponsor) => {
           const altText = sponsor.name || 'สปอนเซอร์';
 
           const card = (
-            <div className="aspect-2/1 w-full max-w-[150px]">
+            <div className="aspect-2/1 w-full">
               <Image
                 src={sponsor.imageUrl}
                 alt={altText}
@@ -75,7 +80,7 @@ export function HomeSponsorsSection({ heading = 'แบรนด์ที่เ�
                 href={sponsor.linkUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="flex justify-center"
+                className={sponsorItemClassName}
               >
                 {card}
               </a>
@@ -83,7 +88,7 @@ export function HomeSponsorsSection({ heading = 'แบรนด์ที่เ�
           }
 
           return (
-            <div key={sponsor.id} className="flex justify-center">
+            <div key={sponsor.id} className={sponsorItemClassName}>
               {card}
             </div>
           );

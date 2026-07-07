@@ -10,16 +10,13 @@ import { InstagramCustomIcon } from '@/components/atoms/icons/filled/InstagramCu
 import { LineCustomIcon } from '@/components/atoms/icons/filled/LineCustomIcon';
 import { MeatballsMenuIcon } from '@/components/atoms/icons/filled/MeatballsMenuIcon';
 import { MessengerCustomIcon } from '@/components/atoms/icons/filled/MessengerCustomIcon';
-import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import { ProductDetailQuantitySelection } from '@/components/molecules/ProductDetailQuantitySelection/ProductDetailQuantitySelection';
+import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import { ProductVariants } from '@/components/molecules/ProductVariants/ProductVariants';
-import { ProductExpiryDate } from '@/components/sections/ProductExpiryDate/ProductExpiryDate';
-import { ProductShowPrice } from '@/components/sections/ProductShowPrice/ProductShowPrice';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 import { useCart } from '@/lib/providers/CartProvider';
 import {
   findVariantByOptions,
-  getDefaultSelectedOptions,
   type VariantOptions,
 } from './variantUtils';
 
@@ -203,6 +200,8 @@ function ProductShareModal({
 
 export type ProductDetailsVariantSelectionProps = {
   product: ProductDetail;
+  selectedOptions: VariantOptions;
+  onSelectedOptionsChange: (options: VariantOptions) => void;
   onVariantChange?: (
     variantId: string | null,
     price: number,
@@ -216,6 +215,8 @@ export type ProductDetailsVariantSelectionProps = {
 
 export default function ProductDetailsVariantSelection({
   product,
+  selectedOptions,
+  onSelectedOptionsChange,
   onVariantChange,
   shareModalOpen,
   onShareModalOpenChange,
@@ -223,9 +224,6 @@ export default function ProductDetailsVariantSelection({
 }: ProductDetailsVariantSelectionProps) {
   const router = useRouter();
   const { addItem } = useCart();
-  const [selectedOptions, setSelectedOptions] = useState<VariantOptions>(() =>
-    getDefaultSelectedOptions(product.variants),
-  );
   const [productQuantity, setProductQuantity] = useState(1);
   const [internalShareOpen, setInternalShareOpen] = useState(false);
   const isShareModalOpen = shareModalOpen ?? internalShareOpen;
@@ -272,11 +270,8 @@ export default function ProductDetailsVariantSelection({
 
   const handleOptionChange = (optionKey: string, value: string) => {
     setProductQuantity(1);
-    setSelectedOptions((previous) => {
-      const next = { ...previous, [optionKey]: value };
-      syncOptionsToUrl(next);
-      return next;
-    });
+    onSelectedOptionsChange({ ...selectedOptions, [optionKey]: value });
+    syncOptionsToUrl({ ...selectedOptions, [optionKey]: value });
   };
 
   const handleAddToCart = async () => {
@@ -311,42 +306,32 @@ export default function ProductDetailsVariantSelection({
   };
 
   return (
-    <div data-testid="product-variant-selection">
-      <ProductShowPrice product={product} selectedOptions={selectedOptions} />
-      <div className="mt-4">
-        <ProductExpiryDate expiryDate={product.expiryDate} />
-      </div>
-
+    <div className="flex flex-col gap-4 lg:gap-8" data-testid="product-variant-selection">
       {hasAnyPrice && (
-        <div className="mt-4">
-          <ProductVariants
-            product={product}
-            selectedOptions={selectedOptions}
-            onOptionChange={handleOptionChange}
-            findVariantStock={findVariantStock}
-          />
-        </div>
+        <ProductVariants
+          product={product}
+          selectedOptions={selectedOptions}
+          onOptionChange={handleOptionChange}
+          findVariantStock={findVariantStock}
+        />
       )}
 
-      <div className="mt-4">
-        <ProductDetailQuantitySelection
-          variantStock={variantStock}
-          productQuantity={productQuantity}
-          setProductQuantity={setProductQuantity}
-        />
-      </div>
+      <ProductDetailQuantitySelection
+        variantStock={variantStock}
+        productQuantity={productQuantity}
+        setProductQuantity={setProductQuantity}
+      />
 
-      <div className="mt-6 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:gap-[18px]">
           <Button
             type="button"
             onClick={() => void handleAddToCart()}
             disabled={isOutOfStock || !hasAnyPrice}
             loading={isAddingToCart}
-            fill
-            size="lg"
+            size="xl"
             variant="secondary"
-            className="md:bg-sop-primary-100 md:text-sop-primary-500 md:border-transparent border-sop-primary-500 text-sop-primary-500 bg-sop-base-white"
+            className="h-12 w-full border-sop-secondary-500 bg-sop-secondary-100 text-sop-secondary-500 lg:min-w-0 lg:flex-1"
             aria-busy={isAddingToCart}
             aria-label={
               isAddingToCart
@@ -356,7 +341,7 @@ export default function ProductDetailsVariantSelection({
                   : `เพิ่ม ${product.name} ลงตะกร้า`
             }
           >
-            {!hasAnyPrice ? 'NOT AVAILABLE IN YOUR REGION' : isOutOfStock ? 'สินค้าหมด' : 'เพิ่มลงรถเข็น'}
+            {!hasAnyPrice ? 'NOT AVAILABLE IN YOUR REGION' : isOutOfStock ? 'สินค้าหมด' : 'เพิ่มใส่ตะกร้า'}
           </Button>
 
           <Button
@@ -364,10 +349,9 @@ export default function ProductDetailsVariantSelection({
             onClick={() => void handleBuyNow()}
             disabled={isOutOfStock || !hasAnyPrice}
             loading={isBuyingNow}
-            fill
-            size="lg"
+            size="xl"
             variant="primary"
-            className="md:py-sop-12px py-sop-8px"
+            className="h-12 w-full lg:min-w-0 lg:flex-1"
             aria-busy={isBuyingNow}
             aria-label={
               isBuyingNow
@@ -377,7 +361,7 @@ export default function ProductDetailsVariantSelection({
                   : `ซื้อ ${product.name} เลย`
             }
           >
-            ซื้อเลย
+            ซื้อสินค้า
           </Button>
 
           <ProductShareWishlistActions
@@ -385,7 +369,7 @@ export default function ProductDetailsVariantSelection({
             onShare={handleShareOpen}
             onWishlist={handleWishlist}
             disabled={isOutOfStock || !hasAnyPrice}
-            className="md:hidden shrink-0"
+            className="shrink-0"
           />
         </div>
 

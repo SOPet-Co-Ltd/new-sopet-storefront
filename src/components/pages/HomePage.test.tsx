@@ -1,5 +1,5 @@
 import { ApolloProvider } from '@apollo/client/react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HomePage from '@/components/pages/HomePage';
@@ -28,8 +28,20 @@ import { useAuth } from '@/lib/hooks/useAuth';
 const mockedUseAuth = vi.mocked(useAuth);
 
 const SAMPLE_CATEGORIES = [
-  { __typename: 'CategoryType' as const, id: 'cat-1', name: 'อาหารสุนัข', slug: 'dog-food' },
-  { __typename: 'CategoryType' as const, id: 'cat-2', name: 'อาหารแมว', slug: 'cat-food' },
+  {
+    __typename: 'CategoryType' as const,
+    id: 'cat-1',
+    name: 'อาหารสุนัข',
+    slug: 'dog-food',
+    imageUrl: 'https://example.com/dog-food-category.jpg',
+  },
+  {
+    __typename: 'CategoryType' as const,
+    id: 'cat-2',
+    name: 'อาหารแมว',
+    slug: 'cat-food',
+    imageUrl: 'https://example.com/cat-food-category.jpg',
+  },
 ];
 
 const SAMPLE_PRODUCT = {
@@ -214,8 +226,43 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    expect(await screen.findByTestId('home-recent-orders')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'ซื้อล่าสุด' })).toBeInTheDocument();
+    const recentOrdersSection = await screen.findByTestId('home-recent-orders');
+    expect(recentOrdersSection).toBeInTheDocument();
+    expect(within(recentOrdersSection).getByRole('heading', { name: 'ซื้อล่าสุด' })).toBeInTheDocument();
+    expect(within(recentOrdersSection).getByRole('link', { name: 'ดูทั้งหมด' })).toHaveAttribute(
+      'href',
+      '/user/orders',
+    );
+  });
+
+  it('renders recommended view-all button', async () => {
+    registerHomeHandlers();
+
+    renderHomePage();
+
+    await screen.findByRole('heading', { name: 'สินค้าแนะนำ' });
+    expect(screen.getByRole('link', { name: /ดูสินค้าทั้งหมด/ })).toHaveAttribute('href', '/categories');
+  });
+
+  it('orders main content sections per design', async () => {
+    registerHomeHandlers({ includeOrders: true });
+    mockedUseAuth.mockReturnValue(createAuthValue(true));
+
+    renderHomePage();
+
+    const headings = await screen.findAllByRole('heading');
+    const mainContentHeadings = headings
+      .map((heading) => heading.textContent)
+      .filter((text) =>
+        ['สินค้าแนะนำ', 'หมวดหมู่สินค้า', 'ซื้อล่าสุด', 'สินค้ามาใหม่'].includes(text ?? ''),
+      );
+
+    expect(mainContentHeadings).toEqual([
+      'สินค้าแนะนำ',
+      'หมวดหมู่สินค้า',
+      'ซื้อล่าสุด',
+      'สินค้ามาใหม่',
+    ]);
   });
 
   it('does not render coupon section or links', async () => {

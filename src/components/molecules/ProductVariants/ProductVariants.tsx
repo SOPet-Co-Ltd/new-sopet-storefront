@@ -1,7 +1,7 @@
 'use client';
 
+import Image from 'next/image';
 import { Fragment } from 'react';
-import { TickThinIcon } from '@/components/atoms/icons/filled/TickThinIcon';
 import { cn } from '@/lib/utils';
 import {
   buildOptionGroups,
@@ -17,6 +17,13 @@ type ProductVariantsProps = {
   findVariantStock: (candidateOptions: VariantOptions) => number;
 };
 
+function resolveVariantThumbnail(product: ProductDetail): string | null {
+  if (product.thumbnailUrl) return product.thumbnailUrl;
+
+  const sortedImages = [...(product.images ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+  return sortedImages[0]?.imageUrl ?? null;
+}
+
 export function ProductVariants({
   product,
   selectedOptions,
@@ -24,24 +31,23 @@ export function ProductVariants({
   findVariantStock,
 }: ProductVariantsProps) {
   const optionGroups = buildOptionGroups(product.variants);
+  const variantThumbnail = resolveVariantThumbnail(product);
 
   return (
-    <div className="md:grid md:grid-cols-[8rem_1fr] flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       {Object.entries(optionGroups).map(([optionKey, values]) => {
         const fieldsetId = `variant-${optionKey}`;
 
         return (
-          <Fragment key={optionKey}>
-            <div>
-              <p
-                id={`${fieldsetId}-label`}
-                className="md:sop-body-lg-regular sop-body-md-regular text-sop-neutral-gray-400"
-              >
-                {formatOptionLabel(optionKey)}
-              </p>
-            </div>
+          <div key={optionKey} className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-5">
+            <p
+              id={`${fieldsetId}-label`}
+              className="sop-body-md-regular text-sop-neutral-gray-400 lg:w-[90px] lg:shrink-0 lg:sop-body-lg-regular"
+            >
+              {formatOptionLabel(optionKey)}
+            </p>
             <fieldset
-              className="flex gap-2 flex-wrap"
+              className="flex min-w-0 flex-wrap gap-3"
               aria-labelledby={`${fieldsetId}-label`}
             >
               <legend className="sr-only">เลือก{formatOptionLabel(optionKey)}</legend>
@@ -56,10 +62,11 @@ export function ProductVariants({
                     key={value}
                     htmlFor={inputId}
                     className={cn(
-                      'relative cursor-pointer sop-body-sm-regular border rounded-sop-8px px-3 py-2 text-sop-neutral-gray-200 bg-sop-base-white border-sop-neutral-grayalpha-100 inline-flex items-center gap-1.5 min-h-[40px]',
-                      isSelected &&
-                        'text-sop-primary-500 border-sop-primary-500 bg-sop-primary-100',
-                      isDisabled && 'opacity-40 cursor-not-allowed',
+                      'inline-flex min-h-[46px] cursor-pointer items-center gap-2 rounded-sop-36 border px-4 py-2 shadow-xs sop-body-xs-regular',
+                      isSelected
+                        ? 'border-sop-secondary-500 bg-sop-base-white text-sop-secondary-500'
+                        : 'border-sop-neutral-grayalpha-100 bg-sop-neutral-gray-500 text-sop-neutral-gray-200',
+                      isDisabled && 'cursor-not-allowed opacity-40',
                     )}
                   >
                     <input
@@ -73,19 +80,22 @@ export function ProductVariants({
                       className="sr-only"
                       aria-label={`${formatOptionLabel(optionKey)}: ${value}`}
                     />
-                    <span>{value}</span>
-                    {isSelected && (
-                      <TickThinIcon
-                        size={{ mobile: 14, desktop: 14 }}
-                        color="#9c6ade"
+                    {variantThumbnail ? (
+                      <Image
+                        src={variantThumbnail}
+                        alt=""
+                        width={30}
+                        height={30}
+                        className="size-[30px] shrink-0 object-cover"
                         aria-hidden
                       />
-                    )}
+                    ) : null}
+                    <span>{value}</span>
                   </label>
                 );
               })}
             </fieldset>
-          </Fragment>
+          </div>
         );
       })}
     </div>

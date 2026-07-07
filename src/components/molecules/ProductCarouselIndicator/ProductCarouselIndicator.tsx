@@ -1,10 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import type { EmblaCarouselType } from 'embla-carousel';
 import useEmblaCarousel from 'embla-carousel-react';
-import { useCallback, useEffect, useState } from 'react';
-import { Button } from '@/components/atoms/Button';
+import { useEffect } from 'react';
 import { LeftArrowIcon } from '@/components/atoms/icons/filled/LeftArrowIcon';
 import { RightArrowIcon } from '@/components/atoms/icons/filled/RightArrowIcon';
 import { cn } from '@/lib/utils';
@@ -16,79 +14,60 @@ type CarouselSlide = {
 
 type ProductCarouselIndicatorProps = {
   slides: CarouselSlide[];
-  embla?: EmblaCarouselType;
+  selectedIndex: number;
+  onSelectIndex: (index: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
 };
 
 export function ProductCarouselIndicator({
   slides = [],
-  embla: parentEmbla,
+  selectedIndex,
+  onSelectIndex,
+  onPrev,
+  onNext,
 }: ProductCarouselIndicatorProps) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
-
-  const [emblaRef] = useEmblaCarousel({
+  const [emblaRef, emblaApi] = useEmblaCarousel({
     axis: 'x',
-    loop: true,
     align: 'start',
     containScroll: 'trimSnaps',
+    dragFree: true,
   });
 
-  const changeSlideHandler = useCallback(
-    (index: number) => {
-      parentEmbla?.scrollTo(index);
-    },
-    [parentEmbla],
-  );
-
-  const scrollPrevImage = useCallback(() => {
-    parentEmbla?.scrollPrev();
-  }, [parentEmbla]);
-
-  const scrollNextImage = useCallback(() => {
-    parentEmbla?.scrollNext();
-  }, [parentEmbla]);
-
-  const onSelectParent = useCallback((emblaApi: EmblaCarouselType) => {
-    setSelectedIndex(emblaApi.selectedScrollSnap());
-    setCanScrollPrev(emblaApi.canScrollPrev());
-    setCanScrollNext(emblaApi.canScrollNext());
-  }, []);
-
   useEffect(() => {
-    if (!parentEmbla) return;
-
-    parentEmbla.on('reInit', onSelectParent).on('select', onSelectParent);
-    return () => {
-      parentEmbla.off('reInit', onSelectParent).off('select', onSelectParent);
-    };
-  }, [onSelectParent, parentEmbla]);
+    if (!emblaApi) return;
+    emblaApi.scrollTo(selectedIndex);
+  }, [emblaApi, selectedIndex]);
 
   return (
-    <div className="mt-2 flex items-center gap-2">
-      <Button
+    <div
+      className="flex w-full items-center gap-2"
+      data-testid="product-gallery-thumbnails"
+    >
+      <button
         type="button"
-        onClick={scrollPrevImage}
-        disabled={!canScrollPrev}
-        variant="neutral"
-        size="sm"
-        uiType="icon"
+        onClick={onPrev}
         aria-label="Previous image"
-        className={cn('shrink-0', !canScrollPrev && 'cursor-not-allowed')}
+        className={cn(
+          'flex size-8 shrink-0 items-center justify-center',
+          selectedIndex === 0 ? 'opacity-50 cursor-not-allowed' : '',
+        )}
+        disabled={selectedIndex === 0}
       >
-        <LeftArrowIcon size={{ mobile: 20, desktop: 20 }} color="#949495" />
-      </Button>
+        <LeftArrowIcon size={{ mobile: 20, desktop: 20 }} strokeWidth={1} color="#949495" />
+      </button>
 
-      <div className="embla flex-1 overflow-hidden" aria-label="Product image thumbnails">
-        <div className="embla__viewport overflow-hidden" ref={emblaRef}>
-          <div className="embla__container flex gap-2 justify-center">
+      <div className="min-w-0 flex-1 overflow-hidden" aria-label="Product image thumbnails">
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex gap-2">
             {slides.map((slide, index) => (
               <button
                 key={slide.id}
                 type="button"
-                className="cursor-pointer"
-                onClick={() => changeSlideHandler(index)}
+                className="shrink-0 cursor-pointer"
+                onClick={() => onSelectIndex(index)}
                 aria-label={`เลือกรูปที่ ${index + 1}`}
+                aria-current={selectedIndex === index ? 'true' : undefined}
               >
                 <Image
                   src={slide.imageUrl}
@@ -96,10 +75,10 @@ export function ProductCarouselIndicator({
                   width={80}
                   height={80}
                   className={cn(
-                    'border-4 transition-colors duration-300 w-20 h-20 object-cover',
+                    'size-20 border-4 object-cover transition-colors duration-300',
                     selectedIndex === index
-                      ? 'border-sop-primary-500'
-                      : 'border-sop-base-white',
+                      ? 'border-sop-secondary-500'
+                      : 'border-transparent',
                   )}
                   draggable={false}
                 />
@@ -109,18 +88,18 @@ export function ProductCarouselIndicator({
         </div>
       </div>
 
-      <Button
+      <button
         type="button"
-        onClick={scrollNextImage}
-        disabled={!canScrollNext}
-        variant="neutral"
-        size="sm"
-        uiType="icon"
+        onClick={onNext}
         aria-label="Next image"
-        className={cn('shrink-0', !canScrollNext && 'cursor-not-allowed')}
+        className={cn(
+          'flex size-8 shrink-0 items-center justify-center',
+          selectedIndex === slides.length - 1 ? 'opacity-50 cursor-not-allowed' : '',
+          selectedIndex === 0 ? 'cursor-not-allowed' : '',
+        )}  
       >
-        <RightArrowIcon size={{ mobile: 20, desktop: 20 }} color="#949495" />
-      </Button>
+        <RightArrowIcon size={{ mobile: 20, desktop: 20 }} strokeWidth={1} color="#949495" />
+      </button>
     </div>
   );
 }

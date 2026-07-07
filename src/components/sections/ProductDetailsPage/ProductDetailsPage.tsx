@@ -3,7 +3,6 @@
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { notFound } from 'next/navigation';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { Breadcrumbs } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
 import { ProductDetails } from '@/components/organisms/ProductDetails/ProductDetails';
 import ProductDetailsSeller from '@/components/organisms/ProductDetailsSeller';
@@ -78,19 +77,13 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
   ];
 
   return (
-    <div data-testid="product-details-page">
-      <div className="py-4 lg:block hidden">
+    <div data-testid="product-details-page" className="flex flex-col gap-2 md:gap-5">
+      <div className="hidden py-2 lg:block">
         <Breadcrumbs items={breadcrumbs} />
       </div>
 
-      <div className="bg-sop-base-white grid lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] grid-cols-1 gap-4 lg:p-6 lg:rounded-sop-16px rounded-none pb-4 md:mt-0 -mx-4 md:mx-0 px-0 md:px-0">
-        <ProductGallery
-          images={product.images}
-          thumbnailUrl={product.thumbnailUrl}
-          productName={product.name}
-          onShareClick={() => setShareModalOpen(true)}
-          onWishlistClick={() => toast.message('ฟีเจอร์รายการโปรดจะเปิดใช้งานเร็วๆ นี้')}
-        />
+      <div className="-mx-4 grid grid-cols-1 gap-4 rounded-none bg-sop-base-white px-0 pb-4 md:mx-0 md:px-0 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-[10px] lg:py-5">
+        <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
         <ProductDetails
           product={product}
           shareModalOpen={shareModalOpen}
@@ -111,17 +104,19 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
         loading={reviewsLoading}
       />
 
-      <HomeProductSection
-        heading="สินค้าจากร้านเดียวกัน"
-        storeId={product.storeId}
-        excludeProductId={product.id}
-      />
+      <div className="mt-2 flex flex-col gap-8 md:mt-3">
+        <HomeProductSection
+          heading="สินค้าจากร้านเดียวกัน"
+          storeId={product.storeId}
+          excludeProductId={product.id}
+        />
 
-      <HomeProductSection
-        heading="สินค้าที่คุณอาจจะชอบ"
-        excludeProductId={product.id}
-        layout="grid"
-      />
+        <HomeProductSection
+          heading="สินค้าที่คุณอาจจะชอบ"
+          excludeProductId={product.id}
+          layout="grid"
+        />
+      </div>
     </div>
   );
 }

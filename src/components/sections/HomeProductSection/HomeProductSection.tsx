@@ -6,13 +6,22 @@ import { RightArrowLineIcon } from '@/components/atoms/icons/filled/RightArrowLi
 import { useProducts } from '@/lib/hooks/useProducts';
 import ProductCard from '@/components/organisms/ProductCard';
 
+const SECTION_HEADING_CLASS = 'mb-5 sop-body-lg-medium text-sop-neutral-gray-200';
+
+const RESPONSIVE_GRID_COLUMNS =
+  'md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5 xl:gap-10';
+
+const PRODUCT_GRID_CLASS = `grid grid-cols-2 gap-2 justify-items-center ${RESPONSIVE_GRID_COLUMNS}`;
+
+const PRODUCT_CAROUSEL_CLASS = `flex gap-4 overflow-x-auto md:grid md:justify-items-center md:overflow-visible ${RESPONSIVE_GRID_COLUMNS}`;
+
 function ProductSkeletonRow() {
   return (
     <div className="flex gap-4 overflow-x-auto px-4 md:px-0" aria-hidden="true">
       {Array.from({ length: 5 }).map((_, index) => (
         <div
           key={index}
-          className="shrink-0 w-[168px] md:w-[223px] h-[280px] rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse"
+          className="h-[280px] w-[168px] shrink-0 rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse md:w-[223px]"
         />
       ))}
     </div>
@@ -46,10 +55,8 @@ export function HomeProductSection({
 
   if (loading) {
     return (
-      <section className={`w-full ${storeId ? 'md:mt-5 mt-2' : ''}`} aria-busy="true">
-        <h2 className="md:px-0 px-4 md:sop-headline-md-medium sop-body-lg-medium text-sop-primary-500 mb-5 border-b border-sop-primary-500 pb-2">
-          {heading}
-        </h2>
+      <section className="w-full" aria-busy="true">
+        <h2 className={`md:px-0 px-4 ${SECTION_HEADING_CLASS}`}>{heading}</h2>
         <ProductSkeletonRow />
       </section>
     );
@@ -62,30 +69,28 @@ export function HomeProductSection({
   const displayProducts = visibleProducts.slice(0, layout === 'grid' ? 15 : 10);
 
   return (
-    <section className="w-full md:mt-5 mt-2">
-      <h2 className="md:px-0 px-4 md:sop-headline-md-medium sop-body-lg-medium text-sop-primary-500 mb-5 border-b border-sop-primary-500 pb-2">
-        {heading}
-      </h2>
+    <section className="w-full">
+      <h2 className={`md:px-0 px-4 ${SECTION_HEADING_CLASS}`}>{heading}</h2>
       {layout === 'grid' ? (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 lg:px-0 px-4">
+        <div className={PRODUCT_GRID_CLASS}>
           {displayProducts.map((product) => (
-            <ProductCard key={product.id} product={product} compact />
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       ) : (
-        <div className="flex gap-1 overflow-x-auto lg:grid md:grid-cols-5 md:gap-4 lg:px-0 px-4">
+        <div className={PRODUCT_CAROUSEL_CLASS}>
           {displayProducts.map((product) => (
-            <div key={product.id} className="shrink-0 md:w-auto flex">
+            <div key={product.id} className="shrink-0">
               <ProductCard product={product} />
             </div>
           ))}
         </div>
       )}
       {!storeId && (
-        <div className="flex justify-center items-center mt-6">
+        <div className="mt-6 flex items-center justify-center">
           <Link href={viewAllHref}>
             <Button variant="secondary">
-              <div className="px-4 flex items-center gap-2 py-2 md:py-0">
+              <div className="flex items-center gap-2 px-4 py-2 md:py-0">
                 <p className="text-center">ดูทั้งหมด</p>
                 <RightArrowLineIcon size={{ mobile: 11, desktop: 11 }} color="#FF6F61" />
               </div>

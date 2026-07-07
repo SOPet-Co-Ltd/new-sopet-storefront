@@ -18,7 +18,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
 
   return (
     <div
-      className="md:mt-5 mt-2 bg-sop-base-white px-4 py-5 md:rounded-sop-16px rounded-none"
+      className="-mx-4 bg-sop-base-white px-4 py-5 rounded-none md:mx-0 md:rounded-sop-16px"
       data-testid="product-seller"
     >
       <div className="flex items-center justify-between gap-4">

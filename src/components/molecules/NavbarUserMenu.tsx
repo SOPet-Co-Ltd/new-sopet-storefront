@@ -301,7 +301,7 @@ function NavbarUserMenuMobile() {
           <div className="flex h-[92px] items-end justify-end px-[17px] py-[21px]">
             <button
               type="button"
-              className="rounded-xl bg-sop-primary-500 p-sop-8px"
+              className="inline-flex aspect-square min-h-[32px] min-w-[32px] items-center justify-center rounded-xl bg-sop-primary-500 p-sop-8px"
               aria-label="ปิดเมนูผู้ใช้"
               onClick={() => setOpen(false)}
             >

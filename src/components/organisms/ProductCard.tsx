@@ -154,7 +154,7 @@ export default function ProductCard({ product, compact = false, className }: Pro
       >
         <ProductCardImage product={product} discountPercent={discountPercent} compact={compact} />
         <div className="flex flex-col gap-2 px-2 md:px-3">
-          <p className="line-clamp-2 sop-body-sm-medium text-sop-neutral-gray-300">{product.name}</p>
+          <p className="line-clamp-2 h-10 sop-body-sm-medium text-sop-neutral-gray-300">{product.name}</p>
           <ProductCardPrice product={product} />
           <ProductCardReviewStars product={product} />
         </div>

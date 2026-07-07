@@ -16,42 +16,34 @@ export function ProductDetailQuantitySelection({
   setProductQuantity,
 }: ProductDetailQuantitySelectionProps) {
   return (
-    <div className="grid md:grid-cols-[8rem_1fr] grid-cols-[6rem_1fr]">
-      <div>
-        <p className="md:sop-body-lg-regular sop-body-md-regular text-sop-neutral-gray-400">
-          จำนวน
-        </p>
-      </div>
-      <div className="flex md:gap-20 items-center justify-between md:justify-normal">
-        <div className="flex gap-2 items-center">
+    <div className="flex flex-row items-center justify-between gap-3 lg:justify-start lg:gap-5">
+      <p className="sop-body-md-regular text-sop-neutral-gray-400 lg:w-[90px] lg:shrink-0 lg:sop-body-lg-regular">
+        จำนวน
+      </p>
+      <div className="flex items-center gap-6 rounded-sop-4px py-1.5">
           <button
             type="button"
-            className="cursor-pointer"
+            className="cursor-pointer disabled:cursor-not-allowed"
             disabled={productQuantity <= 1}
             onClick={() =>
               setProductQuantity((quantity) => (quantity > 1 ? quantity - 1 : 1))
             }
             aria-label="ลดจำนวน"
           >
-            <div className="md:block hidden">
+            <div>
               <MinusSquareIcon
-                size={{ mobile: 32, desktop: 32 }}
+                size={{ mobile: 24, desktop: 26 }}
                 color={productQuantity <= 1 ? '#22222947' : '#211f23'}
-              />
-            </div>
-            <div className="block md:hidden">
-              <MinusSquareIcon
-                size={{ mobile: 24, desktop: 24 }}
-                color={productQuantity <= 1 ? '#22222947' : '#211f23'}
+                strokeWidth={1.5}
               />
             </div>
           </button>
-          <p className="md:sop-body-lg-regular sop-body-md-regular w-sop-28px flex justify-center text-center">
+          <p className="sop-body-md-regular text-sop-neutral-gray-300 lg:sop-body-lg-regular">
             {productQuantity}
           </p>
           <button
             type="button"
-            className="cursor-pointer"
+            className="cursor-pointer disabled:cursor-not-allowed"
             disabled={productQuantity >= variantStock}
             onClick={() =>
               setProductQuantity((quantity) =>
@@ -60,24 +52,18 @@ export function ProductDetailQuantitySelection({
             }
             aria-label="เพิ่มจำนวน"
           >
-            <div className="md:block hidden">
+            <div>
               <PlusSquareIcon
-                size={{ mobile: 32, desktop: 32 }}
+                size={{ mobile: 24, desktop: 26 }}
                 color={productQuantity >= variantStock ? '#22222947' : '#211f23'}
-              />
-            </div>
-            <div className="block md:hidden">
-              <PlusSquareIcon
-                size={{ mobile: 24, desktop: 24 }}
-                color={productQuantity >= variantStock ? '#22222947' : '#211f23'}
+                strokeWidth={1.5}
               />
             </div>
           </button>
-        </div>
-        <p className="sop-body-sm-regular text-sop-neutral-gray-400" data-testid="variant-stock">
-          เหลือสินค้า {variantStock} ชิ้น
-        </p>
       </div>
+      <p className="sop-body-xs-regular text-sop-neutral-gray-400" data-testid="variant-stock">
+        เหลือสินค้า {variantStock} ชิ้น
+      </p>
     </div>
   );
 }

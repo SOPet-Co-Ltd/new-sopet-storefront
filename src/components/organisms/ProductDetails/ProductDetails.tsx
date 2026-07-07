@@ -1,10 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ProductReviewStars } from '@/components/molecules/ProductReviewStars/ProductReviewStars';
-import ProductDetailsMetaFooter from '@/components/organisms/ProductDetailsMetaFooter/ProductDetailsMetaFooter';
 import ProductDetailsVariantSelection from '@/components/organisms/ProductDetailsVariantSelection/ProductDetailsVariantSelection';
+import { ProductExpiryDate } from '@/components/sections/ProductExpiryDate/ProductExpiryDate';
+import {
+  getDefaultSelectedOptions,
+  type VariantOptions,
+} from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
+import { ProductShowPrice } from '@/components/sections/ProductShowPrice/ProductShowPrice';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 
 type ProductDetailsProps = {
@@ -25,33 +30,46 @@ export function ProductDetails({
   shareModalOpen,
   onShareModalOpenChange,
 }: ProductDetailsProps) {
-  const [internalShareOpen, setInternalShareOpen] = useState(false);
-  const isShareOpen = shareModalOpen ?? internalShareOpen;
-  const setShareOpen = onShareModalOpenChange ?? setInternalShareOpen;
+  const [selectedOptions, setSelectedOptions] = useState<VariantOptions>(() =>
+    getDefaultSelectedOptions(product.variants),
+  );
+
+  const hasAnyPrice = useMemo(() => {
+    const firstVariant = product.variants?.[0];
+    return (firstVariant?.price ?? product.basePrice) > 0;
+  }, [product.basePrice, product.variants]);
 
   return (
-    <div className="flex flex-col px-4 md:px-0 gap-4 md:gap-6">
-      <p className="md:sop-headline-md-medium sop-body-lg-medium text-sop-neutral-gray-300">
-        {product.name}
-      </p>
+    <div className="flex flex-col gap-4 px-4 lg:gap-8 lg:px-0">
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <p className="sop-body-lg-medium text-sop-neutral-gray-300 lg:sop-headline-md-medium">
+            {product.name}
+          </p>
 
-      <ProductReviewStars
-        averageRating={product.averageRating}
-        totalReviews={product.reviewCount}
-        soldCount={product.soldCount}
-      />
+          <ProductReviewStars
+            averageRating={product.averageRating}
+            totalReviews={product.reviewCount}
+            soldCount={product.soldCount}
+          />
+        </div>
+
+        {hasAnyPrice ? (
+          <ProductShowPrice product={product} selectedOptions={selectedOptions} />
+        ) : null}
+
+        <ProductExpiryDate expiryDate={product.expiryDate} />
+      </div>
 
       <ProductDetailsVariantSelection
         product={product}
+        selectedOptions={selectedOptions}
+        onSelectedOptionsChange={setSelectedOptions}
         onVariantChange={onVariantChange}
-        shareModalOpen={isShareOpen}
-        onShareModalOpenChange={setShareOpen}
+        shareModalOpen={shareModalOpen}
+        onShareModalOpenChange={onShareModalOpenChange}
         onWishlistClick={() => toast.message('ฟีเจอร์รายการโปรดจะเปิดใช้งานเร็วๆ นี้')}
       />
-
-      {product.tags && product.tags.length > 0 && (
-        <ProductDetailsMetaFooter tags={product.tags} />
-      )}
     </div>
   );
 }

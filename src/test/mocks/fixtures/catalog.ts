@@ -96,6 +96,19 @@ export const samplePlatformBanners = [
   },
 ];
 
+export const samplePlatformAds = [
+  {
+    id: 'ad-1',
+    title: 'Pet Payday Promotion',
+    imageUrl: 'https://example.com/promo-ad.jpg',
+    linkUrl: '/categories',
+    sortOrder: 1,
+    isActive: true,
+    startsAt: null,
+    endsAt: null,
+  },
+];
+
 export const samplePlatformSettings = {
   currency: 'THB',
   storefrontUrl: 'http://localhost:3000',

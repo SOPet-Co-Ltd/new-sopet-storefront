@@ -1,0 +1,1 @@
+export { PromotionalAdsModal } from './PromotionalAdsModal';

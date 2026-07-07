@@ -17,6 +17,7 @@ type ModalProps = {
   width?: number
   transparentBackground?: boolean
   insideCloseButton?: boolean
+  contentClassName?: string
 } & Omit<React.HTMLAttributes<HTMLDivElement>, "children">
 
 export const Modal = ({
@@ -29,6 +30,7 @@ export const Modal = ({
   width = 600,
   transparentBackground = false,
   insideCloseButton = false,
+  contentClassName,
   ...dialogProps
 }: ModalProps) => {
   const modalRef = useRef<HTMLDivElement>(null)
@@ -140,7 +142,14 @@ export const Modal = ({
 
           {header != null && <div className="shrink-0 p-4">{header}</div>}
 
-          <div className="flex-1 overflow-y-auto px-4">{children}</div>
+          <div
+            className={cn(
+              "flex-1 overflow-y-auto px-4",
+              contentClassName
+            )}
+          >
+            {children}
+          </div>
 
           {footer != null && (
             <div className="shrink-0 bg-sop-base-white p-4">

@@ -53,4 +53,15 @@ describe("Modal", () => {
     await user.tab()
     expect(document.activeElement).toBe(first)
   })
+
+  it("applies contentClassName to the children wrapper", () => {
+    render(
+      <Modal contentClassName="px-0 overflow-visible">
+        <div data-testid="modal-content">Content</div>
+      </Modal>
+    )
+
+    const content = screen.getByTestId("modal-content")
+    expect(content.parentElement).toHaveClass("px-0", "overflow-visible")
+  })
 })

@@ -3,59 +3,21 @@
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { notFound } from 'next/navigation';
 import { useState } from 'react';
-import { ReviewStarIcon } from '@/components/atoms/icons/filled/ReviewStarIcon';
-import ProductAdditionalAttributes from '@/components/organisms/ProductAdditionalAttributes';
-import ProductDetailsFooter from '@/components/organisms/ProductDetailsFooter';
-import ProductDetailsHeader from '@/components/organisms/ProductDetailsHeader';
-import ProductDetailsMeasurements from '@/components/organisms/ProductDetailsMeasurements';
+import { toast } from 'sonner';
+import { Breadcrumbs } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
+import { ProductDetails } from '@/components/organisms/ProductDetails/ProductDetails';
 import ProductDetailsSeller from '@/components/organisms/ProductDetailsSeller';
 import ProductDetailsSellerReviews from '@/components/organisms/ProductDetailsSellerReviews';
-import ProductDetailsShipping from '@/components/organisms/ProductDetailsShipping';
-import ProductDetailsVariantSelection from '@/components/organisms/ProductDetailsVariantSelection';
+import { ProductGallery } from '@/components/organisms/ProductGallery/ProductGallery';
+import { ProductDetailDescription } from '@/components/sections/ProductDetailDescription/ProductDetailDescription';
+import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
+import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
 import { useProduct } from '@/lib/hooks/useProduct';
 import { useReviews } from '@/lib/hooks/useReviews';
 
 type ProductDetailsPageProps = {
   productId: string;
 };
-
-function formatSoldCount(count: number): string {
-  if (count < 1000) return count.toString();
-
-  const units = ['', 'K', 'M', 'B', 'T'];
-  const magnitude = Math.floor(Math.log10(count) / 3);
-  const scaled = count / 10 ** (magnitude * 3);
-  const formatted = scaled % 1 === 0 ? scaled.toFixed(0) : scaled.toFixed(1);
-
-  return `${formatted}${units[magnitude]}`;
-}
-
-function ProductReviewSummary({
-  averageRating,
-  reviewCount,
-  soldCount,
-}: {
-  averageRating: number;
-  reviewCount: number;
-  soldCount: number;
-}) {
-  return (
-    <div className="grid grid-cols-[auto_1fr] gap-4 items-center">
-      <div className="flex gap-1">
-        <ReviewStarIcon size={{ mobile: 16, desktop: 24 }} filled />
-      </div>
-      <div className="flex items-center gap-2 flex-wrap">
-        <p className="md:sop-body-lg-regular sop-body-sm-regular text-sop-neutral-gray-400">
-          {averageRating} ({reviewCount} รีวิว)
-        </p>
-        <div className="w-px h-6 bg-sop-neutral-gray-400" />
-        <p className="md:sop-body-lg-regular sop-body-sm-regular text-sop-neutral-gray-400">
-          ขายแล้ว {formatSoldCount(soldCount)} ชิ้น
-        </p>
-      </div>
-    </div>
-  );
-}
 
 function ProductDetailsSkeleton() {
   return (
@@ -78,25 +40,13 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
     id: productId,
   });
 
-  const {
-    productReviews,
-    storeReviewSummary,
-    loading: reviewsLoading,
-  } = useReviews({
+  const { productReviews, loading: reviewsLoading } = useReviews({
     productId: product?.id,
     storeId: product?.storeId,
     skip: !product,
   });
 
-  const defaultVariant = product?.variants?.[0];
-  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
-  const [selectedStock, setSelectedStock] = useState<number | null>(null);
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    defaultVariant?.id ?? null,
-  );
-
-  const footerPrice = selectedPrice ?? product?.basePrice ?? 0;
-  const footerDisabled = (selectedStock ?? defaultVariant?.stockQuantity ?? 0) <= 0;
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const isNotFound = Boolean(
     error &&
@@ -122,59 +72,55 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
     );
   }
 
+  const breadcrumbs = [
+    { label: 'หน้าแรก', path: '/' },
+    { label: product.name, path: `/product/${product.id}` },
+  ];
+
   return (
     <div data-testid="product-details-page">
-      <div className="bg-sop-base-white grid lg:grid-cols-[4fr_6fr] grid-cols-1 gap-4 lg:p-4 lg:rounded-lg rounded-none pb-4">
-        <ProductDetailsHeader
-          productName={product.name}
+      <div className="py-4 lg:block hidden">
+        <Breadcrumbs items={breadcrumbs} />
+      </div>
+
+      <div className="bg-sop-base-white grid lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] grid-cols-1 gap-4 lg:p-6 lg:rounded-sop-16px rounded-none pb-4 md:mt-0 -mx-4 md:mx-0 px-0 md:px-0">
+        <ProductGallery
           images={product.images}
           thumbnailUrl={product.thumbnailUrl}
+          productName={product.name}
+          onShareClick={() => setShareModalOpen(true)}
+          onWishlistClick={() => toast.message('ฟีเจอร์รายการโปรดจะเปิดใช้งานเร็วๆ นี้')}
         />
-
-        <div className="flex flex-col px-4 gap-6">
-          <p className="md:sop-headline-md-medium sop-body-lg-medium text-sop-neutral-gray-300">
-            {product.name}
-          </p>
-
-          <ProductReviewSummary
-            averageRating={product.averageRating}
-            reviewCount={product.reviewCount}
-            soldCount={product.soldCount}
-          />
-
-          <ProductDetailsVariantSelection
-            product={product}
-            onVariantChange={(variantId, price, stockQuantity) => {
-              setSelectedVariantId(variantId);
-              setSelectedPrice(price);
-              setSelectedStock(stockQuantity);
-            }}
-          />
-
-          {product.description && (
-            <div className="sop-body-sm-regular text-sop-neutral-gray-400 whitespace-pre-wrap">
-              {product.description}
-            </div>
-          )}
-
-          <ProductDetailsMeasurements />
-          <ProductDetailsShipping />
-          <ProductAdditionalAttributes tags={product.tags} warning={product.warning} />
-        </div>
+        <ProductDetails
+          product={product}
+          shareModalOpen={shareModalOpen}
+          onShareModalOpenChange={setShareModalOpen}
+        />
       </div>
 
       <ProductDetailsSeller store={product.store} />
 
+      <ProductDetailDescription description={product.description} />
+
+      <ProductDetailWarning warning={product.warning} />
+
       <ProductDetailsSellerReviews
         productReviews={productReviews}
-        storeReviewSummary={storeReviewSummary}
+        averageRating={product.averageRating}
+        totalReviews={product.reviewCount}
         loading={reviewsLoading}
       />
 
-      <ProductDetailsFooter
-        price={footerPrice}
-        disabled={footerDisabled}
-        variantId={selectedVariantId}
+      <HomeProductSection
+        heading="สินค้าจากร้านเดียวกัน"
+        storeId={product.storeId}
+        excludeProductId={product.id}
+      />
+
+      <HomeProductSection
+        heading="สินค้าที่คุณอาจจะชอบ"
+        excludeProductId={product.id}
+        layout="grid"
       />
     </div>
   );

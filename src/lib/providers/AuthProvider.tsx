@@ -6,6 +6,7 @@ import {
   createContext,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -46,8 +47,14 @@ function hasStoredAccessToken(): boolean {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const apolloClient = useApolloClient();
-  const [hasToken, setHasToken] = useState(hasStoredAccessToken);
+  const [hasToken, setHasToken] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [pendingDeletion, setPendingDeletion] = useState(false);
+
+  useLayoutEffect(() => {
+    setHasToken(hasStoredAccessToken());
+    setIsAuthReady(true);
+  }, []);
 
   const { data, loading, refetch } = useQuery(MeDocument, {
     skip: !hasToken,
@@ -59,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const customer = data?.me?.customer ?? null;
   const isAuthenticated = hasToken;
-  const isLoading = hasToken && loading;
+  const isLoading = !isAuthReady || (hasToken && loading);
 
   const logout = useCallback(async () => {
     clearTokens();

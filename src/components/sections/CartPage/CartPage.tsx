@@ -84,12 +84,11 @@ export default function CartPage() {
           <p className="mb-6 sop-headline-sm-medium text-sop-secondary-500" data-testid="cart-subtotal">
             ฿{subtotal.toLocaleString('th-TH')}
           </p>
-          <Button type="button" fill disabled>
-            ดำเนินการชำระเงิน
-          </Button>
-          <p className="mt-3 sop-body-xs-regular text-sop-neutral-gray-400">
-            ขั้นตอนชำระเงินจะเปิดใช้งานใน Phase 3
-          </p>
+          <Link href="/checkout" className="block w-full">
+            <Button type="button" fill className="w-full">
+              ดำเนินการชำระเงิน
+            </Button>
+          </Link>
         </aside>
       </div>
     </main>

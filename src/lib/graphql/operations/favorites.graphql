@@ -1,0 +1,36 @@
+fragment FavoriteProductFields on ProductType {
+  id
+  name
+  slug
+  basePrice
+  thumbnailUrl
+  images {
+    id
+    imageUrl
+    sortOrder
+  }
+}
+
+query Favorites {
+  favorites {
+    id
+    productId
+    product {
+      ...FavoriteProductFields
+    }
+  }
+}
+
+mutation AddFavorite($input: FavoriteProductInput!) {
+  addFavorite(input: $input) {
+    id
+    productId
+    product {
+      ...FavoriteProductFields
+    }
+  }
+}
+
+mutation RemoveFavorite($input: FavoriteProductInput!) {
+  removeFavorite(input: $input)
+}

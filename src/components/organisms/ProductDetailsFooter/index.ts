@@ -1,1 +1,1 @@
-export { default } from './ProductDetailsFooter';
+export { default } from '../ProductMobileStickyBar/ProductMobileStickyBar';

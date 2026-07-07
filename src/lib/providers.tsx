@@ -12,21 +12,24 @@ import { CheckoutProvider } from '@/lib/providers/CheckoutProvider';
 
 const ROUTE_LOADING_DELAY_MS = 0;
 
-function RouteLoadingPreview() {
-  const pathname = usePathname();
+function RouteLoadingPreviewInner() {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    setVisible(true);
     const timer = window.setTimeout(() => setVisible(false), ROUTE_LOADING_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [pathname]);
+  }, []);
 
   if (!visible) {
     return null;
   }
 
   return <GlobalLoadingStage />;
+}
+
+function RouteLoadingPreview() {
+  const pathname = usePathname();
+  return <RouteLoadingPreviewInner key={pathname} />;
 }
 
 export function AppProviders({ children }: { children: ReactNode }) {

@@ -1,93 +1,405 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/atoms/Button';
+import { ChainIcon } from '@/components/atoms/icons/filled/ChainIcon';
+import { FacebookCustomIcon } from '@/components/atoms/icons/filled/FacebookCustomIcon';
+import { InstagramCustomIcon } from '@/components/atoms/icons/filled/InstagramCustomIcon';
+import { LineCustomIcon } from '@/components/atoms/icons/filled/LineCustomIcon';
+import { MeatballsMenuIcon } from '@/components/atoms/icons/filled/MeatballsMenuIcon';
+import { MessengerCustomIcon } from '@/components/atoms/icons/filled/MessengerCustomIcon';
+import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
+import { ProductDetailQuantitySelection } from '@/components/molecules/ProductDetailQuantitySelection/ProductDetailQuantitySelection';
+import { ProductVariants } from '@/components/molecules/ProductVariants/ProductVariants';
+import { ProductExpiryDate } from '@/components/sections/ProductExpiryDate/ProductExpiryDate';
+import { ProductShowPrice } from '@/components/sections/ProductShowPrice/ProductShowPrice';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
+import { useCart } from '@/lib/providers/CartProvider';
 import {
-  buildOptionGroups,
   findVariantByOptions,
-  formatOptionLabel,
   getDefaultSelectedOptions,
   type VariantOptions,
 } from './variantUtils';
 
-type ProductDetailsVariantSelectionProps = {
+type ShareButtonConfig = {
+  label: string;
+  icon: () => React.ReactNode;
+  handler?: () => void;
+  buttonClassName?: string;
+};
+
+function stripHtml(html: string): string {
+  if (typeof document === 'undefined') {
+    return html.replace(/<[^>]*>/g, '');
+  }
+
+  const element = document.createElement('div');
+  element.innerHTML = html;
+  return element.textContent ?? element.innerText ?? '';
+}
+
+function getShortDescription(product: ProductDetail): string {
+  if (!product.description) return '';
+
+  const plainText = /<[^>]+>/.test(product.description)
+    ? stripHtml(product.description)
+    : product.description;
+
+  return plainText.length > 150 ? `${plainText.substring(0, 150).trim()}...` : plainText.trim();
+}
+
+function getProductShareContent(product: ProductDetail, productLink: string): string {
+  return `${product.name || ''}\n${getShortDescription(product)}\n${productLink}`;
+}
+
+function ProductShareModal({
+  isOpen,
+  onClose,
+  product,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
   product: ProductDetail;
-  onVariantChange?: (variantId: string | null, price: number, stockQuantity: number) => void;
+}) {
+  const productLink = typeof window !== 'undefined' ? window.location.href : `/product/${product.id}`;
+
+  const handleCopyLink = async () => {
+    const text = String(productLink ?? '');
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.setAttribute('readonly', '');
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+
+      toast.success('คัดลอกลิงก์สำเร็จ', {
+        description: 'ลิงก์สินค้าถูกคัดลอกไปยังคลิปบอร์ดแล้ว',
+      });
+      onClose();
+    } catch {
+      toast.error('เกิดข้อผิดพลาด', { description: 'ไม่สามารถคัดลอกลิงก์ได้' });
+    }
+  };
+
+  const handleNativeShare = async () => {
+    const shareText = getProductShareContent(product, productLink);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name || '',
+          text: shareText,
+          url: productLink,
+        });
+        onClose();
+      } catch (error) {
+        if (error instanceof Error && error.name !== 'AbortError') {
+          toast.error('เกิดข้อผิดพลาด', { description: 'ไม่สามารถแชร์ได้' });
+        }
+      }
+      return;
+    }
+
+    await handleCopyLink();
+  };
+
+  const openShareWindow = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer,width=600,height=600');
+    onClose();
+  };
+
+  const shareButtons: ShareButtonConfig[] = [
+    {
+      label: 'คัดลอกลิงก์',
+      icon: () => <ChainIcon size={{ mobile: 16, desktop: 16 }} color="#4C4C4C" />,
+      handler: () => void handleCopyLink(),
+      buttonClassName:
+        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full bg-[#D6D6D6] flex items-center justify-center hover:bg-[#C0C0C0] transition-colors cursor-pointer',
+    },
+    {
+      label: 'Line',
+      icon: () => <LineCustomIcon size={{ mobile: 40, desktop: 40 }} />,
+      handler: () =>
+        openShareWindow(
+          `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(productLink)}`,
+        ),
+      buttonClassName:
+        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full bg-[#06C755] flex items-center justify-center hover:bg-[#05B04A] transition-colors cursor-pointer',
+    },
+    {
+      label: 'Facebook',
+      icon: () => <FacebookCustomIcon size={{ mobile: 40, desktop: 40 }} />,
+      handler: () =>
+        openShareWindow(
+          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productLink)}`,
+        ),
+      buttonClassName: 'cursor-pointer',
+    },
+    {
+      label: 'Messenger',
+      icon: () => <MessengerCustomIcon size={{ mobile: 40, desktop: 40 }} />,
+      handler: () =>
+        openShareWindow(
+          `https://www.facebook.com/dialog/send?link=${encodeURIComponent(productLink)}&app_id=${process.env.NEXT_PUBLIC_FACEBOOK_APP_ID ?? ''}&redirect_uri=${encodeURIComponent(productLink)}`,
+        ),
+      buttonClassName:
+        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full bg-[#0084FF] flex items-center justify-center hover:bg-[#0073E6] transition-colors cursor-pointer',
+    },
+    {
+      label: 'Instagram',
+      icon: () => <InstagramCustomIcon size={{ mobile: 24, desktop: 24 }} color="#FFFFFF" />,
+      handler: () => void handleCopyLink(),
+      buttonClassName:
+        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full bg-gradient-to-br from-[#FCAF45] via-[#FD1D1D] to-[#833AB4] flex items-center justify-center hover:opacity-90 transition-opacity cursor-pointer',
+    },
+    {
+      label: 'แอปอื่นๆ',
+      icon: () => <MeatballsMenuIcon size={{ mobile: 20, desktop: 20 }} color="#4C4C4C" />,
+      handler: () => void handleNativeShare(),
+      buttonClassName:
+        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full border border-[#D6D6D6] bg-transparent flex items-center justify-center hover:bg-sop-neutral-grey-100 transition-colors cursor-pointer',
+    },
+  ];
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label="ปิดหน้าต่างแชร์"
+      />
+      <div className="relative bg-sop-base-white rounded-sop-16px p-6 max-w-md w-full mx-4 z-10">
+        <div className="flex items-center justify-center mb-6 border-b border-[#D6D6D6] p-2">
+          <h2 className="sop-body-lg-medium text-[#232323]">แชร์สินค้าให้เพื่อนของคุณ</h2>
+        </div>
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-[12px] justify-items-center">
+          {shareButtons.map((button) => (
+            <div key={button.label} className="flex flex-col items-center gap-2">
+              <button type="button" onClick={button.handler} className={button.buttonClassName}>
+                {button.icon()}
+              </button>
+              <span className="sop-body-sm-light text-sop-base-black text-center">{button.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export type ProductDetailsVariantSelectionProps = {
+  product: ProductDetail;
+  onVariantChange?: (
+    variantId: string | null,
+    price: number,
+    stockQuantity: number,
+    quantity: number,
+  ) => void;
+  shareModalOpen?: boolean;
+  onShareModalOpenChange?: (open: boolean) => void;
+  onWishlistClick?: () => void;
 };
 
 export default function ProductDetailsVariantSelection({
   product,
   onVariantChange,
+  shareModalOpen,
+  onShareModalOpenChange,
+  onWishlistClick,
 }: ProductDetailsVariantSelectionProps) {
-  const variants = useMemo(() => product.variants ?? [], [product.variants]);
-  const optionGroups = useMemo(() => buildOptionGroups(variants), [variants]);
+  const router = useRouter();
+  const { addItem } = useCart();
   const [selectedOptions, setSelectedOptions] = useState<VariantOptions>(() =>
-    getDefaultSelectedOptions(variants),
+    getDefaultSelectedOptions(product.variants),
   );
+  const [productQuantity, setProductQuantity] = useState(1);
+  const [internalShareOpen, setInternalShareOpen] = useState(false);
+  const isShareModalOpen = shareModalOpen ?? internalShareOpen;
+  const setShareModalOpen = onShareModalOpenChange ?? setInternalShareOpen;
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
 
   const selectedVariant = useMemo(
-    () => findVariantByOptions(variants, selectedOptions),
-    [variants, selectedOptions],
+    () => findVariantByOptions(product.variants, selectedOptions),
+    [product.variants, selectedOptions],
   );
 
-  const displayPrice = selectedVariant?.price ?? product.basePrice;
-  const displayStock = selectedVariant?.stockQuantity ?? 0;
-  const isOutOfStock = displayStock <= 0;
+  const variantId = selectedVariant?.id ?? null;
+  const variantStock = selectedVariant?.stockQuantity ?? 0;
+  const variantPrice = selectedVariant?.price ?? product.basePrice;
+  const hasAnyPrice = variantPrice > 0;
+  const isOutOfStock = variantStock <= 0;
 
-  const handleOptionSelect = (optionKey: string, value: string) => {
+  const findVariantStock = (candidateOptions: VariantOptions) =>
+    findVariantByOptions(product.variants, candidateOptions)?.stockQuantity ?? 0;
+
+  useEffect(() => {
+    onVariantChange?.(variantId, variantPrice, variantStock, productQuantity);
+  }, [onVariantChange, productQuantity, variantId, variantPrice, variantStock]);
+
+  const syncOptionsToUrl = (nextOptions: VariantOptions) => {
+    if (typeof window === 'undefined') return;
+
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+
+    Object.keys(nextOptions).forEach((key) => {
+      params.delete(key);
+      const value = nextOptions[key];
+      if (value) {
+        params.set(key, value);
+      }
+    });
+
+    const newSearch = params.toString();
+    const newUrl = newSearch ? `${url.pathname}?${newSearch}` : url.pathname;
+    window.history.replaceState(null, '', newUrl);
+  };
+
+  const handleOptionChange = (optionKey: string, value: string) => {
+    setProductQuantity(1);
     setSelectedOptions((previous) => {
       const next = { ...previous, [optionKey]: value };
-      const variant = findVariantByOptions(variants, next);
-      onVariantChange?.(variant?.id ?? null, variant?.price ?? product.basePrice, variant?.stockQuantity ?? 0);
+      syncOptionsToUrl(next);
       return next;
     });
   };
 
+  const handleAddToCart = async () => {
+    if (!variantId || isOutOfStock || !hasAnyPrice) return;
+
+    try {
+      setIsAddingToCart(true);
+      await addItem(variantId, productQuantity);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!variantId || isOutOfStock || !hasAnyPrice || productQuantity < 1) return;
+
+    try {
+      setIsBuyingNow(true);
+      await addItem(variantId, productQuantity);
+      router.push('/checkout');
+    } finally {
+      setIsBuyingNow(false);
+    }
+  };
+
+  const handleWishlist = () => {
+    onWishlistClick?.();
+  };
+
+  const handleShareOpen = () => {
+    setShareModalOpen(true);
+  };
+
   return (
     <div data-testid="product-variant-selection">
-      <div className="flex flex-col gap-2 mb-4">
-        <p className="sop-headline-sm-medium text-sop-secondary-500" data-testid="variant-price">
-          ฿{displayPrice.toLocaleString('th-TH')}
-        </p>
-        <p className="sop-body-sm-regular text-sop-neutral-gray-400" data-testid="variant-stock">
-          {isOutOfStock ? 'สินค้าหมด' : `คงเหลือ ${displayStock} ชิ้น`}
-        </p>
+      <ProductShowPrice product={product} selectedOptions={selectedOptions} />
+      <div className="mt-4">
+        <ProductExpiryDate expiryDate={product.expiryDate} />
       </div>
 
-      {Object.entries(optionGroups).map(([optionKey, values]) => (
-        <div key={optionKey} className="mb-4">
-          <p className="sop-body-sm-medium text-sop-neutral-gray-300 mb-2">
-            {formatOptionLabel(optionKey)}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {values.map((value) => {
-              const isSelected = selectedOptions[optionKey] === value;
-              const candidateOptions = { ...selectedOptions, [optionKey]: value };
-              const candidateVariant = findVariantByOptions(variants, candidateOptions);
-              const isDisabled = (candidateVariant?.stockQuantity ?? 0) <= 0;
-
-              return (
-                <button
-                  key={`${optionKey}-${value}`}
-                  type="button"
-                  disabled={isDisabled}
-                  aria-pressed={isSelected}
-                  onClick={() => handleOptionSelect(optionKey, value)}
-                  className={`rounded-full border px-4 py-2 sop-body-sm-regular transition-colors ${
-                    isSelected
-                      ? 'border-sop-primary-500 bg-sop-primary-100 text-sop-primary-700'
-                      : 'border-sop-neutral-grayalpha-300 text-sop-neutral-gray-300'
-                  } ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  {value}
-                </button>
-              );
-            })}
-          </div>
+      {hasAnyPrice && (
+        <div className="mt-4">
+          <ProductVariants
+            product={product}
+            selectedOptions={selectedOptions}
+            onOptionChange={handleOptionChange}
+            findVariantStock={findVariantStock}
+          />
         </div>
-      ))}
+      )}
+
+      <div className="mt-4">
+        <ProductDetailQuantitySelection
+          variantStock={variantStock}
+          productQuantity={productQuantity}
+          setProductQuantity={setProductQuantity}
+        />
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            onClick={() => void handleAddToCart()}
+            disabled={isOutOfStock || !hasAnyPrice}
+            loading={isAddingToCart}
+            fill
+            size="lg"
+            variant="secondary"
+            className="md:bg-sop-primary-100 md:text-sop-primary-500 md:border-transparent border-sop-primary-500 text-sop-primary-500 bg-sop-base-white"
+            aria-busy={isAddingToCart}
+            aria-label={
+              isAddingToCart
+                ? 'กำลังเพิ่มสินค้าลงตะกร้า กรุณารอสักครู่'
+                : isOutOfStock
+                  ? 'สินค้าหมด'
+                  : `เพิ่ม ${product.name} ลงตะกร้า`
+            }
+          >
+            {!hasAnyPrice ? 'NOT AVAILABLE IN YOUR REGION' : isOutOfStock ? 'สินค้าหมด' : 'เพิ่มลงรถเข็น'}
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => void handleBuyNow()}
+            disabled={isOutOfStock || !hasAnyPrice}
+            loading={isBuyingNow}
+            fill
+            size="lg"
+            variant="primary"
+            className="md:py-sop-12px py-sop-8px"
+            aria-busy={isBuyingNow}
+            aria-label={
+              isBuyingNow
+                ? 'กำลังดำเนินการซื้อสินค้า กรุณารอสักครู่'
+                : isOutOfStock
+                  ? 'สินค้าหมด'
+                  : `ซื้อ ${product.name} เลย`
+            }
+          >
+            ซื้อเลย
+          </Button>
+
+          <ProductShareWishlistActions
+            productName={product.name}
+            onShare={handleShareOpen}
+            onWishlist={handleWishlist}
+            disabled={isOutOfStock || !hasAnyPrice}
+            className="md:hidden shrink-0"
+          />
+        </div>
+
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {isAddingToCart && 'กำลังเพิ่มสินค้าลงตะกร้า'}
+          {isBuyingNow && 'กำลังดำเนินการซื้อสินค้า'}
+        </div>
+      </div>
+
+      <ProductShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        product={product}
+      />
     </div>
   );
 }
-
-export { type ProductDetailsVariantSelectionProps };

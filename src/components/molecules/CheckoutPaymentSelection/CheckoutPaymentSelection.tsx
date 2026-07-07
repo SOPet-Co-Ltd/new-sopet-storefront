@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/atoms/icons';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
@@ -79,18 +79,14 @@ export function CheckoutPaymentSelection() {
   const [cardFormError, setCardFormError] = useState<string | null>(null);
   const cardFormRef = useRef(cardForm);
 
-  cardFormRef.current = cardForm;
+  useLayoutEffect(() => {
+    cardFormRef.current = cardForm;
+  }, [cardForm]);
 
   const clearCardForm = useCallback(() => {
     setCardForm(EMPTY_CHECKOUT_CARD_FORM);
     setCardFormError(null);
   }, []);
-
-  useEffect(() => {
-    if (paymentMethod !== 'card') {
-      clearCardForm();
-    }
-  }, [clearCardForm, paymentMethod]);
 
   useEffect(() => {
     registerCheckoutCardPaymentBridge(
@@ -105,10 +101,16 @@ export function CheckoutPaymentSelection() {
     };
   }, [clearCardForm]);
 
-  const handlePaymentMethodChange = (method: PaymentMethod) => {
-    setCardFormError(null);
-    setPaymentMethod(method);
-  };
+  const handlePaymentMethodChange = useCallback(
+    (method: PaymentMethod) => {
+      setCardFormError(null);
+      if (paymentMethod === 'card' && method !== 'card') {
+        clearCardForm();
+      }
+      setPaymentMethod(method);
+    },
+    [clearCardForm, paymentMethod, setPaymentMethod],
+  );
 
   return (
     <div

@@ -1,0 +1,31 @@
+fragment SavedPaymentMethodFields on SavedPaymentMethodType {
+  id
+  type
+  lastFour
+  brand
+  expiryMonth
+  expiryYear
+  isDefault
+}
+
+query PaymentMethods {
+  paymentMethods {
+    ...SavedPaymentMethodFields
+  }
+}
+
+mutation AddPaymentMethod($input: AddPaymentMethodInput!) {
+  addPaymentMethod(input: $input) {
+    ...SavedPaymentMethodFields
+  }
+}
+
+mutation DeletePaymentMethod($id: String!) {
+  deletePaymentMethod(id: $id)
+}
+
+mutation SetDefaultPaymentMethod($id: String!) {
+  setDefaultPaymentMethod(id: $id) {
+    ...SavedPaymentMethodFields
+  }
+}

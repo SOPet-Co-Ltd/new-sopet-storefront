@@ -15,40 +15,26 @@ type GuestOTPDialogProps = {
   onVerified: (phone: string) => void;
 };
 
-export function GuestOTPDialog({ isOpen, initialPhone, onVerified }: GuestOTPDialogProps) {
+function GuestOTPDialogContent({
+  initialPhone,
+  onVerified,
+}: Omit<GuestOTPDialogProps, 'isOpen'>) {
   const { isAuthenticated, customer, sendOtp, verifyOtp } = useAuth();
   const [step, setStep] = useState<Step>('PHONE');
   const [phoneNumber, setPhoneNumber] = useState(initialPhone ?? '');
   const [isOtpError, setIsOtpError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const resendInFlightRef = useRef(false);
   const autoSendAttemptedRef = useRef(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      autoSendAttemptedRef.current = false;
-      return;
-    }
-
-    setIsCheckingAuth(true);
-    setStep('PHONE');
-    setPhoneNumber(initialPhone ?? '');
-    setIsOtpError(false);
-    setErrorMessage(null);
-
-    if (isAuthenticated) {
-      onVerified(customer?.phone ?? initialPhone ?? '');
-      setIsCheckingAuth(false);
-      return;
-    }
-
-    setIsCheckingAuth(false);
-  }, [customer?.phone, initialPhone, isAuthenticated, isOpen, onVerified]);
+    if (!isAuthenticated) return;
+    onVerified(customer?.phone ?? initialPhone ?? '');
+  }, [customer?.phone, initialPhone, isAuthenticated, onVerified]);
 
   useEffect(() => {
-    if (!isOpen || isCheckingAuth || isAuthenticated || autoSendAttemptedRef.current) {
+    if (isAuthenticated || autoSendAttemptedRef.current) {
       return;
     }
 
@@ -76,7 +62,7 @@ export function GuestOTPDialog({ isOpen, initialPhone, onVerified }: GuestOTPDia
     };
 
     void sendInitialOtp();
-  }, [initialPhone, isAuthenticated, isCheckingAuth, isOpen, sendOtp]);
+  }, [initialPhone, isAuthenticated, sendOtp]);
 
   const handlePhoneSubmit = useCallback(
     async (phone: string) => {
@@ -141,11 +127,7 @@ export function GuestOTPDialog({ isOpen, initialPhone, onVerified }: GuestOTPDia
     return () => window.clearTimeout(timer);
   }, [handleSuccessFinish, step]);
 
-  if (!isOpen) {
-    return null;
-  }
-
-  if (isCheckingAuth) {
+  if (isAuthenticated) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4" data-testid="guest-otp-dialog">
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -200,5 +182,19 @@ export function GuestOTPDialog({ isOpen, initialPhone, onVerified }: GuestOTPDia
         ) : null}
       </div>
     </div>
+  );
+}
+
+export function GuestOTPDialog({ isOpen, initialPhone, onVerified }: GuestOTPDialogProps) {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <GuestOTPDialogContent
+      key={initialPhone ?? 'guest-otp'}
+      initialPhone={initialPhone}
+      onVerified={onVerified}
+    />
   );
 }

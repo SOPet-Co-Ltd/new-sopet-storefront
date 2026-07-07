@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { BellIcon } from '@/components/atoms/icons/inline';
 import { cn } from '@/lib/utils';
+import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/lib/hooks/useNotifications';
 
 const NOTIFICATION_TYPE_LABELS: Record<string, { label: string; status: string }> = {
@@ -33,50 +34,54 @@ export default function UserNotificationsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-semibold text-sop-base-black mb-6">การแจ้งเตือน</h1>
-
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-sop-base-gray-100 p-1 rounded-lg w-fit">
-        <button
-          className={cn(
-            'px-4 py-1.5 text-sm rounded-md transition-colors',
-            tab === 'all'
-              ? 'bg-sop-base-white text-sop-base-black shadow-sm'
-              : 'text-sop-base-gray-500 hover:text-sop-base-black',
-          )}
-          onClick={() => setTab('all')}
-        >
-          ทั้งหมด
-        </button>
-        <button
-          className={cn(
-            'px-4 py-1.5 text-sm rounded-md transition-colors',
-            tab === 'unread'
-              ? 'bg-sop-base-white text-sop-base-black shadow-sm'
-              : 'text-sop-base-gray-500 hover:text-sop-base-black',
-          )}
-          onClick={() => setTab('unread')}
-        >
-          ยังไม่อ่าน
-          {unreadCount > 0 && (
-            <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-danger text-white text-xs px-1.5">
-              {unreadCount}
-            </span>
-          )}
-        </button>
+    <AccountLayout title="การแจ้งเตือน">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex gap-1 bg-sop-base-gray-100 p-1 rounded-lg w-fit">
+          <button
+            className={cn(
+              'px-4 py-1.5 text-sm rounded-md transition-colors',
+              tab === 'all'
+                ? 'bg-sop-base-white text-sop-base-black shadow-sm'
+                : 'text-sop-base-gray-500 hover:text-sop-base-black',
+            )}
+            onClick={() => setTab('all')}
+          >
+            ทั้งหมด
+          </button>
+          <button
+            className={cn(
+              'px-4 py-1.5 text-sm rounded-md transition-colors',
+              tab === 'unread'
+                ? 'bg-sop-base-white text-sop-base-black shadow-sm'
+                : 'text-sop-base-gray-500 hover:text-sop-base-black',
+            )}
+            onClick={() => setTab('unread')}
+          >
+            ยังไม่อ่าน
+            {unreadCount > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-danger text-white text-xs px-1.5">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+        {unreadCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => void handleMarkAllRead()}
+            className="sop-body-sm-medium text-sop-secondary-500 underline"
+          >
+            อ่านทั้งหมด
+          </button>
+        ) : null}
       </div>
 
-      {/* Notifications list */}
       <div className="space-y-3">
         {loading ? (
           <p className="text-sop-base-gray-500">กำลังโหลด...</p>
         ) : notifications.length === 0 ? (
           <div className="rounded-lg border border-sop-base-gray-200 bg-sop-base-white p-12 flex flex-col items-center justify-center">
-            <BellIcon
-              size={{ mobile: 48, desktop: 48 }}
-              color="#9E9EA8"
-            />
+            <BellIcon size={{ mobile: 48, desktop: 48 }} color="#9E9EA8" />
             <p className="mt-4 text-sm text-sop-base-gray-500">
               {tab === 'unread' ? 'ไม่มีรายการที่ไม่ได้อ่าน' : 'ยังไม่มีแจ้งเตือน'}
             </p>
@@ -91,7 +96,7 @@ export default function UserNotificationsPage() {
           ))
         )}
       </div>
-    </div>
+    </AccountLayout>
   );
 }
 

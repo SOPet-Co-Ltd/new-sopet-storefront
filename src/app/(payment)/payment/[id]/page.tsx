@@ -44,7 +44,7 @@ export default function PaymentPage() {
 
     if (isPaymentNotFoundError(error)) {
       hasTriedFallback.current = true;
-      setLookupMode('orderId');
+      queueMicrotask(() => setLookupMode('orderId'));
     }
   }, [lookupMode, loading, error]);
 

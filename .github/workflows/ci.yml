@@ -1,0 +1,53 @@
+# SOPET Storefront CI
+# Triggers on pull request open, update, and reopen.
+# Runs: lint → test → build → forbidden-import guard
+
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    env:
+      NEXT_PUBLIC_GRAPHQL_URL: http://localhost:3002/graphql
+      NEXT_PUBLIC_OMISE_PUBLIC_KEY: pkey_test_ci_dummy
+
+    steps:
+      - name: Checkout storefront
+        uses: actions/checkout@v4
+
+      - name: Checkout backend schema
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/sopet-backend
+          path: sopet-backend
+          sparse-checkout: |
+            src/schema.gql
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Unit tests
+        run: yarn test
+
+      - name: Build
+        env:
+          GRAPHQL_SCHEMA_PATH: sopet-backend/src/schema.gql
+        run: yarn build
+
+      - name: Forbidden import guard
+        run: bash scripts/check-forbidden-imports.sh

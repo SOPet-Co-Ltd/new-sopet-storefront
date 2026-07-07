@@ -22,17 +22,31 @@ function ProductSkeletonRow() {
 type HomeProductSectionProps = {
   heading?: string;
   viewAllHref?: string;
+  storeId?: string;
+  excludeProductId?: string;
+  layout?: 'carousel' | 'grid';
 };
 
 export function HomeProductSection({
   heading = 'สินค้ามาใหม่',
   viewAllHref = '/categories',
+  storeId,
+  excludeProductId,
+  layout = 'carousel',
 }: HomeProductSectionProps) {
-  const { products, loading, error } = useProducts({ limit: 10, page: 1 });
+  const { products, loading, error } = useProducts({
+    limit: 10,
+    page: 1,
+    storeId: storeId ?? undefined,
+  });
+
+  const visibleProducts = excludeProductId
+    ? products.filter((product) => product.id !== excludeProductId)
+    : products;
 
   if (loading) {
     return (
-      <section className="w-full" aria-busy="true">
+      <section className={`w-full ${storeId ? 'md:mt-5 mt-2' : ''}`} aria-busy="true">
         <h2 className="md:px-0 px-4 md:sop-headline-md-medium sop-body-lg-medium text-sop-primary-500 mb-5 border-b border-sop-primary-500 pb-2">
           {heading}
         </h2>
@@ -41,32 +55,44 @@ export function HomeProductSection({
     );
   }
 
-  if (error || products.length === 0) {
+  if (error || visibleProducts.length === 0) {
     return null;
   }
 
+  const displayProducts = visibleProducts.slice(0, layout === 'grid' ? 15 : 10);
+
   return (
-    <section className="w-full">
+    <section className="w-full md:mt-5 mt-2">
       <h2 className="md:px-0 px-4 md:sop-headline-md-medium sop-body-lg-medium text-sop-primary-500 mb-5 border-b border-sop-primary-500 pb-2">
         {heading}
       </h2>
-      <div className="flex gap-1 overflow-x-auto lg:grid md:grid-cols-5 md:gap-4 lg:px-0 px-4">
-        {products.map((product) => (
-          <div key={product.id} className="shrink-0 md:w-auto flex">
-            <HomeSectionProductCard product={product} />
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-center items-center mt-6">
-        <Link href={viewAllHref}>
-          <Button variant="secondary">
-            <div className="px-4 flex items-center gap-2 py-2 md:py-0">
-              <p className="text-center">ดูทั้งหมด</p>
-              <RightArrowLineIcon size={{ mobile: 11, desktop: 11 }} color="#FF6F61" />
+      {layout === 'grid' ? (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 lg:px-0 px-4">
+          {displayProducts.map((product) => (
+            <HomeSectionProductCard key={product.id} product={product} compact />
+          ))}
+        </div>
+      ) : (
+        <div className="flex gap-1 overflow-x-auto lg:grid md:grid-cols-5 md:gap-4 lg:px-0 px-4">
+          {displayProducts.map((product) => (
+            <div key={product.id} className="shrink-0 md:w-auto flex">
+              <HomeSectionProductCard product={product} />
             </div>
-          </Button>
-        </Link>
-      </div>
+          ))}
+        </div>
+      )}
+      {!storeId && (
+        <div className="flex justify-center items-center mt-6">
+          <Link href={viewAllHref}>
+            <Button variant="secondary">
+              <div className="px-4 flex items-center gap-2 py-2 md:py-0">
+                <p className="text-center">ดูทั้งหมด</p>
+                <RightArrowLineIcon size={{ mobile: 11, desktop: 11 }} color="#FF6F61" />
+              </div>
+            </Button>
+          </Link>
+        </div>
+      )}
     </section>
   );
 }

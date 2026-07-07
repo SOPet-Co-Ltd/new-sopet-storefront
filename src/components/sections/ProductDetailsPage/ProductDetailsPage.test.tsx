@@ -30,6 +30,7 @@ const SAMPLE_PRODUCT_DETAIL = {
   category: 'dog-food',
   tags: ['dog', 'food'],
   warning: null,
+  expiryDate: null,
   store: {
     __typename: 'StoreType' as const,
     id: STORE_ID,
@@ -82,23 +83,35 @@ const SAMPLE_PRODUCT_REVIEW = {
   images: [{ id: 'img-r1', url: 'https://example.com/review.jpg' }],
 };
 
-const SAMPLE_STORE_REVIEW_SUMMARY = {
-  averageRating: 4.6,
-  totalCount: 24,
-  productBreakdown: [
-    {
-      productId: PRODUCT_ID,
-      productName: 'Premium Dog Food 5kg',
-      averageRating: 4.5,
-      reviewCount: 12,
-    },
-  ],
+const SAMPLE_STORE_PRODUCT = {
+  __typename: 'ProductType' as const,
+  id: 'prod-002',
+  name: 'Dog Treats',
+  slug: 'dog-treats',
+  storeId: STORE_ID,
+  basePrice: 120,
+  compareAtPrice: null,
+  thumbnailUrl: 'https://example.com/treats.jpg',
+  averageRating: 4.2,
+  reviewCount: 3,
+  soldCount: 10,
+  store: {
+    __typename: 'StoreType' as const,
+    id: STORE_ID,
+    name: 'SOPet Pet Shop',
+    slug: 'sopet-pet-shop',
+  },
 };
 
 const notFound = vi.fn();
 
 vi.mock('next/navigation', () => ({
   notFound: () => notFound(),
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => `/product/${PRODUCT_ID}`,
 }));
 
 vi.mock('next/image', () => ({
@@ -161,7 +174,31 @@ function mockProductQueries({
     }),
     graphql.query('StoreReviewSummary', ({ variables }) => {
       expect(variables).toEqual({ storeId: STORE_ID });
-      return HttpResponse.json({ data: { storeReviewSummary: SAMPLE_STORE_REVIEW_SUMMARY } });
+      return HttpResponse.json({
+        data: {
+          storeReviewSummary: {
+            averageRating: 4.6,
+            totalCount: 24,
+            productBreakdown: [],
+          },
+        },
+      });
+    }),
+    graphql.query('Products', ({ variables }) => {
+      expect(variables.storeId).toBe(STORE_ID);
+      return HttpResponse.json({
+        data: {
+          products: {
+            items: [SAMPLE_STORE_PRODUCT],
+            pagination: {
+              page: 1,
+              limit: 10,
+              total: 1,
+              totalPages: 1,
+            },
+          },
+        },
+      });
     }),
   );
 }
@@ -184,6 +221,8 @@ describe('ProductDetailsPage', () => {
     expect(screen.getByTestId('product-variant-selection')).toBeInTheDocument();
     expect(screen.getByTestId('product-seller')).toBeInTheDocument();
     expect(screen.getByText('SOPet Pet Shop')).toBeInTheDocument();
+    expect(screen.getByText('รายละเอียดสินค้า')).toBeInTheDocument();
+    expect(screen.getByText('High quality dog food for all breeds.')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByTestId('product-reviews')).toBeInTheDocument();
@@ -191,7 +230,7 @@ describe('ProductDetailsPage', () => {
 
     expect(screen.getByText('Test Customer')).toBeInTheDocument();
     expect(screen.getByText('Great product')).toBeInTheDocument();
-    expect(screen.getByTestId('store-review-average')).toHaveTextContent('4.6');
+    expect(screen.getByTestId('store-review-average')).toHaveTextContent('4.5');
   });
 
   it('updates price and stock when variant is changed', async () => {
@@ -203,13 +242,12 @@ describe('ProductDetailsPage', () => {
     });
 
     expect(await screen.findByTestId('variant-price')).toHaveTextContent('฿890');
-    expect(screen.getByTestId('variant-stock')).toHaveTextContent('คงเหลือ 10 ชิ้น');
+    expect(screen.getByTestId('variant-stock')).toHaveTextContent('เหลือสินค้า 10 ชิ้น');
 
-    await user.click(screen.getByRole('button', { name: 'L' }));
+    await user.click(screen.getByRole('radio', { name: 'Size: L' }));
 
     expect(screen.getByTestId('variant-price')).toHaveTextContent('฿990');
-    expect(screen.getByTestId('variant-stock')).toHaveTextContent('คงเหลือ 5 ชิ้น');
-    expect(screen.getByTestId('footer-price')).toHaveTextContent('฿990');
+    expect(screen.getByTestId('variant-stock')).toHaveTextContent('เหลือสินค้า 5 ชิ้น');
   });
 
   it('calls notFound when product is not found', async () => {

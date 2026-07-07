@@ -13,12 +13,16 @@ import {
 import { sampleCart, sampleEmptyCart } from './fixtures/cart';
 import {
   sampleOrder,
-  samplePaidPayment,
   samplePendingPayment,
   samplePromotionValidation,
   sampleSavedAddress,
   sampleShippingOption,
 } from './fixtures/checkout';
+import {
+  sampleDispute,
+  sampleFavorite,
+  samplePaymentMethod,
+} from './fixtures/account';
 
 /**
  * Default MSW handlers for Vitest. Phase-specific handlers are added per test
@@ -208,6 +212,43 @@ export const handlers = [
         order: {
           ...sampleOrder,
           id: variables.id ?? sampleOrder.id,
+        },
+      },
+    });
+  }),
+
+  graphql.query('Orders', () => {
+    return HttpResponse.json({
+      data: { orders: [sampleOrder] },
+    });
+  }),
+
+  graphql.query('Favorites', () => {
+    return HttpResponse.json({
+      data: { favorites: [sampleFavorite] },
+    });
+  }),
+
+  graphql.query('MyDisputes', () => {
+    return HttpResponse.json({
+      data: { myDisputes: [sampleDispute] },
+    });
+  }),
+
+  graphql.query('PaymentMethods', () => {
+    return HttpResponse.json({
+      data: { paymentMethods: [samplePaymentMethod] },
+    });
+  }),
+
+  graphql.mutation('UpdateProfile', () => {
+    return HttpResponse.json({
+      data: {
+        updateProfile: {
+          id: 'cust-1',
+          phone: '0812345678',
+          email: 'user@example.com',
+          fullName: 'สมชาย ใจดี',
         },
       },
     });

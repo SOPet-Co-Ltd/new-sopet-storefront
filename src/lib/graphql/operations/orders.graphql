@@ -36,3 +36,9 @@ query Order($id: String!) {
     ...OrderConfirmationFields
   }
 }
+
+query GuestOrders($guestPhone: String!) {
+  guestOrders(guestPhone: $guestPhone) {
+    ...OrderConfirmationFields
+  }
+}

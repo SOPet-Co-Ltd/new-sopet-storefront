@@ -18,8 +18,8 @@ type HomeSectionProductCardProps = {
 };
 
 export function HomeSectionProductCard({ product, compact = false }: HomeSectionProductCardProps) {
-  const widthClass = compact ? 'w-[168px]' : 'md:w-[223px] w-[168px]';
-  const heightClass = compact ? 'h-[168px]' : 'md:h-[223px] h-[168px]';
+  const widthClass = compact ? 'w-full' : 'md:w-[223px] w-[168px]';
+  const heightClass = compact ? 'aspect-square w-full' : 'md:h-[223px] h-[168px]';
 
   return (
     <Link
@@ -29,7 +29,7 @@ export function HomeSectionProductCard({ product, compact = false }: HomeSection
       className="block shrink-0"
     >
       <div
-        className={`${widthClass} md:max-w-[223px] max-w-[168px] md:rounded-sop-24px rounded-sop-16px overflow-hidden bg-sop-base-white`}
+        className={`${compact ? 'w-full' : widthClass} md:max-w-[223px] max-w-[168px] md:rounded-sop-24px rounded-sop-16px overflow-hidden bg-sop-base-white`}
       >
         <div className={`${widthClass} ${heightClass}`}>
           {product.thumbnailUrl ? (

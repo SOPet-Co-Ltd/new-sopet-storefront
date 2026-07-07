@@ -38,3 +38,15 @@ query StoreReviewSummary($storeId: String!) {
     }
   }
 }
+
+mutation CreateReview($input: CreateReviewInput!) {
+  createReview(input: $input) {
+    id
+    productId
+    rating
+    comment
+    status
+    createdAt
+    customerName
+  }
+}

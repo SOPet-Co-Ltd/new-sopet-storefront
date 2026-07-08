@@ -1,4 +1,3 @@
-export const THAI_PHONE_COUNTRY_CODE = '+66';
 export const THAI_PHONE_SUBSCRIBER_LENGTH = 9;
 
 export function getThaiPhoneSubscriber(value: string | null | undefined): string {
@@ -33,14 +32,25 @@ export function formatThaiPhoneSubscriber(value: string | null | undefined): str
   return `${subscriber.slice(0, 2)}-${subscriber.slice(2, 5)}-${subscriber.slice(5)}`;
 }
 
+/** Normalize to local 0-leading Thai phone format (e.g. 0812345678). */
 export function normalizeThaiPhoneNumber(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
+  const trimmed = phone.trim();
 
-  if (digits.startsWith('66') && digits.length === 11) {
-    return `0${digits.slice(2)}`;
+  if (trimmed.startsWith('+66')) {
+    return `0${trimmed.slice(3).replace(/\D/g, '').slice(0, 9)}`;
   }
 
-  return digits;
+  const digits = trimmed.replace(/\D/g, '');
+
+  if (digits.startsWith('66') && digits.length >= 11) {
+    return `0${digits.slice(2, 11)}`;
+  }
+
+  if (digits.startsWith('0')) {
+    return digits.slice(0, 10);
+  }
+
+  return digits.slice(0, 10);
 }
 
 export function isValidThaiPhoneNumber(phone: string): boolean {
@@ -60,13 +70,7 @@ export function formatThaiPhoneNumber(phone: string): string {
 const THAI_PHONE_DIGIT_LENGTH = 10;
 
 export function sanitizeThaiPhoneInput(raw: string): string {
-  const digits = raw.replace(/\D/g, '');
-
-  if (digits.startsWith('66') && digits.length >= 11) {
-    return `0${digits.slice(2, 11)}`;
-  }
-
-  return digits.slice(0, THAI_PHONE_DIGIT_LENGTH);
+  return normalizeThaiPhoneNumber(raw).slice(0, THAI_PHONE_DIGIT_LENGTH);
 }
 
 export function formatThaiPhoneInputMask(value: string | null | undefined): string {
@@ -83,17 +87,12 @@ export function formatThaiPhoneInputMask(value: string | null | undefined): stri
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
+/** Display phone numbers in local format (081-234-5678). */
 export function formatThaiPhoneNumberForDisplay(value: string | null | undefined): string {
   const trimmed = String(value ?? '').trim();
 
   if (!trimmed) {
     return '';
-  }
-
-  const normalized = normalizeThaiPhoneNumber(trimmed);
-
-  if (normalized.length === 10) {
-    return `${THAI_PHONE_COUNTRY_CODE} ${formatThaiPhoneSubscriber(normalized)}`;
   }
 
   return formatThaiPhoneNumber(trimmed);

@@ -12,7 +12,7 @@ type Step = 'phone' | 'otp';
 
 export default function ChangePhonePage() {
   const router = useRouter();
-  const { customer, sendOtp, verifyOtp } = useAuth();
+  const { customer, sendOtp, changeCustomerPhone } = useAuth();
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -50,7 +50,7 @@ export default function ChangePhonePage() {
     try {
       setLoading(true);
       setError(null);
-      await verifyOtp(phone, otp.trim());
+      await changeCustomerPhone(phone, otp.trim());
       router.push('/user/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'รหัส OTP ไม่ถูกต้อง');

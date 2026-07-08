@@ -16,6 +16,7 @@ import {
   ReactivateAccountDocument,
   SendCustomerOtpDocument,
   VerifyCustomerOtpDocument,
+  ChangeCustomerPhoneDocument,
   type CustomerAuthPayload,
   type CustomerProfile,
   type MessagePayload,
@@ -35,6 +36,7 @@ export type AuthContextValue = {
   pendingDeletion: boolean;
   sendOtp: (phone: string) => Promise<MessagePayload>;
   verifyOtp: (phone: string, code: string) => Promise<CustomerAuthPayload>;
+  changeCustomerPhone: (phone: string, code: string) => Promise<CustomerAuthPayload>;
   reactivateAccount: (token: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -62,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [sendOtpMutation] = useMutation(SendCustomerOtpDocument);
   const [verifyOtpMutation] = useMutation(VerifyCustomerOtpDocument);
+  const [changeCustomerPhoneMutation] = useMutation(ChangeCustomerPhoneDocument);
   const [reactivateAccountMutation] = useMutation(ReactivateAccountDocument);
 
   const customer = data?.me?.customer ?? null;
@@ -135,6 +138,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [verifyOtpMutation, refetch],
   );
 
+  const changeCustomerPhone = useCallback(
+    async (phone: string, code: string): Promise<CustomerAuthPayload> => {
+      const result = await changeCustomerPhoneMutation({
+        variables: { input: { phone, code } },
+      });
+
+      const payload = result.data?.changeCustomerPhone;
+      if (!payload?.tokens) {
+        throw new Error('ไม่สามารถเปลี่ยนเบอร์โทรศัพท์ได้ กรุณาลองใหม่อีกครั้ง');
+      }
+
+      setTokens(payload.tokens.accessToken, payload.tokens.refreshToken);
+      setHasToken(true);
+      setPendingDeletion(false);
+      await refetch();
+
+      return payload;
+    },
+    [changeCustomerPhoneMutation, refetch],
+  );
+
   const reactivateAccount = useCallback(
     async (token: string): Promise<void> => {
       const result = await reactivateAccountMutation({
@@ -162,6 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       pendingDeletion,
       sendOtp,
       verifyOtp,
+      changeCustomerPhone,
       reactivateAccount,
       logout,
     }),
@@ -172,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       pendingDeletion,
       sendOtp,
       verifyOtp,
+      changeCustomerPhone,
       reactivateAccount,
       logout,
     ],

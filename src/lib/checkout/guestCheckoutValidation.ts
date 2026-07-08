@@ -81,14 +81,8 @@ export function getCustomerContactPrefill(
   };
 }
 
-function toE164ThaiPhone(phone: string): string {
-  const normalized = normalizeThaiPhoneNumber(phone);
-
-  if (normalized.startsWith('0')) {
-    return `+66${normalized.slice(1)}`;
-  }
-
-  return phone;
+function toLocalThaiPhone(phone: string): string {
+  return normalizeThaiPhoneNumber(phone);
 }
 
 function validatePhoneField(
@@ -220,7 +214,7 @@ export function mapGuestFormToCreateAddressInput(
   return {
     label: DEFAULT_CHECKOUT_ADDRESS_LABEL,
     recipientName: formState.recipientFullName.trim(),
-    recipientPhone: toE164ThaiPhone(formState.recipientPhone),
+    recipientPhone: toLocalThaiPhone(formState.recipientPhone),
     addressLine1: formState.address.trim(),
     addressLine2: formState.addressLine2?.trim() || undefined,
     tumbon: formState.subDistrict?.trim() || undefined,
@@ -234,7 +228,7 @@ export function mapGuestFormToCreateAddressInput(
 function mapShippingAddress(formState: GuestCheckoutFormState): ShippingAddressInput {
   return {
     recipientName: formState.recipientFullName.trim(),
-    recipientPhone: toE164ThaiPhone(formState.recipientPhone),
+    recipientPhone: toLocalThaiPhone(formState.recipientPhone),
     addressLine1: formState.address.trim(),
     addressLine2: formState.addressLine2?.trim() || undefined,
     tumbon: formState.subDistrict?.trim() || '',

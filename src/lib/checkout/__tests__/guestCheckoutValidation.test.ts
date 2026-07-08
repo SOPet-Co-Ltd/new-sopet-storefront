@@ -107,7 +107,7 @@ describe('toCreateOrderInput', () => {
       paymentMethod: 'promptpay',
       shippingAddress: {
         recipientName: 'Somchai',
-        recipientPhone: '+66812345678',
+        recipientPhone: '0812345678',
         addressLine1: '123 Sukhumvit',
         tumbon: 'Khlong Toei Nuea',
         amphoe: 'Khlong Toei',

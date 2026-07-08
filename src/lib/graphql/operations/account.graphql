@@ -1,3 +1,19 @@
 mutation RequestAccountDeletion {
   requestAccountDeletion
 }
+
+mutation ChangeCustomerPhone($input: ChangeCustomerPhoneInput!) {
+  changeCustomerPhone(input: $input) {
+    customer {
+      id
+      phone
+      email
+      fullName
+    }
+    pendingDeletion
+    tokens {
+      accessToken
+      refreshToken
+    }
+  }
+}

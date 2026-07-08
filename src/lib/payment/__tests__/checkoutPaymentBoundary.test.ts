@@ -13,6 +13,7 @@ vi.mock('@/lib/payment/omise', () => ({
 }));
 
 vi.mock('@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge', () => ({
+  prepareCardPayment: vi.fn(),
   prepareCardPaymentToken: vi.fn(),
 }));
 
@@ -43,6 +44,7 @@ function createSubmitParams(
       },
       selectedAddressId: null,
       promotionCode: null,
+      storePromotionCodes: [],
       paymentMethod,
     },
     cart: sampleCart,
@@ -65,8 +67,23 @@ describe('submitCheckout payment method boundaries', () => {
 
     expect(params.checkoutHook.createPayment).toHaveBeenCalledWith(
       expect.objectContaining({
-        paymentMethod: 'card',
+        paymentMethod: 'credit_card',
         omiseToken: 'tokn_test_123',
+      }),
+    );
+    expect(tokenizeCard).not.toHaveBeenCalled();
+  });
+
+  it('includes savedPaymentMethodId for saved card payments when provided', async () => {
+    const params = createSubmitParams('card');
+    params.savedPaymentMethodId = 'saved-card-1';
+
+    await submitCheckout(params);
+
+    expect(params.checkoutHook.createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentMethod: 'credit_card',
+        savedPaymentMethodId: 'saved-card-1',
       }),
     );
     expect(tokenizeCard).not.toHaveBeenCalled();

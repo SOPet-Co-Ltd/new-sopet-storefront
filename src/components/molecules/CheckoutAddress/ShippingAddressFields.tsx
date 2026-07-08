@@ -44,23 +44,22 @@ export function ShippingAddressFields({
       {showHeading ? (
         <h3
           id="checkout-shipping-heading"
-          className="mb-sop-12px sop-body-sm-medium text-sop-neutral-gray-300"
+          className="mb-sop-12px sop-body-xs-medium text-sop-neutral-gray-200 lg:sop-body-sm-medium"
         >
           การจัดส่ง
         </h3>
       ) : null}
 
-      <div className="grid gap-sop-12px md:grid-cols-2">
+      <div className="flex flex-col gap-sop-12px">
         <Input
           title="ที่อยู่"
           hasTitle
           isRequired
-          placeholder="บ้านเลขที่ ถนน"
+          placeholder="บ้านเลขที่/ซอย/หมู่/ถนน"
           value={values.address}
           onChange={(event) => onChange('address', event.target.value)}
           state={addressError ? 'error' : 'default'}
           description={addressError}
-          className="md:col-span-2"
           data-testid="shipping-address-line1"
         />
 
@@ -78,30 +77,27 @@ export function ShippingAddressFields({
         />
 
         <Input
-          title="ชื่อ-นามสกุล (ผู้รับสินค้า)"
+          title="ชื่อ / นามสกุล (ผู้รับสินค้า)"
           hasTitle
           isRequired
-          placeholder="กรอกชื่อผู้รับสินค้า"
+          placeholder="ชื่อ / นามสกุล (ผู้รับสินค้า)"
           value={values.recipientFullName}
           onChange={(event) => onChange('recipientFullName', event.target.value)}
           state={recipientNameError ? 'error' : 'default'}
           description={recipientNameError}
-          className="md:col-span-2"
           data-testid="shipping-recipient-name"
         />
 
-        <div className="md:col-span-2">
-          <ThaiPhoneInput
-            title="เบอร์โทรศัพท์ (ผู้รับสินค้า)"
-            hasTitle
-            isRequired
-            value={values.recipientPhone}
-            onValueChange={(value) => onChange('recipientPhone', value)}
-            state={recipientPhoneError ? 'error' : 'default'}
-            description={recipientPhoneError}
-            data-testid="recipient-phone-field"
-          />
-        </div>
+        <ThaiPhoneInput
+          title="เบอร์โทรศัพท์ (ผู้รับสินค้า)"
+          hasTitle
+          isRequired
+          value={values.recipientPhone}
+          onValueChange={(value) => onChange('recipientPhone', value)}
+          state={recipientPhoneError ? 'error' : 'default'}
+          description={recipientPhoneError}
+          data-testid="recipient-phone-field"
+        />
       </div>
     </section>
   );

@@ -20,11 +20,18 @@ export const EMPTY_CHECKOUT_CARD_FORM: CheckoutCardFormState = {
   cvv: '',
 };
 
+export type CardPaymentPayload =
+  | { type: 'token'; omiseToken: string }
+  | { type: 'saved'; savedPaymentMethodId: string };
+
 type CheckoutCardPaymentBridge = {
   getCardForm: () => CheckoutCardFormState;
   validateCardForm: () => boolean;
   tokenizeCardForCheckout: () => Promise<string>;
   clearCardForm: () => void;
+  getSavedPaymentMethodId: () => string | null;
+  shouldUseSavedCard: () => boolean;
+  getSaveCardForNextTime: () => boolean;
 };
 
 let bridge: CheckoutCardPaymentBridge | null = null;
@@ -73,9 +80,18 @@ export function validateCheckoutCardForm(form: CheckoutCardFormState): string | 
   return null;
 }
 
-export async function prepareCardPaymentToken(): Promise<string> {
+export async function prepareCardPayment(): Promise<CardPaymentPayload> {
   if (!bridge) {
     throw new Error('กรุณากรอกข้อมูลบัตรเครดิตให้ครบ');
+  }
+
+  if (bridge.shouldUseSavedCard()) {
+    const savedPaymentMethodId = bridge.getSavedPaymentMethodId();
+    if (!savedPaymentMethodId) {
+      throw new Error('กรุณาเลือกบัตรที่บันทึกไว้');
+    }
+
+    return { type: 'saved', savedPaymentMethodId };
   }
 
   const form = bridge.getCardForm();
@@ -85,9 +101,9 @@ export async function prepareCardPaymentToken(): Promise<string> {
   }
 
   try {
-    const token = await bridge.tokenizeCardForCheckout();
+    const omiseToken = await bridge.tokenizeCardForCheckout();
     bridge.clearCardForm();
-    return token;
+    return { type: 'token', omiseToken };
   } catch (error) {
     if (error instanceof OmiseConfigurationError) {
       throw error;
@@ -99,13 +115,28 @@ export async function prepareCardPaymentToken(): Promise<string> {
   }
 }
 
+export async function prepareCardPaymentToken(): Promise<string> {
+  const payload = await prepareCardPayment();
+  if (payload.type !== 'token') {
+    throw new Error('กรุณากรอกข้อมูลบัตรเครดิตให้ครบ');
+  }
+
+  return payload.omiseToken;
+}
+
 export function createCheckoutCardPaymentBridge(handlers: {
   getCardForm: () => CheckoutCardFormState;
   clearCardForm: () => void;
+  getSavedPaymentMethodId: () => string | null;
+  shouldUseSavedCard: () => boolean;
+  getSaveCardForNextTime: () => boolean;
 }): CheckoutCardPaymentBridge {
   return {
     getCardForm: handlers.getCardForm,
     clearCardForm: handlers.clearCardForm,
+    getSavedPaymentMethodId: handlers.getSavedPaymentMethodId,
+    shouldUseSavedCard: handlers.shouldUseSavedCard,
+    getSaveCardForNextTime: handlers.getSaveCardForNextTime,
     validateCardForm: () => validateCheckoutCardForm(handlers.getCardForm()) === null,
     tokenizeCardForCheckout: async () => tokenizeCard(buildTokenizeInput(handlers.getCardForm())),
   };

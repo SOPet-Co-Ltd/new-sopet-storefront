@@ -57,6 +57,32 @@ export function formatThaiPhoneNumber(phone: string): string {
   return `${normalized.slice(0, 3)}-${normalized.slice(3, 6)}-${normalized.slice(6)}`;
 }
 
+const THAI_PHONE_DIGIT_LENGTH = 10;
+
+export function sanitizeThaiPhoneInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+
+  if (digits.startsWith('66') && digits.length >= 11) {
+    return `0${digits.slice(2, 11)}`;
+  }
+
+  return digits.slice(0, THAI_PHONE_DIGIT_LENGTH);
+}
+
+export function formatThaiPhoneInputMask(value: string | null | undefined): string {
+  const digits = sanitizeThaiPhoneInput(String(value ?? ''));
+
+  if (digits.length <= 3) {
+    return digits;
+  }
+
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  }
+
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 export function formatThaiPhoneNumberForDisplay(value: string | null | undefined): string {
   const trimmed = String(value ?? '').trim();
 

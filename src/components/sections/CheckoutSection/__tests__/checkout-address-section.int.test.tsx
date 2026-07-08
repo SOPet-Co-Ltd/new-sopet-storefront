@@ -1,91 +1,340 @@
-// Checkout Address Section integration Test - Design Doc: checkout-address-section-design.md
-// Generated: 2026-07-08 | Budget Used: 3/3 integration, 0/3 fixture-e2e, 0/2 service-e2e
-//
-// Setup notes (implementer):
-// - Render with CheckoutProvider + ApolloProvider (getApolloClient) + MSW server.use overrides
-// - Mock useAuth via vi.mock('@/lib/hooks/useAuth') — toggle isAuthenticated per scenario
-// - MSW: override graphql.query('Addresses') for empty [], single, or multi-address fixtures
-// - Preload Thai address dataset mock if useThaiAddressDataset async gate blocks interactions
-// - Use sampleSavedAddress / additional address fixtures from @/test/mocks/fixtures/checkout
-// - Mock boundary: GraphQL I/O only (Addresses, CreateAddress, UpdateAddress, DeleteAddress, SetDefaultAddress)
-// - Do NOT mock CheckoutAddressSection internals, guestCheckoutValidation, or CheckoutProvider
-//
-// ---------------------------------------------------------------------------
-// Test 1 — Display mode resolution across auth and address query states
-// ---------------------------------------------------------------------------
-//
-// AC1: "When the shopper is unauthenticated, the system shall render การติดต่อ and การจัดส่ง sections under ที่อยู่จัดส่ง" (AC-001)
-// AC2: "When the shopper is authenticated and the addresses query returns an empty array, the system shall render inline การจัดส่ง with save checkbox and shall not render การติดต่อ" (AC-002)
-// AC3: "When the shopper is authenticated and at least one saved address exists, the system shall render the summary card with เปลี่ยน and shall not render the inline full form by default" (AC-003)
-// AC14: "While addresses are loading for authenticated users, the system shall show address-loading skeleton without interactive fields" (AC-038)
-//
-// ROI: 90 (BV:9 × Freq:9 + Legal:0 + Defect:9)
-// Behavior: Vary isAuthenticated + MSW Addresses response → CheckoutAddressSection renders exactly one display mode with correct child sections
-// @category: integration
-// @lane: integration
-// @dependency: CheckoutAddressSection, CheckoutProvider, useAuth (mock), useAddresses (MSW Addresses query)
-// @complexity: medium
-// Primary failure mode: section renders the wrong mode (e.g., guest sees summary card, auth-empty shows contact section, or loading skeleton replaced by interactive fields mid-flight)
-// Proof obligation: traverse four mode boundaries — (a) guest: assert checkout-address-mode-guest, checkout-contact-section + checkout-shipping-section visible, address-summary absent; (b) auth-inline: assert checkout-address-mode-auth-inline, checkout-shipping-section + save-address-checkbox visible, checkout-contact-section absent; (c) auth-summary: assert checkout-address-mode-auth-summary, address-summary + address-change-button visible, inline shipping fields absent; (d) auth-loading: delay Addresses handler, assert address-loading present and no mode-guest/auth-inline/auth-summary content until settled
-// Verification points / expected results / pass criteria:
-// - Exactly one mode probe testid matches resolveDisplayMode() output per scenario
-// - Guest: contact-phone-field and thai-dropdown-province present; address-summary absent
-// - Auth-inline: save-address-checkbox present; checkout-contact-section absent
-// - Auth-summary: address-summary present; address-list testid absent (deprecated)
-// - Auth-loading: address-loading skeleton visible; no address-change-button or shipping inputs interactable
-//
-// ---------------------------------------------------------------------------
-// Test 2 — Inline field validation on failed submit (guest shipping + contact)
-// ---------------------------------------------------------------------------
-//
-// AC5: "When the guest enters an invalid contact phone and submits, the system shall show กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง on contact-phone-field" (AC-006, AC-041)
-// AC9: "When the shopper submits with empty sub-district, the system shall block submit and show กรุณาเลือกตำบลของคุณ on the sub-district dropdown" (AC-021)
-// AC (inline errors): AC-040 — field-level errors adjacent to invalid inputs after submit attempt
-//
-// ROI: 89 (BV:10 × Freq:8 + Legal:0 + Defect:9)
-// Behavior: Guest mode with invalid contactPhone + empty subDistrict → trigger checkout submit validation → inline Thai errors appear on mapped testids; editing a field clears its error
-// @category: core-functionality
-// @lane: integration
-// @dependency: CheckoutAddressSection, useCheckoutSubmit (or validation wiring), guestCheckoutValidation, fieldErrors/showFieldErrors props
-// @complexity: medium
-// Primary failure mode: submit shows toast-only feedback without inline errors, or errors bind to wrong testids/keys (guestPhone vs contactPhone, subDistrict missing from GuestCheckoutField)
-// Proof obligation: arrange guest form with contactPhone='12345' and subDistrict=''; act on place-order/submit path that invokes validateGuestCheckoutForm and sets fieldErrors + showFieldErrors=true; assert contact-phone-field description/error contains กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง and thai-dropdown-subdistrict shows กรุณาเลือกตำบลของคุณ; act again by correcting contactPhone — assert guestPhone error clears on contact-phone-field while subDistrict error persists until sub-district selected
-// Verification points / expected results / pass criteria:
-// - Submit does not proceed to createOrder while validation fails
-// - contact-phone-field shows Thai invalid-format message (not missing-phone message)
-// - thai-dropdown-subdistrict shows SUB_DISTRICT_REQUIRED_MESSAGE
-// - showFieldErrors gates visibility — no error descriptions before submit attempt
-// - Field edit clears only the edited field's error key (AC-040 partial-clear contract)
-//
-// ---------------------------------------------------------------------------
-// Test 3 — Address management modal selection confirm updates checkout context
-// ---------------------------------------------------------------------------
-//
-// AC10: "When the shopper opens the address modal, the system shall list addresses with default first and disable ยืนยัน until a row is selected" (AC-028, AC-029)
-// AC (confirm): AC-034 — ยืนยัน sets selectedAddressId and closes modal
-// AC4: "When saved addresses load, the system shall set selectedAddressId to the default address or the first address" (AC-004) — baseline before modal change
-//
-// ROI: 76 (BV:9 × Freq:7 + Legal:0 + Defect:8)
-// Behavior: Auth-summary with ≥2 saved addresses → click เปลี่ยน → modal list → ยืนยัน disabled until row selected → confirm → CheckoutProvider.selectedAddressId updates and modal closes
-// @category: integration
-// @lane: integration
-// @dependency: CheckoutAddressSection, SavedAddressSummaryCard, AddressManagementModal, CheckoutProvider, useAddresses (MSW)
-// @complexity: high
-// Primary failure mode: ยืนยัน enabled without pending selection, setAddress not called on confirm, or modal stays open after successful confirm
-// Proof obligation: MSW returns two addresses (one isDefault, one not); render auth-summary; assert initial selectedAddressId matches default; open address-change-button → address-modal visible with address-option-{id} rows sorted default-first; assert address-confirm-button disabled; click non-default address-option-{id} → confirm enabled; click address-confirm-button → modal unmounted/hidden, selectedAddressId equals chosen id, summary card reflects new selection
-// Verification points / expected results / pass criteria:
-// - address-modal and address-modal-title (ข้อมูลการจัดส่ง) visible after เปลี่ยน click
-// - address-confirm-button disabled when no address-option row selected
-// - Default address row shows default-address-badge and appears first in list
-// - After confirm: address-modal absent, address-summary reflects selected address name/line
-// - CheckoutProvider probe confirms selectedAddressId changed from default to pending selection
-//
-// ---------------------------------------------------------------------------
-// Deferred candidates (below integration budget — implement if budget expanded)
-// ---------------------------------------------------------------------------
-//
-// - Auth-inline submit: createAddress before createOrder with isDefault from checkbox (AC-037) — ROI 76
-// - Delete selected address fallback to new default/first (AC-035) — ROI 49
-// - Province change clears district, subDistrict, postalCode (AC-015) — ROI 64
-// - Auth-error mode shows address-error + blocks submit until retry succeeds — ROI 39
-// - Thai cascade auto-fills disabled postalCode on sub-district select (AC-018) — ROI 58
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
+import { ApolloProvider } from '@apollo/client/react';
+import { graphql, HttpResponse, delay } from 'msw';
+import { CheckoutAddressSection } from '@/components/sections/CheckoutSection/CheckoutAddressSection';
+import { CheckoutProvider } from '@/lib/providers/CheckoutProvider';
+import { getApolloClient } from '@/lib/graphql/client';
+import { preloadThaiAddressDataset } from '@/lib/thai-address';
+import {
+  SUB_DISTRICT_REQUIRED_MESSAGE,
+  type GuestCheckoutFormState,
+} from '@/lib/checkout/guestCheckoutValidation';
+import {
+  sampleSavedAddress,
+  sampleSavedAddress2,
+} from '@/test/mocks/fixtures/checkout';
+import { server } from '@/test/mocks/server';
+
+vi.mock('@/lib/hooks/useAuth', () => ({
+  useAuth: vi.fn(),
+}));
+
+import { useAuth } from '@/lib/hooks/useAuth';
+
+const mockedUseAuth = vi.mocked(useAuth);
+
+const EMPTY_GUEST_FORM: GuestCheckoutFormState = {
+  contactPhone: '',
+  recipientFullName: '',
+  recipientPhone: '',
+  address: '',
+  district: '',
+  subDistrict: '',
+  province: '',
+  postalCode: '',
+  email: '',
+};
+
+function renderCheckoutAddressSection({
+  guestForm = EMPTY_GUEST_FORM,
+  onGuestFormChange = vi.fn(),
+  fieldErrors,
+  showFieldErrors = false,
+  saveAddressChecked = false,
+  onSaveAddressPreferenceChange = vi.fn(),
+}: {
+  guestForm?: GuestCheckoutFormState;
+  onGuestFormChange?: (field: keyof GuestCheckoutFormState, value: string) => void;
+  fieldErrors?: Partial<Record<string, string>>;
+  showFieldErrors?: boolean;
+  saveAddressChecked?: boolean;
+  onSaveAddressPreferenceChange?: (checked: boolean) => void;
+} = {}) {
+  const client = getApolloClient();
+
+  return render(
+    <ApolloProvider client={client}>
+      <CheckoutProvider>
+        <CheckoutAddressSection
+          guestForm={guestForm}
+          onGuestFormChange={onGuestFormChange}
+          fieldErrors={fieldErrors}
+          showFieldErrors={showFieldErrors}
+          saveAddressChecked={saveAddressChecked}
+          onSaveAddressPreferenceChange={onSaveAddressPreferenceChange}
+        />
+      </CheckoutProvider>
+    </ApolloProvider>,
+  );
+}
+
+describe('CheckoutAddressSection integration', () => {
+  beforeEach(async () => {
+    await getApolloClient().clearStore();
+    await preloadThaiAddressDataset();
+    mockedUseAuth.mockReturnValue({
+      customer: null,
+      isAuthenticated: false,
+      isLoading: false,
+      pendingDeletion: false,
+      sendOtp: vi.fn(),
+      verifyOtp: vi.fn(),
+      reactivateAccount: vi.fn(),
+      logout: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('Test 1 — display mode resolution', () => {
+    it('renders guest mode with contact and shipping sections', async () => {
+      renderCheckoutAddressSection();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId('checkout-contact-section')).toBeInTheDocument();
+      expect(screen.getByTestId('checkout-shipping-section')).toBeInTheDocument();
+      expect(screen.getByTestId('contact-phone-field')).toBeInTheDocument();
+      expect(screen.queryByTestId('address-summary')).not.toBeInTheDocument();
+    });
+
+    it('renders auth-inline mode with contact, shipping, and save checkbox', async () => {
+      const onGuestFormChange = vi.fn();
+
+      mockedUseAuth.mockReturnValue({
+        customer: {
+          id: 'cust-1',
+          phone: '0812345678',
+          email: 'user@example.com',
+        } as never,
+        isAuthenticated: true,
+        isLoading: false,
+        pendingDeletion: false,
+        sendOtp: vi.fn(),
+        verifyOtp: vi.fn(),
+        reactivateAccount: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      renderCheckoutAddressSection({ onGuestFormChange });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-auth-inline')).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId('checkout-contact-section')).toBeInTheDocument();
+      expect(screen.getByTestId('checkout-shipping-section')).toBeInTheDocument();
+      expect(screen.getByTestId('save-address-checkbox')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(onGuestFormChange).toHaveBeenCalledWith('contactPhone', '0812345678');
+        expect(onGuestFormChange).toHaveBeenCalledWith('recipientPhone', '0812345678');
+        expect(onGuestFormChange).toHaveBeenCalledWith('email', 'user@example.com');
+      });
+    });
+
+    it('renders auth-summary mode with summary card', async () => {
+      mockedUseAuth.mockReturnValue({
+        customer: { id: 'cust-1' } as never,
+        isAuthenticated: true,
+        isLoading: false,
+        pendingDeletion: false,
+        sendOtp: vi.fn(),
+        verifyOtp: vi.fn(),
+        reactivateAccount: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      server.use(
+        graphql.query('Addresses', () =>
+          HttpResponse.json({ data: { addresses: [sampleSavedAddress] } }),
+        ),
+      );
+
+      renderCheckoutAddressSection();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-auth-summary')).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId('address-summary')).toBeInTheDocument();
+      expect(screen.getByTestId('address-change-button')).toBeInTheDocument();
+      expect(screen.queryByTestId('address-list')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('shipping-address-line1')).not.toBeInTheDocument();
+    });
+
+    it('renders auth-loading skeleton while addresses query is in flight', async () => {
+      mockedUseAuth.mockReturnValue({
+        customer: { id: 'cust-1' } as never,
+        isAuthenticated: true,
+        isLoading: false,
+        pendingDeletion: false,
+        sendOtp: vi.fn(),
+        verifyOtp: vi.fn(),
+        reactivateAccount: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      server.use(
+        graphql.query('Addresses', async () => {
+          await delay(200);
+          return HttpResponse.json({ data: { addresses: [sampleSavedAddress] } });
+        }),
+      );
+
+      renderCheckoutAddressSection();
+
+      expect(screen.getByTestId('address-loading')).toBeInTheDocument();
+      expect(screen.queryByTestId('address-change-button')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('contact phone sync', () => {
+    function renderStatefulCheckoutAddressSection() {
+      function StatefulSection() {
+        const [guestForm, setGuestForm] = useState(EMPTY_GUEST_FORM);
+
+        return (
+          <CheckoutAddressSection
+            guestForm={guestForm}
+            onGuestFormChange={(field, value) => {
+              setGuestForm((current) => ({ ...current, [field]: value }));
+            }}
+          />
+        );
+      }
+
+      const client = getApolloClient();
+
+      return render(
+        <ApolloProvider client={client}>
+          <CheckoutProvider>
+            <StatefulSection />
+          </CheckoutProvider>
+        </ApolloProvider>,
+      );
+    }
+
+    it('auto-fills recipient phone while typing contact phone', async () => {
+      const user = userEvent.setup();
+      renderStatefulCheckoutAddressSection();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      const contactPhoneField = screen.getByTestId('contact-phone-field');
+      const recipientPhoneField = screen.getByTestId('recipient-phone-field');
+
+      await user.type(contactPhoneField, '0812345678');
+
+      expect(recipientPhoneField).toHaveValue('081-234-5678');
+    });
+
+    it('stops syncing recipient phone after recipient phone is edited manually', async () => {
+      const user = userEvent.setup();
+      renderStatefulCheckoutAddressSection();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      const contactPhoneField = screen.getByTestId('contact-phone-field');
+      const recipientPhoneField = screen.getByTestId('recipient-phone-field');
+
+      await user.type(contactPhoneField, '0812345678');
+      await user.clear(recipientPhoneField);
+      await user.type(recipientPhoneField, '0899999999');
+      await user.clear(contactPhoneField);
+      await user.type(contactPhoneField, '0822222222');
+
+      expect(recipientPhoneField).toHaveValue('089-999-9999');
+    });
+  });
+
+  describe('Test 2 — inline field validation display', () => {
+    it('shows inline errors for invalid contact phone and empty subDistrict', async () => {
+      renderCheckoutAddressSection({
+        guestForm: {
+          ...EMPTY_GUEST_FORM,
+          contactPhone: '12345',
+        },
+        fieldErrors: {
+          guestPhone: 'กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง',
+          subDistrict: SUB_DISTRICT_REQUIRED_MESSAGE,
+        },
+        showFieldErrors: true,
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง')).toBeInTheDocument();
+
+      const subDistrictField = screen.getByTestId('thai-dropdown-subdistrict');
+      expect(within(subDistrictField).getByText(SUB_DISTRICT_REQUIRED_MESSAGE)).toBeInTheDocument();
+    });
+  });
+
+  describe('Test 3 — address modal selection confirm', () => {
+    it('updates selected address after modal confirm', async () => {
+      const user = userEvent.setup();
+
+      mockedUseAuth.mockReturnValue({
+        customer: { id: 'cust-1' } as never,
+        isAuthenticated: true,
+        isLoading: false,
+        pendingDeletion: false,
+        sendOtp: vi.fn(),
+        verifyOtp: vi.fn(),
+        reactivateAccount: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      server.use(
+        graphql.query('Addresses', () =>
+          HttpResponse.json({
+            data: { addresses: [sampleSavedAddress, sampleSavedAddress2] },
+          }),
+        ),
+      );
+
+      renderCheckoutAddressSection();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('address-summary-name')).toHaveTextContent(
+          sampleSavedAddress.fullName,
+        );
+      });
+
+      await user.click(screen.getByTestId('address-change-button'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('address-modal')).toBeInTheDocument();
+      });
+
+      const confirmButton = screen.getByTestId('address-confirm-button');
+      expect(confirmButton).not.toBeDisabled();
+
+      await user.click(screen.getByTestId(`address-option-${sampleSavedAddress2.id}`));
+
+      await user.click(confirmButton);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('address-modal')).not.toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId('address-summary-name')).toHaveTextContent(
+        sampleSavedAddress2.fullName,
+      );
+    });
+  });
+});

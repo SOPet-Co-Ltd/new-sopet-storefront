@@ -17,6 +17,8 @@ import {
   samplePromotionValidation,
   sampleSavedAddress,
   sampleShippingOption,
+  sampleStorePromotion,
+  samplePlatformPromotion,
 } from './fixtures/checkout';
 import {
   sampleDispute,
@@ -179,6 +181,18 @@ export const handlers = [
   graphql.query('ValidatePromotion', () => {
     return HttpResponse.json({
       data: { validatePromotion: samplePromotionValidation },
+    });
+  }),
+
+  graphql.query('ActiveStorePromotions', () => {
+    return HttpResponse.json({
+      data: { activeStorePromotions: [sampleStorePromotion] },
+    });
+  }),
+
+  graphql.query('ActivePlatformPromotions', () => {
+    return HttpResponse.json({
+      data: { activePlatformPromotions: [samplePlatformPromotion] },
     });
   }),
 

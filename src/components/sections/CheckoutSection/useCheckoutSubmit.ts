@@ -19,8 +19,7 @@ import {
   type GuestCheckoutField,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
-import { prepareCardPaymentToken } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
-import { useGuestCheckoutOtp } from '@/components/organisms/GuestOTPDialog';
+import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
@@ -49,16 +48,12 @@ export function useCheckoutSubmit(
   const { selectedItems: items, selectedSubtotal: subtotal } = useCart();
   const checkoutMutations = useCheckoutMutations();
   const {
-    isPhoneVerified,
-    openDialog,
-    queueSubmit,
-  } = useGuestCheckoutOtp();
-  const {
     step,
     shippingByStoreId,
     selectedAddressId,
     promotionCode,
     paymentMethod,
+    storePromotionsByStoreId,
     canAdvanceToPayment,
     canAdvanceToReview,
     setStep,
@@ -80,7 +75,7 @@ export function useCheckoutSubmit(
     }
   }, [canAdvanceToReview, setStep, step]);
 
-  const isGuestCheckout = Boolean(guestForm?.contactPhone?.trim());
+  const isGuestCheckout = !isAuthenticated;
 
   const checkoutContext = useMemo(
     () => ({
@@ -88,6 +83,9 @@ export function useCheckoutSubmit(
       shippingByStoreId,
       selectedAddressId,
       promotionCode,
+      storePromotionCodes: Object.values(storePromotionsByStoreId)
+        .map((promotion) => promotion?.code?.trim())
+        .filter((code): code is string => Boolean(code)),
       paymentMethod,
     }),
     [
@@ -97,6 +95,7 @@ export function useCheckoutSubmit(
       promotionCode,
       selectedAddressId,
       shippingByStoreId,
+      storePromotionsByStoreId,
     ],
   );
 
@@ -120,8 +119,8 @@ export function useCheckoutSubmit(
   const executeSubmit = useCallback(
     async (overrideAddressId?: string | null) => {
       try {
-        const omiseToken =
-          paymentMethod === 'card' ? await prepareCardPaymentToken() : undefined;
+        const cardPayment =
+          paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
         const result = await submitCheckout(
           {
@@ -134,7 +133,10 @@ export function useCheckoutSubmit(
             guestForm: isGuestCheckout ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
-            omiseToken,
+            omiseToken:
+              cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined,
+            savedPaymentMethodId:
+              cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined,
           },
           submitGuardRef.current,
         );
@@ -234,12 +236,6 @@ export function useCheckoutSubmit(
       }
     }
 
-    if (isGuestCheckout && !isPhoneVerified) {
-      queueSubmit(() => executeSubmit());
-      openDialog();
-      return;
-    }
-
     try {
       await executeSubmit();
     } catch {
@@ -255,9 +251,6 @@ export function useCheckoutSubmit(
     isAuthInlineMode,
     isAuthSummaryMode,
     isGuestCheckout,
-    isPhoneVerified,
-    openDialog,
-    queueSubmit,
     selectedAddressId,
     setAddress,
   ]);
@@ -275,12 +268,14 @@ export async function applyCheckoutPromotionCode({
   subtotal,
   validatePromotion,
   setPromotion,
+  setPromotionName,
   setPromotionDiscount,
 }: {
   code: string;
   subtotal: number;
   validatePromotion: ReturnType<typeof useCheckoutMutations>['validatePromotion'];
   setPromotion: (code: string | null) => void;
+  setPromotionName: (name: string | null) => void;
   setPromotionDiscount: (amount: number) => void;
 }): Promise<void> {
   const validation = await validateCheckoutPromotionCode({
@@ -290,6 +285,7 @@ export async function applyCheckoutPromotionCode({
   });
 
   setPromotion(validation.code);
+  setPromotionName(validation.name);
   setPromotionDiscount(validation.discountAmount);
 }
 

@@ -1,0 +1,25 @@
+fragment StorePromotionFields on PromotionType {
+  id
+  code
+  name
+  description
+  type
+  discountValue
+  minPurchaseAmount
+  maxDiscountAmount
+  expiresAt
+  scope
+  storeId
+}
+
+query ActiveStorePromotions($storeId: String!) {
+  activeStorePromotions(storeId: $storeId) {
+    ...StorePromotionFields
+  }
+}
+
+query ActivePlatformPromotions {
+  activePlatformPromotions {
+    ...StorePromotionFields
+  }
+}

@@ -29,17 +29,16 @@ export function CheckoutContactSection({
     <section
       role="group"
       aria-labelledby="checkout-contact-heading"
-      className="mb-sop-16px"
       data-testid="checkout-contact-section"
     >
       <h3
         id="checkout-contact-heading"
-        className="mb-sop-12px sop-body-sm-medium text-sop-neutral-gray-300"
+        className="mb-sop-12px sop-body-xs-medium text-sop-neutral-gray-200 lg:sop-body-sm-medium"
       >
         การติดต่อ
       </h3>
 
-      <div className="grid gap-sop-12px md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-sop-12px md:grid-cols-2">
         <ThaiPhoneInput
           title="เบอร์โทรศัพท์"
           hasTitle
@@ -51,12 +50,12 @@ export function CheckoutContactSection({
           data-testid="contact-phone-field"
         />
 
-        <div>
+        <div className="min-w-0">
           <Input
-            title="อีเมล (ไม่บังคับ)"
+            title="อีเมล"
             hasTitle
             type="email"
-            placeholder="example@email.com"
+            placeholder="example@mail.com"
             value={email}
             onChange={(event) => onEmailChange(event.target.value)}
             state={emailError ? 'error' : 'default'}

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/atoms/Button';
-import { Input } from '@/components/atoms/Input';
+import { OtpCodeInput } from '@/components/atoms/OtpCodeInput/OtpCodeInput';
 import { SOPetLogo } from '@/components/atoms/icons';
 import { ReactivateAccountModal } from '@/components/molecules/ReactivateAccountModal/ReactivateAccountModal';
 import { formatThaiPhoneNumber } from '@/lib/helpers/phone';
@@ -113,22 +113,29 @@ export function OtpVerifyForm() {
         </p>
 
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4" noValidate>
-          <Input
-            title="รหัส OTP"
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            placeholder="123456"
-            value={code}
-            variant="bordered"
-            maxLength={6}
-            state={error ? 'error' : 'default'}
-            description={error ?? undefined}
-            onChange={(event) => {
-              setError(null);
-              setCode(event.target.value.replace(/\D/g, '').slice(0, 6));
-            }}
-          />
+          <div>
+            <p className="mb-sop-8px sop-body-xs-medium text-sop-neutral-gray-300">รหัส OTP</p>
+            <OtpCodeInput
+              value={code}
+              onChange={(next) => {
+                setError(null);
+                setCode(next);
+              }}
+              error={Boolean(error)}
+              ariaDescribedBy={error ? 'otp-code-error' : undefined}
+              disabled={loading}
+              data-testid="otp-code-input"
+            />
+            {error ? (
+              <p
+                id="otp-code-error"
+                role="alert"
+                className="mt-sop-8px sop-body-xs-regular text-sop-system-error-400"
+              >
+                {error}
+              </p>
+            ) : null}
+          </div>
 
           <Button type="submit" size="lg" fill loading={loading} disabled={loading || !phone}>
             ยืนยัน

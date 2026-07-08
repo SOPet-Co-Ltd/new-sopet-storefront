@@ -3,6 +3,7 @@ import {
   type CreateOrderCheckoutContext,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import { mapCheckoutPaymentMethodForApi } from '@/lib/checkout/checkoutPaymentMethod';
 import {
   PromotionValidationError,
   validateCheckoutPromotionCode,
@@ -32,6 +33,7 @@ export type SubmitCheckoutParams = {
   subtotal: number;
   checkoutHook: Pick<UseCheckoutResult, 'validatePromotion' | 'createOrder' | 'createPayment'>;
   omiseToken?: string | null;
+  savedPaymentMethodId?: string | null;
 };
 
 export type SubmitCheckoutResult = {
@@ -101,16 +103,22 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     throw new SubmitCheckoutError('ไม่สามารถสร้างคำสั่งซื้อได้', 'order_failed');
   }
 
+  const apiPaymentMethod = mapCheckoutPaymentMethodForApi(
+    params.checkoutContext.paymentMethod ?? order.paymentMethod,
+  );
+
   const paymentInput = {
     orderId: order.id,
     amount: order.total,
-    paymentMethod: params.checkoutContext.paymentMethod ?? order.paymentMethod,
+    paymentMethod: apiPaymentMethod,
     currency: 'THB' as const,
-    ...(params.checkoutContext.paymentMethod === 'cod'
+    ...(apiPaymentMethod === 'cod'
       ? {}
-      : params.omiseToken
-        ? { omiseToken: params.omiseToken }
-        : {}),
+      : params.savedPaymentMethodId
+        ? { savedPaymentMethodId: params.savedPaymentMethodId }
+        : params.omiseToken
+          ? { omiseToken: params.omiseToken }
+          : {}),
   };
 
   const payment = await params.checkoutHook.createPayment(paymentInput);

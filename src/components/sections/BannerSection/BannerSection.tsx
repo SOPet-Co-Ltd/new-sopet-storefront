@@ -11,7 +11,7 @@ const isExternalHref = (href: string): boolean => /^https?:\/\//i.test(href);
 function BannerSkeleton() {
   return (
     <div
-      className="w-full aspect-3/1 bg-sop-neutral-gray-600 animate-pulse"
+      className="w-full aspect-3/4 bg-sop-neutral-gray-600 animate-pulse md:aspect-auto md:h-[480px]"
       aria-hidden="true"
     />
   );
@@ -94,7 +94,7 @@ export function BannerSection() {
         onDragStart={preventDragStart}
       >
         <div
-          className={`flex aspect-3/1 transition-transform ease-in-out ${
+          className={`flex aspect-3/4 transition-transform ease-in-out md:aspect-auto md:h-[480px] ${
             isDragging || !isTransitionEnabled ? 'duration-0' : 'duration-500'
           }`}
           style={{
@@ -106,6 +106,8 @@ export function BannerSection() {
             const key = `${banner.id}-${index}`;
             const isFirstVisibleBanner = index === (hasLoop ? 1 : 0);
             const hasMobileImage = Boolean(banner.mobile_image_url);
+            const slideClassName = 'relative h-full w-full shrink-0 grow-0 basis-full overflow-hidden';
+            const imageClassName = 'h-full w-full object-cover object-center';
             const image = (
               <>
                 <Image
@@ -116,7 +118,7 @@ export function BannerSection() {
                   width={1440}
                   height={480}
                   sizes="100vw"
-                  className={`h-full w-full object-cover ${hasMobileImage ? 'hidden md:block' : ''}`}
+                  className={`${imageClassName} ${hasMobileImage ? 'hidden md:block' : ''}`}
                 />
                 {hasMobileImage ? (
                   <Image
@@ -125,9 +127,9 @@ export function BannerSection() {
                     src={banner.mobile_image_url as string}
                     alt={banner.name || 'แบนเนอร์'}
                     width={768}
-                    height={768}
+                    height={1024}
                     sizes="100vw"
-                    className="h-full w-full object-cover md:hidden"
+                    className={`${imageClassName} md:hidden`}
                   />
                 ) : null}
               </>
@@ -137,7 +139,7 @@ export function BannerSection() {
               return (
                 <div
                   key={key}
-                  className="w-full shrink-0 grow-0 basis-full"
+                  className={slideClassName}
                   onClickCapture={preventClickAfterDrag}
                 >
                   {image}
@@ -152,7 +154,7 @@ export function BannerSection() {
                   href={banner.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full shrink-0 grow-0 basis-full"
+                  className={slideClassName}
                   onClickCapture={preventClickAfterDrag}
                 >
                   {image}
@@ -164,7 +166,7 @@ export function BannerSection() {
               <Link
                 href={banner.href}
                 key={key}
-                className="w-full shrink-0 grow-0 basis-full"
+                className={slideClassName}
                 onClickCapture={preventClickAfterDrag}
               >
                 {image}

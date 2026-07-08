@@ -56,6 +56,7 @@ function createSubmitParams(
       },
       selectedAddressId: null,
       promotionCode: null,
+      storePromotionCodes: [],
       paymentMethod: 'promptpay',
     },
     cart: sampleCart,
@@ -117,6 +118,7 @@ describe('submitCheckout', () => {
         },
         selectedAddressId: null,
         promotionCode: 'SAVE10',
+        storePromotionCodes: [],
         paymentMethod: 'promptpay',
       },
       checkoutHook: {
@@ -170,6 +172,7 @@ describe('submitCheckout', () => {
         },
         selectedAddressId: null,
         promotionCode: 'INVALID',
+        storePromotionCodes: [],
         paymentMethod: 'promptpay',
       },
       checkoutHook,
@@ -216,6 +219,7 @@ describe('submitCheckout', () => {
           },
           selectedAddressId: null,
           promotionCode: null,
+          storePromotionCodes: [],
           paymentMethod: 'card',
         },
         omiseToken: 'tokn_test_123',
@@ -226,7 +230,7 @@ describe('submitCheckout', () => {
 
     expect(createPayment).toHaveBeenCalledWith(
       expect.objectContaining({
-        paymentMethod: 'card',
+        paymentMethod: 'credit_card',
         omiseToken: 'tokn_test_123',
       }),
     );
@@ -242,6 +246,7 @@ describe('submitCheckout', () => {
           },
           selectedAddressId: null,
           promotionCode: null,
+          storePromotionCodes: [],
           paymentMethod: 'cod',
         },
         omiseToken: 'tokn_test_123',
@@ -306,6 +311,7 @@ describe('submitCheckout MSW integration', () => {
         },
         selectedAddressId: null,
         promotionCode: 'SAVE10',
+        storePromotionCodes: [],
         paymentMethod: 'promptpay',
       },
       checkoutHook: {

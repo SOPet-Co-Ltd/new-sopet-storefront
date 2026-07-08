@@ -1,13 +1,15 @@
 'use client';
 
 import { Button } from '@/components/atoms/Button';
+import { useCheckoutTotals } from '@/lib/hooks/useCheckoutTotals';
 import { useCheckoutSubmit, type AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
-import { useCart } from '@/lib/providers/CartProvider';
-import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 function formatPrice(amount: number): string {
-  return `฿${amount.toLocaleString('th-TH')}`;
+  return `฿${amount.toLocaleString('th-TH', {
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 type CheckoutMobileBottomBarProps = {
@@ -19,13 +21,10 @@ export function CheckoutMobileBottomBar({
   guestForm,
   addressSubmitContext,
 }: CheckoutMobileBottomBarProps) {
-  const { selectedSubtotal: subtotal } = useCart();
-  const { shippingByStoreId, promotionDiscount } = useCheckout();
+  const totals = useCheckoutTotals();
   const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
     addressSubmitContext,
   });
-  const selectedShippingCount = Object.keys(shippingByStoreId).length;
-  const finalPrice = Math.max(subtotal - promotionDiscount, 0);
 
   return (
     <div className="block md:hidden" data-testid="checkout-mobile-bottom-bar">
@@ -33,7 +32,7 @@ export function CheckoutMobileBottomBar({
         <div className="flex flex-col">
           <label className="sop-body-sm-medium text-sop-neutral-gray-300">ยอดชำระเงิน</label>
           <label className="text-sop-secondary-600" data-testid="checkout-mobile-final-price">
-            {formatPrice(finalPrice)}
+            {formatPrice(totals.finalPrice)}
           </label>
         </div>
         <div className="flex flex-col items-end">
@@ -50,7 +49,7 @@ export function CheckoutMobileBottomBar({
           >
             {isSubmitting ? 'กำลังดำเนินการ...' : 'ชำระเงิน'}
           </Button>
-          {selectedShippingCount === 0 ? (
+          {!totals.isShippingComplete ? (
             <span className="mt-1 sop-body-xs-regular text-sop-neutral-gray-400">
               เลือกการจัดส่งก่อน
             </span>

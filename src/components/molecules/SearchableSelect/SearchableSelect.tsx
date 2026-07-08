@@ -133,9 +133,7 @@ export function SearchableSelect({
           setOpen(true);
           if (showAllOptions) setFilterBySearch(false);
         }}
-        size="sm"
-        variant="bordered"
-        endIcon={<DownArrowIcon size={12} color="#211F23" />}
+        endIcon={<DownArrowIcon size={{ mobile: 12, desktop: 12 }} color="#211F23" />}
         aria-required={isRequired}
       />
 

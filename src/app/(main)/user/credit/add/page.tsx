@@ -48,6 +48,9 @@ export default function AddCreditCardPage() {
       createCheckoutCardPaymentBridge({
         getCardForm: () => cardFormRef.current,
         clearCardForm,
+        getSavedPaymentMethodId: () => null,
+        shouldUseSavedCard: () => false,
+        getSaveCardForNextTime: () => false,
       }),
     );
 

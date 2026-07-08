@@ -78,7 +78,12 @@ export function CartShippingMethodsSection({
               role="radio"
               aria-checked={isSelected}
               data-testid={`shipping-option-${storeId}-${option.id}`}
-              onClick={() => setShipping(storeId, { shippingOptionId: option.id })}
+              onClick={() =>
+                setShipping(storeId, {
+                  shippingOptionId: option.id,
+                  shippingFee: option.price,
+                })
+              }
               className={cn(
                 'flex items-center justify-between rounded-sop-12px border px-sop-16px py-sop-12px text-left transition-colors',
                 isSelected

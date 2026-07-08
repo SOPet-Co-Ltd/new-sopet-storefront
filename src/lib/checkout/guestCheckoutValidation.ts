@@ -4,7 +4,12 @@ import type {
   CreateOrderInput,
   ShippingAddressInput,
 } from '@/lib/graphql/generated/graphql';
-import { isValidThaiPhoneNumber, normalizeThaiPhoneNumber } from '@/lib/helpers/phone';
+import {
+  isValidThaiPhoneNumber,
+  normalizeThaiPhoneNumber,
+  sanitizeThaiPhoneInput,
+} from '@/lib/helpers/phone';
+import { mapCheckoutPaymentMethodForApi } from '@/lib/checkout/checkoutPaymentMethod';
 import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
 
 export type GuestCheckoutFormState = {
@@ -42,6 +47,7 @@ export type CreateOrderCheckoutContext = {
   shippingByStoreId: Record<string, { shippingOptionId: string }>;
   selectedAddressId: string | null;
   promotionCode: string | null;
+  storePromotionCodes: string[];
   paymentMethod: PaymentMethod | null;
 };
 
@@ -56,6 +62,24 @@ export const DEFAULT_CHECKOUT_ADDRESS_LABEL = 'ที่อยู่จัดส
 const PROVINCE_REQUIRED_MESSAGE = 'กรุณาเลือกจังหวัดของคุณ';
 const POSTAL_CODE_REQUIRED_MESSAGE = 'กรุณาเลือกรหัสไปรษณีย์ของคุณ';
 const INVALID_EMAIL_MESSAGE = 'รูปแบบอีเมลไม่ถูกต้อง';
+
+type CustomerContactSource = {
+  phone?: string | null;
+  email?: string | null;
+};
+
+export function getCustomerContactPrefill(
+  customer: CustomerContactSource | null | undefined,
+): Pick<GuestCheckoutFormState, 'contactPhone' | 'email'> {
+  const contactPhone = customer?.phone
+    ? sanitizeThaiPhoneInput(normalizeThaiPhoneNumber(customer.phone))
+    : '';
+
+  return {
+    contactPhone,
+    email: customer?.email?.trim() ?? '',
+  };
+}
 
 function toE164ThaiPhone(phone: string): string {
   const normalized = normalizeThaiPhoneNumber(phone);
@@ -260,12 +284,16 @@ export function toCreateOrderInput(
 
   const input: CreateOrderInput = {
     items: mapCartItems(cart.items),
-    paymentMethod: checkoutContext.paymentMethod,
+    paymentMethod: mapCheckoutPaymentMethodForApi(checkoutContext.paymentMethod),
     storeShipping: mapStoreShipping(checkoutContext.shippingByStoreId),
   };
 
   if (checkoutContext.promotionCode?.trim()) {
     input.platformPromotionCode = checkoutContext.promotionCode.trim();
+  }
+
+  if (checkoutContext.storePromotionCodes.length > 0) {
+    input.storePromotionCodes = checkoutContext.storePromotionCodes;
   }
 
   if (checkoutContext.isAuthenticated) {
@@ -284,7 +312,7 @@ export function toCreateOrderInput(
 
   return {
     ...input,
-    guestPhone: toE164ThaiPhone(formState.contactPhone),
+    guestPhone: normalizeThaiPhoneNumber(formState.contactPhone),
     guestName: formState.recipientFullName.trim(),
     guestEmail: trimmedEmail || undefined,
     notes: formState.notes?.trim() || undefined,

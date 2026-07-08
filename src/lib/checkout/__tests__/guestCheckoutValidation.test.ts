@@ -3,6 +3,7 @@ import { CATALOG_PRODUCT_ID, CATALOG_STORE_ID } from '@/test/mocks/fixtures/cata
 import { sampleCart, sampleCartItem } from '@/test/mocks/fixtures/cart';
 import type { CartType } from '@/lib/graphql/generated/graphql';
 import {
+  getCustomerContactPrefill,
   toCreateOrderInput,
   validateGuestCheckoutForm,
   type CreateOrderCheckoutContext,
@@ -30,6 +31,7 @@ const guestCheckoutContext: CreateOrderCheckoutContext = {
   },
   selectedAddressId: null,
   promotionCode: null,
+  storePromotionCodes: [],
   paymentMethod: 'promptpay',
 };
 
@@ -40,8 +42,30 @@ const authenticatedCheckoutContext: CreateOrderCheckoutContext = {
   },
   selectedAddressId: SAVED_ADDRESS_ID,
   promotionCode: 'SAVE10',
+  storePromotionCodes: [],
   paymentMethod: 'promptpay',
 };
+
+describe('getCustomerContactPrefill', () => {
+  it('normalizes customer phone to local digits and trims email', () => {
+    expect(
+      getCustomerContactPrefill({
+        phone: '+66812345678',
+        email: '  user@example.com  ',
+      }),
+    ).toEqual({
+      contactPhone: '0812345678',
+      email: 'user@example.com',
+    });
+  });
+
+  it('returns empty strings when customer contact fields are missing', () => {
+    expect(getCustomerContactPrefill(null)).toEqual({
+      contactPhone: '',
+      email: '',
+    });
+  });
+});
 
 describe('validateGuestCheckoutForm', () => {
   it('returns a Thai error when guestPhone is missing', () => {
@@ -70,7 +94,7 @@ describe('toCreateOrderInput', () => {
     const input = toCreateOrderInput(validGuestForm, sampleCart, guestCheckoutContext);
 
     expect(input).toEqual({
-      guestPhone: '+66812345678',
+      guestPhone: '0812345678',
       guestName: 'Somchai',
       items: [
         {

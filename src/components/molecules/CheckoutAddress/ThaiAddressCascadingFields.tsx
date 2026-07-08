@@ -55,7 +55,7 @@ export function ThaiAddressCascadingFields({
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 md:gap-6 md:col-span-2">
+      <div className="grid grid-cols-2 gap-sop-12px">
         <AddressDropdown
           title="ตำบล/แขวง"
           placeholder="เลือกตำบล/แขวง"
@@ -86,7 +86,7 @@ export function ThaiAddressCascadingFields({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-6 md:col-span-2">
+      <div className="grid grid-cols-2 gap-sop-12px">
         <AddressDropdown
           title="จังหวัด"
           placeholder="เลือกจังหวัด"
@@ -106,7 +106,7 @@ export function ThaiAddressCascadingFields({
           hasTitle
           isRequired
           value={values.postalCode}
-          placeholder="รหัสไปรษณีย์"
+          placeholder="เลือกรหัสไปรษณีย์"
           disabled
           readOnly
           aria-readonly="true"

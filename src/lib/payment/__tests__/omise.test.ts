@@ -159,6 +159,9 @@ describe('checkout card payment bridge', () => {
             cvv: '',
           };
         },
+        getSavedPaymentMethodId: () => null,
+        shouldUseSavedCard: () => false,
+        getSaveCardForNextTime: () => false,
       }),
     );
 
@@ -183,6 +186,9 @@ describe('checkout card payment bridge', () => {
           cvv: '',
         }),
         clearCardForm: vi.fn(),
+        getSavedPaymentMethodId: () => null,
+        shouldUseSavedCard: () => false,
+        getSaveCardForNextTime: () => false,
       }),
     );
 

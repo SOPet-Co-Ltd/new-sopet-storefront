@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import type { GuestCheckoutField, GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
-import type { AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { CheckoutAddressSection } from './CheckoutAddressSection';
@@ -15,7 +14,6 @@ type CheckoutSectionProps = {
   showFieldErrors?: boolean;
   saveAddressChecked?: boolean;
   onSaveAddressPreferenceChange?: (checked: boolean) => void;
-  addressSubmitContext?: AddressSubmitContext;
 };
 
 export function CheckoutSection({
@@ -60,9 +58,7 @@ export function CheckoutSection({
         saveAddressChecked={saveAddressChecked}
         onSaveAddressPreferenceChange={onSaveAddressPreferenceChange}
       />
-      <div className="p-4">
-        <CheckoutOrderItems groups={itemsByStore} />
-      </div>
+      <CheckoutOrderItems groups={itemsByStore} />
     </div>
   );
 }

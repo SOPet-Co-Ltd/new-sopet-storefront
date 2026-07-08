@@ -1,5 +1,6 @@
 export { AddressManagementModal } from './AddressManagementModal';
 export { AuthSaveAddressCheckbox } from './AuthSaveAddressCheckbox';
+export { CheckoutAddressCardFooterPattern } from './CheckoutAddressCardFooterPattern';
 export { CheckoutAddressErrorState } from './CheckoutAddressErrorState';
 export { CheckoutAddressSectionSkeleton } from './CheckoutAddressSectionSkeleton';
 export { CheckoutContactSection } from './CheckoutContactSection';

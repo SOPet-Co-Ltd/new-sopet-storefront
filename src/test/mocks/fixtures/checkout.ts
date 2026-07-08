@@ -44,6 +44,36 @@ export const sampleShippingOption = {
   providerId: null,
 };
 
+export const sampleStorePromotion = {
+  __typename: 'PromotionType' as const,
+  id: 'promo-store-1',
+  code: 'STORE150',
+  name: 'ลด 150 บาท',
+  description: null,
+  type: 'fixed_amount',
+  discountValue: 150,
+  minPurchaseAmount: null,
+  maxDiscountAmount: null,
+  expiresAt: '2027-05-24T00:00:00.000Z',
+  scope: 'store',
+  storeId: CHECKOUT_STORE_ID,
+};
+
+export const samplePlatformPromotion = {
+  __typename: 'PromotionType' as const,
+  id: 'promo-platform-1',
+  code: 'SAVE10',
+  name: '5.5 Payday',
+  description: 'ลดเพิ่ม ฿50 ทั้งออเดอร์',
+  type: 'fixed_amount',
+  discountValue: 50,
+  minPurchaseAmount: null,
+  maxDiscountAmount: null,
+  expiresAt: '2027-05-24T00:00:00.000Z',
+  scope: 'platform',
+  storeId: null,
+};
+
 export const samplePromotionValidation = {
   __typename: 'PromotionValidationResult' as const,
   code: 'SAVE10',

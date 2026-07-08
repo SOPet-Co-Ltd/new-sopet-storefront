@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Modal } from '@/components/atoms/Modal';
 import {
@@ -115,7 +115,7 @@ export function AddressManagementModal({
   addressesApi,
 }: AddressManagementModalProps) {
   const [view, setView] = useState<AddressModalView>('list');
-  const [pendingSelectionId, setPendingSelectionId] = useState<string | null>(null);
+  const [pendingSelectionId, setPendingSelectionId] = useState<string | null>(selectedAddressId);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState(EMPTY_SHIPPING_FORM);
@@ -128,17 +128,6 @@ export function AddressManagementModal({
     () => [...addresses].sort((a, b) => Number(b.isDefault) - Number(a.isDefault)),
     [addresses],
   );
-
-  const resetModalState = useCallback(() => {
-    setView('list');
-    setPendingSelectionId(selectedAddressId);
-    setEditingAddressId(null);
-    setDeletingAddressId(null);
-    setFormValues(EMPTY_SHIPPING_FORM);
-    setFieldErrors({});
-    setShowFieldErrors(false);
-    setMutationError(null);
-  }, [selectedAddressId]);
 
   const handleFormChange = (field: keyof typeof formValues, value: string) => {
     setFormValues((prev) => ({ ...prev, [field]: value }));

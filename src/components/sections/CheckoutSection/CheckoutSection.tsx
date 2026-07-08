@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
+import type { GuestCheckoutField, GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
+import type { AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { CheckoutAddressSection } from './CheckoutAddressSection';
@@ -10,10 +11,22 @@ import { CheckoutOrderItems } from './CheckoutOrderItems';
 type CheckoutSectionProps = {
   guestForm: GuestCheckoutFormState;
   onGuestFormChange: (field: keyof GuestCheckoutFormState, value: string) => void;
+  fieldErrors?: Partial<Record<GuestCheckoutField, string>>;
+  showFieldErrors?: boolean;
+  saveAddressChecked?: boolean;
+  onSaveAddressPreferenceChange?: (checked: boolean) => void;
+  addressSubmitContext?: AddressSubmitContext;
 };
 
-export function CheckoutSection({ guestForm, onGuestFormChange }: CheckoutSectionProps) {
-  const { itemsByStore, loading, error } = useCart();
+export function CheckoutSection({
+  guestForm,
+  onGuestFormChange,
+  fieldErrors,
+  showFieldErrors,
+  saveAddressChecked,
+  onSaveAddressPreferenceChange,
+}: CheckoutSectionProps) {
+  const { selectedItemsByStore: itemsByStore, loading, error } = useCart();
   const { setRequiredStoreIds } = useCheckout();
 
   useEffect(() => {
@@ -39,7 +52,14 @@ export function CheckoutSection({ guestForm, onGuestFormChange }: CheckoutSectio
 
   return (
     <div data-testid="checkout-section">
-      <CheckoutAddressSection guestForm={guestForm} onGuestFormChange={onGuestFormChange} />
+      <CheckoutAddressSection
+        guestForm={guestForm}
+        onGuestFormChange={onGuestFormChange}
+        fieldErrors={fieldErrors}
+        showFieldErrors={showFieldErrors}
+        saveAddressChecked={saveAddressChecked}
+        onSaveAddressPreferenceChange={onSaveAddressPreferenceChange}
+      />
       <div className="p-4">
         <CheckoutOrderItems groups={itemsByStore} />
       </div>

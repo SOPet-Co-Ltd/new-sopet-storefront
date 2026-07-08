@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/atoms/Button';
-import { useCheckoutSubmit } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
+import { useCheckoutSubmit, type AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
@@ -12,12 +12,18 @@ function formatPrice(amount: number): string {
 
 type CheckoutMobileBottomBarProps = {
   guestForm: GuestCheckoutFormState | null;
+  addressSubmitContext?: AddressSubmitContext;
 };
 
-export function CheckoutMobileBottomBar({ guestForm }: CheckoutMobileBottomBarProps) {
-  const { subtotal } = useCart();
+export function CheckoutMobileBottomBar({
+  guestForm,
+  addressSubmitContext,
+}: CheckoutMobileBottomBarProps) {
+  const { selectedSubtotal: subtotal } = useCart();
   const { shippingByStoreId, promotionDiscount } = useCheckout();
-  const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm);
+  const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
+    addressSubmitContext,
+  });
   const selectedShippingCount = Object.keys(shippingByStoreId).length;
   const finalPrice = Math.max(subtotal - promotionDiscount, 0);
 

@@ -13,6 +13,8 @@ import { MessengerCustomIcon } from '@/components/atoms/icons/filled/MessengerCu
 import { ProductDetailQuantitySelection } from '@/components/molecules/ProductDetailQuantitySelection/ProductDetailQuantitySelection';
 import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import { ProductVariants } from '@/components/molecules/ProductVariants/ProductVariants';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useFavorites } from '@/lib/hooks/useFavorites';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 import { useCart } from '@/lib/providers/CartProvider';
 import {
@@ -210,7 +212,6 @@ export type ProductDetailsVariantSelectionProps = {
   ) => void;
   shareModalOpen?: boolean;
   onShareModalOpenChange?: (open: boolean) => void;
-  onWishlistClick?: () => void;
 };
 
 export default function ProductDetailsVariantSelection({
@@ -220,10 +221,12 @@ export default function ProductDetailsVariantSelection({
   onVariantChange,
   shareModalOpen,
   onShareModalOpenChange,
-  onWishlistClick,
 }: ProductDetailsVariantSelectionProps) {
   const router = useRouter();
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
+  const { isFavorite, addFavorite, removeFavorite, loading: favoritesLoading } = useFavorites();
+  const [wishlistPending, setWishlistPending] = useState(false);
   const [productQuantity, setProductQuantity] = useState(1);
   const [internalShareOpen, setInternalShareOpen] = useState(false);
   const isShareModalOpen = shareModalOpen ?? internalShareOpen;
@@ -299,8 +302,28 @@ export default function ProductDetailsVariantSelection({
     }
   };
 
-  const handleWishlist = () => {
-    onWishlistClick?.();
+  const isWishlisted = isFavorite(product.id);
+
+  const handleWishlist = async () => {
+    if (!isAuthenticated) {
+      router.push('/login?notice=sessionRequired');
+      return;
+    }
+
+    try {
+      setWishlistPending(true);
+      if (isWishlisted) {
+        await removeFavorite(product.id);
+        toast.success('นำออกจากรายการโปรดแล้ว');
+      } else {
+        await addFavorite(product.id);
+        toast.success('เพิ่มในรายการโปรดแล้ว');
+      }
+    } catch {
+      toast.error('เกิดข้อผิดพลาด', { description: 'ไม่สามารถอัปเดตรายการโปรดได้' });
+    } finally {
+      setWishlistPending(false);
+    }
   };
 
   const handleShareOpen = () => {
@@ -369,8 +392,10 @@ export default function ProductDetailsVariantSelection({
           <ProductShareWishlistActions
             productName={product.name}
             onShare={handleShareOpen}
-            onWishlist={handleWishlist}
+            onWishlist={() => void handleWishlist()}
             disabled={isOutOfStock || !hasAnyPrice}
+            isWishlisted={isWishlisted}
+            wishlistLoading={wishlistPending || favoritesLoading}
             className="shrink-0"
           />
         </div>

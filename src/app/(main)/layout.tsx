@@ -1,5 +1,5 @@
 import { Header } from "@/components/organisms/Header";
-import { Footer } from "@/components/organisms/Footer";
+import { ConditionalFooter } from "@/components/organisms/ConditionalFooter";
 import { PromotionalAdsModal } from "@/components/organisms/PromotionalAdsModal";
 
 export default function Layout({
@@ -12,7 +12,7 @@ export default function Layout({
       <PromotionalAdsModal />
       <Header />
       {children}
-      <Footer />
+      <ConditionalFooter />
     </>
   );
 }

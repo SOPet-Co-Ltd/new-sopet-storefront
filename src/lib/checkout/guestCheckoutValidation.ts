@@ -1,6 +1,6 @@
 import type {
-  CartType,
   CartQuery,
+  CreateAddressInput,
   CreateOrderInput,
   ShippingAddressInput,
 } from '@/lib/graphql/generated/graphql';
@@ -26,6 +26,7 @@ export type GuestCheckoutField =
   | 'recipientPhone'
   | 'recipientName'
   | 'address'
+  | 'subDistrict'
   | 'district'
   | 'province'
   | 'postalCode'
@@ -49,7 +50,9 @@ const INVALID_PHONE_MESSAGE = 'กรุณากรอกเบอร์โท�
 const RECIPIENT_PHONE_REQUIRED_MESSAGE = 'กรุณากรอกเบอร์โทรศัพท์ (ผู้รับสินค้า)';
 const RECIPIENT_NAME_REQUIRED_MESSAGE = 'กรุณากรอกชื่อ / นามสกุล (ผู้รับสินค้า)';
 const ADDRESS_REQUIRED_MESSAGE = 'กรุณากรอกที่อยู่ของคุณ';
+export const SUB_DISTRICT_REQUIRED_MESSAGE = 'กรุณาเลือกตำบลของคุณ';
 const DISTRICT_REQUIRED_MESSAGE = 'กรุณาเลือกเขต/อำเภอของคุณ';
+export const DEFAULT_CHECKOUT_ADDRESS_LABEL = 'ที่อยู่จัดส่ง';
 const PROVINCE_REQUIRED_MESSAGE = 'กรุณาเลือกจังหวัดของคุณ';
 const POSTAL_CODE_REQUIRED_MESSAGE = 'กรุณาเลือกรหัสไปรษณีย์ของคุณ';
 const INVALID_EMAIL_MESSAGE = 'รูปแบบอีเมลไม่ถูกต้อง';
@@ -96,18 +99,10 @@ function validateOptionalEmail(value: string | undefined): string | undefined {
   return emailPattern.test(trimmed) ? undefined : INVALID_EMAIL_MESSAGE;
 }
 
-export function validateGuestCheckoutForm(
+function validateShippingFields(
   formState: GuestCheckoutFormState,
-): GuestCheckoutValidationResult {
+): Partial<Record<GuestCheckoutField, string>> {
   const errors: Partial<Record<GuestCheckoutField, string>> = {};
-
-  const guestPhoneError = validatePhoneField(
-    formState.contactPhone,
-    GUEST_PHONE_REQUIRED_MESSAGE,
-  );
-  if (guestPhoneError) {
-    errors.guestPhone = guestPhoneError;
-  }
 
   const recipientPhoneError = validatePhoneField(
     formState.recipientPhone,
@@ -130,6 +125,14 @@ export function validateGuestCheckoutForm(
     errors.address = addressError;
   }
 
+  const subDistrictError = validateRequiredText(
+    formState.subDistrict ?? '',
+    SUB_DISTRICT_REQUIRED_MESSAGE,
+  );
+  if (subDistrictError) {
+    errors.subDistrict = subDistrictError;
+  }
+
   const districtError = validateRequiredText(formState.district, DISTRICT_REQUIRED_MESSAGE);
   if (districtError) {
     errors.district = districtError;
@@ -148,6 +151,33 @@ export function validateGuestCheckoutForm(
     errors.postalCode = postalCodeError;
   }
 
+  return errors;
+}
+
+export function validateAuthInlineShippingForm(
+  formState: GuestCheckoutFormState,
+): GuestCheckoutValidationResult {
+  const errors = validateShippingFields(formState);
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+  };
+}
+
+export function validateGuestCheckoutForm(
+  formState: GuestCheckoutFormState,
+): GuestCheckoutValidationResult {
+  const errors = validateShippingFields(formState);
+
+  const guestPhoneError = validatePhoneField(
+    formState.contactPhone,
+    GUEST_PHONE_REQUIRED_MESSAGE,
+  );
+  if (guestPhoneError) {
+    errors.guestPhone = guestPhoneError;
+  }
+
   const emailError = validateOptionalEmail(formState.email);
   if (emailError) {
     errors.email = emailError;
@@ -159,13 +189,31 @@ export function validateGuestCheckoutForm(
   };
 }
 
+export function mapGuestFormToCreateAddressInput(
+  formState: GuestCheckoutFormState,
+  options: { isDefault: boolean },
+): CreateAddressInput {
+  return {
+    label: DEFAULT_CHECKOUT_ADDRESS_LABEL,
+    recipientName: formState.recipientFullName.trim(),
+    recipientPhone: toE164ThaiPhone(formState.recipientPhone),
+    addressLine1: formState.address.trim(),
+    addressLine2: formState.addressLine2?.trim() || undefined,
+    tumbon: formState.subDistrict?.trim() || undefined,
+    amphoe: formState.district.trim(),
+    province: formState.province.trim(),
+    postalCode: formState.postalCode.trim(),
+    isDefault: options.isDefault,
+  };
+}
+
 function mapShippingAddress(formState: GuestCheckoutFormState): ShippingAddressInput {
   return {
     recipientName: formState.recipientFullName.trim(),
     recipientPhone: toE164ThaiPhone(formState.recipientPhone),
     addressLine1: formState.address.trim(),
     addressLine2: formState.addressLine2?.trim() || undefined,
-    tumbon: formState.subDistrict?.trim() || undefined,
+    tumbon: formState.subDistrict?.trim() || '',
     amphoe: formState.district.trim(),
     province: formState.province.trim(),
     postalCode: formState.postalCode.trim(),

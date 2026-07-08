@@ -2,6 +2,21 @@ export const CHECKOUT_STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
 export const CHECKOUT_PAYMENT_ID = 'payment-checkout-1';
 export const CHECKOUT_ORDER_ID = 'order-checkout-1';
 
+export const sampleSavedAddress2 = {
+  __typename: 'SavedAddressType' as const,
+  id: 'addr-2',
+  fullName: 'สมหญิง รักสัตว์',
+  phone: '0898765432',
+  addressLine1: '456 ถนนพระราม 4',
+  addressLine2: null,
+  amphoe: 'ปทุมวัน',
+  tumbon: 'ลุมพินี',
+  province: 'กรุงเทพมหานคร',
+  postalCode: '10330',
+  label: 'ออฟฟิศ',
+  isDefault: false,
+};
+
 export const sampleSavedAddress = {
   __typename: 'SavedAddressType' as const,
   id: 'addr-1',

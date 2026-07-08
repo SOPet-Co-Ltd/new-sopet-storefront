@@ -15,7 +15,7 @@ import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 export function CheckoutPromotionSection() {
   const isMobile = useIsMobile(768);
-  const { subtotal } = useCart();
+  const { selectedSubtotal: subtotal } = useCart();
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
   const { promotionCode, setPromotion, setPromotionDiscount } = useCheckout();
   const [manualCode, setManualCode] = useState(promotionCode ?? '');

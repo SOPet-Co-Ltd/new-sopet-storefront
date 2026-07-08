@@ -13,20 +13,40 @@ import {
   validateCheckoutPromotionCode,
 } from '@/lib/checkout/validateCheckoutPromotion';
 import {
+  mapGuestFormToCreateAddressInput,
+  validateAuthInlineShippingForm,
   validateGuestCheckoutForm,
+  type GuestCheckoutField,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
 import { prepareCardPaymentToken } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import { useGuestCheckoutOtp } from '@/components/organisms/GuestOTPDialog';
 import { useAuth } from '@/lib/hooks/useAuth';
+import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
-export function useCheckoutSubmit(guestForm: GuestCheckoutFormState | null) {
+export type AddressSubmitContext = {
+  createAddress: UseAddressesResult['createAddress'];
+  setAddress: (id: string | null) => void;
+  saveAddressChecked: boolean;
+  setFieldErrors: (errors: Partial<Record<GuestCheckoutField, string>>) => void;
+  setShowFieldErrors: (show: boolean) => void;
+  addressQueryError: Error | undefined;
+  addressQueryLoading: boolean;
+  addressCount: number;
+};
+
+export function useCheckoutSubmit(
+  guestForm: GuestCheckoutFormState | null,
+  options?: {
+    addressSubmitContext?: AddressSubmitContext;
+  },
+) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const { items, subtotal } = useCart();
+  const { selectedItems: items, selectedSubtotal: subtotal } = useCart();
   const checkoutMutations = useCheckoutMutations();
   const {
     isPhoneVerified,
@@ -42,8 +62,11 @@ export function useCheckoutSubmit(guestForm: GuestCheckoutFormState | null) {
     canAdvanceToPayment,
     canAdvanceToReview,
     setStep,
+    setAddress,
   } = useCheckout();
   const submitGuardRef = useRef(createSubmitCheckoutGuard());
+
+  const addressSubmitContext = options?.addressSubmitContext;
 
   useEffect(() => {
     if (step === 'shipping' && canAdvanceToPayment()) {
@@ -77,51 +100,122 @@ export function useCheckoutSubmit(guestForm: GuestCheckoutFormState | null) {
     ],
   );
 
-  const canSubmit = step === 'review' && paymentMethod !== null && items.length > 0;
+  const isAuthPath = isAuthenticated && !isGuestCheckout;
+  const addressQueryLoading = addressSubmitContext?.addressQueryLoading ?? false;
+  const addressQueryError = addressSubmitContext?.addressQueryError;
+  const addressCount = addressSubmitContext?.addressCount ?? 0;
 
-  const executeSubmit = useCallback(async () => {
-    try {
-      const omiseToken =
-        paymentMethod === 'card' ? await prepareCardPaymentToken() : undefined;
+  const isAuthInlineMode =
+    isAuthPath && !addressQueryLoading && !addressQueryError && addressCount === 0;
+  const isAuthSummaryMode =
+    isAuthPath && !addressQueryLoading && !addressQueryError && addressCount > 0;
+  const isAuthErrorMode = isAuthPath && Boolean(addressQueryError);
 
-      const result = await submitCheckout(
-        {
-          step,
-          checkoutContext,
-          cart: { items },
-          guestForm: isGuestCheckout ? guestForm : null,
-          subtotal,
-          checkoutHook: checkoutMutations,
-          omiseToken,
-        },
-        submitGuardRef.current,
-      );
+  const canSubmit =
+    step === 'review' &&
+    paymentMethod !== null &&
+    items.length > 0 &&
+    !(isAuthPath && (addressQueryLoading || addressQueryError));
 
-      router.push(result.redirectPath);
-    } catch (error) {
-      const message =
-        error instanceof SubmitCheckoutError
-          ? error.message
-          : error instanceof Error
+  const executeSubmit = useCallback(
+    async (overrideAddressId?: string | null) => {
+      try {
+        const omiseToken =
+          paymentMethod === 'card' ? await prepareCardPaymentToken() : undefined;
+
+        const result = await submitCheckout(
+          {
+            step,
+            checkoutContext: {
+              ...checkoutContext,
+              selectedAddressId: overrideAddressId ?? checkoutContext.selectedAddressId,
+            },
+            cart: { items },
+            guestForm: isGuestCheckout ? guestForm : null,
+            subtotal,
+            checkoutHook: checkoutMutations,
+            omiseToken,
+          },
+          submitGuardRef.current,
+        );
+
+        router.push(result.redirectPath);
+      } catch (error) {
+        const message =
+          error instanceof SubmitCheckoutError
             ? error.message
-            : 'ไม่สามารถดำเนินการชำระเงินได้';
+            : error instanceof Error
+              ? error.message
+              : 'ไม่สามารถดำเนินการชำระเงินได้';
 
-      toast.error(message);
-    }
-  }, [
-    checkoutContext,
-    checkoutMutations,
-    guestForm,
-    isGuestCheckout,
-    items,
-    paymentMethod,
-    router,
-    step,
-    subtotal,
-  ]);
+        toast.error(message);
+      }
+    },
+    [
+      checkoutContext,
+      checkoutMutations,
+      guestForm,
+      isGuestCheckout,
+      items,
+      paymentMethod,
+      router,
+      step,
+      subtotal,
+    ],
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) {
+      if (isAuthErrorMode) {
+        toast.error('ไม่สามารถโหลดที่อยู่ได้ กรุณาลองอีกครั้ง');
+      }
+      return;
+    }
+
+    if (isAuthInlineMode) {
+      if (!guestForm) {
+        toast.error('กรุณากรอกข้อมูลการจัดส่ง');
+        return;
+      }
+
+      const validation = validateAuthInlineShippingForm(guestForm);
+      if (!validation.valid) {
+        addressSubmitContext?.setShowFieldErrors(true);
+        addressSubmitContext?.setFieldErrors(validation.errors);
+        toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
+        return;
+      }
+
+      const createAddress = addressSubmitContext?.createAddress;
+      if (!createAddress) {
+        toast.error('ไม่สามารถบันทึกที่อยู่ได้');
+        return;
+      }
+
+      const created = await createAddress(
+        mapGuestFormToCreateAddressInput(guestForm, {
+          isDefault: addressSubmitContext.saveAddressChecked,
+        }),
+      );
+
+      if (!created?.id) {
+        toast.error('ไม่สามารถบันทึกที่อยู่ได้');
+        return;
+      }
+
+      addressSubmitContext.setAddress(created.id);
+      setAddress(created.id);
+
+      try {
+        await executeSubmit(created.id);
+      } catch {
+        // executeSubmit already surfaces toast errors
+      }
+      return;
+    }
+
+    if (isAuthSummaryMode && !selectedAddressId) {
+      toast.error('กรุณาเลือกที่อยู่จัดส่ง');
       return;
     }
 
@@ -133,6 +227,8 @@ export function useCheckoutSubmit(guestForm: GuestCheckoutFormState | null) {
 
       const validation = validateGuestCheckoutForm(guestForm);
       if (!validation.valid) {
+        addressSubmitContext?.setShowFieldErrors(true);
+        addressSubmitContext?.setFieldErrors(validation.errors);
         toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
         return;
       }
@@ -150,14 +246,20 @@ export function useCheckoutSubmit(guestForm: GuestCheckoutFormState | null) {
       // executeSubmit already surfaces toast errors
     }
   }, [
+    addressSubmitContext,
     canSubmit,
     executeSubmit,
     guestForm,
     isAuthenticated,
+    isAuthErrorMode,
+    isAuthInlineMode,
+    isAuthSummaryMode,
     isGuestCheckout,
     isPhoneVerified,
     openDialog,
     queueSubmit,
+    selectedAddressId,
+    setAddress,
   ]);
 
   return {

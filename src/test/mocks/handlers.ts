@@ -142,7 +142,7 @@ export const handlers = [
 
   graphql.query('Addresses', () => {
     return HttpResponse.json({
-      data: { addresses: [sampleSavedAddress] },
+      data: { addresses: [] },
     });
   }),
 

@@ -4,7 +4,7 @@ import { Button } from '@/components/atoms/Button';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
-import { useCheckoutSubmit } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
+import { useCheckoutSubmit, type AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 
 function formatPrice(amount: number): string {
@@ -32,13 +32,19 @@ function SummaryRow({ label, value, valueClassName = 'text-sop-base-black' }: Su
 
 type CheckoutSummarySectionProps = {
   guestForm: GuestCheckoutFormState | null;
+  addressSubmitContext?: AddressSubmitContext;
 };
 
-export function CheckoutSummarySection({ guestForm }: CheckoutSummarySectionProps) {
+export function CheckoutSummarySection({
+  guestForm,
+  addressSubmitContext,
+}: CheckoutSummarySectionProps) {
   const { isAuthenticated } = useAuth();
-  const { itemCount, subtotal } = useCart();
+  const { selectedItemCount: itemCount, selectedSubtotal: subtotal } = useCart();
   const { shippingByStoreId, promotionDiscount } = useCheckout();
-  const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm);
+  const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
+    addressSubmitContext,
+  });
 
   const selectedShippingCount = Object.keys(shippingByStoreId).length;
   const displayShippingFee = selectedShippingCount > 0 ? 0 : 0;

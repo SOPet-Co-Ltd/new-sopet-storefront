@@ -52,16 +52,16 @@ export function LoginForm({ notice = null }: LoginFormProps) {
 
   return (
     <div className="w-full max-w-md" data-testid="login-form">
-      <div className="mb-8 flex justify-center">
+      <div className="flex justify-center">
         <Link href="/" aria-label="SOPet หน้าหลัก">
-          <SOPetLogo size={{ mobile: 56, desktop: 56 }} />
+          <SOPetLogo size={{ mobile: 156, desktop: 256 }} />
         </Link>
       </div>
 
       <h1 className="mb-2 text-center sop-headline-sm-medium text-sop-neutral-gray-300">
         เข้าสู่ระบบ
       </h1>
-      <p className="mb-6 text-center sop-body-sm-regular text-sop-neutral-gray-400">
+      <p className="mb-2 text-center sop-body-sm-regular text-sop-neutral-gray-400">
         กรอกเบอร์โทรศัพท์เพื่อรับรหัส OTP
       </p>
 
@@ -71,26 +71,31 @@ export function LoginForm({ notice = null }: LoginFormProps) {
         </p>
       )}
 
-      <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
+      <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4" noValidate>
         <Input
           title="เบอร์โทรศัพท์"
           type="tel"
-          inputMode="tel"
+          inputMode="numeric"
           autoComplete="tel"
           placeholder="0812345678"
           value={phone}
-          onChange={(event) => setPhone(event.target.value)}
+          variant="bordered"
+          maxLength={10}
+          state={error ? 'error' : 'default'}
+          description={error ?? undefined}
+          onChange={(event) => {
+            setError(null);
+            setPhone(event.target.value.replace(/\D/g, '').slice(0, 10));
+          }}
         />
 
-        {error && (
-          <p role="alert" className="sop-body-sm-regular text-sop-system-error-400">
-            {error}
-          </p>
-        )}
-
-        <Button type="submit" fill loading={loading} disabled={loading}>
-          รับรหัส OTP
+        <Button type="submit" size="lg" fill loading={loading} disabled={loading}>
+          ขอ OTP
         </Button>
+
+        <p className="text-center sop-body-sm-regular text-sop-neutral-gray-400">
+          หากยังไม่มีบัญชี ระบบจะสร้างบัญชีให้อัตโนมัติ
+        </p>
       </form>
     </div>
   );

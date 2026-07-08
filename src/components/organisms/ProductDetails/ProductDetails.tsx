@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import { ProductReviewStars } from '@/components/molecules/ProductReviewStars/ProductReviewStars';
 import ProductDetailsVariantSelection from '@/components/organisms/ProductDetailsVariantSelection/ProductDetailsVariantSelection';
 import { ProductExpiryDate } from '@/components/sections/ProductExpiryDate/ProductExpiryDate';
@@ -68,7 +67,6 @@ export function ProductDetails({
         onVariantChange={onVariantChange}
         shareModalOpen={shareModalOpen}
         onShareModalOpenChange={onShareModalOpenChange}
-        onWishlistClick={() => toast.message('ฟีเจอร์รายการโปรดจะเปิดใช้งานเร็วๆ นี้')}
       />
     </div>
   );

@@ -9,6 +9,8 @@ type ProductShareWishlistActionsProps = {
   onShare: () => void;
   onWishlist: () => void;
   disabled?: boolean;
+  isWishlisted?: boolean;
+  wishlistLoading?: boolean;
   className?: string;
 };
 
@@ -17,6 +19,8 @@ export function ProductShareWishlistActions({
   onShare,
   onWishlist,
   disabled = false,
+  isWishlisted = false,
+  wishlistLoading = false,
   className,
 }: ProductShareWishlistActionsProps) {
   return (
@@ -37,10 +41,16 @@ export function ProductShareWishlistActions({
       <button
         type="button"
         onClick={onWishlist}
-        className="cursor-pointer"
-        aria-label={`เพิ่ม ${productName} ในรายการโปรด`}
+        disabled={wishlistLoading}
+        aria-pressed={isWishlisted}
+        className="cursor-pointer disabled:opacity-40"
+        aria-label={
+          isWishlisted
+            ? `นำ ${productName} ออกจากรายการโปรด`
+            : `เพิ่ม ${productName} ในรายการโปรด`
+        }
       >
-        <WishListHeartIcon size={{ mobile: 24, desktop: 36 }}/>
+        <WishListHeartIcon size={{ mobile: 24, desktop: 36 }} filled={isWishlisted} />
       </button>
     </div>
   );

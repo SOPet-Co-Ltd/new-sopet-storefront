@@ -2,11 +2,10 @@ import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
-import { ApolloProvider } from '@apollo/client/react';
 import { graphql, HttpResponse, delay } from 'msw';
 import { CheckoutAddressSection } from '@/components/sections/CheckoutSection/CheckoutAddressSection';
 import { CheckoutProvider } from '@/lib/providers/CheckoutProvider';
-import { getApolloClient } from '@/lib/graphql/client';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { preloadThaiAddressDataset } from '@/lib/thai-address';
 import {
   SUB_DISTRICT_REQUIRED_MESSAGE,
@@ -38,6 +37,8 @@ const EMPTY_GUEST_FORM: GuestCheckoutFormState = {
   email: '',
 };
 
+const ApolloTestWrapper = createApolloTestWrapper();
+
 function renderCheckoutAddressSection({
   guestForm = EMPTY_GUEST_FORM,
   onGuestFormChange = vi.fn(),
@@ -53,10 +54,8 @@ function renderCheckoutAddressSection({
   saveAddressChecked?: boolean;
   onSaveAddressPreferenceChange?: (checked: boolean) => void;
 } = {}) {
-  const client = getApolloClient();
-
   return render(
-    <ApolloProvider client={client}>
+    <ApolloTestWrapper>
       <CheckoutProvider>
         <CheckoutAddressSection
           guestForm={guestForm}
@@ -67,13 +66,12 @@ function renderCheckoutAddressSection({
           onSaveAddressPreferenceChange={onSaveAddressPreferenceChange}
         />
       </CheckoutProvider>
-    </ApolloProvider>,
+    </ApolloTestWrapper>,
   );
 }
 
 describe('CheckoutAddressSection integration', () => {
   beforeEach(async () => {
-    await getApolloClient().clearStore();
     await preloadThaiAddressDataset();
     mockedUseAuth.mockReturnValue({
       customer: null,
@@ -211,14 +209,12 @@ describe('CheckoutAddressSection integration', () => {
         );
       }
 
-      const client = getApolloClient();
-
       return render(
-        <ApolloProvider client={client}>
+        <ApolloTestWrapper>
           <CheckoutProvider>
             <StatefulSection />
           </CheckoutProvider>
-        </ApolloProvider>,
+        </ApolloTestWrapper>,
       );
     }
 

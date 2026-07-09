@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/atoms/Button';
 import { RightArrowLineIcon } from '@/components/atoms/icons/filled/RightArrowLineIcon';
-import { RecommendedProductsDocument } from '@/lib/graphql/generated/graphql';
+import { RecommendedProductsDocument, type RecommendedProductsQuery } from '@/lib/graphql/generated/graphql';
 import ProductCard from '@/components/organisms/ProductCard';
 
 const RECOMMENDED_GRID_CLASS =
@@ -29,18 +29,23 @@ type HomeRecommendedProductSectionProps = {
   heading?: string;
   limit?: number;
   viewAllHref?: string;
+  initialRecommendedProducts?: RecommendedProductsQuery['recommendedProducts'];
 };
 
 export function HomeRecommendedProductSection({
   heading = 'สินค้าแนะนำ',
   limit = 25,
   viewAllHref = '/categories',
+  initialRecommendedProducts,
 }: HomeRecommendedProductSectionProps) {
   const { data, loading, error } = useQuery(RecommendedProductsDocument, {
     variables: { limit },
   });
 
-  if (loading) {
+  const products = initialRecommendedProducts ?? data?.recommendedProducts ?? [];
+  const showLoading = !initialRecommendedProducts && loading;
+
+  if (showLoading) {
     return (
       <section className="w-full" aria-busy="true">
         <h2 className={SECTION_HEADING_CLASS}>{heading}</h2>
@@ -49,11 +54,9 @@ export function HomeRecommendedProductSection({
     );
   }
 
-  if (error) {
+  if (error && !initialRecommendedProducts) {
     return null;
   }
-
-  const products = data?.recommendedProducts ?? [];
 
   if (products.length === 0) {
     return null;

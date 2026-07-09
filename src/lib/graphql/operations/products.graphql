@@ -18,6 +18,12 @@ query Products(
   $search: String
   $storeId: String
   $tag: String
+  $petTypeIds: [String!]
+  $brandIds: [String!]
+  $minPrice: Int
+  $maxPrice: Int
+  $sortBy: String
+  $sortOrder: String
 ) {
   products(
     category: $category
@@ -26,6 +32,12 @@ query Products(
     search: $search
     storeId: $storeId
     tag: $tag
+    petTypeIds: $petTypeIds
+    brandIds: $brandIds
+    minPrice: $minPrice
+    maxPrice: $maxPrice
+    sortBy: $sortBy
+    sortOrder: $sortOrder
   ) {
     items {
       ...ProductCardFields

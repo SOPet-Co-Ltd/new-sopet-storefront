@@ -1,9 +1,7 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { createElement, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getApolloClient } from '@/lib/graphql/client';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import { useCheckout } from '@/lib/hooks/useCheckout';
 import { useShippingOptions } from '@/lib/hooks/useShippingOptions';
@@ -26,16 +24,10 @@ vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-function createWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(ApolloProvider, { client }, children);
-  };
-}
+const createWrapper = createApolloTestWrapper;
 
-afterEach(async () => {
+afterEach(() => {
   mockUseAuth.mockReset();
-  await getApolloClient().clearStore();
 });
 
 describe('useAddresses', () => {

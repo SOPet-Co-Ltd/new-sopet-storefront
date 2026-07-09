@@ -1,9 +1,7 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { createElement, type ReactNode } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
-import { getApolloClient } from '@/lib/graphql/client';
+import { describe, expect, it } from 'vitest';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { useProducts } from '@/lib/hooks/useProducts';
 import { server } from '@/test/mocks/server';
 import {
@@ -12,16 +10,7 @@ import {
   sampleProductCard,
 } from '@/test/mocks/fixtures/catalog';
 
-function createWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(ApolloProvider, { client }, children);
-  };
-}
-
-afterEach(async () => {
-  await getApolloClient().clearStore();
-});
+const createWrapper = createApolloTestWrapper;
 
 describe('useProducts', () => {
   // AC: Phase 1 catalog — products list with category filter and pagination

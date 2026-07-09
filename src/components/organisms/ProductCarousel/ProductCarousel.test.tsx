@@ -68,27 +68,19 @@ describe('ProductCarousel', () => {
     expect(screen.getAllByAltText('Product image')).toHaveLength(4);
   });
 
-  it('renders trust badges overlaid on the hero image', () => {
-    render(<ProductCarousel slides={[slides[0]]} />);
-
-    const hero = screen.getByTestId('product-gallery-hero');
-    expect(hero).toContainElement(screen.getByTestId('product-gallery-trust-badges'));
-    expect(screen.getByText('ราคาถูกที่สุด')).toBeInTheDocument();
-    expect(screen.getByText('ของแท้จากรพ.')).toBeInTheDocument();
-  });
-
-  it('hides the thumbnail strip when only one slide is available', () => {
+  it('renders carousel indicator for a single slide', () => {
     render(<ProductCarousel slides={[slides[0]]} />);
 
     expect(screen.getByTestId('product-gallery')).toBeInTheDocument();
-    expect(screen.queryByTestId('product-gallery-thumbnails')).not.toBeInTheDocument();
+    expect(screen.getByTestId('product-gallery-thumbnails')).toBeInTheDocument();
+    expect(screen.queryByTestId('product-gallery-trust-badges')).not.toBeInTheDocument();
   });
 
-  it('uses thumbnailUrl as a single image when no gallery images exist', () => {
+  it('renders thumbnail indicator when only thumbnailUrl is provided', () => {
     render(<ProductCarousel slides={[]} thumbnailUrl="https://example.com/thumbnail.jpg" />);
 
     expect(screen.getByTestId('product-gallery-hero')).toBeInTheDocument();
-    expect(screen.queryByTestId('product-gallery-thumbnails')).not.toBeInTheDocument();
+    expect(screen.getByTestId('product-gallery-thumbnails')).toBeInTheDocument();
 
     const heroImage = screen.getByAltText('Product image');
     expect(heroImage).toHaveAttribute('src', 'https://example.com/thumbnail.jpg');

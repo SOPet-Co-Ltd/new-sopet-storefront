@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/atoms/Button';
 import { RightArrowLineIcon } from '@/components/atoms/icons/filled/RightArrowLineIcon';
+import { prefetchProductsListing } from '@/lib/catalog/prefetchProductsListing';
 import { useProducts } from '@/lib/hooks/useProducts';
 import ProductCard from '@/components/organisms/ProductCard';
 
@@ -68,6 +69,10 @@ export function HomeProductSection({
 
   const displayProducts = visibleProducts.slice(0, layout === 'grid' ? 15 : 10);
 
+  const handleViewAllPrefetch = () => {
+    prefetchProductsListing({ page: 1, limit: 10 });
+  };
+
   return (
     <section className="w-full">
       <h2 className={`md:px-0 px-4 ${SECTION_HEADING_CLASS}`}>{heading}</h2>
@@ -88,7 +93,11 @@ export function HomeProductSection({
       )}
       {!storeId && (
         <div className="mt-6 flex items-center justify-center">
-          <Link href={viewAllHref}>
+          <Link
+            href={viewAllHref}
+            onMouseEnter={handleViewAllPrefetch}
+            onFocus={handleViewAllPrefetch}
+          >
             <Button variant="secondary">
               <div className="flex items-center gap-2 px-4 py-2 md:py-0">
                 <p className="text-center">ดูทั้งหมด</p>

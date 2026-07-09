@@ -1,9 +1,7 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
-import { getApolloClient } from '@/lib/graphql/client';
+import { describe, expect, it } from 'vitest';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { useCategories } from '@/lib/hooks/useCategories';
 import { useReviews } from '@/lib/hooks/useReviews';
 import { useStore } from '@/lib/hooks/useStore';
@@ -17,16 +15,7 @@ import {
   sampleStoreReviewSummary,
 } from '@/test/mocks/fixtures/catalog';
 
-function createWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return <ApolloProvider client={client}>{children}</ApolloProvider>;
-  };
-}
-
-afterEach(async () => {
-  await getApolloClient().clearStore();
-});
+const createWrapper = createApolloTestWrapper;
 
 describe('useCategories', () => {
   it('returns approvedCategories', async () => {

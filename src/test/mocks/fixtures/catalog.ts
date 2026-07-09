@@ -71,6 +71,24 @@ export const sampleCategories = [
   },
 ];
 
+export const samplePetTypes = [
+  { __typename: 'PetTypeType' as const, id: 'pet-dog', name: 'สุนัข' },
+  { __typename: 'PetTypeType' as const, id: 'pet-cat', name: 'แมว' },
+  { __typename: 'PetTypeType' as const, id: 'pet-turtle', name: 'เต่า' },
+  { __typename: 'PetTypeType' as const, id: 'pet-fish', name: 'ปลา' },
+  { __typename: 'PetTypeType' as const, id: 'pet-rabbit', name: 'กระต่าย' },
+  { __typename: 'PetTypeType' as const, id: 'pet-bird', name: 'นก' },
+];
+
+export const sampleBrands = [
+  { __typename: 'BrandType' as const, id: 'brand-1', name: 'แบรนด์ 1' },
+  { __typename: 'BrandType' as const, id: 'brand-2', name: 'แบรนด์ 2' },
+  { __typename: 'BrandType' as const, id: 'brand-3', name: 'แบรนด์ 3' },
+  { __typename: 'BrandType' as const, id: 'brand-4', name: 'แบรนด์ 4' },
+  { __typename: 'BrandType' as const, id: 'brand-5', name: 'แบรนด์ 5' },
+  { __typename: 'BrandType' as const, id: 'brand-6', name: 'แบรนด์ 6' },
+];
+
 export const sampleProductReview = {
   id: 'review-1',
   productId: CATALOG_PRODUCT_ID,

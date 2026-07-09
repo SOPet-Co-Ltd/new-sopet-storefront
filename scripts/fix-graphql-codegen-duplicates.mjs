@@ -26,6 +26,7 @@ const duplicateBlocks = [
   '\nexport type CreateReviewInput = {\n  comment?: string | null | undefined;\n  orderId: string;\n  productId: string;\n  rating: number;\n};\n',
   '\nexport type FavoriteProductInput = {\n  productId: string;\n};\n',
   '\nexport type UpdateProfileInput = {\n  email?: string | null | undefined;\n  fullName?: string | null | undefined;\n};\n',
+  '\nexport type ChangeCustomerPhoneInput = {\n  code: string;\n  phone: string;\n};\n',
 ];
 
 const schemaBlocks = [
@@ -49,6 +50,7 @@ const schemaBlocks = [
   "export type CreateReviewInput = {\n  comment?: InputMaybe<Scalars['String']['input']>;\n  orderId: Scalars['String']['input'];\n  productId: Scalars['String']['input'];\n  rating: Scalars['Int']['input'];\n};",
   "export type FavoriteProductInput = {\n  productId: Scalars['String']['input'];\n};",
   "export type UpdateProfileInput = {\n  email?: InputMaybe<Scalars['String']['input']>;\n  fullName?: InputMaybe<Scalars['String']['input']>;\n};",
+  "export type ChangeCustomerPhoneInput = {\n  code: Scalars['String']['input'];\n  phone: Scalars['String']['input'];\n};",
 ];
 
 let content = readFileSync(filePath, 'utf8');

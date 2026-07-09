@@ -8,6 +8,7 @@ type CheckboxProps = {
   onChange: (checked: boolean) => void;
   indeterminate?: boolean;
   disabled?: boolean;
+  size?: 'sm' | 'md';
   'aria-label'?: string;
   className?: string;
 };
@@ -17,6 +18,7 @@ export function Checkbox({
   onChange,
   indeterminate = false,
   disabled = false,
+  size = 'md',
   'aria-label': ariaLabel,
   className,
 }: CheckboxProps) {
@@ -29,9 +31,11 @@ export function Checkbox({
   }, [indeterminate, checked]);
 
   const isActive = checked || indeterminate;
+  const sizeClasses = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
+  const iconClasses = size === 'sm' ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5';
 
   return (
-    <span className={cn('relative inline-flex h-5 w-5 shrink-0', className)}>
+    <span className={cn('relative inline-flex shrink-0', sizeClasses, className)}>
       <input
         ref={inputRef}
         type="checkbox"
@@ -44,7 +48,8 @@ export function Checkbox({
       <span
         aria-hidden
         className={cn(
-          'flex h-5 w-5 items-center justify-center rounded-sop-4px border transition-colors',
+          'flex items-center justify-center rounded-sop-4px border transition-colors',
+          sizeClasses,
           isActive
             ? 'border-sop-primary-500 bg-sop-primary-500 text-sop-base-white'
             : 'border-sop-neutral-grayalpha-300 bg-sop-base-white text-transparent',
@@ -52,11 +57,11 @@ export function Checkbox({
         )}
       >
         {indeterminate && !checked ? (
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none">
+          <svg viewBox="0 0 24 24" className={iconClasses} fill="none">
             <path d="M6 12h12" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" />
           </svg>
         ) : (
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none">
+          <svg viewBox="0 0 24 24" className={iconClasses} fill="none">
             <path
               d="M5 12.5l4.5 4.5L19 7"
               stroke="currentColor"

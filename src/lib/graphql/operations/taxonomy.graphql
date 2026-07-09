@@ -1,0 +1,13 @@
+query ApprovedPetTypes {
+  approvedPetTypes {
+    id
+    name
+  }
+}
+
+query ApprovedBrands {
+  approvedBrands {
+    id
+    name
+  }
+}

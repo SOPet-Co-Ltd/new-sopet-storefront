@@ -1,12 +1,21 @@
-export function ProductListingSkeleton() {
+import { PRODUCT_LISTING_GRID_CLASS } from './productListingGrid';
+
+type ProductListingSkeletonProps = {
+  variant?: 'default' | 'search';
+};
+
+export function ProductListingSkeleton({ variant = 'default' }: ProductListingSkeletonProps) {
   return (
     <div className="py-4" aria-busy="true" data-testid="product-listing-skeleton">
-      <div className="h-6 w-32 bg-sop-neutral-gray-600 rounded-xs animate-pulse mb-6" />
-      <ul className="grid grid-cols-[repeat(auto-fit,minmax(165px,1fr))] gap-2 justify-items-center md:grid-cols-[repeat(auto-fit,minmax(223px,1fr))] md:gap-4">
+      <div className="mb-6 h-9 w-full max-w-xl rounded-xs bg-sop-neutral-gray-600 animate-pulse" />
+      {variant === 'search' && (
+        <div className="mb-10 h-10 w-full rounded-xs bg-sop-neutral-gray-600 animate-pulse" />
+      )}
+      <ul className={PRODUCT_LISTING_GRID_CLASS}>
         {Array.from({ length: 20 }).map((_, index) => (
           <li
             key={index}
-            className="w-[168px] md:w-[223px] h-[280px] rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse"
+            className="h-[280px] w-[168px] rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse md:h-[320px] md:w-sop-224px"
           />
         ))}
       </ul>

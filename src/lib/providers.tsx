@@ -1,11 +1,11 @@
 'use client';
 
-import { ApolloProvider } from '@apollo/client/react';
+import { ApolloNextAppProvider } from '@apollo/client-integration-nextjs';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { GlobalLoadingStage } from '@/components/organisms/GlobalLoadingStage';
-import { getApolloClient } from '@/lib/graphql/client';
+import { makeApolloClient } from '@/lib/graphql/client';
 import { AuthProvider } from '@/lib/providers/AuthProvider';
 import { CartProvider } from '@/lib/providers/CartProvider';
 import { CheckoutProvider } from '@/lib/providers/CheckoutProvider';
@@ -33,10 +33,8 @@ function RouteLoadingPreview() {
 }
 
 export function AppProviders({ children }: { children: ReactNode }) {
-  const client = useMemo(() => getApolloClient(), []);
-
   return (
-    <ApolloProvider client={client}>
+    <ApolloNextAppProvider makeClient={makeApolloClient}>
       <AuthProvider>
         <CartProvider>
           <CheckoutProvider>
@@ -46,6 +44,6 @@ export function AppProviders({ children }: { children: ReactNode }) {
           </CheckoutProvider>
         </CartProvider>
       </AuthProvider>
-    </ApolloProvider>
+    </ApolloNextAppProvider>
   );
 }

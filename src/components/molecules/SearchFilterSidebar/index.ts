@@ -1,0 +1,1 @@
+export { SearchFilterSidebar } from './SearchFilterSidebar';

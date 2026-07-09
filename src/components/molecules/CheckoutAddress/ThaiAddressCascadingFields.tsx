@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import type { InputProps } from '@/components/atoms/Input';
 import { Input } from '@/components/atoms/Input';
 import { AddressDropdown } from '@/components/molecules/AddressDropdown';
 import {
@@ -24,6 +25,7 @@ type ThaiAddressCascadingFieldsProps = {
   onCascadeReset: (fields: Array<keyof ThaiAddressValues>) => void;
   errors?: Partial<Record<GuestCheckoutField, string>>;
   showErrors?: boolean;
+  inputVariant?: InputProps['variant'];
 };
 
 export function ThaiAddressCascadingFields({
@@ -32,6 +34,7 @@ export function ThaiAddressCascadingFields({
   onCascadeReset,
   errors,
   showErrors = false,
+  inputVariant,
 }: ThaiAddressCascadingFieldsProps) {
   const { ready } = useThaiAddressDataset();
 
@@ -63,6 +66,7 @@ export function ThaiAddressCascadingFields({
           options={subdistrictOptions}
           disabled={!ready || !values.district}
           error={subDistrictError ? { message: subDistrictError } : undefined}
+          variant={inputVariant}
           onChange={(value) => onChange('subDistrict', value)}
           onSelect={(option) => {
             onChange('subDistrict', option.label);
@@ -78,6 +82,7 @@ export function ThaiAddressCascadingFields({
           options={districtOptions}
           disabled={!ready || !values.province}
           error={districtError ? { message: districtError } : undefined}
+          variant={inputVariant}
           onChange={(value) => {
             onChange('district', value);
             onCascadeReset(['subDistrict', 'postalCode']);
@@ -94,6 +99,7 @@ export function ThaiAddressCascadingFields({
           options={provinceOptions}
           disabled={!ready}
           error={provinceError ? { message: provinceError } : undefined}
+          variant={inputVariant}
           onChange={(value) => {
             onChange('province', value);
             onCascadeReset(['district', 'subDistrict', 'postalCode']);
@@ -110,6 +116,7 @@ export function ThaiAddressCascadingFields({
           disabled
           readOnly
           aria-readonly="true"
+          variant={inputVariant}
           state={postalCodeError ? 'error' : 'default'}
           description={postalCodeError}
           data-testid="postal-code-field"

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
+import { prefetchProductsListing } from '@/lib/catalog/prefetchProductsListing';
 import { useCategories, type Category } from '@/lib/hooks/useCategories';
 
 const PLACEHOLDER_IMAGE = '/images/placeholder.svg';
@@ -17,11 +18,17 @@ function CategoryCard({ category }: CategoryCardProps) {
   const imageSrc =
     !imageError && category.imageUrl ? category.imageUrl : PLACEHOLDER_IMAGE;
 
+  const handlePrefetch = () => {
+    prefetchProductsListing({ category: category.slug, page: 1 });
+  };
+
   return (
     <Link
       href={`/categories/${category.slug}`}
       className="flex h-16 w-full flex-row items-center overflow-hidden rounded-sop-20 border border-sop-additionalblue-200 bg-sop-additionalblue-100 px-5 py-3 transition-opacity hover:opacity-90"
       aria-label={`ดูหมวดหมู่ ${category.name}`}
+      onMouseEnter={handlePrefetch}
+      onFocus={handlePrefetch}
     >
       <span className="min-w-0 flex-1 sop-body-sm-medium text-sop-neutral-gray-200 line-clamp-2">
         {category.name}
@@ -64,12 +71,18 @@ function CategoryListContainer({ children }: CategoryListContainerProps) {
 
 type HomeCategoriesProps = {
   heading?: string;
+  initialCategories?: Category[];
 };
 
-export function HomeCategories({ heading = 'หมวดหมู่สินค้า' }: HomeCategoriesProps) {
-  const { categories, loading, error, refetch } = useCategories();
+export function HomeCategories({
+  heading = 'หมวดหมู่สินค้า',
+  initialCategories,
+}: HomeCategoriesProps) {
+  const { categories: fetchedCategories, loading, error, refetch } = useCategories();
+  const categories = initialCategories ?? fetchedCategories;
+  const showLoading = !initialCategories && loading;
 
-  if (loading) {
+  if (showLoading) {
     return (
       <section className="w-full" aria-busy="true">
         <h2 className="mb-5 sop-body-lg-medium text-sop-neutral-gray-200">{heading}</h2>

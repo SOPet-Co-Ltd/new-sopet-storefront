@@ -11,11 +11,13 @@ import { ProductGallery } from '@/components/organisms/ProductGallery/ProductGal
 import { ProductDetailDescription } from '@/components/sections/ProductDetailDescription/ProductDetailDescription';
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
+import type { ProductByIdQuery } from '@/lib/graphql/generated/graphql';
 import { useProduct } from '@/lib/hooks/useProduct';
 import { useReviews } from '@/lib/hooks/useReviews';
 
 type ProductDetailsPageProps = {
   productId: string;
+  initialProduct?: ProductByIdQuery['product'];
 };
 
 function ProductDetailsSkeleton() {
@@ -33,11 +35,16 @@ function ProductDetailsSkeleton() {
   );
 }
 
-export default function ProductDetailsPage({ productId }: ProductDetailsPageProps) {
-  const { product, loading, error } = useProduct({
+export default function ProductDetailsPage({
+  productId,
+  initialProduct,
+}: ProductDetailsPageProps) {
+  const { product: fetchedProduct, loading, error } = useProduct({
     mode: 'id',
     id: productId,
   });
+  const product = fetchedProduct ?? initialProduct ?? null;
+  const showLoading = !initialProduct && loading;
 
   const { productReviews, loading: reviewsLoading } = useReviews({
     productId: product?.id,
@@ -53,7 +60,7 @@ export default function ProductDetailsPage({ productId }: ProductDetailsPageProp
       error.errors.some((graphError) => graphError.extensions?.code === 'PRODUCT_NOT_FOUND'),
   );
 
-  if (loading) {
+  if (showLoading) {
     return <ProductDetailsSkeleton />;
   }
 

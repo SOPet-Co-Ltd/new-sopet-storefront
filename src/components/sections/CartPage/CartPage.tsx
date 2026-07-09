@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/atoms/Button';
 import { Checkbox } from '@/components/atoms/Checkbox';
 import { InfoIcon } from '@/components/atoms/icons/outline/InfoIcon';
+import { CartEmptyState } from '@/components/sections/CartPage/CartEmptyState';
 import { CartItemRow } from '@/components/organisms/CartItemRow/CartItemRow';
 import { useCart } from '@/lib/providers/CartProvider';
 
@@ -67,12 +68,11 @@ export default function CartPage() {
 
   if (itemsByStore.length === 0) {
     return (
-      <main className="container px-4 py-8 lg:px-20" data-testid="cart-empty">
-        <h1 className="mb-6 sop-headline-md-medium text-sop-neutral-gray-300">ตะกร้าสินค้า</h1>
-        <p className="mb-4 sop-body-md-regular text-sop-neutral-gray-400">ตะกร้าของคุณว่างเปล่า</p>
-        <Link href="/categories" className="sop-body-sm-medium text-sop-primary-500 underline">
-          เลือกซื้อสินค้า
-        </Link>
+      <main
+        className="container mx-auto flex min-h-[calc(100dvh-12rem)] flex-col px-4 py-8 lg:min-h-[calc(100dvh-10rem)] lg:px-20"
+        data-testid="cart-empty"
+      >
+        <CartEmptyState />
       </main>
     );
   }

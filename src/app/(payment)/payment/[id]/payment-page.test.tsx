@@ -1,10 +1,8 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { createElement, type ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PaymentPage from '@/app/(payment)/payment/[id]/page';
-import { getApolloClient } from '@/lib/graphql/client';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import {
   CHECKOUT_ORDER_ID,
   CHECKOUT_PAYMENT_ID,
@@ -30,16 +28,7 @@ vi.mock('@/components/organisms/OrderPaymentForm/constants', () => ({
   PAYMENT_POLL_MAX_ATTEMPTS: 30,
 }));
 
-function createWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(ApolloProvider, { client }, children);
-  };
-}
-
-afterEach(async () => {
-  await getApolloClient().clearStore();
-});
+const createWrapper = createApolloTestWrapper;
 
 describe('PaymentPage', () => {
   beforeEach(() => {

@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { resetApolloClientSingletons } from '@apollo/client-integration-nextjs';
 import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { server } from './mocks/server';
@@ -38,6 +39,7 @@ beforeAll(() => {
 });
 
 afterEach(() => {
+  resetApolloClientSingletons();
   cleanup();
   server.resetHandlers();
 });

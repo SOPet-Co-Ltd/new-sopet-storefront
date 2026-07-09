@@ -1,4 +1,3 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { MockedProvider } from '@apollo/client/testing/react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -9,7 +8,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CheckoutPage from '@/app/(checkout)/checkout/page';
 import { CheckoutPaymentSelection } from '@/components/molecules/CheckoutPaymentSelection/CheckoutPaymentSelection';
 import { CheckoutPromotionSection } from '@/components/sections/CheckoutPromotionSection/CheckoutPromotionSection';
-import { getApolloClient } from '@/lib/graphql/client';
 import { CartDocument } from '@/lib/graphql/generated/graphql';
 import { CartProvider } from '@/lib/providers/CartProvider';
 import {
@@ -18,6 +16,7 @@ import {
   type CheckoutContextValue,
 } from '@/lib/providers/CheckoutProvider';
 import { SESSION_ID_COOKIE } from '@/lib/session';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { sampleCart } from '@/test/mocks/fixtures/cart';
 import { samplePromotionValidation } from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
@@ -235,6 +234,8 @@ describe('CheckoutPage reset on unmount', () => {
 });
 
 describe('CheckoutPromotionSection', () => {
+  const ApolloTestWrapper = createApolloTestWrapper();
+
   beforeEach(() => {
     document.cookie = `${SESSION_ID_COOKIE}=${TEST_SESSION_ID}; path=/`;
     Object.defineProperty(window, 'matchMedia', {
@@ -252,7 +253,6 @@ describe('CheckoutPromotionSection', () => {
 
   it('renders promotion code input without coupons page link', async () => {
     const user = userEvent.setup();
-    const client = getApolloClient();
 
     server.use(
       graphql.query('Cart', () => {
@@ -266,13 +266,13 @@ describe('CheckoutPromotionSection', () => {
     );
 
     render(
-      <ApolloProvider client={client}>
+      <ApolloTestWrapper>
         <CartProvider>
           <CheckoutProvider>
             <CheckoutPromotionSection />
           </CheckoutProvider>
         </CartProvider>
-      </ApolloProvider>,
+      </ApolloTestWrapper>,
     );
 
     await waitFor(() => {
@@ -293,9 +293,6 @@ describe('CheckoutPromotionSection', () => {
   });
 
   it('shows empty state when no platform promotions are available', async () => {
-    const client = getApolloClient();
-    await client.clearStore();
-
     server.use(
       graphql.query('Cart', () => {
         return HttpResponse.json({ data: { cart: sampleCart } });
@@ -306,13 +303,13 @@ describe('CheckoutPromotionSection', () => {
     );
 
     render(
-      <ApolloProvider client={client}>
+      <ApolloTestWrapper>
         <CartProvider>
           <CheckoutProvider>
             <CheckoutPromotionSection />
           </CheckoutProvider>
         </CartProvider>
-      </ApolloProvider>,
+      </ApolloTestWrapper>,
     );
 
     expect(await screen.findByTestId('platform-promotion-picker-button')).toHaveTextContent(

@@ -1,6 +1,10 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import { StarIcon } from '@/components/atoms/icons/filled/StarIcon';
+import { prefetchProductById } from '@/lib/catalog/prefetchProduct';
 import type { ProductListItem } from '@/lib/hooks/useProducts';
 
 export type ProductCardProduct = Pick<
@@ -22,6 +26,7 @@ type ProductCardProps = {
   product: ProductCardProduct;
   compact?: boolean;
   className?: string;
+  priority?: boolean;
 };
 
 function buildProductHref(productId: string): string {
@@ -56,10 +61,12 @@ function ProductCardImage({
   product,
   discountPercent,
   compact,
+  priority = false,
 }: {
   product: ProductCardProduct;
   discountPercent: number;
   compact: boolean;
+  priority?: boolean;
 }) {
   const imageContainerClass = compact
     ? 'relative aspect-square w-full shrink-0 overflow-hidden bg-sop-additionalblue-300'
@@ -69,10 +76,11 @@ function ProductCardImage({
     <div className={imageContainerClass}>
       {product.thumbnailUrl ? (
         <Image
-          fetchPriority="auto"
+          fetchPriority={priority ? 'high' : 'auto'}
           src={product.thumbnailUrl}
           alt={product.name}
           fill
+          priority={priority}
           quality={85}
           sizes={compact ? '(max-width: 768px) 50vw, 20vw' : '(max-width: 768px) 168px, 224px'}
           className="pointer-events-none object-cover object-center select-none"
@@ -129,31 +137,65 @@ function ProductCardReviewStars({ product }: { product: ProductCardProduct }) {
       <p className="min-w-0 flex-1 pl-1 sop-body-xs-regular text-sop-neutral-gray-400 md:sop-body-sm-regular">
         {averageRating} ({totalReviews})
       </p>
-      <p className="sop-body-xs-medium text-sop-neutral-gray-400">ขายแล้ว {formatSoldCount(soldCount)}</p>
+      <p className="shrink-0 whitespace-nowrap sop-body-xs-medium text-sop-neutral-gray-400">
+        ขายแล้ว {formatSoldCount(soldCount)}
+      </p>
     </div>
   );
 }
 
-export default function ProductCard({ product, compact = false, className }: ProductCardProps) {
+export default function ProductCard({ product, compact = false, className, priority = false }: ProductCardProps) {
   const href = buildProductHref(product.id);
   const discountPercent = getDiscountPercent(product.basePrice, product.compareAtPrice);
+  const cardRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const element = cardRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          prefetchProductById(product.id);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [product.id]);
+
+  const handlePrefetch = () => {
+    prefetchProductById(product.id);
+  };
 
   const cardWidthClass = compact
-    ? 'w-full max-w-full'
+    ? 'w-full min-w-0 max-w-full'
     : 'w-[168px] max-w-[168px] md:w-sop-224px md:max-w-sop-224px';
 
   return (
     <Link
+      ref={cardRef}
       href={href}
+      prefetch
       aria-label={`ดู ${product.name}`}
       title={`ดู ${product.name}`}
-      className={['block shrink-0', className].filter(Boolean).join(' ')}
+      className={['block', compact ? 'w-full min-w-0' : 'shrink-0', className].filter(Boolean).join(' ')}
+      onMouseEnter={handlePrefetch}
+      onFocus={handlePrefetch}
     >
       <div
         className={`flex flex-col gap-2 overflow-hidden rounded-sop-16px bg-sop-base-white pb-4 md:rounded-sop-24px md:pb-5 ${cardWidthClass}`}
       >
-        <ProductCardImage product={product} discountPercent={discountPercent} compact={compact} />
-        <div className="flex flex-col gap-2 px-2 md:px-3">
+        <ProductCardImage
+          product={product}
+          discountPercent={discountPercent}
+          compact={compact}
+          priority={priority}
+        />
+        <div className="flex min-w-0 flex-col gap-2 px-2 md:px-3">
           <p className="line-clamp-2 h-10 sop-body-sm-medium text-sop-neutral-gray-300">{product.name}</p>
           <ProductCardPrice product={product} />
           <ProductCardReviewStars product={product} />

@@ -8,6 +8,13 @@ import { HomeRecentOrdersSection } from '@/components/sections/HomeRecentOrdersS
 import { HomeRecommendedProductSection } from '@/components/sections/HomeRecommendedProductSection';
 import { ChatWithAdminFloatingButton } from '@/components/molecules/ChatWithAdminFloatingButton/ChatWithAdminFloatingButton';
 import { HomeSponsorsSection } from '@/components/sections/HomeSponsorsSection';
+import type { Category } from '@/lib/hooks/useCategories';
+import type { RecommendedProductsQuery } from '@/lib/graphql/generated/graphql';
+
+export type HomePageProps = {
+  initialCategories?: Category[];
+  initialRecommendedProducts?: RecommendedProductsQuery['recommendedProducts'];
+};
 
 export const HOME_FAQ_ITEMS: HomeFaqItem[] = [
   {
@@ -36,7 +43,10 @@ export const HOME_FAQ_ITEMS: HomeFaqItem[] = [
   },
 ];
 
-export default function HomePage() {
+export default function HomePage({
+  initialCategories,
+  initialRecommendedProducts,
+}: HomePageProps = {}) {
   return (
     <main className="flex flex-col row-start-2 items-center sm:items-start text-primary w-full">
       <header className="w-full">
@@ -52,11 +62,13 @@ export default function HomePage() {
           </div>
 
           <div className="w-full">
-            <HomeCategories />
+            <HomeCategories initialCategories={initialCategories} />
           </div>
 
           <div className="w-full">
-            <HomeRecommendedProductSection />
+            <HomeRecommendedProductSection
+              initialRecommendedProducts={initialRecommendedProducts}
+            />
           </div>
         </section>
 

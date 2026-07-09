@@ -15,8 +15,14 @@ export type UseProductsParams = {
   search?: string | null;
   storeId?: string | null;
   tag?: string | null;
+  petTypeIds?: string[] | null;
+  brandIds?: string[] | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
   page?: number;
   limit?: number;
+  sortBy?: string | null;
+  sortOrder?: 'ASC' | 'DESC' | null;
   skip?: boolean;
 };
 
@@ -42,8 +48,14 @@ export function useProducts({
   search,
   storeId,
   tag,
+  petTypeIds,
+  brandIds,
+  minPrice,
+  maxPrice,
   page = 1,
   limit = 24,
+  sortBy,
+  sortOrder,
   skip = false,
 }: UseProductsParams = {}): UseProductsResult {
   const variables: ProductsQueryVariables = {
@@ -51,13 +63,20 @@ export function useProducts({
     search,
     storeId,
     tag,
+    petTypeIds: petTypeIds && petTypeIds.length > 0 ? petTypeIds : undefined,
+    brandIds: brandIds && brandIds.length > 0 ? brandIds : undefined,
+    minPrice: minPrice ?? undefined,
+    maxPrice: maxPrice ?? undefined,
     page,
     limit,
+    sortBy,
+    sortOrder,
   };
 
   const { data, loading, error, fetchMore: apolloFetchMore, refetch } = useQuery(ProductsDocument, {
     variables,
     skip,
+    fetchPolicy: 'cache-and-network',
   });
 
   const pagination = data?.products.pagination;
@@ -66,11 +85,39 @@ export function useProducts({
     (nextPage?: number) => {
       const targetPage = nextPage ?? (pagination?.page ?? page) + 1;
       return apolloFetchMore({
-        variables: { category, search, storeId, tag, page: targetPage, limit },
+        variables: {
+          category,
+          search,
+          storeId,
+          tag,
+          petTypeIds: petTypeIds && petTypeIds.length > 0 ? petTypeIds : undefined,
+          brandIds: brandIds && brandIds.length > 0 ? brandIds : undefined,
+          minPrice: minPrice ?? undefined,
+          maxPrice: maxPrice ?? undefined,
+          page: targetPage,
+          limit,
+          sortBy,
+          sortOrder,
+        },
         updateQuery: (_previous, { fetchMoreResult }) => fetchMoreResult ?? _previous,
       });
     },
-    [apolloFetchMore, category, search, storeId, tag, limit, pagination?.page, page],
+    [
+      apolloFetchMore,
+      category,
+      search,
+      storeId,
+      tag,
+      petTypeIds,
+      brandIds,
+      minPrice,
+      maxPrice,
+      limit,
+      sortBy,
+      sortOrder,
+      pagination?.page,
+      page,
+    ],
   );
 
   return {

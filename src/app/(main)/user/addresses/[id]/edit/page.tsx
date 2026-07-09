@@ -71,7 +71,7 @@ export default function EditAddressPage() {
 
   return (
     <AccountLayout title="แก้ไขที่อยู่">
-      <div className="max-w-lg">
+      <div className="mx-auto max-w-2xl">
         <EditAddressForm
           key={address.id}
           addressId={address.id}

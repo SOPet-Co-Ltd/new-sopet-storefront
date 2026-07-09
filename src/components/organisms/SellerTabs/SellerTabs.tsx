@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { ProductListing } from '@/components/sections/ProductListing';
 import { ProductListingSkeleton } from '@/components/sections/ProductListing/ProductListingSkeleton';
+import { prefetchProductsListing } from '@/lib/catalog/prefetchProductsListing';
+import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
+import type { StoreDetail } from '@/lib/hooks/useStore';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/lib/hooks/useStore';
 import { SellerHeading } from '@/components/organisms/SellerHeading';
@@ -15,6 +18,7 @@ type SellerTabsProps = {
   activeTab: SellerTab;
   storeHandle: string;
   storeId: string;
+  initialProducts?: ProductsQuery['products']['items'];
 };
 
 type TabItem = {
@@ -48,17 +52,33 @@ function TabContent({
   return <div>{children}</div>;
 }
 
-export function SellerTabs({ activeTab, storeHandle, storeId }: SellerTabsProps) {
+export function SellerTabs({
+  activeTab,
+  storeHandle,
+  storeId,
+  initialProducts,
+}: SellerTabsProps) {
   const tabs: TabItem[] = [
     { label: 'products', href: `/sellers/${storeHandle}` },
     { label: 'reviews', href: `/sellers/${storeHandle}/reviews` },
   ];
 
+  const handleTabPrefetch = (tab: SellerTab) => {
+    if (tab === activeTab || tab !== 'products') return;
+    prefetchProductsListing({ storeId, page: 1, limit: 24 });
+  };
+
   return (
     <div className="mt-8" data-testid="seller-tabs">
       <nav className="flex gap-4 w-full" aria-label="Seller page tabs">
         {tabs.map(({ label, href }) => (
-          <Link key={label} href={href} aria-current={activeTab === label ? 'page' : undefined}>
+          <Link
+            key={label}
+            href={href}
+            aria-current={activeTab === label ? 'page' : undefined}
+            onMouseEnter={() => handleTabPrefetch(label)}
+            onFocus={() => handleTabPrefetch(label)}
+          >
             <TabTrigger label={label} isActive={activeTab === label} />
           </Link>
         ))}
@@ -66,7 +86,7 @@ export function SellerTabs({ activeTab, storeHandle, storeId }: SellerTabsProps)
 
       <TabContent activeTab={activeTab} value="products">
         <Suspense fallback={<ProductListingSkeleton />}>
-          <ProductListing storeId={storeId} />
+          <ProductListing storeId={storeId} initialProducts={initialProducts} />
         </Suspense>
       </TabContent>
 
@@ -80,6 +100,8 @@ export function SellerTabs({ activeTab, storeHandle, storeId }: SellerTabsProps)
 type SellerStorefrontProps = {
   handle: string;
   activeTab: SellerTab;
+  initialStore?: StoreDetail | null;
+  initialProducts?: ProductsQuery['products']['items'];
 };
 
 function SellerStorefrontSkeleton() {
@@ -91,10 +113,17 @@ function SellerStorefrontSkeleton() {
   );
 }
 
-export function SellerStorefront({ handle, activeTab }: SellerStorefrontProps) {
-  const { store, loading, error } = useStore({ slug: handle });
+export function SellerStorefront({
+  handle,
+  activeTab,
+  initialStore,
+  initialProducts,
+}: SellerStorefrontProps) {
+  const { store: fetchedStore, loading, error } = useStore({ slug: handle });
+  const store = fetchedStore ?? initialStore ?? null;
+  const showLoading = !initialStore && loading;
 
-  if (loading) {
+  if (showLoading) {
     return <SellerStorefrontSkeleton />;
   }
 
@@ -119,7 +148,12 @@ export function SellerStorefront({ handle, activeTab }: SellerStorefrontProps) {
   return (
     <>
       <SellerHeading store={store} />
-      <SellerTabs activeTab={activeTab} storeHandle={store.slug} storeId={store.id} />
+      <SellerTabs
+        activeTab={activeTab}
+        storeHandle={store.slug}
+        storeId={store.id}
+        initialProducts={initialProducts}
+      />
     </>
   );
 }

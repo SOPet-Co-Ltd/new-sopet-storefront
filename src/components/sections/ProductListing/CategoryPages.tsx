@@ -4,11 +4,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { useCategories } from '@/lib/hooks/useCategories';
+import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
 import { ProductListing } from './ProductListing';
 import { ProductListingSkeleton } from './ProductListingSkeleton';
 
 type CategoryPLPProps = {
   categorySlug: string;
+  initialProducts?: ProductsQuery['products']['items'];
 };
 
 function CategoryHeader({ categorySlug }: { categorySlug: string }) {
@@ -23,12 +25,12 @@ function CategoryHeader({ categorySlug }: { categorySlug: string }) {
   );
 }
 
-export function CategoryPLP({ categorySlug }: CategoryPLPProps) {
+export function CategoryPLP({ categorySlug, initialProducts }: CategoryPLPProps) {
   return (
     <>
       <CategoryHeader categorySlug={categorySlug} />
       <Suspense fallback={<ProductListingSkeleton />}>
-        <ProductListing category={categorySlug} />
+        <ProductListing category={categorySlug} initialProducts={initialProducts} />
       </Suspense>
     </>
   );

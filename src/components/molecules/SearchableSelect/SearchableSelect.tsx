@@ -39,6 +39,7 @@ export type SearchableSelectProps = {
   storeFieldValue?: 'value' | 'label';
   searchable?: boolean;
   showAllOptions?: boolean;
+  variant?: 'flat' | 'bordered' | 'underlined';
   'data-testid'?: string;
 };
 
@@ -59,6 +60,7 @@ export function SearchableSelect({
   storeFieldValue = 'value',
   searchable = true,
   showAllOptions = false,
+  variant = 'flat',
   'data-testid': dataTestId,
 }: SearchableSelectProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -114,6 +116,7 @@ export function SearchableSelect({
         autoComplete="off"
         disabled={disabled}
         readOnly={!searchable}
+        variant={variant}
         state={error?.message ? 'error' : 'default'}
         description={error?.message}
         className={!searchable ? 'cursor-pointer' : undefined}

@@ -1,9 +1,9 @@
-import { ApolloProvider, useQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client/react';
 import { render, screen } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { MeDocument } from '@/lib/graphql/generated/graphql';
-import { getApolloClient } from '@/lib/graphql/client';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from './mocks/server';
 
 const SAMPLE_CUSTOMER = {
@@ -39,10 +39,12 @@ describe('Vitest + RTL + MSW scaffold', () => {
       }),
     );
 
+    const ApolloTestWrapper = createApolloTestWrapper();
+
     render(
-      <ApolloProvider client={getApolloClient()}>
+      <ApolloTestWrapper>
         <MeProbe />
-      </ApolloProvider>,
+      </ApolloTestWrapper>,
     );
 
     expect(await screen.findByTestId('me-phone')).toHaveTextContent('0812345678');

@@ -1,6 +1,9 @@
 import type { TypePolicies } from '@apollo/client';
 
 export const typePolicies: TypePolicies = {
+  ProductType: {
+    keyFields: ['id'],
+  },
   Query: {
     fields: {
       me: {

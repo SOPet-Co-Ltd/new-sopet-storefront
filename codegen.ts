@@ -17,7 +17,7 @@ const config: CodegenConfig = {
         scalars: {
           DateTime: 'string',
         },
-        preResolveTypes: true,
+        preResolveTypes: false,
       },
     },
   },

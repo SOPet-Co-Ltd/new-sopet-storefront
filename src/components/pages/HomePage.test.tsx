@@ -1,9 +1,8 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HomePage from '@/components/pages/HomePage';
-import { getApolloClient } from '@/lib/graphql/client';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import type { AuthContextValue } from '@/lib/providers/AuthProvider';
 import { server } from '@/test/mocks/server';
 
@@ -157,18 +156,18 @@ function registerHomeHandlers(options?: { includeOrders?: boolean }) {
   );
 }
 
+const ApolloTestWrapper = createApolloTestWrapper();
+
 function renderHomePage() {
-  const client = getApolloClient();
   return render(
-    <ApolloProvider client={client}>
+    <ApolloTestWrapper>
       <HomePage />
-    </ApolloProvider>,
+    </ApolloTestWrapper>,
   );
 }
 
 describe('HomePage', () => {
-  beforeEach(async () => {
-    await getApolloClient().clearStore();
+  beforeEach(() => {
     mockedUseAuth.mockReturnValue(createAuthValue(false));
   });
 
@@ -178,7 +177,6 @@ describe('HomePage', () => {
     renderHomePage();
 
     expect(await screen.findByRole('heading', { name: 'หมวดหมู่สินค้า' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'สินค้ามาใหม่' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'สินค้าแนะนำ' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'แบรนด์ที่เข้าร่วม' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'คำถามที่พบบ่อย' })).toBeInTheDocument();
@@ -254,15 +252,10 @@ describe('HomePage', () => {
     const mainContentHeadings = headings
       .map((heading) => heading.textContent)
       .filter((text) =>
-        ['สินค้าแนะนำ', 'หมวดหมู่สินค้า', 'ซื้อล่าสุด', 'สินค้ามาใหม่'].includes(text ?? ''),
+        ['สินค้าแนะนำ', 'หมวดหมู่สินค้า', 'ซื้อล่าสุด'].includes(text ?? ''),
       );
 
-    expect(mainContentHeadings).toEqual([
-      'สินค้าแนะนำ',
-      'หมวดหมู่สินค้า',
-      'ซื้อล่าสุด',
-      'สินค้ามาใหม่',
-    ]);
+    expect(mainContentHeadings).toEqual(['ซื้อล่าสุด', 'หมวดหมู่สินค้า', 'สินค้าแนะนำ']);
   });
 
   it('does not render coupon section or links', async () => {

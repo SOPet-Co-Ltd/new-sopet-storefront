@@ -1,16 +1,14 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
-import { createElement, type ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ADS_DISMISS_STORAGE_KEY,
   getCooldownMs,
   parseDismissState,
   PromotionalAdsModal,
 } from '@/components/organisms/PromotionalAdsModal/PromotionalAdsModal';
-import { getApolloClient } from '@/lib/graphql/client';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { samplePlatformAds } from '@/test/mocks/fixtures/catalog';
 import { server } from '@/test/mocks/server';
 
@@ -26,12 +24,7 @@ vi.mock('next/image', () => ({
   }) => <img src={src} alt={alt} {...props} />,
 }));
 
-function createWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(ApolloProvider, { client }, children);
-  };
-}
+const createWrapper = createApolloTestWrapper;
 
 describe('PromotionalAdsModal helpers', () => {
   it('parseDismissState returns null for invalid JSON', () => {
@@ -85,10 +78,6 @@ describe('PromotionalAdsModal', () => {
         });
       }),
     );
-  });
-
-  afterEach(async () => {
-    await getApolloClient().clearStore();
   });
 
   it('shows the promotional ad modal when no dismiss cooldown is active', async () => {

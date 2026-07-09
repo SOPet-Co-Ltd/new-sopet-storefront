@@ -1,7 +1,9 @@
 import { graphql, HttpResponse } from 'msw';
 import {
   defaultProductsPagination,
+  sampleBrands,
   sampleCategories,
+  samplePetTypes,
   samplePlatformBanners,
   samplePlatformSettings,
   sampleProductCard,
@@ -67,6 +69,18 @@ export const handlers = [
   graphql.query('ApprovedCategories', () => {
     return HttpResponse.json({
       data: { approvedCategories: sampleCategories },
+    });
+  }),
+
+  graphql.query('ApprovedPetTypes', () => {
+    return HttpResponse.json({
+      data: { approvedPetTypes: samplePetTypes },
+    });
+  }),
+
+  graphql.query('ApprovedBrands', () => {
+    return HttpResponse.json({
+      data: { approvedBrands: sampleBrands },
     });
   }),
 

@@ -4,11 +4,22 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 import { EmptySearchResults } from '@/components/molecules/EmptySearchResults';
 import { Pagination } from '@/components/molecules/Pagination';
+import { SearchSortBar, type SearchSortValue } from '@/components/molecules/SearchSortBar';
 import ProductCard from '@/components/organisms/ProductCard';
+import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
 import { useProducts } from '@/lib/hooks/useProducts';
+import { parseSearchSort } from '@/lib/search/searchSort';
+import {
+  hasSearchFilters,
+  parseSearchFilters,
+  toProductsFilterVariables,
+} from '@/lib/search/searchFilters';
+import { cn } from '@/lib/utils';
 import { ProductListingSkeleton } from './ProductListingSkeleton';
+import { PRODUCT_LISTING_GRID_CLASS } from './productListingGrid';
 
-const PRODUCT_LIMIT = 24;
+const DEFAULT_PRODUCT_LIMIT = 24;
+const SEARCH_PRODUCT_LIMIT = 40;
 
 export type ProductListingProps = {
   category?: string;
@@ -16,6 +27,9 @@ export type ProductListingProps = {
   storeId?: string;
   tag?: string;
   heading?: string;
+  variant?: 'default' | 'search';
+  limit?: number;
+  initialProducts?: ProductsQuery['products']['items'];
 };
 
 export function ProductListing({
@@ -24,20 +38,52 @@ export function ProductListing({
   storeId,
   tag,
   heading,
+  variant = 'default',
+  limit: limitProp,
+  initialProducts,
 }: ProductListingProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPage = Math.max(1, Number(searchParams.get('page') ?? 1));
+  const sortParam = searchParams.get('sort') as SearchSortValue | null;
+  const searchFilters = parseSearchFilters(searchParams);
+  const filterVariables = toProductsFilterVariables(searchFilters);
+  const filtersActive = hasSearchFilters(searchFilters);
+  const { sortBy, sortOrder } =
+    variant === 'search' ? parseSearchSort(sortParam) : { sortBy: undefined, sortOrder: undefined };
+  const limit =
+    limitProp ?? (variant === 'search' ? SEARCH_PRODUCT_LIMIT : DEFAULT_PRODUCT_LIMIT);
 
-  const { products, total, totalPages, loading, error, refetch } = useProducts({
+  const listingPrefetch =
+    variant === 'search'
+      ? { search, category, storeId, tag, limit, sortBy, sortOrder, ...filterVariables }
+      : { category, search, storeId, tag, limit, sortBy, sortOrder, ...filterVariables };
+
+  const {
+    products: fetchedProducts,
+    total,
+    totalPages,
+    loading,
+    error,
+    refetch,
+  } = useProducts({
     category,
     search,
     storeId,
     tag,
+    ...filterVariables,
     page: currentPage,
-    limit: PRODUCT_LIMIT,
+    limit,
+    sortBy,
+    sortOrder,
   });
+
+  const useInitialProducts =
+    currentPage === 1 && initialProducts !== undefined && !filtersActive;
+  const products =
+    useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
+  const showLoading = useInitialProducts ? !initialProducts && loading : loading;
 
   const handlePageChange = useCallback(
     (page: number) => {
@@ -54,8 +100,8 @@ export function ProductListing({
     [pathname, router, searchParams],
   );
 
-  if (loading) {
-    return <ProductListingSkeleton />;
+  if (showLoading) {
+    return <ProductListingSkeleton variant={variant} />;
   }
 
   if (error) {
@@ -76,7 +122,59 @@ export function ProductListing({
   }
 
   if (products.length === 0) {
+    if (variant === 'search') {
+      return (
+        <div data-testid="product-listing">
+          {heading && (
+            <h1 className="sop-headline-md-medium text-sop-neutral-gray-300">{heading}</h1>
+          )}
+          <div className={cn(heading && 'mt-10')}>
+            <SearchSortBar
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              listingPrefetch={listingPrefetch}
+            />
+          </div>
+          <EmptySearchResults />
+        </div>
+      );
+    }
+
     return <EmptySearchResults />;
+  }
+
+  if (variant === 'search') {
+    return (
+      <div data-testid="product-listing">
+        {heading && (
+          <h1 className="sop-headline-md-medium text-sop-neutral-gray-300">{heading}</h1>
+        )}
+
+        <div className={cn(heading && 'mt-10')}>
+          <SearchSortBar
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            listingPrefetch={listingPrefetch}
+          />
+        </div>
+
+        <div className="mt-6 pt-7">
+          <p className="sop-body-lg-medium text-sop-neutral-gray-200">
+            สินค้าทั้งหมด ({total})
+          </p>
+
+          <ul className={cn('mt-6', PRODUCT_LISTING_GRID_CLASS)}>
+            {products.map((product, index) => (
+              <li key={product.id}>
+                <ProductCard product={product} priority={index < 4} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -92,13 +190,14 @@ export function ProductListing({
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
+          listingPrefetch={listingPrefetch}
         />
       </div>
 
-      <ul className="grid grid-cols-[repeat(auto-fit,minmax(165px,1fr))] gap-2 justify-items-center md:grid-cols-[repeat(auto-fit,minmax(223px,1fr))] md:gap-4">
-        {products.map((product) => (
+      <ul className={PRODUCT_LISTING_GRID_CLASS}>
+        {products.map((product, index) => (
           <li key={product.id}>
-            <ProductCard product={product} />
+            <ProductCard product={product} priority={index < 4} />
           </li>
         ))}
       </ul>
@@ -108,6 +207,7 @@ export function ProductListing({
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
+          listingPrefetch={listingPrefetch}
         />
       </div>
     </div>

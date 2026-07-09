@@ -1,9 +1,7 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { createElement, type ReactNode } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
-import { getApolloClient } from '@/lib/graphql/client';
+import { describe, expect, it } from 'vitest';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { useProduct } from '@/lib/hooks/useProduct';
 import { server } from '@/test/mocks/server';
 import {
@@ -12,16 +10,7 @@ import {
   sampleProductDetail,
 } from '@/test/mocks/fixtures/catalog';
 
-function createWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(ApolloProvider, { client }, children);
-  };
-}
-
-afterEach(async () => {
-  await getApolloClient().clearStore();
-});
+const createWrapper = createApolloTestWrapper;
 
 describe('useProduct', () => {
   // AC: P0-T9 slug strategy — productBySlug requires slug + storeId

@@ -1,8 +1,6 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { renderHook, waitFor } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getApolloClient } from '@/lib/graphql/client';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import { useOrders } from '@/lib/hooks/useOrders';
 import { useProfile } from '@/lib/hooks/useProfile';
@@ -16,16 +14,10 @@ vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-function createWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(ApolloProvider, { client }, children);
-  };
-}
+const createWrapper = createApolloTestWrapper;
 
-afterEach(async () => {
+afterEach(() => {
   mockUseAuth.mockReset();
-  await getApolloClient().clearStore();
 });
 
 describe('Phase 4 account hooks', () => {

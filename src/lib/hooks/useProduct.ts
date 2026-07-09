@@ -57,6 +57,7 @@ export function useProduct(params: UseProductParams): UseProductResult {
   const idQuery = useQuery(ProductByIdDocument, {
     variables: { id: idParams?.id ?? '' },
     skip: !idCanQuery,
+    fetchPolicy: 'cache-first',
   });
 
   if (params.mode === 'slug') {

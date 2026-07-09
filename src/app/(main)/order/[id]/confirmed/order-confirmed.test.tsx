@@ -1,11 +1,9 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { createElement, type ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OrderConfirmedContent } from '@/app/(main)/order/[id]/confirmed/OrderConfirmedContent';
 import { ThankYouPageContent } from '@/app/(main)/thank-you/[id]/ThankYouPageContent';
-import { getApolloClient } from '@/lib/graphql/client';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { CHECKOUT_ORDER_ID, sampleOrder } from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
 
@@ -38,16 +36,7 @@ vi.mock('@/lib/hooks/useAuth', () => ({
   }),
 }));
 
-function createWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(ApolloProvider, { client }, children);
-  };
-}
-
-afterEach(async () => {
-  await getApolloClient().clearStore();
-});
+const createWrapper = createApolloTestWrapper;
 
 describe('OrderConfirmedContent', () => {
   it('renders order number and line items from GraphQL', async () => {

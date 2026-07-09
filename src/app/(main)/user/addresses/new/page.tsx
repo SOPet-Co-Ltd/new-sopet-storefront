@@ -38,7 +38,7 @@ export default function NewAddressPage() {
 
   return (
     <AccountLayout title="เพิ่มที่อยู่ใหม่">
-      <div className="max-w-lg">
+      <div className="mx-auto max-w-2xl">
         <AddressForm
           values={values}
           onChange={setValues}

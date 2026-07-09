@@ -1,12 +1,11 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ProductDetailsPage from '@/components/sections/ProductDetailsPage';
-import { getApolloClient } from '@/lib/graphql/client';
 import { CartProvider } from '@/lib/providers/CartProvider';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from '@/test/mocks/server';
 
 const STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
@@ -134,12 +133,12 @@ vi.mock('@/lib/hooks/useAuth', () => ({
 }));
 
 function createWrapper() {
-  const client = getApolloClient();
+  const ApolloTestWrapper = createApolloTestWrapper();
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <ApolloProvider client={client}>
+      <ApolloTestWrapper>
         <CartProvider>{children}</CartProvider>
-      </ApolloProvider>
+      </ApolloTestWrapper>
     );
   };
 }
@@ -203,9 +202,8 @@ function mockProductQueries({
   );
 }
 
-afterEach(async () => {
+afterEach(() => {
   notFound.mockClear();
-  await getApolloClient().clearStore();
 });
 
 describe('ProductDetailsPage', () => {

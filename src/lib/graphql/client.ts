@@ -1,11 +1,11 @@
+import { HttpLink } from '@apollo/client';
 import {
   ApolloClient,
-  HttpLink,
   InMemoryCache,
   type DocumentNode,
   type OperationVariables,
   type TypedDocumentNode,
-} from '@apollo/client';
+} from '@apollo/client-integration-nextjs';
 import { from } from '@apollo/client/link';
 import { GRAPHQL_URL } from '@/lib/config';
 import { createAuthLink } from '@/lib/graphql/authLink';
@@ -13,7 +13,7 @@ import { typePolicies } from '@/lib/graphql/cachePolicies';
 
 let browserApolloClient: ApolloClient | null = null;
 
-function createApolloClient(): ApolloClient {
+export function makeApolloClient(): ApolloClient {
   const httpLink = new HttpLink({
     uri: GRAPHQL_URL,
     credentials: 'include',
@@ -27,11 +27,11 @@ function createApolloClient(): ApolloClient {
 
 export function getApolloClient(): ApolloClient {
   if (typeof window === 'undefined') {
-    return createApolloClient();
+    return makeApolloClient();
   }
 
   if (!browserApolloClient) {
-    browserApolloClient = createApolloClient();
+    browserApolloClient = makeApolloClient();
   }
   return browserApolloClient;
 }

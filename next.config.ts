@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
 
+const graphqlBackendOrigin =
+  process.env.GRAPHQL_SSR_URL?.replace(/\/graphql\/?$/, "") ??
+  "http://localhost:3002";
+
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/graphql",
+        destination: `${graphqlBackendOrigin}/graphql`,
+      },
+    ];
+  },
   images: {
+    qualities: [75, 85],
     remotePatterns: [
       {
         protocol: "http",

@@ -1,9 +1,7 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { renderHook } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { createElement, type ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getApolloClient } from '@/lib/graphql/client';
+import { describe, expect, it, vi } from 'vitest';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { useCheckout } from '@/lib/hooks/useCheckout';
 import { server } from '@/test/mocks/server';
 import { CATALOG_STORE_ID } from '@/test/mocks/fixtures/catalog';
@@ -269,16 +267,7 @@ describe('submitCheckout', () => {
   });
 });
 
-function createApolloWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(ApolloProvider, { client }, children);
-  };
-}
-
-afterEach(async () => {
-  await getApolloClient().clearStore();
-});
+const createApolloWrapper = createApolloTestWrapper;
 
 describe('submitCheckout MSW integration', () => {
   it('submits checkout end-to-end using useCheckout with MSW handlers', async () => {

@@ -8,10 +8,16 @@ export default defineConfig({
     environment: 'jsdom',
     globals: false,
     setupFiles: ['./src/test/setup.ts'],
+    server: {
+      deps: {
+        inline: true,
+      },
+    },
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    conditions: ['browser'],
   },
 });

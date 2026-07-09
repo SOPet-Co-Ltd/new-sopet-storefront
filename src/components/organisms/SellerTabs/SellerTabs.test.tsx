@@ -1,10 +1,8 @@
-import { ApolloProvider } from '@apollo/client/react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import type { ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SellerStorefront } from '@/components/organisms/SellerTabs';
-import { getApolloClient } from '@/lib/graphql/client';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from '@/test/mocks/server';
 
 const STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
@@ -69,12 +67,7 @@ vi.mock('next/image', () => ({
   ),
 }));
 
-function createWrapper() {
-  const client = getApolloClient();
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return <ApolloProvider client={client}>{children}</ApolloProvider>;
-  };
-}
+const createWrapper = createApolloTestWrapper;
 
 function registerSellerHandlers() {
   server.use(
@@ -103,10 +96,6 @@ function registerSellerHandlers() {
 beforeEach(() => {
   pathname = `/sellers/${STORE_SLUG}`;
   push.mockClear();
-});
-
-afterEach(async () => {
-  await getApolloClient().clearStore();
 });
 
 describe('SellerStorefront', () => {

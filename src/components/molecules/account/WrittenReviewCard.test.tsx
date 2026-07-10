@@ -18,5 +18,6 @@ describe('WrittenReviewCard', () => {
     expect(screen.getByLabelText(`${sampleMyReview.rating} จาก 5 ดาว`)).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: sampleMyReview.productName })).toHaveLength(2);
     expect(screen.getAllByRole('link')[0]).toHaveAttribute('href', `/product/${sampleMyReview.productId}`);
+    expect(screen.getByTestId('review-images-grid')).toBeInTheDocument();
   });
 });

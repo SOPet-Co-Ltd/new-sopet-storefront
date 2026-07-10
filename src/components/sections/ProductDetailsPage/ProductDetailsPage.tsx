@@ -2,7 +2,7 @@
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { notFound } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Breadcrumbs } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
 import { ProductDetails } from '@/components/organisms/ProductDetails/ProductDetails';
 import ProductDetailsSeller from '@/components/organisms/ProductDetailsSeller';
@@ -19,6 +19,27 @@ type ProductDetailsPageProps = {
   productId: string;
   initialProduct?: ProductByIdQuery['product'];
 };
+
+function computeReviewSummary(
+  productReviews: { rating: number }[],
+  productAverageRating: number,
+  productReviewCount: number,
+) {
+  if (productReviews.length === 0) {
+    return {
+      averageRating: productAverageRating,
+      totalReviews: productReviewCount,
+    };
+  }
+
+  const totalReviews = productReviews.length;
+  const averageRating =
+    Math.round(
+      (productReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews) * 10,
+    ) / 10;
+
+  return { averageRating, totalReviews };
+}
 
 function ProductDetailsSkeleton() {
   return (
@@ -51,6 +72,14 @@ export default function ProductDetailsPage({
     storeId: product?.storeId,
     skip: !product,
   });
+
+  const reviewSummary = useMemo(
+    () =>
+      product
+        ? computeReviewSummary(productReviews, product.averageRating, product.reviewCount)
+        : { averageRating: 0, totalReviews: 0 },
+    [product, productReviews],
+  );
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
@@ -106,8 +135,8 @@ export default function ProductDetailsPage({
 
       <ProductDetailsSellerReviews
         productReviews={productReviews}
-        averageRating={product.averageRating}
-        totalReviews={product.reviewCount}
+        averageRating={reviewSummary.averageRating}
+        totalReviews={reviewSummary.totalReviews}
         loading={reviewsLoading}
       />
 

@@ -1,0 +1,6 @@
+mutation UploadImage($base64: String!, $folder: String) {
+  uploadImage(base64: $base64, folder: $folder) {
+    url
+    key
+  }
+}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Modal } from '@/components/atoms/Modal';
+import { ReviewImagePicker } from '@/components/molecules/ReviewImagePicker/ReviewImagePicker';
 
 export type ReviewModalItem = {
   id: string;
@@ -17,6 +18,7 @@ export type ReviewSubmitData = {
   productId: string;
   rating: number;
   comment: string;
+  imageFiles: File[];
 };
 
 type ReviewFormEntry = {
@@ -24,6 +26,7 @@ type ReviewFormEntry = {
   productId: string;
   rating: number;
   comment: string;
+  imageFiles: File[];
 };
 
 type ReviewModalProps = {
@@ -47,6 +50,7 @@ function ReviewModalContent({ items, onClose, onSubmit }: ReviewModalContentProp
         productId: item.productId,
         rating: 0,
         comment: '',
+        imageFiles: [],
       })),
     [items],
   );
@@ -64,8 +68,8 @@ function ReviewModalContent({ items, onClose, onSubmit }: ReviewModalContentProp
 
   const updateItemReview = (
     itemId: string,
-    field: 'rating' | 'comment',
-    value: number | string,
+    field: 'rating' | 'comment' | 'imageFiles',
+    value: number | string | File[],
   ) => {
     setReviewData((previous) =>
       previous.map((entry) =>
@@ -93,6 +97,7 @@ function ReviewModalContent({ items, onClose, onSubmit }: ReviewModalContentProp
           productId: entry.productId,
           rating: entry.rating,
           comment: entry.comment,
+          imageFiles: entry.imageFiles,
         })),
       );
       onClose();
@@ -163,7 +168,12 @@ function ReviewModalContent({ items, onClose, onSubmit }: ReviewModalContentProp
                   value={entry.comment}
                   onChange={(event) => updateItemReview(item.id, 'comment', event.target.value)}
                   placeholder="แบ่งปันประสบการณ์ของคุณ"
-                  className="w-full h-24 rounded-sop-12px border border-sop-neutral-gray-500 p-3 sop-body-sm-regular"
+                  className="h-24 w-full rounded-sop-12px border border-sop-neutral-gray-500 p-3 sop-body-sm-regular"
+                />
+                <ReviewImagePicker
+                  files={entry.imageFiles}
+                  disabled={isSubmitting}
+                  onChange={(files) => updateItemReview(item.id, 'imageFiles', files)}
                 />
               </div>
             );

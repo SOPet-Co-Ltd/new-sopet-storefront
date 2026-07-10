@@ -11,18 +11,36 @@ query ProductReviews($productId: String!) {
       id
       url
     }
+    reply {
+      id
+      body
+      createdAt
+      updatedAt
+    }
   }
 }
 
-query StoreProductReviews($storeId: String!) {
-  storeProductReviews(storeId: $storeId) {
+query StoreReviews($storeId: String!) {
+  storeReviews(storeId: $storeId) {
     id
     productId
     productName
+    productSlug
+    productImageUrl
     rating
     comment
     createdAt
     customerName
+    images {
+      id
+      url
+    }
+    reply {
+      id
+      body
+      createdAt
+      updatedAt
+    }
   }
 }
 
@@ -48,6 +66,10 @@ mutation CreateReview($input: CreateReviewInput!) {
     status
     createdAt
     customerName
+    images {
+      id
+      url
+    }
   }
 }
 

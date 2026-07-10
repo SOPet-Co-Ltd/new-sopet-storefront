@@ -4,11 +4,14 @@ import { useQuery } from '@apollo/client/react';
 import {
   ProductReviewsDocument,
   StoreReviewSummaryDocument,
+  StoreReviewsDocument,
   type ProductReviewsQuery,
   type StoreReviewSummaryQuery,
+  type StoreReviewsQuery,
 } from '@/lib/graphql/generated/graphql';
 
 export type ProductReview = ProductReviewsQuery['productReviews'][number];
+export type StoreReview = StoreReviewsQuery['storeReviews'][number];
 export type StoreReviewSummary = StoreReviewSummaryQuery['storeReviewSummary'];
 
 export type UseReviewsParams = {
@@ -19,9 +22,15 @@ export type UseReviewsParams = {
 
 export type UseReviewsResult = {
   productReviews: ProductReview[];
+  storeReviews: StoreReview[];
   storeReviewSummary: StoreReviewSummary | null;
   loading: boolean;
+  productReviewsLoading: boolean;
+  storeReviewSummaryLoading: boolean;
+  storeReviewsLoading: boolean;
   error: Error | undefined;
+  storeReviewsError: Error | undefined;
+  refetchStoreReviews: () => void;
 };
 
 function toHookError(error: unknown): Error | undefined {
@@ -30,7 +39,7 @@ function toHookError(error: unknown): Error | undefined {
 }
 
 /**
- * Combines product-level reviews and store-level review summary for PDP and seller pages.
+ * Combines product-level reviews, store-level review list, and summary for PDP and seller pages.
  */
 export function useReviews({
   productId,
@@ -51,20 +60,39 @@ export function useReviews({
 
   const {
     data: storeData,
-    loading: storeLoading,
-    error: storeError,
+    loading: storeSummaryLoading,
+    error: storeSummaryError,
   } = useQuery(StoreReviewSummaryDocument, {
     variables: { storeId: storeId ?? '' },
     skip: skipStore,
   });
 
+  const {
+    data: storeReviewsData,
+    loading: storeReviewsLoading,
+    error: storeReviewsError,
+    refetch: refetchStoreReviewsQuery,
+  } = useQuery(StoreReviewsDocument, {
+    variables: { storeId: storeId ?? '' },
+    skip: skipStore,
+  });
+
   const loading =
-    (!skipProduct && productLoading) || (!skipStore && storeLoading);
+    (!skipProduct && productLoading) ||
+    (!skipStore && (storeSummaryLoading || storeReviewsLoading));
 
   return {
     productReviews: productData?.productReviews ?? [],
+    storeReviews: storeReviewsData?.storeReviews ?? [],
     storeReviewSummary: storeData?.storeReviewSummary ?? null,
     loading,
-    error: toHookError(productError ?? storeError),
+    productReviewsLoading: !skipProduct && productLoading,
+    storeReviewSummaryLoading: !skipStore && storeSummaryLoading,
+    storeReviewsLoading: !skipStore && storeReviewsLoading,
+    error: toHookError(productError ?? storeSummaryError),
+    storeReviewsError: toHookError(storeReviewsError),
+    refetchStoreReviews: () => {
+      void refetchStoreReviewsQuery();
+    },
   };
 }

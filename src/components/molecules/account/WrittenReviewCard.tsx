@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
+import { ReviewImagesGrid } from '@/components/molecules/ReviewImagesGrid/ReviewImagesGrid';
 import { buildProductHref } from '@/components/organisms/ProductCard';
 import type { CustomerReview } from '@/lib/hooks/useCustomerReviews';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
@@ -77,6 +78,8 @@ export function WrittenReviewCard({ review }: WrittenReviewCardProps) {
               {review.comment}
             </p>
           ) : null}
+
+          <ReviewImagesGrid images={review.images ?? []} />
 
           <p className="mt-2 sop-body-xs-regular text-sop-neutral-gray-400">
             {formatThaiDateTime(review.createdAt)}

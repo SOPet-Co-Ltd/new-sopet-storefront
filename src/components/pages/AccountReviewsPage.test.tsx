@@ -11,11 +11,12 @@ import {
 import { server } from '@/test/mocks/server';
 
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 
 let searchParams = new URLSearchParams();
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, prefetch: vi.fn() }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace, prefetch: vi.fn() }),
   usePathname: () => '/user/reviews',
   useSearchParams: () => searchParams,
 }));
@@ -38,6 +39,7 @@ const createWrapper = createApolloTestWrapper;
 beforeEach(() => {
   searchParams = new URLSearchParams();
   mockPush.mockReset();
+  mockReplace.mockReset();
 });
 
 describe('AccountReviewsPage', () => {
@@ -208,6 +210,44 @@ describe('AccountReviewsPage', () => {
     await user.click(screen.getByRole('tab', { name: 'รอดำเนินการ' }));
 
     expect(mockPush).toHaveBeenCalledWith('/user/reviews');
+  });
+
+  it('opens review modal automatically when orderId search param is present', async () => {
+    searchParams = new URLSearchParams({ orderId: sampleReviewableItem.orderId });
+
+    server.use(
+      graphql.query('CustomerReviewableItems', () => {
+        return HttpResponse.json({
+          data: { customerReviewableItems: [sampleReviewableItem] },
+        });
+      }),
+    );
+
+    render(<AccountReviewsPage />, { wrapper: createWrapper() });
+
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'รีวิวสินค้า' }),
+    ).toBeInTheDocument();
+  });
+
+  it('clears orderId search param when review modal is closed', async () => {
+    const user = userEvent.setup();
+    searchParams = new URLSearchParams({ orderId: sampleReviewableItem.orderId });
+
+    server.use(
+      graphql.query('CustomerReviewableItems', () => {
+        return HttpResponse.json({
+          data: { customerReviewableItems: [sampleReviewableItem] },
+        });
+      }),
+    );
+
+    render(<AccountReviewsPage />, { wrapper: createWrapper() });
+    await screen.findByRole('heading', { level: 2, name: 'รีวิวสินค้า' });
+
+    await user.click(screen.getByRole('button', { name: 'ยกเลิก' }));
+
+    expect(mockReplace).toHaveBeenCalledWith('/user/reviews');
   });
 
   it('opens review modal and submits createReview with orderId from selection', async () => {

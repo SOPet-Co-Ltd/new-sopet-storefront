@@ -9,8 +9,11 @@ import {
   sampleProductCard,
   sampleProductDetail,
   sampleProductReview,
+  sampleProductReviewWithReply,
   sampleStore,
+  sampleStoreReview,
   sampleStoreReviewSummary,
+  sampleStoreReviewWithReply,
 } from './fixtures/catalog';
 import { sampleCart, sampleEmptyCart } from './fixtures/cart';
 import { sampleSearchRecoverySuggestions, sampleSearchSuggestionsPayload } from './fixtures/search';
@@ -115,6 +118,12 @@ export const handlers = [
     });
   }),
 
+  graphql.query('StoreReviews', () => {
+    return HttpResponse.json({
+      data: { storeReviews: [sampleStoreReview] },
+    });
+  }),
+
   graphql.query('StoreReviewSummary', () => {
     return HttpResponse.json({
       data: { storeReviewSummary: sampleStoreReviewSummary },
@@ -141,7 +150,7 @@ export const handlers = [
           productId: sampleMyReview.productId,
           rating: 5,
           comment: 'Great',
-          status: 'pending',
+          status: 'approved',
           createdAt: new Date().toISOString(),
           customerName: 'ลูกค้า',
         },

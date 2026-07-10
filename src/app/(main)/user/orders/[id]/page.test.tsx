@@ -190,7 +190,7 @@ describe('OrderDetailPage', () => {
       );
       expect(screen.getByRole('link', { name: 'เขียนรีวิว' })).toHaveAttribute(
         'href',
-        '/user/reviews?tab=pending',
+        '/user/reviews?orderId=order-1',
       );
       expect(screen.getByRole('link', { name: 'ขอคืนสินค้า' })).toHaveAttribute(
         'href',

@@ -98,6 +98,58 @@ export const sampleProductReview = {
   createdAt: '2026-01-01T00:00:00.000Z',
   customerName: 'Test Customer',
   images: [],
+  reply: null,
+};
+
+export const sampleProductReviewWithReply = {
+  ...sampleProductReview,
+  id: 'review-2',
+  reply: {
+    id: 'reply-1',
+    body: 'Thank you for your review',
+    createdAt: '2026-01-02T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+  },
+};
+
+export const sampleStoreReview = {
+  id: 'store-review-1',
+  productId: CATALOG_PRODUCT_ID,
+  productName: 'Premium Dog Food 5kg',
+  productSlug: 'premium-dog-food-5kg',
+  productImageUrl: 'https://example.com/dog-food.jpg',
+  rating: 5,
+  comment: 'Great product',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  customerName: 'Test Customer',
+  reply: null,
+  images: [],
+};
+
+export const sampleProductReviewWithImages = {
+  ...sampleProductReview,
+  id: 'review-with-images',
+  images: [
+    { id: 'review-img-1', url: 'https://example.com/review-1.jpg' },
+    { id: 'review-img-2', url: 'https://example.com/review-2.jpg' },
+  ],
+};
+
+export const sampleStoreReviewWithImages = {
+  ...sampleStoreReview,
+  id: 'store-review-with-images',
+  images: [{ id: 'review-img-1', url: 'https://example.com/review-1.jpg' }],
+};
+
+export const sampleStoreReviewWithReply = {
+  ...sampleStoreReview,
+  id: 'store-review-2',
+  reply: {
+    id: 'reply-1',
+    body: 'Thank you for shopping with us',
+    createdAt: '2026-01-02T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+  },
 };
 
 export const sampleStoreReviewSummary = {

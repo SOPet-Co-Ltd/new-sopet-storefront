@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation } from '@apollo/client/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -17,6 +17,7 @@ import ReviewModal, {
 } from '@/components/organisms/ReviewModal';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { CreateReviewDocument } from '@/lib/graphql/generated/graphql';
+import { uploadReviewImage } from '@/lib/upload/uploadReviewImage';
 import {
   type CustomerReviewableItem,
   type ReviewTab,
@@ -103,16 +104,36 @@ export function AccountReviewsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeTab = parseReviewsTab(searchParams.get('tab'));
+  const orderIdParam = searchParams.get('orderId');
   const { reviewableItems, myReviews, loading, error, refetch } = useCustomerReviews({
     tab: activeTab,
   });
-  const [selectedReviewItem, setSelectedReviewItem] = useState<CustomerReviewableItem | null>(null);
+  const [selectedReviewItems, setSelectedReviewItems] = useState<CustomerReviewableItem[]>([]);
+  const handledOrderIdRef = useRef<string | null>(null);
   const [createReviewMutation] = useMutation(CreateReviewDocument);
 
   const modalItems = useMemo(
-    () => (selectedReviewItem ? [toReviewModalItem(selectedReviewItem)] : []),
-    [selectedReviewItem],
+    () => selectedReviewItems.map(toReviewModalItem),
+    [selectedReviewItems],
   );
+
+  useEffect(() => {
+    if (!orderIdParam || loading || activeTab !== 'pending') {
+      return;
+    }
+
+    if (handledOrderIdRef.current === orderIdParam) {
+      return;
+    }
+
+    const orderItems = reviewableItems.filter((item) => item.orderId === orderIdParam);
+    if (orderItems.length === 0) {
+      return;
+    }
+
+    handledOrderIdRef.current = orderIdParam;
+    setSelectedReviewItems(orderItems);
+  }, [activeTab, loading, orderIdParam, reviewableItems]);
 
   const handleTabChange = useCallback(
     (tabId: string) => {
@@ -130,21 +151,48 @@ export function AccountReviewsPage() {
     [pathname, router, searchParams],
   );
 
+  const clearOrderIdParam = useCallback(() => {
+    if (!searchParams.get('orderId')) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('orderId');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [pathname, router, searchParams]);
+
+  const handleCloseReviewModal = useCallback(() => {
+    setSelectedReviewItems([]);
+    clearOrderIdParam();
+  }, [clearOrderIdParam]);
+
   const handleReviewSubmit = useCallback(
     async (data: ReviewSubmitData[]) => {
-      if (!selectedReviewItem) {
+      if (selectedReviewItems.length === 0) {
         return;
       }
 
       for (const entry of data) {
+        const sourceItem = selectedReviewItems.find((item) => item.productId === entry.productId);
+        if (!sourceItem) {
+          continue;
+        }
+
         try {
+          const imageUrls: string[] = [];
+          for (const file of entry.imageFiles) {
+            imageUrls.push(await uploadReviewImage(file));
+          }
+
           await createReviewMutation({
             variables: {
               input: {
                 productId: entry.productId,
-                orderId: selectedReviewItem.orderId,
+                orderId: sourceItem.orderId,
                 rating: entry.rating,
                 comment: entry.comment || undefined,
+                imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
               },
             },
           });
@@ -156,7 +204,7 @@ export function AccountReviewsPage() {
       toast.success('ส่งรีวิวสำเร็จ');
       await refetch();
     },
-    [createReviewMutation, refetch, selectedReviewItem],
+    [createReviewMutation, refetch, selectedReviewItems],
   );
 
   const renderTabPanel = () => {
@@ -186,7 +234,7 @@ export function AccountReviewsPage() {
             <ReviewableItemCard
               key={`${item.orderId}-${item.orderItemId}`}
               item={item}
-              onWriteReview={setSelectedReviewItem}
+              onWriteReview={(item) => setSelectedReviewItems([item])}
             />
           ))}
         </div>
@@ -222,9 +270,9 @@ export function AccountReviewsPage() {
       </AccountTabBar>
 
       <ReviewModal
-        isOpen={!!selectedReviewItem}
+        isOpen={selectedReviewItems.length > 0}
         items={modalItems}
-        onClose={() => setSelectedReviewItem(null)}
+        onClose={handleCloseReviewModal}
         onSubmit={handleReviewSubmit}
       />
     </AccountLayout>

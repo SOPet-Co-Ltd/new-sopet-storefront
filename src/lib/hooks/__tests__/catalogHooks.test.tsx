@@ -68,6 +68,10 @@ describe('useReviews', () => {
         expect(variables).toEqual({ storeId: CATALOG_STORE_ID });
         return HttpResponse.json({ data: { storeReviewSummary: sampleStoreReviewSummary } });
       }),
+      graphql.query('StoreReviews', ({ variables }) => {
+        expect(variables).toEqual({ storeId: CATALOG_STORE_ID });
+        return HttpResponse.json({ data: { storeReviews: [] } });
+      }),
     );
 
     const { result } = renderHook(

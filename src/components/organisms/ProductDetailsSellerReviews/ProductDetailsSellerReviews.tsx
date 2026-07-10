@@ -1,15 +1,16 @@
 'use client';
 
-import Image from 'next/image';
 import { Suspense, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ProductReviewPagination } from '@/components/molecules/ProductReviewPagination/ProductReviewPagination';
 import { RenderReviewFilterButtons } from '@/components/molecules/RenderReviewFilterButtons/RenderReviewFilterButtons';
 import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
 import { cn } from '@/lib/utils';
 import type { ProductReview } from '@/lib/hooks/useReviews';
-import { formatThaiDate } from '@/lib/datetime/formatThaiDatetime';
+import { ProductReviewItem } from './ProductReviewItem';
 
 const REVIEWS_PER_PAGE = 5;
+const RATING_QUERY_KEY = 'prf';
 
 type ProductDetailsSellerReviewsProps = {
   productReviews: ProductReview[];
@@ -38,7 +39,7 @@ function filterReviews(reviews: ProductReview[], filter: string | null): Product
   }
 
   if (filter === 'wi') {
-    return reviews.filter((review) => review.images.length > 0);
+    return reviews.filter((review) => (review.images?.length ?? 0) > 0);
   }
 
   if (filter === 'oc') {
@@ -56,35 +57,7 @@ function ReviewComments({ productReviews }: { productReviews: ProductReview[] })
   return (
     <div className="flex flex-col gap-4">
       {productReviews.map((review) => (
-        <article
-          key={review.id}
-          className="border-b border-sop-neutral-grayalpha-200 pb-4 last:border-b-0"
-        >
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <p className="sop-body-sm-medium text-sop-neutral-gray-300">{review.customerName}</p>
-            <time className="sop-body-xs-regular text-sop-neutral-gray-400" dateTime={review.createdAt}>
-              {formatThaiDate(review.createdAt)}
-            </time>
-          </div>
-          <RenderStars averageRating={review.rating} size={18} />
-          {review.comment && (
-            <p className="mt-2 sop-body-sm-regular text-sop-neutral-gray-400">{review.comment}</p>
-          )}
-          {review.images.length > 0 && (
-            <div className="mt-2 flex gap-2 flex-wrap">
-              {review.images.map((image) => (
-                <Image
-                  key={image.id}
-                  src={image.url}
-                  alt=""
-                  width={64}
-                  height={64}
-                  className="h-16 w-16 rounded-sop-8px object-cover"
-                />
-              ))}
-            </div>
-          )}
-        </article>
+        <ProductReviewItem key={review.id} review={review} />
       ))}
     </div>
   );
@@ -96,7 +69,10 @@ function ProductDetailsSellerReviewsContent({
   totalReviews,
   loading = false,
 }: ProductDetailsSellerReviewsProps) {
-  const [ratingFilter, setRatingFilter] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [ratingFilter, setRatingFilter] = useState<string | null>(
+    () => searchParams.get(RATING_QUERY_KEY),
+  );
   const [currentPage, setCurrentPage] = useState(1);
 
   const starCounts = useMemo(() => computeStarCounts(productReviews), [productReviews]);

@@ -28,8 +28,10 @@ export function RenderReviewFilterButtons({
   const searchParams = useSearchParams();
   const initialRating = searchParams.get(RATING_QUERY_KEY);
   const [uncontrolledRating, setUncontrolledRating] = useState<string | null>(initialRating);
-  const selectedRating =
-    controlledRating ?? uncontrolledRating ?? searchParams.get(RATING_QUERY_KEY);
+  const isControlled = onFilterChange !== undefined;
+  const selectedRating = isControlled
+    ? (controlledRating ?? null)
+    : (uncontrolledRating ?? searchParams.get(RATING_QUERY_KEY));
 
   const { allFilter, starFilters, miscFilters } = useMemo(() => {
     const starFilterButtons = [5, 4, 3, 2, 1].map((rating) => ({

@@ -119,7 +119,7 @@ export default function OrderDetailPage() {
             ) : null}
             {isDelivered ? (
               hasPendingReviews ? (
-                <Link href="/user/reviews?tab=pending">
+                <Link href={`/user/reviews?orderId=${order.id}`}>
                   <Button variant="primary">เขียนรีวิว</Button>
                 </Link>
               ) : (

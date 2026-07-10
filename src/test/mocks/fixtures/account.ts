@@ -58,4 +58,10 @@ export const sampleMyReview = {
   comment: 'ดีมาก',
   status: 'pending',
   createdAt: '2026-07-01T10:00:00.000Z',
+  images: [
+    {
+      id: 'review-image-1',
+      url: 'https://example.com/review-photo.jpg',
+    },
+  ],
 };

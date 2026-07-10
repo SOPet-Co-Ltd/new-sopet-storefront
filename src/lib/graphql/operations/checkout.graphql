@@ -3,6 +3,8 @@ fragment OrderItemFields on OrderItemType {
   variantId
   storeId
   productName
+  productId
+  productImageUrl
   quantity
   unitPrice
   subtotal

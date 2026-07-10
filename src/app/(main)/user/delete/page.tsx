@@ -47,7 +47,12 @@ export default function DeleteAccountPage() {
           <input
             type="checkbox"
             checked={confirmed}
-            onChange={(e) => setConfirmed(e.target.checked)}
+            onChange={(e) => {
+              setConfirmed(e.target.checked);
+              if (e.target.checked) {
+                setError(null);
+              }
+            }}
             className="mt-1 h-4 w-4 accent-sop-system-error-400"
           />
           ฉันเข้าใจและต้องการลบบัญชีของฉัน
@@ -63,7 +68,7 @@ export default function DeleteAccountPage() {
           variant="destructive"
           fill
           loading={loading}
-          disabled={loading}
+          disabled={loading || !confirmed}
           onClick={() => void handleDelete()}
         >
           ส่งคำขอลบบัญชี

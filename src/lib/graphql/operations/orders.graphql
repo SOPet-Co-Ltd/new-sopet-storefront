@@ -5,6 +5,8 @@ fragment OrderListFields on OrderType {
   createdAt
   total
   items {
+    id
+    productName
     quantity
   }
 }
@@ -24,6 +26,8 @@ fragment OrderConfirmationFields on OrderType {
     variantId
     storeId
     productName
+    productId
+    productImageUrl
     unitPrice
     quantity
     subtotal

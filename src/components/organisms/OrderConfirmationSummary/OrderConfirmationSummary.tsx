@@ -1,7 +1,12 @@
+import Link from 'next/link';
 import type { OrderQuery } from '@/lib/graphql/generated/graphql';
+import { ProductThumbnail } from '@/components/molecules/ProductThumbnail/ProductThumbnail';
+import { buildProductHref } from '@/components/organisms/ProductCard';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
+import { cn } from '@/lib/utils';
 
 type OrderConfirmationOrder = NonNullable<OrderQuery['order']>;
+type OrderConfirmationItem = OrderConfirmationOrder['items'][number];
 
 function formatPrice(amount: number): string {
   return `฿${amount.toLocaleString('th-TH')}`;
@@ -10,6 +15,52 @@ function formatPrice(amount: number): string {
 type OrderConfirmationSummaryProps = {
   order: OrderConfirmationOrder;
 };
+
+function OrderConfirmationItemRow({ item }: { item: OrderConfirmationItem }) {
+  const productHref = item.productId ? buildProductHref(item.productId) : null;
+  const rowClassName =
+    'flex items-start justify-between gap-4 border-b border-sop-neutral-grayalpha-100 pb-4 last:border-b-0 last:pb-0';
+
+  const content = (
+    <>
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <ProductThumbnail
+          alt={item.productName}
+          imageUrl={item.productImageUrl}
+          size="sm"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="sop-body-sm-medium text-sop-neutral-gray-200">{item.productName}</p>
+          <p className="sop-body-xs-regular text-sop-neutral-gray-400">
+            จำนวน {item.quantity} × {formatPrice(item.unitPrice)}
+          </p>
+        </div>
+      </div>
+      <p className="sop-body-sm-medium text-sop-neutral-gray-200">{formatPrice(item.subtotal)}</p>
+    </>
+  );
+
+  if (!productHref) {
+    return (
+      <div className={rowClassName} data-testid="order-confirmation-item">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={productHref}
+      className={cn(
+        rowClassName,
+        '-mx-2 rounded-sop-8px px-2 transition-colors hover:bg-sop-primary-50',
+      )}
+      data-testid="order-confirmation-item"
+    >
+      {content}
+    </Link>
+  );
+}
 
 export function OrderConfirmationSummary({ order }: OrderConfirmationSummaryProps) {
   return (
@@ -32,19 +83,7 @@ export function OrderConfirmationSummary({ order }: OrderConfirmationSummaryProp
 
       <div className="space-y-4">
         {order.items.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-start justify-between gap-4 border-b border-sop-neutral-grayalpha-100 pb-4 last:border-b-0 last:pb-0"
-            data-testid="order-confirmation-item"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="sop-body-sm-medium text-sop-neutral-gray-200">{item.productName}</p>
-              <p className="sop-body-xs-regular text-sop-neutral-gray-400">
-                จำนวน {item.quantity} × {formatPrice(item.unitPrice)}
-              </p>
-            </div>
-            <p className="sop-body-sm-medium text-sop-neutral-gray-200">{formatPrice(item.subtotal)}</p>
-          </div>
+          <OrderConfirmationItemRow key={item.id} item={item} />
         ))}
       </div>
 

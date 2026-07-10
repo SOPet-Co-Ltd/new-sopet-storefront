@@ -13,31 +13,33 @@ function createOrder(status: string): OrderSummary {
     orderNumber: 'ORD-001',
     status,
     createdAt: '2025-01-01T00:00:00.000Z',
-    subtotal: 900,
-    shippingFee: 50,
-    discountAmount: 0,
     total: 950,
-    paymentMethod: 'credit_card',
     items: [
       {
         id: 'item-1',
-        variantId: 'variant-1',
-        storeId: 'store-1',
         productName: 'Test Product',
-        unitPrice: 900,
         quantity: 1,
-        subtotal: 900,
-        fulfillmentStatus: 'pending',
-        trackingNumber: null,
-        fulfillmentProvider: null,
-        trackingUrl: null,
+      },
+      {
+        id: 'item-2',
+        productName: 'Second Product',
+        quantity: 2,
       },
     ],
-    storeShippings: [],
-  } as OrderSummary;
+  };
 }
 
 describe('OrderListItem', () => {
+  it('renders purchased item names and quantities', () => {
+    render(<OrderListItem order={createOrder('delivered')} />);
+
+    expect(screen.getByText('Test Product')).toBeInTheDocument();
+    expect(screen.getByText('Second Product')).toBeInTheDocument();
+    expect(screen.getByText('× 1')).toBeInTheDocument();
+    expect(screen.getByText('× 2')).toBeInTheDocument();
+    expect(screen.getByText('3 รายการ')).toBeInTheDocument();
+  });
+
   it('renders pending_payment status label', () => {
     render(<OrderListItem order={createOrder('pending_payment')} />);
     expect(screen.getByText('รอชำระเงิน')).toBeInTheDocument();

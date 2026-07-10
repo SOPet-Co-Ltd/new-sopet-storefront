@@ -99,5 +99,9 @@ query MyReviews($limit: Int, $offset: Int) {
     comment
     status
     createdAt
+    images {
+      id
+      url
+    }
   }
 }

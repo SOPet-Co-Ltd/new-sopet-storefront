@@ -10,6 +10,7 @@ import {
   OrdersDocument,
   PaymentMethodsDocument,
 } from '@/lib/graphql/generated/graphql';
+import { ORDERS_PAGE_SIZE } from '@/lib/constants/orderListFilters';
 import { getApolloClient } from '@/lib/graphql/client';
 import {
   MY_REVIEWS_DEFAULT_LIMIT,
@@ -23,7 +24,12 @@ type AccountPrefetchSpec = {
 
 const ACCOUNT_PREFETCH_SPECS: Record<string, AccountPrefetchSpec[] | null> = {
   '/user/profile': null,
-  '/user/orders': [{ query: OrdersDocument }],
+  '/user/orders': [
+    {
+      query: OrdersDocument,
+      variables: { page: 1, limit: ORDERS_PAGE_SIZE, filter: 'ALL' },
+    },
+  ],
   '/user/addresses': [{ query: AddressesDocument }],
   '/user/favorites': [{ query: FavoritesDocument }],
   '/user/reviews': [

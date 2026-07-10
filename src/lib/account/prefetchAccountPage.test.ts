@@ -5,6 +5,7 @@ import {
   prefetchAllAccountPages,
   prefetchOrderDetail,
 } from './prefetchAccountPage';
+import { ORDERS_PAGE_SIZE } from '@/lib/constants/orderListFilters';
 
 const { mockQuery } = vi.hoisted(() => ({
   mockQuery: vi.fn(() => Promise.resolve({ data: {} })),
@@ -30,6 +31,7 @@ describe('prefetchAccountPage', () => {
     expect(mockQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         fetchPolicy: 'cache-first',
+        variables: { page: 1, limit: ORDERS_PAGE_SIZE, filter: 'ALL' },
       }),
     );
   });

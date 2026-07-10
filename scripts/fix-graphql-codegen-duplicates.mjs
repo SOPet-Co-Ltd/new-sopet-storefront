@@ -68,4 +68,12 @@ for (let index = 0; index < duplicateBlocks.length; index += 1) {
   }
 }
 
+const enumNames = [...content.matchAll(/^export enum (\w+)/gm)].map((match) => match[1]);
+for (const enumName of enumNames) {
+  const typeAliasRegex = new RegExp(`\\nexport type ${enumName} =[\\s\\S]*?;\\n`, 'g');
+  if (content.includes(`export enum ${enumName} {`)) {
+    content = content.replace(typeAliasRegex, '\n');
+  }
+}
+
 writeFileSync(filePath, content);

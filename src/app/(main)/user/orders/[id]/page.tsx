@@ -8,7 +8,12 @@ import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { Button } from '@/components/atoms/Button';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
-import { ORDER_STATUS_LABELS, getOrderStatusBadgeVariant } from '@/lib/constants/orderStatus';
+import {
+  ORDER_STATUS_LABELS,
+  getOrderStatusBadgeVariant,
+  isPendingPaymentStatus,
+  isReturnEligibleOrderStatus,
+} from '@/lib/constants/orderStatus';
 import { useOrderDetail } from '@/lib/hooks/useOrders';
 
 export default function OrderDetailPage() {
@@ -80,6 +85,11 @@ export default function OrderDetailPage() {
             {statusLabel}
           </AccountStatusBadge>
           <div className="flex flex-wrap gap-2">
+            {isPendingPaymentStatus(order.status) ? (
+              <Link href={`/payment/${order.id}`}>
+                <Button variant="primary">ชำระเงิน</Button>
+              </Link>
+            ) : null}
             {order.status === 'shipped' ? (
               <Button
                 variant="primary"
@@ -94,9 +104,11 @@ export default function OrderDetailPage() {
                 <Button variant="primary">เขียนรีวิว</Button>
               </Link>
             ) : null}
-            <Link href={`/user/orders/${order.id}/return`}>
-              <Button variant="outline">ขอคืนสินค้า</Button>
-            </Link>
+            {!isPendingPaymentStatus(order.status) && isReturnEligibleOrderStatus(order.status) ? (
+              <Link href={`/user/orders/${order.id}/return`}>
+                <Button variant="outline">ขอคืนสินค้า</Button>
+              </Link>
+            ) : null}
           </div>
         </div>
 

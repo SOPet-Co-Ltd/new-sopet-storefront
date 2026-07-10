@@ -292,9 +292,22 @@ export const handlers = [
     });
   }),
 
-  graphql.query('Orders', () => {
+  graphql.query('Orders', ({ variables }) => {
+    const page = variables?.page ?? 1;
+    const limit = variables?.limit ?? 10;
+
     return HttpResponse.json({
-      data: { orders: [sampleOrder] },
+      data: {
+        orders: {
+          items: [sampleOrder],
+          pagination: {
+            page,
+            limit,
+            total: 1,
+            totalPages: 1,
+          },
+        },
+      },
     });
   }),
 

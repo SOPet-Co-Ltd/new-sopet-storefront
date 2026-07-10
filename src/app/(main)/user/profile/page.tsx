@@ -83,6 +83,7 @@ function ProfileDetailsForm({ customerId, initialFullName }: ProfileDetailsFormP
   const [fullName, setFullName] = useState(initialFullName);
   const [success, setSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const hasNameChanged = fullName.trim() !== initialFullName.trim();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -120,7 +121,7 @@ function ProfileDetailsForm({ customerId, initialFullName }: ProfileDetailsFormP
       ) : null}
 
       <div className="flex justify-end pt-1">
-        <Button type="submit" loading={updating} disabled={updating}>
+        <Button type="submit" loading={updating} disabled={updating || !hasNameChanged}>
           บันทึกข้อมูล
         </Button>
       </div>

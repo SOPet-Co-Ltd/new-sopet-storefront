@@ -1,3 +1,14 @@
+fragment OrderListFields on OrderType {
+  id
+  orderNumber
+  status
+  createdAt
+  total
+  items {
+    quantity
+  }
+}
+
 fragment OrderConfirmationFields on OrderType {
   id
   orderNumber
@@ -28,9 +39,17 @@ fragment OrderConfirmationFields on OrderType {
   }
 }
 
-query Orders {
-  orders {
-    ...OrderConfirmationFields
+query Orders($page: Int, $limit: Int, $filter: CustomerOrderListFilter) {
+  orders(page: $page, limit: $limit, filter: $filter) {
+    items {
+      ...OrderListFields
+    }
+    pagination {
+      page
+      limit
+      total
+      totalPages
+    }
   }
 }
 

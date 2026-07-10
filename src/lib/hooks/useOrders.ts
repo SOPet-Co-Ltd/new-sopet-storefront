@@ -6,17 +6,27 @@ import {
   ConfirmOrderDeliveredDocument,
   OrdersDocument,
   OrderDocument,
+  type CustomerOrderListFilter,
   type OrdersQuery,
   type OrderQuery,
 } from '@/lib/graphql/generated/graphql';
 import { getApolloClient } from '@/lib/graphql/client';
+import { ORDERS_PAGE_SIZE } from '@/lib/constants/orderListFilters';
 import { useAuth } from '@/lib/hooks/useAuth';
 
-export type OrderSummary = OrdersQuery['orders'][number];
+export type OrderSummary = OrdersQuery['orders']['items'][number];
 export type OrderDetail = NonNullable<OrderQuery['order']>;
+export type OrdersPagination = OrdersQuery['orders']['pagination'];
+
+export type UseOrdersOptions = {
+  page?: number;
+  limit?: number;
+  filter?: CustomerOrderListFilter;
+};
 
 export type UseOrdersResult = {
   orders: OrderSummary[];
+  pagination: OrdersPagination | undefined;
   loading: boolean;
   error: Error | undefined;
   refetch: () => Promise<unknown>;
@@ -38,11 +48,15 @@ function toHookError(error: unknown): Error | undefined {
   return error as Error;
 }
 
-export function useOrders(): UseOrdersResult {
+export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
   const { isAuthenticated } = useAuth();
+  const page = options.page ?? 1;
+  const limit = options.limit ?? ORDERS_PAGE_SIZE;
+  const filter = options.filter ?? 'ALL';
 
   const { data, loading, error, refetch } = useQuery(OrdersDocument, {
     skip: !isAuthenticated,
+    variables: { page, limit, filter },
   });
 
   const fetchOrder = useCallback(async (id: string) => {
@@ -69,7 +83,8 @@ export function useOrders(): UseOrdersResult {
   );
 
   return {
-    orders: data?.orders ?? [],
+    orders: data?.orders.items ?? [],
+    pagination: data?.orders.pagination,
     loading: isAuthenticated && loading,
     error: toHookError(error),
     refetch: () => refetch(),

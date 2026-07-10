@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { EmptySearchResults } from '@/components/molecules/EmptySearchResults';
 import { Pagination } from '@/components/molecules/Pagination';
 import { SearchSortBar, type SearchSortValue } from '@/components/molecules/SearchSortBar';
@@ -12,7 +12,6 @@ import { useSearchContext } from '@/lib/hooks/useSearchContext';
 import { useSessionId } from '@/lib/hooks/useSessionId';
 import { parseSearchSort } from '@/lib/search/searchSort';
 import {
-  hasSearchFilters,
   parseSearchFilters,
   toProductsFilterVariables,
 } from '@/lib/search/searchFilters';
@@ -51,7 +50,18 @@ export function ProductListing({
   const sortParam = searchParams.get('sort') as SearchSortValue | null;
   const searchFilters = parseSearchFilters(searchParams);
   const filterVariables = toProductsFilterVariables(searchFilters);
-  const filtersActive = hasSearchFilters(searchFilters);
+  const listingParamsKey = useMemo(
+    () =>
+      JSON.stringify({
+        search: search ?? null,
+        sort: sortParam,
+        page: currentPage,
+        ...filterVariables,
+      }),
+    [search, sortParam, currentPage, filterVariables],
+  );
+  const initialListingParamsKeyRef = useRef(listingParamsKey);
+  const listingParamsChanged = listingParamsKey !== initialListingParamsKeyRef.current;
   const { sortBy, sortOrder } =
     variant === 'search' ? parseSearchSort(sortParam) : { sortBy: undefined, sortOrder: undefined };
   const limit =
@@ -86,7 +96,7 @@ export function ProductListing({
   });
 
   const useInitialProducts =
-    currentPage === 1 && initialProducts !== undefined && !filtersActive;
+    currentPage === 1 && initialProducts !== undefined && !listingParamsChanged;
   const products =
     useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;

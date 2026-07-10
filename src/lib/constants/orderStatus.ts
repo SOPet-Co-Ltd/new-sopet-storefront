@@ -26,6 +26,14 @@ export function getOrderStatusBadgeVariant(status: string): OrderStatusBadgeVari
   return ORDER_STATUS_BADGE_VARIANTS[status] ?? 'default';
 }
 
+export function isPendingPaymentStatus(status: string): boolean {
+  return status === 'pending_payment' || status === 'pending';
+}
+
+export function isReturnEligibleOrderStatus(status: string): boolean {
+  return status === 'shipped' || status === 'delivered';
+}
+
 export const CANONICAL_ORDER_STATUS_KEYS = [
   'pending_payment',
   'paid',

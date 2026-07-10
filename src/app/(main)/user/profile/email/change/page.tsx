@@ -3,9 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
-import { Button } from '@/components/atoms/Button';
+import {
+  ProfileContactEditLayout,
+  ProfileFormActions,
+} from '@/components/molecules/account/ProfileContactEditLayout';
 import { Input } from '@/components/atoms/Input';
+import { FooterMailIcon } from '@/components/atoms/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { isValidEmail } from '@/lib/helpers/email';
 import { useProfile } from '@/lib/hooks/useProfile';
 
 type ChangeEmailFormProps = {
@@ -18,18 +23,20 @@ function ChangeEmailForm({ customerId, initialEmail }: ChangeEmailFormProps) {
   const { updateProfile, updating } = useProfile();
   const [email, setEmail] = useState(initialEmail);
   const [error, setError] = useState<string | null>(null);
+  const trimmedEmail = email.trim();
+  const hasEmailChanged = trimmedEmail !== initialEmail.trim();
+  const canSubmit = hasEmailChanged && isValidEmail(trimmedEmail);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const trimmed = email.trim();
-    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    if (!isValidEmail(trimmedEmail)) {
       setError('กรุณากรอกอีเมลให้ถูกต้อง');
       return;
     }
 
     try {
       setError(null);
-      await updateProfile({ email: trimmed });
+      await updateProfile({ email: trimmedEmail });
       router.push('/user/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถบันทึกอีเมลได้');
@@ -37,23 +44,39 @@ function ChangeEmailForm({ customerId, initialEmail }: ChangeEmailFormProps) {
   };
 
   return (
-    <form key={customerId} onSubmit={(e) => void handleSubmit(e)} className="max-w-md space-y-4">
-      <Input
-        title="อีเมลใหม่"
-        type="email"
-        autoComplete="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      {error ? (
-        <p role="alert" className="sop-body-sm-regular text-sop-system-error-400">
-          {error}
-        </p>
-      ) : null}
-      <Button type="submit" fill loading={updating} disabled={updating}>
-        บันทึก
-      </Button>
-    </form>
+    <ProfileContactEditLayout
+      icon={<FooterMailIcon />}
+      description="อีเมลใหม่จะใช้สำหรับการแจ้งเตือนและการติดต่อจาก SOPet"
+      currentValue={{
+        label: 'อีเมลปัจจุบัน',
+        value: initialEmail.trim() || 'ยังไม่ได้เพิ่ม',
+      }}
+    >
+      <form key={customerId} onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+        <Input
+          title="อีเมลใหม่"
+          type="email"
+          autoComplete="email"
+          placeholder="name@example.com"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) setError(null);
+          }}
+          variant="bordered"
+        />
+        {error ? (
+          <p role="alert" className="sop-body-sm-regular text-sop-system-error-400">
+            {error}
+          </p>
+        ) : null}
+        <ProfileFormActions
+          submitLabel="บันทึกอีเมลใหม่"
+          loading={updating}
+          disabled={!canSubmit}
+        />
+      </form>
+    </ProfileContactEditLayout>
   );
 }
 

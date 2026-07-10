@@ -64,6 +64,45 @@ describe('OrderDetailPage', () => {
     });
   });
 
+  it('renders pay now link when order is pending_payment', async () => {
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('pending_payment'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
+
+    render(<OrderDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'ชำระเงิน' })).toHaveAttribute(
+        'href',
+        '/payment/order-1',
+      );
+      expect(screen.queryByRole('link', { name: 'ขอคืนสินค้า' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders pay now link for legacy pending status', async () => {
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('pending'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
+
+    render(<OrderDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'ชำระเงิน' })).toHaveAttribute(
+        'href',
+        '/payment/order-1',
+      );
+    });
+  });
+
   it('renders legacy pending status label', async () => {
     mockUseOrderDetail.mockReturnValue({
       order: createOrder('pending'),
@@ -77,6 +116,41 @@ describe('OrderDetailPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('รอชำระเงิน')).toBeInTheDocument();
+    });
+  });
+
+  it('does not render return link for paid orders', async () => {
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('paid'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
+
+    render(<OrderDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('link', { name: 'ขอคืนสินค้า' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders return link when order is shipped', async () => {
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('shipped'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
+
+    render(<OrderDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'ขอคืนสินค้า' })).toHaveAttribute(
+        'href',
+        '/user/orders/order-1/return',
+      );
     });
   });
 
@@ -95,6 +169,10 @@ describe('OrderDetailPage', () => {
       expect(screen.getByRole('link', { name: 'เขียนรีวิว' })).toHaveAttribute(
         'href',
         '/user/reviews?tab=pending',
+      );
+      expect(screen.getByRole('link', { name: 'ขอคืนสินค้า' })).toHaveAttribute(
+        'href',
+        '/user/orders/order-1/return',
       );
     });
   });

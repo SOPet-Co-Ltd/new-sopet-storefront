@@ -6,6 +6,7 @@ import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountEmptyState } from '@/components/molecules/account/AccountEmptyState';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { useDisputes } from '@/lib/hooks/useDisputes';
+import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 
 const DISPUTE_STATUS_LABELS: Record<string, string> = {
   open: 'เปิดอยู่',
@@ -46,7 +47,7 @@ export default function UserReturnsPage() {
                     {ISSUE_TYPE_LABELS[dispute.issueType] ?? dispute.issueType}
                   </p>
                   <p className="mt-1 sop-body-xs-regular text-sop-neutral-gray-400">
-                    {new Date(dispute.createdAt).toLocaleString('th-TH')}
+                    {formatThaiDateTime(dispute.createdAt)}
                   </p>
                 </div>
                 <AccountStatusBadge>

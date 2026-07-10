@@ -6,6 +6,7 @@ import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountEmptyState } from '@/components/molecules/account/AccountEmptyState';
 import { AccountTabBar } from '@/components/molecules/account/AccountTabBar';
 import { cn } from '@/lib/utils';
+import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/lib/hooks/useNotifications';
 
@@ -183,7 +184,7 @@ function NotificationCard({
           </div>
           <p className="sop-body-sm-regular text-sop-neutral-gray-400">{notification.message}</p>
           <p className="mt-2 sop-body-xs-regular text-sop-neutral-gray-400">
-            {new Date(notification.createdAt).toLocaleString('th-TH')}
+            {formatThaiDateTime(notification.createdAt)}
           </p>
         </div>
         </div>

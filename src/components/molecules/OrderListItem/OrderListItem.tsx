@@ -5,17 +5,11 @@ import { useRouter } from 'next/navigation';
 import { ORDER_STATUS_LABELS } from '@/lib/constants/orderStatus';
 import { prefetchOrderDetail } from '@/lib/account/prefetchAccountPage';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
+import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 import type { OrderSummary } from '@/lib/hooks/useOrders';
 
 function formatPrice(amount: number): string {
   return `฿${amount.toLocaleString('th-TH')}`;
-}
-
-function formatOrderDate(createdAt: string): string {
-  return new Date(createdAt).toLocaleString('th-TH', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
 }
 
 type OrderListItemProps = {
@@ -47,7 +41,7 @@ export function OrderListItem({ order }: OrderListItemProps) {
             คำสั่งซื้อ #{order.orderNumber}
           </p>
           <p className="sop-body-xs-regular text-sop-neutral-gray-400">
-            {formatOrderDate(order.createdAt)}
+            {formatThaiDateTime(order.createdAt)}
           </p>
         </div>
         <AccountStatusBadge>{statusLabel}</AccountStatusBadge>

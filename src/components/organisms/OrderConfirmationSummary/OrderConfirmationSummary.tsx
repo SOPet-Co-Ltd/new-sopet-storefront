@@ -1,16 +1,10 @@
 import type { OrderQuery } from '@/lib/graphql/generated/graphql';
+import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 
 type OrderConfirmationOrder = NonNullable<OrderQuery['order']>;
 
 function formatPrice(amount: number): string {
   return `฿${amount.toLocaleString('th-TH')}`;
-}
-
-function formatOrderDate(createdAt: string): string {
-  return new Date(createdAt).toLocaleString('th-TH', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
 }
 
 type OrderConfirmationSummaryProps = {
@@ -31,7 +25,7 @@ export function OrderConfirmationSummary({ order }: OrderConfirmationSummaryProp
             <span className="sop-body-sm-medium text-sop-secondary-500">{order.orderNumber}</span>
           </p>
           <p className="sop-body-sm-regular text-sop-neutral-gray-300">
-            วันที่สั่งซื้อ: {formatOrderDate(order.createdAt)}
+            วันที่สั่งซื้อ: {formatThaiDateTime(order.createdAt)}
           </p>
         </div>
       </div>

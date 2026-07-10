@@ -7,6 +7,7 @@ import { RenderReviewFilterButtons } from '@/components/molecules/RenderReviewFi
 import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
 import { cn } from '@/lib/utils';
 import type { ProductReview } from '@/lib/hooks/useReviews';
+import { formatThaiDate } from '@/lib/datetime/formatThaiDatetime';
 
 const REVIEWS_PER_PAGE = 5;
 
@@ -16,14 +17,6 @@ type ProductDetailsSellerReviewsProps = {
   totalReviews: number;
   loading?: boolean;
 };
-
-function formatReviewDate(createdAt: string): string {
-  return new Intl.DateTimeFormat('th-TH', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(createdAt));
-}
 
 function computeStarCounts(reviews: ProductReview[]) {
   const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -70,7 +63,7 @@ function ReviewComments({ productReviews }: { productReviews: ProductReview[] })
           <div className="flex items-center justify-between gap-2 mb-2">
             <p className="sop-body-sm-medium text-sop-neutral-gray-300">{review.customerName}</p>
             <time className="sop-body-xs-regular text-sop-neutral-gray-400" dateTime={review.createdAt}>
-              {formatReviewDate(review.createdAt)}
+              {formatThaiDate(review.createdAt)}
             </time>
           </div>
           <RenderStars averageRating={review.rating} size={18} />

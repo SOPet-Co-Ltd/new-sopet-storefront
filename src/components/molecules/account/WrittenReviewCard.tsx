@@ -4,6 +4,7 @@ import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { buildProductHref } from '@/components/organisms/ProductCard';
 import type { CustomerReview } from '@/lib/hooks/useCustomerReviews';
+import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 import { cn } from '@/lib/utils';
 
 type WrittenReviewCardProps = {
@@ -78,7 +79,7 @@ export function WrittenReviewCard({ review }: WrittenReviewCardProps) {
           ) : null}
 
           <p className="mt-2 sop-body-xs-regular text-sop-neutral-gray-400">
-            {new Date(review.createdAt).toLocaleString('th-TH')}
+            {formatThaiDateTime(review.createdAt)}
           </p>
         </div>
       </div>

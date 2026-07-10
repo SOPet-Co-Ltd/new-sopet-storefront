@@ -11,6 +11,7 @@ import {
   createCheckoutCardPaymentBridge,
   prepareCardPaymentToken,
   registerCheckoutCardPaymentBridge,
+  validateCheckoutCardForm,
 } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 
 const VALID_CARD_FORM = {
@@ -193,5 +194,33 @@ describe('checkout card payment bridge', () => {
     );
 
     await expect(prepareCardPaymentToken()).rejects.toThrow('กรุณากรอกหมายเลขบัตร');
+  });
+
+  it('rejects Visa CVV that is not exactly 3 digits', async () => {
+    registerCheckoutCardPaymentBridge(
+      createCheckoutCardPaymentBridge({
+        getCardForm: () => ({
+          ...VALID_CARD_FORM,
+          cvv: '12',
+        }),
+        clearCardForm: vi.fn(),
+        getSavedPaymentMethodId: () => null,
+        shouldUseSavedCard: () => false,
+        getSaveCardForNextTime: () => false,
+      }),
+    );
+
+    await expect(prepareCardPaymentToken()).rejects.toThrow('กรุณากรอกรหัส CVV 3 หลัก');
+  });
+
+  it('rejects American Express CVV that is not exactly 4 digits', () => {
+    expect(
+      validateCheckoutCardForm({
+        cardNumber: '3782-822463-10005',
+        cardName: 'Test User',
+        expiry: '12/30',
+        cvv: '123',
+      }),
+    ).toBe('กรุณากรอกรหัส CVV 4 หลัก');
   });
 });

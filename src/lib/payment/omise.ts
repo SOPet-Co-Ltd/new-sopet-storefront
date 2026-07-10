@@ -129,7 +129,7 @@ export async function tokenizeCard(input: TokenizeCardInput): Promise<string> {
         number: input.number.replace(/\s|-/g, ''),
         expiration_month: input.expirationMonth,
         expiration_year: input.expirationYear,
-        security_code: input.securityCode,
+        security_code: input.securityCode.replace(/\D/g, ''),
       },
       (statusCode, response) => {
         if (statusCode !== 200 || !response.id) {

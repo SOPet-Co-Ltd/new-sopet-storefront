@@ -87,28 +87,22 @@ const SAMPLE_SPONSOR = {
   endsAt: null,
 };
 
-const SAMPLE_ORDER = {
-  __typename: 'OrderType' as const,
-  id: 'order-1',
-  orderNumber: 'ORD-001',
-  status: 'completed',
-  subtotal: 890,
-  shippingFee: 50,
-  discountAmount: 0,
-  total: 940,
-  paymentMethod: 'card',
-  items: [
-    {
-      __typename: 'OrderItemType' as const,
-      id: 'item-1',
-      storeId: 'store-1',
-      productName: 'Premium Dog Food 5kg',
-      unitPrice: 890,
-      quantity: 1,
-      subtotal: 890,
-      fulfillmentStatus: 'delivered',
-    },
-  ],
+const SAMPLE_RECENT_PRODUCT = {
+  ...SAMPLE_PRODUCT,
+  id: 'prod-recent-1',
+  name: 'Pet Shampoo 500ml',
+  slug: 'pet-shampoo-500ml',
+  basePrice: 250,
+  thumbnailUrl: 'https://example.com/shampoo.jpg',
+};
+
+const SAMPLE_RECENT_PRODUCT_2 = {
+  ...SAMPLE_PRODUCT,
+  id: 'prod-recent-2',
+  name: 'Chew Toy Bone',
+  slug: 'chew-toy-bone',
+  basePrice: 199,
+  thumbnailUrl: 'https://example.com/bone.jpg',
 };
 
 function createAuthValue(isAuthenticated: boolean): AuthContextValue {
@@ -124,7 +118,10 @@ function createAuthValue(isAuthenticated: boolean): AuthContextValue {
   };
 }
 
-function registerHomeHandlers(options?: { includeOrders?: boolean }) {
+function registerHomeHandlers(options?: {
+  includeRecentPurchases?: boolean;
+  latestPurchaseProducts?: typeof SAMPLE_PRODUCT[];
+}) {
   server.use(
     graphql.query('PlatformBanners', () =>
       HttpResponse.json({ data: { platformBanners: [SAMPLE_BANNER] } }),
@@ -148,9 +145,14 @@ function registerHomeHandlers(options?: { includeOrders?: boolean }) {
     graphql.query('PlatformSponsors', () =>
       HttpResponse.json({ data: { platformSponsors: [SAMPLE_SPONSOR] } }),
     ),
-    graphql.query('Orders', () =>
+    graphql.query('LatestPurchaseProducts', () =>
       HttpResponse.json({
-        data: options?.includeOrders ? { orders: [SAMPLE_ORDER] } : { orders: [] },
+        data:
+          options?.latestPurchaseProducts != null
+            ? { latestPurchaseProducts: options.latestPurchaseProducts }
+            : options?.includeRecentPurchases
+              ? { latestPurchaseProducts: [SAMPLE_PRODUCT] }
+              : { latestPurchaseProducts: [] },
       }),
     ),
   );
@@ -205,7 +207,7 @@ describe('HomePage', () => {
   });
 
   it('hides recent orders section for guest users', async () => {
-    registerHomeHandlers({ includeOrders: true });
+    registerHomeHandlers({ includeRecentPurchases: true });
     mockedUseAuth.mockReturnValue(createAuthValue(false));
 
     renderHomePage();
@@ -219,7 +221,7 @@ describe('HomePage', () => {
   });
 
   it('shows recent orders section for authenticated users', async () => {
-    registerHomeHandlers({ includeOrders: true });
+    registerHomeHandlers({ includeRecentPurchases: true });
     mockedUseAuth.mockReturnValue(createAuthValue(true));
 
     renderHomePage();
@@ -233,6 +235,27 @@ describe('HomePage', () => {
     );
   });
 
+  it('renders compact recent purchase cards with product links and thumbnails', async () => {
+    registerHomeHandlers({
+      latestPurchaseProducts: [SAMPLE_RECENT_PRODUCT, SAMPLE_RECENT_PRODUCT_2],
+    });
+    mockedUseAuth.mockReturnValue(createAuthValue(true));
+
+    renderHomePage();
+
+    const recentOrdersSection = await screen.findByTestId('home-recent-orders');
+    expect(within(recentOrdersSection).getAllByText('Pet Shampoo 500ml')).toHaveLength(1);
+    expect(within(recentOrdersSection).getAllByText('Chew Toy Bone')).toHaveLength(1);
+    expect(within(recentOrdersSection).queryByText('ขายแล้ว')).not.toBeInTheDocument();
+    expect(
+      within(recentOrdersSection).getByRole('link', { name: 'ดู Pet Shampoo 500ml' }),
+    ).toHaveAttribute('href', '/product/prod-recent-1');
+    expect(within(recentOrdersSection).getByRole('img', { name: 'Pet Shampoo 500ml' })).toHaveAttribute(
+      'src',
+      'https://example.com/shampoo.jpg',
+    );
+  });
+
   it('renders recommended view-all button', async () => {
     registerHomeHandlers();
 
@@ -243,7 +266,7 @@ describe('HomePage', () => {
   });
 
   it('orders main content sections per design', async () => {
-    registerHomeHandlers({ includeOrders: true });
+    registerHomeHandlers({ includeRecentPurchases: true });
     mockedUseAuth.mockReturnValue(createAuthValue(true));
 
     renderHomePage();

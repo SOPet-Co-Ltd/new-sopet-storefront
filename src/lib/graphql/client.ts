@@ -1,4 +1,7 @@
 import { HttpLink } from '@apollo/client';
+import { split } from '@apollo/client';
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
+import { getMainDefinition } from '@apollo/client/utilities';
 import {
   ApolloClient,
   InMemoryCache,
@@ -7,20 +10,57 @@ import {
   type TypedDocumentNode,
 } from '@apollo/client-integration-nextjs';
 import { from } from '@apollo/client/link';
-import { GRAPHQL_URL } from '@/lib/config';
-import { createAuthLink } from '@/lib/graphql/authLink';
+import { createClient } from 'graphql-ws';
+import { getGraphqlWsUrl, GRAPHQL_URL } from '@/lib/config';
+import { createAuthLink, getAccessToken } from '@/lib/graphql/authLink';
 import { typePolicies } from '@/lib/graphql/cachePolicies';
 
 let browserApolloClient: ApolloClient | null = null;
 
-export function makeApolloClient(): ApolloClient {
+function createWsLink(): GraphQLWsLink | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return new GraphQLWsLink(
+    createClient({
+      url: getGraphqlWsUrl(),
+      connectionParams: () => {
+        const token = getAccessToken();
+        return token ? { authorization: `Bearer ${token}` } : {};
+      },
+    }),
+  );
+}
+
+function createApolloLink() {
   const httpLink = new HttpLink({
     uri: GRAPHQL_URL,
     credentials: 'include',
   });
 
+  const wsLink = createWsLink();
+  if (!wsLink) {
+    return from([createAuthLink(), httpLink]);
+  }
+
+  const splitLink = split(
+    ({ query }) => {
+      const definition = getMainDefinition(query);
+      return (
+        definition.kind === 'OperationDefinition' && definition.operation === 'subscription'
+      );
+    },
+    wsLink,
+    from([createAuthLink(), httpLink]),
+  );
+
+  return splitLink;
+}
+
+export function makeApolloClient(): ApolloClient {
   return new ApolloClient({
-    link: from([createAuthLink(), httpLink]),
+    link: createApolloLink(),
     cache: new InMemoryCache({ typePolicies }),
   });
 }

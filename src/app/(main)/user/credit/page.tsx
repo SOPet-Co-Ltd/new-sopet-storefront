@@ -12,7 +12,13 @@ export default function UserCreditPage() {
   const [actionId, setActionId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('ต้องการลบบัตรนี้หรือไม่?')) return;
+    const method = paymentMethods.find((item) => item.id === id);
+    const isOnlyCard = paymentMethods.length === 1;
+    const confirmMessage = method?.isDefault && !isOnlyCard
+      ? 'ต้องการลบบัตรหลักนี้หรือไม่? ระบบจะตั้งบัตรอื่นเป็นบัตรหลักให้อัตโนมัติ'
+      : 'ต้องการลบบัตรนี้หรือไม่?';
+
+    if (!window.confirm(confirmMessage)) return;
     setActionId(id);
     try {
       await deletePaymentMethod(id);

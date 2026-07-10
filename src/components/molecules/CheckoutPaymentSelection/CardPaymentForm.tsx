@@ -9,6 +9,7 @@ import {
   formatCvv,
   formatExpiry,
   getCvvLength,
+  getCvvPlaceholder,
 } from './paymentFormat';
 
 type CardPaymentFormProps = {
@@ -87,10 +88,10 @@ export function CardPaymentForm({
 
         <Input
           isRequire
-          title="รหัส CCV"
+          title="รหัส CVV"
           size="sm"
           variant="bordered"
-          placeholder="***"
+          placeholder={getCvvPlaceholder(value.cardNumber)}
           inputMode="numeric"
           autoComplete="cc-csc"
           data-testid="card-cvv-input"

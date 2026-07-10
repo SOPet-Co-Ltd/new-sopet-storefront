@@ -2,6 +2,7 @@ import type {
   ProductByIdQueryVariables,
   ProductsQueryVariables,
   RecommendedProductsQueryVariables,
+  SearchContextInput,
   StoreBySlugQueryVariables,
 } from '@/lib/graphql/generated/graphql';
 
@@ -18,6 +19,8 @@ export type ProductsListingVariablesInput = {
   limit?: number;
   sortBy?: string | null;
   sortOrder?: 'ASC' | 'DESC' | null;
+  sessionId?: string | null;
+  searchContext?: SearchContextInput | null;
 };
 
 export function buildProductsListingVariables(
@@ -36,6 +39,8 @@ export function buildProductsListingVariables(
     limit = 24,
     sortBy,
     sortOrder,
+    sessionId,
+    searchContext,
   } = params;
 
   return {
@@ -51,6 +56,8 @@ export function buildProductsListingVariables(
     limit,
     sortBy,
     sortOrder,
+    sessionId: sessionId ?? undefined,
+    searchContext: searchContext ?? undefined,
   };
 }
 

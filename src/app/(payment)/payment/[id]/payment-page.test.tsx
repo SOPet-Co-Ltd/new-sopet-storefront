@@ -23,9 +23,18 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-vi.mock('@/components/organisms/OrderPaymentForm/constants', () => ({
-  PAYMENT_POLL_INTERVAL_MS: 50,
-  PAYMENT_POLL_MAX_ATTEMPTS: 30,
+const paymentState = {
+  payment: samplePendingPayment as typeof samplePendingPayment | typeof samplePaidPayment,
+};
+
+vi.mock('@/lib/hooks/usePayment', () => ({
+  usePayment: () => ({
+    payment: paymentState.payment,
+    loading: false,
+    error: undefined,
+    refetch: vi.fn(),
+    poll: vi.fn(),
+  }),
 }));
 
 const createWrapper = createApolloTestWrapper;
@@ -33,36 +42,30 @@ const createWrapper = createApolloTestWrapper;
 describe('PaymentPage', () => {
   beforeEach(() => {
     mockReplace.mockReset();
+    paymentState.payment = samplePendingPayment;
   });
 
-  it('poll detects paid status and navigates to confirmation route', async () => {
-    let pollCount = 0;
-
+  it('redirects to thank-you when subscription reports paid status', async () => {
     server.use(
       graphql.query('Payment', () => {
-        pollCount += 1;
         return HttpResponse.json({
-          data: {
-            payment: pollCount >= 2 ? samplePaidPayment : samplePendingPayment,
-          },
+          data: { payment: samplePendingPayment },
         });
       }),
     );
 
-    render(<PaymentPage />, { wrapper: createWrapper() });
+    const { rerender } = render(<PaymentPage />, { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
     });
 
-    await waitFor(
-      () => {
-        expect(mockReplace).toHaveBeenCalledWith(`/order/${CHECKOUT_ORDER_ID}/confirmed`);
-      },
-      { timeout: 5_000 },
-    );
+    paymentState.payment = samplePaidPayment;
+    rerender(<PaymentPage />);
 
-    expect(pollCount).toBeGreaterThanOrEqual(2);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+    });
   });
 
   it('falls back to paymentByOrderId when payment id lookup is not found', async () => {

@@ -27,6 +27,8 @@ const duplicateBlocks = [
   '\nexport type FavoriteProductInput = {\n  productId: string;\n};\n',
   '\nexport type UpdateProfileInput = {\n  email?: string | null | undefined;\n  fullName?: string | null | undefined;\n};\n',
   '\nexport type ChangeCustomerPhoneInput = {\n  code: string;\n  phone: string;\n};\n',
+  '\nexport type SearchContextInput = {\n  recentProductIds?: Array<string> | null | undefined;\n  recentQueries?: Array<string> | null | undefined;\n};\n',
+  '\nexport type ConfirmOrderDeliveredInput = {\n  guestPhone?: string | null | undefined;\n  orderId: string;\n};\n',
 ];
 
 const schemaBlocks = [
@@ -51,6 +53,8 @@ const schemaBlocks = [
   "export type FavoriteProductInput = {\n  productId: Scalars['String']['input'];\n};",
   "export type UpdateProfileInput = {\n  email?: InputMaybe<Scalars['String']['input']>;\n  fullName?: InputMaybe<Scalars['String']['input']>;\n};",
   "export type ChangeCustomerPhoneInput = {\n  code: Scalars['String']['input'];\n  phone: Scalars['String']['input'];\n};",
+  "export type SearchContextInput = {\n  recentProductIds?: InputMaybe<Array<Scalars['String']['input']>>;\n  recentQueries?: InputMaybe<Array<Scalars['String']['input']>>;\n};",
+  "export type ConfirmOrderDeliveredInput = {\n  guestPhone?: InputMaybe<Scalars['String']['input']>;\n  orderId: Scalars['String']['input'];\n};",
 ];
 
 let content = readFileSync(filePath, 'utf8');

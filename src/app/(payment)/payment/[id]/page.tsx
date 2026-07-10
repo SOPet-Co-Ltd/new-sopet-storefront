@@ -3,10 +3,7 @@
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import {
-  OrderPaymentForm,
-  PAYMENT_POLL_INTERVAL_MS,
-} from '@/components/organisms/OrderPaymentForm';
+import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm';
 import { usePayment } from '@/lib/hooks/usePayment';
 
 type LookupMode = 'paymentId' | 'orderId';
@@ -30,11 +27,11 @@ export default function PaymentPage() {
   const router = useRouter();
   const [lookupMode, setLookupMode] = useState<LookupMode>('paymentId');
   const hasTriedFallback = useRef(false);
+  const hasRedirected = useRef(false);
 
   const { payment, loading, error, refetch } = usePayment({
     id: lookupMode === 'paymentId' ? routeId : null,
     orderId: lookupMode === 'orderId' ? routeId : null,
-    pollInterval: PAYMENT_POLL_INTERVAL_MS,
   });
 
   useEffect(() => {
@@ -49,12 +46,17 @@ export default function PaymentPage() {
   }, [lookupMode, loading, error]);
 
   useEffect(() => {
-    if (payment?.status !== 'paid' || !payment.orderId) {
+    if (
+      hasRedirected.current ||
+      payment?.status !== 'paid' ||
+      !payment.orderId
+    ) {
       return;
     }
 
-    router.replace(`/order/${payment.orderId}/confirmed`);
-  }, [payment, router]);
+    hasRedirected.current = true;
+    router.replace(`/thank-you/${payment.orderId}`);
+  }, [payment?.orderId, payment?.status, router]);
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-sop-primary-100 px-4 py-8">

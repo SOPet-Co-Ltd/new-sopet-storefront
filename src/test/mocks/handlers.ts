@@ -13,6 +13,7 @@ import {
   sampleStoreReviewSummary,
 } from './fixtures/catalog';
 import { sampleCart, sampleEmptyCart } from './fixtures/cart';
+import { sampleSearchRecoverySuggestions, sampleSearchSuggestionsPayload } from './fixtures/search';
 import {
   sampleOrder,
   samplePendingPayment,
@@ -50,6 +51,22 @@ export const handlers = [
           items: [sampleProductCard],
           pagination: defaultProductsPagination,
         },
+      },
+    });
+  }),
+
+  graphql.query('SearchSuggestions', () => {
+    return HttpResponse.json({
+      data: {
+        searchSuggestions: sampleSearchSuggestionsPayload,
+      },
+    });
+  }),
+
+  graphql.query('SearchRecoverySuggestions', () => {
+    return HttpResponse.json({
+      data: {
+        searchRecoverySuggestions: sampleSearchRecoverySuggestions,
       },
     });
   }),

@@ -1,12 +1,14 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
 import {
   ProductsDocument,
   type ProductsQuery,
   type ProductsQueryVariables,
+  type SearchContextInput,
 } from '@/lib/graphql/generated/graphql';
+import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
 
 export type ProductListItem = ProductsQuery['products']['items'][number];
 
@@ -23,6 +25,8 @@ export type UseProductsParams = {
   limit?: number;
   sortBy?: string | null;
   sortOrder?: 'ASC' | 'DESC' | null;
+  sessionId?: string | null;
+  searchContext?: SearchContextInput | null;
   skip?: boolean;
 };
 
@@ -56,22 +60,45 @@ export function useProducts({
   limit = 24,
   sortBy,
   sortOrder,
+  sessionId,
+  searchContext,
   skip = false,
 }: UseProductsParams = {}): UseProductsResult {
-  const variables: ProductsQueryVariables = {
-    category,
-    search,
-    storeId,
-    tag,
-    petTypeIds: petTypeIds && petTypeIds.length > 0 ? petTypeIds : undefined,
-    brandIds: brandIds && brandIds.length > 0 ? brandIds : undefined,
-    minPrice: minPrice ?? undefined,
-    maxPrice: maxPrice ?? undefined,
-    page,
-    limit,
-    sortBy,
-    sortOrder,
-  };
+  const variables: ProductsQueryVariables = useMemo(
+    () =>
+      buildProductsListingVariables({
+        category,
+        search,
+        storeId,
+        tag,
+        petTypeIds,
+        brandIds,
+        minPrice,
+        maxPrice,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        sessionId,
+        searchContext,
+      }),
+    [
+      category,
+      search,
+      storeId,
+      tag,
+      petTypeIds,
+      brandIds,
+      minPrice,
+      maxPrice,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      sessionId,
+      searchContext,
+    ],
+  );
 
   const { data, loading, error, fetchMore: apolloFetchMore, refetch } = useQuery(ProductsDocument, {
     variables,
@@ -85,39 +112,11 @@ export function useProducts({
     (nextPage?: number) => {
       const targetPage = nextPage ?? (pagination?.page ?? page) + 1;
       return apolloFetchMore({
-        variables: {
-          category,
-          search,
-          storeId,
-          tag,
-          petTypeIds: petTypeIds && petTypeIds.length > 0 ? petTypeIds : undefined,
-          brandIds: brandIds && brandIds.length > 0 ? brandIds : undefined,
-          minPrice: minPrice ?? undefined,
-          maxPrice: maxPrice ?? undefined,
-          page: targetPage,
-          limit,
-          sortBy,
-          sortOrder,
-        },
+        variables: { ...variables, page: targetPage },
         updateQuery: (_previous, { fetchMoreResult }) => fetchMoreResult ?? _previous,
       });
     },
-    [
-      apolloFetchMore,
-      category,
-      search,
-      storeId,
-      tag,
-      petTypeIds,
-      brandIds,
-      minPrice,
-      maxPrice,
-      limit,
-      sortBy,
-      sortOrder,
-      pagination?.page,
-      page,
-    ],
+    [apolloFetchMore, variables, pagination?.page, page],
   );
 
   return {

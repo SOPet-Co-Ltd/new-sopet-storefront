@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useQuery } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import {
+  ConfirmOrderDeliveredDocument,
   OrdersDocument,
   OrderDocument,
   type OrdersQuery,
@@ -20,6 +21,8 @@ export type UseOrdersResult = {
   error: Error | undefined;
   refetch: () => Promise<unknown>;
   fetchOrder: (id: string) => Promise<OrderDetail | null | undefined>;
+  confirmOrderDelivered: (orderId: string) => Promise<OrderDetail | null | undefined>;
+  confirmingDelivery: boolean;
 };
 
 function toHookError(error: unknown): Error | undefined {
@@ -43,11 +46,27 @@ export function useOrders(): UseOrdersResult {
     return result.data?.order;
   }, []);
 
+  const [confirmDeliveryMutation, { loading: confirmingDelivery }] = useMutation(
+    ConfirmOrderDeliveredDocument,
+  );
+
+  const confirmOrderDelivered = useCallback(
+    async (orderId: string) => {
+      const result = await confirmDeliveryMutation({
+        variables: { input: { orderId } },
+      });
+      return result.data?.confirmOrderDelivered;
+    },
+    [confirmDeliveryMutation],
+  );
+
   return {
     orders: data?.orders ?? [],
     loading: isAuthenticated && loading,
     error: toHookError(error),
     refetch: () => refetch(),
     fetchOrder,
+    confirmOrderDelivered,
+    confirmingDelivery,
   };
 }

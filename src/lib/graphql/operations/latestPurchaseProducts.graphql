@@ -1,0 +1,5 @@
+query LatestPurchaseProducts($limit: Int) {
+  latestPurchaseProducts(limit: $limit) {
+    ...ProductCardFields
+  }
+}

@@ -9,7 +9,7 @@ import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmati
 import { useOrders, type OrderDetail } from '@/lib/hooks/useOrders';
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending: 'รอชำระเงิน',
+  pending_payment: 'รอชำระเงิน',
   paid: 'ชำระเงินแล้ว',
   processing: 'กำลังเตรียมสินค้า',
   shipped: 'จัดส่งแล้ว',
@@ -20,7 +20,7 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
-  const { fetchOrder } = useOrders();
+  const { fetchOrder, confirmOrderDelivered, confirmingDelivery } = useOrders();
   const [order, setOrder] = useState<OrderDetail | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +34,19 @@ export default function OrderDetailPage() {
         setOrder(null);
       });
   }, [params.id, fetchOrder]);
+
+  const handleConfirmDelivery = async () => {
+    if (!order) return;
+    setError(null);
+    try {
+      const updated = await confirmOrderDelivered(order.id);
+      if (updated) {
+        setOrder(updated);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ยืนยันการรับสินค้าไม่สำเร็จ');
+    }
+  };
 
   if (order === undefined) {
     return (
@@ -57,6 +70,24 @@ export default function OrderDetailPage() {
   }
 
   const statusLabel = ORDER_STATUS_LABELS[order.status] ?? order.status;
+  const shipments = order.items.reduce<
+    Map<
+      string,
+      { fulfillmentProvider?: string | null; trackingNumber?: string | null; trackingUrl?: string | null }
+    >
+  >((map, item) => {
+    if (!item.trackingNumber && !item.fulfillmentProvider && !item.trackingUrl) {
+      return map;
+    }
+    if (!map.has(item.storeId)) {
+      map.set(item.storeId, {
+        fulfillmentProvider: item.fulfillmentProvider,
+        trackingNumber: item.trackingNumber,
+        trackingUrl: item.trackingUrl,
+      });
+    }
+    return map;
+  }, new Map());
 
   return (
     <AccountLayout title="รายละเอียดคำสั่งซื้อ">
@@ -65,10 +96,65 @@ export default function OrderDetailPage() {
           <span className="rounded-sop-8px bg-sop-primary-100 px-3 py-1 sop-body-sm-medium text-sop-primary-600">
             {statusLabel}
           </span>
-          <Link href={`/user/orders/${order.id}/return`}>
-            <Button variant="outline">ขอคืนสินค้า</Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {order.status === 'shipped' ? (
+              <Button
+                variant="primary"
+                disabled={confirmingDelivery}
+                onClick={() => void handleConfirmDelivery()}
+              >
+                {confirmingDelivery ? 'กำลังยืนยัน...' : 'ยืนยันได้รับสินค้าแล้ว'}
+              </Button>
+            ) : null}
+            <Link href={`/user/orders/${order.id}/return`}>
+              <Button variant="outline">ขอคืนสินค้า</Button>
+            </Link>
+          </div>
         </div>
+
+        {error ? (
+          <p className="sop-body-sm-regular text-sop-system-error-400" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        {shipments.size > 0 ? (
+          <div className="rounded-sop-16px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-4">
+            <p className="mb-2 sop-body-sm-medium text-sop-neutral-gray-200">ติดตามพัสดุ</p>
+            <ul className="space-y-3">
+              {[...shipments.entries()].map(([storeId, shipment]) => (
+                <li key={storeId} className="space-y-1">
+                  {shipment.fulfillmentProvider ? (
+                    <p className="sop-body-sm-regular text-sop-neutral-gray-300">
+                      ขนส่ง:{' '}
+                      <span className="sop-body-sm-medium text-sop-neutral-gray-200">
+                        {shipment.fulfillmentProvider}
+                      </span>
+                    </p>
+                  ) : null}
+                  {shipment.trackingNumber ? (
+                    <p className="sop-body-sm-regular text-sop-neutral-gray-300">
+                      เลขพัสดุ:{' '}
+                      <span className="sop-body-sm-medium text-sop-neutral-gray-200">
+                        {shipment.trackingNumber}
+                      </span>
+                    </p>
+                  ) : null}
+                  {shipment.trackingUrl ? (
+                    <a
+                      href={shipment.trackingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex sop-body-sm-medium text-sop-secondary-500 underline"
+                    >
+                      เปิดลิงก์ติดตามพัสดุ
+                    </a>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <OrderConfirmationSummary order={order} />
 

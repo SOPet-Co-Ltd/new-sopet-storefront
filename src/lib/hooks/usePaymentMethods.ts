@@ -1,5 +1,6 @@
 'use client';
 
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useCallback } from 'react';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
@@ -36,20 +37,34 @@ export function usePaymentMethods(): UsePaymentMethodsResult {
     skip: !isAuthenticated,
   });
 
-  const [addMutation] = useMutation(AddPaymentMethodDocument, {
-    refetchQueries: [{ query: PaymentMethodsDocument }],
-  });
+  const [addMutation] = useMutation(AddPaymentMethodDocument);
   const [deleteMutation] = useMutation(DeletePaymentMethodDocument, {
     refetchQueries: [{ query: PaymentMethodsDocument }],
+    awaitRefetchQueries: false,
   });
   const [setDefaultMutation] = useMutation(SetDefaultPaymentMethodDocument, {
     refetchQueries: [{ query: PaymentMethodsDocument }],
+    awaitRefetchQueries: false,
   });
 
   const addPaymentMethod = useCallback(
     async (input: AddPaymentMethodInput) => {
-      const result = await addMutation({ variables: { input } });
-      return result.data?.addPaymentMethod;
+      const result = await addMutation({
+        variables: { input },
+        refetchQueries: [{ query: PaymentMethodsDocument }],
+        awaitRefetchQueries: false,
+      });
+
+      const method = result.data?.addPaymentMethod;
+      if (method) {
+        return method;
+      }
+
+      if (CombinedGraphQLErrors.is(result.error)) {
+        throw result.error;
+      }
+
+      throw new Error('ไม่สามารถเพิ่มบัตรได้');
     },
     [addMutation],
   );

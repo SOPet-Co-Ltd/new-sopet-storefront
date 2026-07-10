@@ -8,6 +8,8 @@ import { SearchSortBar, type SearchSortValue } from '@/components/molecules/Sear
 import ProductCard from '@/components/organisms/ProductCard';
 import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
 import { useProducts } from '@/lib/hooks/useProducts';
+import { useSearchContext } from '@/lib/hooks/useSearchContext';
+import { useSessionId } from '@/lib/hooks/useSessionId';
 import { parseSearchSort } from '@/lib/search/searchSort';
 import {
   hasSearchFilters,
@@ -54,10 +56,12 @@ export function ProductListing({
     variant === 'search' ? parseSearchSort(sortParam) : { sortBy: undefined, sortOrder: undefined };
   const limit =
     limitProp ?? (variant === 'search' ? SEARCH_PRODUCT_LIMIT : DEFAULT_PRODUCT_LIMIT);
+  const searchContext = useSearchContext();
+  const sessionId = useSessionId(variant === 'search');
 
   const listingPrefetch =
     variant === 'search'
-      ? { search, category, storeId, tag, limit, sortBy, sortOrder, ...filterVariables }
+      ? { search, category, storeId, tag, limit, sortBy, sortOrder, sessionId, searchContext, ...filterVariables }
       : { category, search, storeId, tag, limit, sortBy, sortOrder, ...filterVariables };
 
   const {
@@ -77,6 +81,8 @@ export function ProductListing({
     limit,
     sortBy,
     sortOrder,
+    sessionId,
+    searchContext,
   });
 
   const useInitialProducts =
@@ -136,7 +142,7 @@ export function ProductListing({
               listingPrefetch={listingPrefetch}
             />
           </div>
-          <EmptySearchResults />
+          <EmptySearchResults searchQuery={search} />
         </div>
       );
     }

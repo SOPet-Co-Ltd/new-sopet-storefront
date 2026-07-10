@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import type { SearchSortValue } from '@/components/molecules/SearchSortBar';
 import {
   ProductsDocument,
@@ -15,6 +16,7 @@ import {
 import { parseSearchSort } from '@/lib/search/searchSort';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { SearchResultsPage } from '@/components/pages/SearchResultsPage';
+import { SESSION_ID_COOKIE, parseSessionIdCookie } from '@/lib/session';
 
 export const revalidate = 60;
 
@@ -51,12 +53,15 @@ export default async function SearchPage({ searchParams }: Props) {
       return null;
     },
   });
+  const cookieStore = await cookies();
+  const sessionId = parseSessionIdCookie(cookieStore.get(SESSION_ID_COOKIE)?.value);
   const variables = buildProductsListingVariables({
     search: trimmedQ || undefined,
     sortBy,
     sortOrder,
     page: 1,
     limit: SEARCH_PRODUCT_LIMIT,
+    sessionId: sessionId ?? undefined,
     ...toProductsFilterVariables(filters),
   });
   const petTypesVariables = buildApprovedPetTypesVariables();

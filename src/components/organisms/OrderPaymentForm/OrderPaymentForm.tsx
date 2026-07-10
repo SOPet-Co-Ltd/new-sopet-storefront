@@ -137,12 +137,7 @@ export function OrderPaymentForm({
       </div>
 
       <div className="relative flex min-h-[250px] flex-col items-center justify-center overflow-hidden rounded-lg border border-gray-300">
-        {loading ? (
-          <div className="flex flex-col items-center gap-3 p-6">
-            <SpinnerIcon size={{ mobile: 28, desktop: 28 }} />
-            <p className="text-sm text-gray-500">กำลังตรวจสอบสถานะการชำระเงิน...</p>
-          </div>
-        ) : hasQrCode ? (
+        {hasQrCode ? (
           <div className="flex w-full flex-col items-center bg-white p-4">
             <img
               src={payment.qrCodeUrl ?? ''}

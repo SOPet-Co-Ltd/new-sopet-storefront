@@ -1,7 +1,8 @@
 export const SESSION_ID_COOKIE = 'sopet_session_id';
+export const RECENT_SEARCHES_STORAGE_KEY = 'sopet_recent_searches';
 
 const COOKIE_MAX_AGE_SECONDS = 31_536_000;
-const UUID_V4_REGEX =
+export const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isBrowser(): boolean {
@@ -54,6 +55,14 @@ export function getSessionId(): string | null {
   }
 
   return null;
+}
+
+export function parseSessionIdCookie(value: string | undefined | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  return isValidUuidV4(value) ? value : null;
 }
 
 export function ensureSessionId(): string {

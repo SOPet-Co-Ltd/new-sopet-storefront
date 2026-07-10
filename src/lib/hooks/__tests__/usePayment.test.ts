@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { usePayment } from '@/lib/hooks/usePayment';
 import { server } from '@/test/mocks/server';
@@ -10,6 +10,18 @@ import {
   samplePaidPayment,
   samplePendingPayment,
 } from '@/test/mocks/fixtures/checkout';
+
+vi.mock('@apollo/client/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@apollo/client/react')>();
+  return {
+    ...actual,
+    useSubscription: () => ({
+      data: undefined,
+      error: undefined,
+      loading: false,
+    }),
+  };
+});
 
 const createWrapper = createApolloTestWrapper;
 

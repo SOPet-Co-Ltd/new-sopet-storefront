@@ -20,3 +20,9 @@ query PaymentByOrderId($orderId: String!) {
     ...PaymentFields
   }
 }
+
+subscription PaymentStatusUpdated($paymentId: String, $orderId: String) {
+  paymentStatusUpdated(paymentId: $paymentId, orderId: $orderId) {
+    ...PaymentFields
+  }
+}

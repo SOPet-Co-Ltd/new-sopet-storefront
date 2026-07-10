@@ -69,7 +69,7 @@ function ProductCardImage({
   priority?: boolean;
 }) {
   const imageContainerClass = compact
-    ? 'relative aspect-square w-full shrink-0 overflow-hidden bg-sop-additionalblue-300'
+    ? 'relative h-[136px] w-[136px] shrink-0 overflow-hidden bg-sop-additionalblue-300'
     : 'relative h-[168px] w-[168px] shrink-0 overflow-hidden bg-sop-additionalblue-300 md:h-sop-224px md:w-sop-224px';
 
   return (
@@ -82,7 +82,7 @@ function ProductCardImage({
           fill
           priority={priority}
           quality={85}
-          sizes={compact ? '(max-width: 768px) 50vw, 20vw' : '(max-width: 768px) 168px, 224px'}
+          sizes={compact ? '136px' : '(max-width: 768px) 168px, 224px'}
           className="pointer-events-none object-cover object-center select-none"
           draggable={false}
         />
@@ -105,7 +105,13 @@ function ProductCardImage({
   );
 }
 
-function ProductCardPrice({ product }: { product: ProductCardProduct }) {
+function ProductCardPrice({
+  product,
+  compact = false,
+}: {
+  product: ProductCardProduct;
+  compact?: boolean;
+}) {
   const hasPrice = product.basePrice > 0;
 
   if (!hasPrice) {
@@ -116,9 +122,23 @@ function ProductCardPrice({ product }: { product: ProductCardProduct }) {
 
   return (
     <div className="flex items-baseline gap-1">
-      <span className="sop-body-lg-bold text-sop-secondary-500">{formatPrice(product.basePrice)}</span>
+      <span
+        className={
+          compact
+            ? 'sop-body-sm-bold text-sop-secondary-500'
+            : 'sop-body-lg-bold text-sop-secondary-500'
+        }
+      >
+        {formatPrice(product.basePrice)}
+      </span>
       {product.compareAtPrice != null && product.compareAtPrice > product.basePrice && (
-        <span className="sop-strike-sm-regular text-sop-neutral-grayalpha-400">
+        <span
+          className={
+            compact
+              ? 'sop-strike-2xs-regular text-sop-neutral-grayalpha-400'
+              : 'sop-strike-sm-regular text-sop-neutral-grayalpha-400'
+          }
+        >
           {formatPrice(product.compareAtPrice)}
         </span>
       )}
@@ -172,7 +192,7 @@ export default function ProductCard({ product, compact = false, className, prior
   };
 
   const cardWidthClass = compact
-    ? 'w-full min-w-0 max-w-full'
+    ? 'w-[136px] max-w-[136px]'
     : 'w-[168px] max-w-[168px] md:w-sop-224px md:max-w-sop-224px';
 
   return (
@@ -182,12 +202,14 @@ export default function ProductCard({ product, compact = false, className, prior
       prefetch
       aria-label={`ดู ${product.name}`}
       title={`ดู ${product.name}`}
-      className={['block', compact ? 'w-full min-w-0' : 'shrink-0', className].filter(Boolean).join(' ')}
+      className={['block shrink-0', className].filter(Boolean).join(' ')}
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
     >
       <div
-        className={`flex flex-col gap-2 overflow-hidden rounded-sop-16px bg-sop-base-white pb-4 md:rounded-sop-24px md:pb-5 ${cardWidthClass}`}
+        className={`flex flex-col gap-2 overflow-hidden rounded-sop-16px bg-sop-base-white ${
+          compact ? 'pb-4' : 'pb-4 md:rounded-sop-24px md:pb-5'
+        } ${cardWidthClass}`}
       >
         <ProductCardImage
           product={product}
@@ -195,10 +217,18 @@ export default function ProductCard({ product, compact = false, className, prior
           compact={compact}
           priority={priority}
         />
-        <div className="flex min-w-0 flex-col gap-2 px-2 md:px-3">
-          <p className="line-clamp-2 h-10 sop-body-sm-medium text-sop-neutral-gray-300">{product.name}</p>
-          <ProductCardPrice product={product} />
-          <ProductCardReviewStars product={product} />
+        <div className={`flex min-w-0 flex-col ${compact ? 'gap-1 px-2' : 'gap-2 px-2 md:px-3'}`}>
+          <p
+            className={
+              compact
+                ? 'line-clamp-2 sop-body-2xs-regular text-sop-neutral-gray-300'
+                : 'line-clamp-2 h-10 sop-body-sm-medium text-sop-neutral-gray-300'
+            }
+          >
+            {product.name}
+          </p>
+          <ProductCardPrice product={product} compact={compact} />
+          {!compact && <ProductCardReviewStars product={product} />}
         </div>
       </div>
     </Link>

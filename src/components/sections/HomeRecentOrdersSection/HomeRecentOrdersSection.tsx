@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
-import { OrdersDocument } from '@/lib/graphql/generated/graphql';
+import { LatestPurchaseProductsDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 import ProductCard from '@/components/organisms/ProductCard';
 
+const RECENT_ORDERS_LIMIT = 12;
 const SECTION_HEADING_CLASS = 'sop-body-lg-medium text-sop-neutral-gray-200';
 
 function RecentOrdersSkeleton() {
@@ -29,7 +30,8 @@ export function HomeRecentOrdersSection({
   viewAllHref = '/user/orders',
 }: HomeRecentOrdersSectionProps) {
   const { isAuthenticated } = useAuth();
-  const { data, loading, error } = useQuery(OrdersDocument, {
+  const { data, loading, error } = useQuery(LatestPurchaseProductsDocument, {
+    variables: { limit: RECENT_ORDERS_LIMIT },
     skip: !isAuthenticated,
   });
 
@@ -54,37 +56,7 @@ export function HomeRecentOrdersSection({
     return null;
   }
 
-  const recentProducts = (data?.orders ?? [])
-    .flatMap((order) => order.items)
-    .reduce<
-      Array<{
-        id: string;
-        name: string;
-        slug: string;
-        basePrice: number;
-        thumbnailUrl: string | null;
-      }>
-    >((acc, item) => {
-      const slug = item.productName
-        .toLowerCase()
-        .replace(/[^\u0E00-\u0E7Fa-z0-9]+/gi, '-')
-        .replace(/^-+|-+$/g, '');
-
-      if (acc.some((entry) => entry.id === item.id)) {
-        return acc;
-      }
-
-      acc.push({
-        id: item.id,
-        name: item.productName,
-        slug: slug || item.id,
-        basePrice: item.unitPrice,
-        thumbnailUrl: null,
-      });
-
-      return acc;
-    }, [])
-    .slice(0, 12);
+  const recentProducts = data?.latestPurchaseProducts ?? [];
 
   if (recentProducts.length === 0) {
     return null;
@@ -104,8 +76,8 @@ export function HomeRecentOrdersSection({
       <div className="w-full overflow-x-auto">
         <ul className="flex min-w-max gap-5 pb-2">
           {recentProducts.map((product) => (
-            <li key={product.id} className="shrink-0">
-              <ProductCard product={product} compact compactLayout="recent" />
+            <li key={product.id} className="w-[136px] shrink-0">
+              <ProductCard product={product} compact />
             </li>
           ))}
         </ul>

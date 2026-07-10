@@ -1,0 +1,17 @@
+query SearchSuggestions($query: String!, $limit: Int, $sessionId: String) {
+  searchSuggestions(query: $query, limit: $limit, sessionId: $sessionId) {
+    products {
+      id
+      name
+      slug
+      thumbnailUrl
+    }
+    queries {
+      query
+    }
+  }
+}
+
+query SearchRecoverySuggestions($query: String!) {
+  searchRecoverySuggestions(query: $query)
+}

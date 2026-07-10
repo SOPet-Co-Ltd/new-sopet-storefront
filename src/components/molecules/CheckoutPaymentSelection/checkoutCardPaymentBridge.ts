@@ -4,7 +4,7 @@ import {
   tokenizeCard,
   type TokenizeCardInput,
 } from '@/lib/payment/omise';
-import { cleanCardNumber } from './paymentFormat';
+import { cleanCardNumber, getCvvLength, isValidCvv } from './paymentFormat';
 
 export type CheckoutCardFormState = {
   cardNumber: string;
@@ -69,6 +69,13 @@ export function validateCheckoutCardForm(form: CheckoutCardFormState): string | 
 
   if (!form.cvv.trim()) {
     return 'กรุณากรอกรหัส CVV';
+  }
+
+  if (!isValidCvv(form.cvv, form.cardNumber)) {
+    const cvvLength = getCvvLength(form.cardNumber);
+    return cvvLength === 4
+      ? 'กรุณากรอกรหัส CVV 4 หลัก'
+      : 'กรุณากรอกรหัส CVV 3 หลัก';
   }
 
   try {

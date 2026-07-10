@@ -18,6 +18,15 @@ export function getCvvLength(cardNumber: string): number {
   return getCardBrand(cardNumber) === 'amex' ? 4 : 3;
 }
 
+export function getCvvPlaceholder(cardNumber: string): string {
+  return getCvvLength(cardNumber) === 4 ? '****' : '***';
+}
+
+export function isValidCvv(cvv: string, cardNumber: string): boolean {
+  const digits = cvv.replace(/\D/g, '');
+  return digits.length === getCvvLength(cardNumber);
+}
+
 export function formatCardNumber(value: string): string {
   const digits = cleanCardNumber(value).slice(0, getCardNumberLength(value));
 

@@ -1,10 +1,11 @@
 'use client';
 
-import { useApolloClient, useQuery } from '@apollo/client/react';
+import { useApolloClient, useQuery, useSubscription } from '@apollo/client/react';
 import { useCallback, useMemo } from 'react';
 import {
   PaymentByOrderIdDocument,
   PaymentDocument,
+  PaymentStatusUpdatedDocument,
   type PaymentQuery,
 } from '@/lib/graphql/generated/graphql';
 
@@ -27,7 +28,6 @@ export type PollPaymentResult = {
 export type UsePaymentParams = {
   id?: string | null;
   orderId?: string | null;
-  pollInterval?: number;
   skip?: boolean;
 };
 
@@ -60,34 +60,56 @@ function isTerminalStatus(status: PaymentStatus): boolean {
 export function usePayment({
   id,
   orderId,
-  pollInterval = 0,
   skip = false,
 }: UsePaymentParams = {}): UsePaymentResult {
   const apolloClient = useApolloClient();
   const queryByOrderId = Boolean(orderId) && !id;
   const shouldQuery = !skip && Boolean(id || orderId);
-  const pollIntervalMs = pollInterval > 0 ? pollInterval : undefined;
 
   const paymentByIdQuery = useQuery(PaymentDocument, {
     variables: { id: id ?? '' },
     skip: !shouldQuery || queryByOrderId,
-    pollInterval: pollIntervalMs,
+    fetchPolicy: 'network-only',
   });
 
   const paymentByOrderIdQuery = useQuery(PaymentByOrderIdDocument, {
     variables: { orderId: orderId ?? '' },
     skip: !shouldQuery || !queryByOrderId,
-    pollInterval: pollIntervalMs,
+    fetchPolicy: 'network-only',
   });
 
   const activeQuery = queryByOrderId ? paymentByOrderIdQuery : paymentByIdQuery;
 
+  const subscriptionVariables = useMemo(
+    () => ({
+      paymentId: queryByOrderId ? null : (id ?? null),
+      orderId: queryByOrderId ? (orderId ?? null) : null,
+    }),
+    [id, orderId, queryByOrderId],
+  );
+
+  const paymentStatusUpdatedSubscription = useSubscription(PaymentStatusUpdatedDocument, {
+    variables: subscriptionVariables,
+    skip: !shouldQuery || (!id && !orderId),
+  });
+
   const payment = useMemo(() => {
+    const fromSubscription = paymentStatusUpdatedSubscription.data?.paymentStatusUpdated;
+    if (fromSubscription) {
+      return fromSubscription;
+    }
+
     if (queryByOrderId) {
       return paymentByOrderIdQuery.data?.paymentByOrderId ?? null;
     }
+
     return paymentByIdQuery.data?.payment ?? null;
-  }, [paymentByIdQuery.data, paymentByOrderIdQuery.data, queryByOrderId]);
+  }, [
+    paymentByIdQuery.data,
+    paymentByOrderIdQuery.data,
+    paymentStatusUpdatedSubscription.data,
+    queryByOrderId,
+  ]);
 
   const poll = useCallback(
     async (params: PollPaymentParams = {}): Promise<PollPaymentResult> => {
@@ -142,8 +164,8 @@ export function usePayment({
 
   return {
     payment,
-    loading: shouldQuery && activeQuery.loading,
-    error: toHookError(activeQuery.error),
+    loading: shouldQuery && activeQuery.loading && !payment,
+    error: toHookError(activeQuery.error ?? paymentStatusUpdatedSubscription.error),
     refetch: () => activeQuery.refetch(),
     poll,
   };

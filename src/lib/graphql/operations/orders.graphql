@@ -17,6 +17,9 @@ fragment OrderConfirmationFields on OrderType {
     quantity
     subtotal
     fulfillmentStatus
+    trackingNumber
+    fulfillmentProvider
+    trackingUrl
   }
   storeShippings {
     storeId
@@ -33,6 +36,12 @@ query Orders {
 
 query Order($id: String!) {
   order(id: $id) {
+    ...OrderConfirmationFields
+  }
+}
+
+mutation ConfirmOrderDelivered($input: ConfirmOrderDeliveredInput!) {
+  confirmOrderDelivered(input: $input) {
     ...OrderConfirmationFields
   }
 }

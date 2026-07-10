@@ -1,12 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   SESSION_ID_COOKIE,
+  UUID_V4_REGEX,
   ensureSessionId,
   getSessionId,
 } from './session';
-
-const UUID_V4_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const EXISTING_SESSION_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
 

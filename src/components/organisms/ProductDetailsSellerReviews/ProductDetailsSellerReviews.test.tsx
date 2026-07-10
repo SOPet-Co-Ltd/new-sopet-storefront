@@ -93,4 +93,27 @@ describe('ProductDetailsSellerReviews', () => {
     expect(screen.getByTestId(`product-review-item-${sampleProductReviewWithImages.id}`)).toBeInTheDocument();
     expect(screen.queryByTestId('product-review-item-review-no-images')).not.toBeInTheDocument();
   });
+
+  it('shows 10 reviews per page with numbered pagination', async () => {
+    const reviews = Array.from({ length: 11 }, (_, index) => ({
+      ...sampleProductReview,
+      id: `review-page-${index + 1}`,
+      comment: `Review ${index + 1}`,
+    }));
+
+    render(
+      <ProductDetailsSellerReviews productReviews={reviews} averageRating={5} totalReviews={11} />,
+    );
+
+    expect(screen.getByTestId('product-review-item-review-page-1')).toBeInTheDocument();
+    expect(screen.getByTestId('product-review-item-review-page-10')).toBeInTheDocument();
+    expect(screen.queryByTestId('product-review-item-review-page-11')).not.toBeInTheDocument();
+    expect(screen.getByTestId('product-review-pagination')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '2' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: '2' }));
+
+    expect(screen.queryByTestId('product-review-item-review-page-1')).not.toBeInTheDocument();
+    expect(screen.getByTestId('product-review-item-review-page-11')).toBeInTheDocument();
+  });
 });

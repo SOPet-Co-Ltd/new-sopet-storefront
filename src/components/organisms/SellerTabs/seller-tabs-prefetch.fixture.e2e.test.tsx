@@ -99,7 +99,7 @@ describe('SellerTabs hover-prefetch journey', () => {
       { wrapper: createWrapper() },
     );
 
-    const productsTab = screen.getByRole('link', { name: 'products' });
+    const productsTab = screen.getByRole('tab', { name: 'สินค้า' });
     const classNameBefore = productsTab.className;
     const styleBefore = productsTab.getAttribute('style');
 
@@ -147,7 +147,7 @@ describe('SellerTabs hover-prefetch journey', () => {
     await screen.findByText('Premium Dog Food 5kg');
 
     const countAfterRender = productsCallCount;
-    const reviewsTab = screen.getByRole('link', { name: 'reviews' });
+    const reviewsTab = screen.getByRole('tab', { name: 'รีวิว' });
     fireEvent.mouseEnter(reviewsTab);
 
     expect(productsCallCount).toBe(countAfterRender);

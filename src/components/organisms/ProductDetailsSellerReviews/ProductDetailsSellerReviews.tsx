@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import type { ProductReview } from '@/lib/hooks/useReviews';
 import { ProductReviewItem } from './ProductReviewItem';
 
-const REVIEWS_PER_PAGE = 5;
+const REVIEWS_PER_PAGE = 10;
 const RATING_QUERY_KEY = 'prf';
 
 type ProductDetailsSellerReviewsProps = {

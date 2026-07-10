@@ -1,4 +1,4 @@
-import { PRODUCT_LISTING_GRID_CLASS } from './productListingGrid';
+import { PRODUCT_CARD_GRID_CLASS } from './productListingGrid';
 
 type ProductListingSkeletonProps = {
   variant?: 'default' | 'search';
@@ -11,7 +11,7 @@ export function ProductListingSkeleton({ variant = 'default' }: ProductListingSk
       {variant === 'search' && (
         <div className="mb-10 h-10 w-full rounded-xs bg-sop-neutral-gray-600 animate-pulse" />
       )}
-      <ul className={PRODUCT_LISTING_GRID_CLASS}>
+      <ul className={PRODUCT_CARD_GRID_CLASS}>
         {Array.from({ length: 20 }).map((_, index) => (
           <li
             key={index}

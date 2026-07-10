@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { StarIcon } from '@/components/atoms/icons/filled/StarIcon';
+import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
 import { SellerStoreReviewList } from '@/components/molecules/SellerStoreReviewList/SellerStoreReviewList';
 import { useReviews } from '@/lib/hooks/useReviews';
 
@@ -12,17 +12,17 @@ type SellerReviewTabProps = {
 function SellerReviewTabSkeleton() {
   return (
     <div
-      className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-4"
+      className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(200px,1fr)_minmax(0,3fr)] lg:gap-6"
       aria-busy="true"
       data-testid="seller-review-tab-skeleton"
     >
-      <div className="h-48 animate-pulse rounded-xs border bg-sop-neutral-gray-600 p-4" />
-      <div className="col-span-3 h-48 animate-pulse rounded-xs border bg-sop-neutral-gray-600 p-4" />
+      <div className="min-h-sop-160px animate-pulse rounded-sop-8 bg-sop-neutral-gray-600" />
+      <div className="min-h-sop-160px animate-pulse rounded-sop-8 bg-sop-neutral-gray-600" />
     </div>
   );
 }
 
-function SellerScore({
+function SellerScorePanel({
   averageRating,
   totalCount,
 }: {
@@ -30,13 +30,18 @@ function SellerScore({
   totalCount: number;
 }) {
   return (
-    <div className="flex h-full flex-col items-center py-12 sop-body-md-regular">
-      <h3 className="sop-headline-sm-medium mb-2 uppercase text-sop-neutral-gray-300">Seller score</h3>
-      <div className="mb-4 flex items-center gap-2 text-sop-neutral-gray-400">
-        <StarIcon color="#ffb514" size={{ mobile: 16, desktop: 16 }} />
-        <span>{averageRating.toFixed(1)}</span>
+    <div className="flex min-h-sop-160px flex-col items-center justify-center gap-2 rounded-sop-8 bg-sop-primary-100 p-4 md:p-6">
+      <h3 className="sop-headline-sm-medium text-sop-neutral-gray-300">คะแนนร้านค้า</h3>
+      <p className="sop-headline-md-medium md:sop-display-sm-medium text-sop-system-warning-500">
+        {averageRating.toFixed(1)}
+      </p>
+      <div className="hidden items-center gap-2 md:flex">
+        <RenderStars averageRating={averageRating} size={25} />
       </div>
-      <p className="text-sop-neutral-gray-400">{totalCount} reviews</p>
+      <div className="flex items-center gap-2 md:hidden">
+        <RenderStars averageRating={averageRating} size={19} />
+      </div>
+      <p className="sop-body-sm-regular text-sop-neutral-gray-400">{totalCount} รีวิว</p>
     </div>
   );
 }
@@ -59,21 +64,24 @@ export function SellerReviewTab({ storeId }: SellerReviewTabProps) {
   const summary = storeReviewSummary;
 
   return (
-    <div className="mt-8 grid grid-cols-1 lg:grid-cols-4" data-testid="seller-review-tab">
-      <div className="rounded-xs border p-4">
-        <SellerScore
-          averageRating={summary?.averageRating ?? 0}
-          totalCount={summary?.totalCount ?? 0}
-        />
-      </div>
-      <div className="col-span-3 rounded-xs border p-4">
-        <h3 className="sop-headline-sm-medium border-b pb-4 uppercase text-sop-neutral-gray-300">
-          รีวิวจากลูกค้า
-        </h3>
+    <div
+      className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(200px,1fr)_minmax(0,3fr)] lg:gap-6"
+      data-testid="seller-review-tab"
+    >
+      <SellerScorePanel
+        averageRating={summary?.averageRating ?? 0}
+        totalCount={summary?.totalCount ?? 0}
+      />
+      <div>
+        <div className="mb-4 border-b border-sop-primary-500 py-2">
+          <h3 className="sop-headline-sm-medium md:sop-headline-md-medium text-sop-primary-700">
+            รีวิวจากลูกค้า
+          </h3>
+        </div>
         {storeReviewsLoading ? (
-          <p className="mt-4 sop-body-md-regular text-sop-neutral-gray-400">กำลังโหลด...</p>
+          <p className="sop-body-md-regular text-sop-neutral-gray-400">กำลังโหลด...</p>
         ) : storeReviewsError ? (
-          <div className="mt-4 text-center" data-testid="seller-review-tab-error">
+          <div className="text-center" data-testid="seller-review-tab-error">
             <p className="sop-body-md-regular text-sop-neutral-gray-300">โหลดรีวิวไม่สำเร็จ</p>
             <button
               type="button"
@@ -84,15 +92,13 @@ export function SellerReviewTab({ storeId }: SellerReviewTabProps) {
             </button>
           </div>
         ) : storeReviews.length === 0 ? (
-          <p className="mt-4 sop-body-md-regular text-sop-neutral-gray-400">ยังไม่มีรีวิว</p>
+          <p className="sop-body-md-regular text-sop-neutral-gray-400">ยังไม่มีรีวิว</p>
         ) : (
-          <div className="mt-4">
-            <SellerStoreReviewList
-              reviews={storeReviews}
-              currentPage={currentPage}
-              onPageChange={setCurrentPage}
-            />
-          </div>
+          <SellerStoreReviewList
+            reviews={storeReviews}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
     </div>

@@ -117,9 +117,16 @@ describe('SellerStorefront', () => {
     expect(screen.getByRole('link', { name: 'ดู Premium Dog Food 5kg' })).toBeInTheDocument();
   });
 
-  it('shows review summary and product breakdown on reviews tab', async () => {
+  it('shows review summary on reviews tab', async () => {
     registerSellerHandlers();
     pathname = `/sellers/${STORE_SLUG}/reviews`;
+
+    server.use(
+      graphql.query('StoreReviews', ({ variables }) => {
+        expect(variables).toMatchObject({ storeId: STORE_ID });
+        return HttpResponse.json({ data: { storeReviews: [] } });
+      }),
+    );
 
     render(<SellerStorefront handle={STORE_SLUG} activeTab="reviews" />, {
       wrapper: createWrapper(),
@@ -129,11 +136,10 @@ describe('SellerStorefront', () => {
       expect(screen.getByTestId('seller-review-tab')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Seller score')).toBeInTheDocument();
+    expect(screen.getByText('คะแนนร้านค้า')).toBeInTheDocument();
     expect(screen.getByText('4.6')).toBeInTheDocument();
-    expect(screen.getByText('24 reviews')).toBeInTheDocument();
-    expect(screen.getByText('Premium Dog Food 5kg')).toBeInTheDocument();
-    expect(screen.getByText('12 รีวิว')).toBeInTheDocument();
+    expect(screen.getByText('24 รีวิว')).toBeInTheDocument();
+    expect(screen.getByText('รีวิวจากลูกค้า')).toBeInTheDocument();
     expect(screen.queryByTestId('product-listing')).not.toBeInTheDocument();
   });
 
@@ -148,11 +154,11 @@ describe('SellerStorefront', () => {
       expect(screen.getByTestId('seller-tabs')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('link', { name: 'products' })).toHaveAttribute(
+    expect(screen.getByRole('tab', { name: 'สินค้า' })).toHaveAttribute(
       'href',
       `/sellers/${STORE_SLUG}`,
     );
-    expect(screen.getByRole('link', { name: 'reviews' })).toHaveAttribute(
+    expect(screen.getByRole('tab', { name: 'รีวิว' })).toHaveAttribute(
       'href',
       `/sellers/${STORE_SLUG}/reviews`,
     );

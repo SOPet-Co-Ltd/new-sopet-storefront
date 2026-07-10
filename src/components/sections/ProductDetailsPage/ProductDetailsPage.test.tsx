@@ -9,7 +9,7 @@ import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from '@/test/mocks/server';
 
 const STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
-const PRODUCT_ID = 'prod-001';
+const PRODUCT_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
 const SLUG = 'premium-dog-food-5kg';
 
 const SAMPLE_PRODUCT_DETAIL = {
@@ -84,7 +84,7 @@ const SAMPLE_PRODUCT_REVIEW = {
 
 const SAMPLE_STORE_PRODUCT = {
   __typename: 'ProductType' as const,
-  id: 'prod-002',
+  id: 'b2c3d4e5-f6a7-4890-b123-456789abcdef',
   name: 'Dog Treats',
   slug: 'dog-treats',
   storeId: STORE_ID,
@@ -131,6 +131,21 @@ vi.mock('@/lib/hooks/useAuth', () => ({
     logout: vi.fn(),
   })),
 }));
+
+vi.mock('@/lib/hooks/useSessionId', () => ({
+  useSessionId: () => 'session-test',
+}));
+
+vi.mock('@/lib/hooks/useSearchContext', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/hooks/useSearchContext')>(
+    '@/lib/hooks/useSearchContext',
+  );
+
+  return {
+    ...actual,
+    useSearchContext: () => undefined,
+  };
+});
 
 function createWrapper() {
   const ApolloTestWrapper = createApolloTestWrapper();
@@ -184,14 +199,57 @@ function mockProductQueries({
       });
     }),
     graphql.query('Products', ({ variables }) => {
-      expect(variables.storeId).toBe(STORE_ID);
+      if (variables.storeId) {
+        expect(variables).toMatchObject({
+          storeId: STORE_ID,
+          page: 1,
+          limit: 11,
+        });
+        return HttpResponse.json({
+          data: {
+            products: {
+              items: [SAMPLE_STORE_PRODUCT],
+              pagination: {
+                page: 1,
+                limit: 11,
+                total: 1,
+                totalPages: 1,
+              },
+            },
+          },
+        });
+      }
+
+      expect(variables).toMatchObject({
+        category: 'dog-food',
+        page: 1,
+        limit: 11,
+        sortBy: 'soldCount',
+        sortOrder: 'DESC',
+        searchContext: {
+          recentProductIds: [PRODUCT_ID],
+        },
+      });
       return HttpResponse.json({
         data: {
           products: {
-            items: [SAMPLE_STORE_PRODUCT],
+            items: [
+              {
+                ...SAMPLE_STORE_PRODUCT,
+                id: 'c3d4e5f6-a7b8-4901-c234-56789abcdef0',
+                name: 'Chew Toy Bone',
+                storeId: 'store-2',
+                store: {
+                  __typename: 'StoreType',
+                  id: 'store-2',
+                  name: 'Other Shop',
+                  slug: 'other-shop',
+                },
+              },
+            ],
             pagination: {
               page: 1,
-              limit: 10,
+              limit: 11,
               total: 1,
               totalPages: 1,
             },

@@ -1,11 +1,12 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { EmptySearchResults } from '@/components/molecules/EmptySearchResults';
 import { Pagination } from '@/components/molecules/Pagination';
 import { SearchSortBar, type SearchSortValue } from '@/components/molecules/SearchSortBar';
 import ProductCard from '@/components/organisms/ProductCard';
+import { prefetchProductsListing } from '@/lib/catalog/prefetchProductsListing';
 import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
 import { useProducts } from '@/lib/hooks/useProducts';
 import { useSearchContext } from '@/lib/hooks/useSearchContext';
@@ -17,7 +18,7 @@ import {
 } from '@/lib/search/searchFilters';
 import { cn } from '@/lib/utils';
 import { ProductListingSkeleton } from './ProductListingSkeleton';
-import { PRODUCT_LISTING_GRID_CLASS } from './productListingGrid';
+import { PRODUCT_CARD_GRID_CLASS } from './productListingGrid';
 
 const DEFAULT_PRODUCT_LIMIT = 24;
 const SEARCH_PRODUCT_LIMIT = 40;
@@ -31,6 +32,7 @@ export type ProductListingProps = {
   variant?: 'default' | 'search';
   limit?: number;
   initialProducts?: ProductsQuery['products']['items'];
+  initialPage?: number;
 };
 
 export function ProductListing({
@@ -42,6 +44,7 @@ export function ProductListing({
   variant = 'default',
   limit: limitProp,
   initialProducts,
+  initialPage = 1,
 }: ProductListingProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -53,12 +56,15 @@ export function ProductListing({
   const listingParamsKey = useMemo(
     () =>
       JSON.stringify({
+        category: category ?? null,
         search: search ?? null,
+        storeId: storeId ?? null,
+        tag: tag ?? null,
         sort: sortParam,
         page: currentPage,
         ...filterVariables,
       }),
-    [search, sortParam, currentPage, filterVariables],
+    [category, search, storeId, tag, sortParam, currentPage, filterVariables],
   );
   const initialListingParamsKeyRef = useRef(listingParamsKey);
   const listingParamsChanged = listingParamsKey !== initialListingParamsKeyRef.current;
@@ -69,10 +75,36 @@ export function ProductListing({
   const searchContext = useSearchContext();
   const sessionId = useSessionId(variant === 'search');
 
-  const listingPrefetch =
-    variant === 'search'
-      ? { search, category, storeId, tag, limit, sortBy, sortOrder, sessionId, searchContext, ...filterVariables }
-      : { category, search, storeId, tag, limit, sortBy, sortOrder, ...filterVariables };
+  const listingPrefetch = useMemo(
+    () =>
+      variant === 'search'
+        ? {
+            search,
+            category,
+            storeId,
+            tag,
+            limit,
+            sortBy,
+            sortOrder,
+            sessionId,
+            searchContext,
+            ...filterVariables,
+          }
+        : { category, search, storeId, tag, limit, sortBy, sortOrder, ...filterVariables },
+    [
+      variant,
+      search,
+      category,
+      storeId,
+      tag,
+      limit,
+      sortBy,
+      sortOrder,
+      sessionId,
+      searchContext,
+      filterVariables,
+    ],
+  );
 
   const {
     products: fetchedProducts,
@@ -96,10 +128,23 @@ export function ProductListing({
   });
 
   const useInitialProducts =
-    currentPage === 1 && initialProducts !== undefined && !listingParamsChanged;
+    currentPage === initialPage &&
+    initialProducts !== undefined &&
+    !listingParamsChanged;
   const products =
     useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;
+
+  useEffect(() => {
+    if (!listingPrefetch || totalPages <= 1 || currentPage >= totalPages) {
+      return;
+    }
+
+    prefetchProductsListing({
+      ...listingPrefetch,
+      page: currentPage + 1,
+    });
+  }, [listingPrefetch, totalPages, currentPage]);
 
   const handlePageChange = useCallback(
     (page: number) => {
@@ -181,7 +226,7 @@ export function ProductListing({
             สินค้าทั้งหมด ({total})
           </p>
 
-          <ul className={cn('mt-6', PRODUCT_LISTING_GRID_CLASS)}>
+          <ul className={cn('mt-6', PRODUCT_CARD_GRID_CLASS)}>
             {products.map((product, index) => (
               <li key={product.id}>
                 <ProductCard product={product} priority={index < 4} />
@@ -210,7 +255,7 @@ export function ProductListing({
         />
       </div>
 
-      <ul className={PRODUCT_LISTING_GRID_CLASS}>
+      <ul className={PRODUCT_CARD_GRID_CLASS}>
         {products.map((product, index) => (
           <li key={product.id}>
             <ProductCard product={product} priority={index < 4} />

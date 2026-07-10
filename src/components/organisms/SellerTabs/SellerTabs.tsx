@@ -14,6 +14,11 @@ import { SellerReviewTab } from '@/components/organisms/SellerReviewTab';
 
 export type SellerTab = 'products' | 'reviews';
 
+const TAB_LABELS: Record<SellerTab, string> = {
+  products: 'สินค้า',
+  reviews: 'รีวิว',
+};
+
 type SellerTabsProps = {
   activeTab: SellerTab;
   storeHandle: string;
@@ -26,16 +31,34 @@ type TabItem = {
   href: string;
 };
 
-function TabTrigger({ label, isActive }: { label: SellerTab; isActive: boolean }) {
+function SellerTabLink({
+  tab,
+  href,
+  isActive,
+  onPrefetch,
+}: {
+  tab: SellerTab;
+  href: string;
+  isActive: boolean;
+  onPrefetch: () => void;
+}) {
   return (
-    <p
+    <Link
+      href={href}
+      role="tab"
+      aria-current={isActive ? 'page' : undefined}
+      aria-selected={isActive}
       className={cn(
-        'capitalize cursor-pointer px-2 pb-2 sop-body-md-regular text-sop-neutral-gray-300',
-        isActive && 'border-b border-sop-primary-500 font-bold',
+        'rounded-sop-8px px-4 py-2 sop-body-sm-regular transition-colors',
+        isActive
+          ? 'bg-sop-primary-500 text-sop-base-white shadow-sm'
+          : 'text-sop-primary-700 hover:bg-sop-primary-50 hover:text-sop-primary-600',
       )}
+      onMouseEnter={onPrefetch}
+      onFocus={onPrefetch}
     >
-      {label}
-    </p>
+      {TAB_LABELS[tab]}
+    </Link>
   );
 }
 
@@ -49,7 +72,7 @@ function TabContent({
   children: React.ReactNode;
 }) {
   if (activeTab !== value) return null;
-  return <div>{children}</div>;
+  return <div className="mt-6">{children}</div>;
 }
 
 export function SellerTabs({
@@ -69,18 +92,20 @@ export function SellerTabs({
   };
 
   return (
-    <div className="mt-8" data-testid="seller-tabs">
-      <nav className="flex gap-4 w-full" aria-label="Seller page tabs">
+    <div className="mt-6" data-testid="seller-tabs">
+      <nav
+        className="inline-flex rounded-sop-8px bg-sop-primary-100 p-1"
+        aria-label="แท็บหน้าร้านค้า"
+        role="tablist"
+      >
         {tabs.map(({ label, href }) => (
-          <Link
+          <SellerTabLink
             key={label}
+            tab={label}
             href={href}
-            aria-current={activeTab === label ? 'page' : undefined}
-            onMouseEnter={() => handleTabPrefetch(label)}
-            onFocus={() => handleTabPrefetch(label)}
-          >
-            <TabTrigger label={label} isActive={activeTab === label} />
-          </Link>
+            isActive={activeTab === label}
+            onPrefetch={() => handleTabPrefetch(label)}
+          />
         ))}
       </nav>
 
@@ -107,8 +132,16 @@ type SellerStorefrontProps = {
 function SellerStorefrontSkeleton() {
   return (
     <div aria-busy="true" data-testid="seller-storefront-skeleton">
-      <div className="border rounded-xs p-4 h-32 bg-sop-neutral-gray-600 animate-pulse" />
-      <div className="mt-8 h-10 w-48 bg-sop-neutral-gray-600 animate-pulse" />
+      <div className="overflow-hidden rounded-sop-16 border border-sop-primary-200 bg-sop-base-white">
+        <div className="h-32 animate-pulse bg-sop-primary-100 md:h-40" />
+        <div className="flex items-center gap-4 bg-sop-base-white p-4 md:p-5">
+          <div className="h-12 w-12 shrink-0 animate-pulse rounded-full border-2 border-sop-primary-200 bg-sop-primary-100" />
+          <div className="h-6 w-48 animate-pulse rounded-sop-8 bg-sop-primary-100" />
+        </div>
+      </div>
+      <div className="mt-6 inline-flex h-10 w-52 animate-pulse rounded-sop-8px bg-sop-primary-100 p-1">
+        <div className="h-full w-1/2 rounded-sop-8px bg-sop-primary-200" />
+      </div>
     </div>
   );
 }

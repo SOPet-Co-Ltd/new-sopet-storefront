@@ -34,6 +34,8 @@ describe('SellerReviewTab', () => {
     await waitFor(() => {
       expect(screen.getByText('4.6')).toBeInTheDocument();
     });
+    expect(screen.getByText('คะแนนร้านค้า')).toBeInTheDocument();
+    expect(screen.getByText('24 รีวิว')).toBeInTheDocument();
     expect(screen.getByText('รีวิวจากลูกค้า')).toBeInTheDocument();
     expect(screen.getByText(sampleStoreReview.productName)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: sampleStoreReview.productName })).toHaveAttribute(

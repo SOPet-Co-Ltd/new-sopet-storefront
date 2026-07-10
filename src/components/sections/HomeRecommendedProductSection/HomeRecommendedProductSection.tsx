@@ -6,15 +6,13 @@ import { Button } from '@/components/atoms/Button';
 import { RightArrowLineIcon } from '@/components/atoms/icons/filled/RightArrowLineIcon';
 import { RecommendedProductsDocument, type RecommendedProductsQuery } from '@/lib/graphql/generated/graphql';
 import ProductCard from '@/components/organisms/ProductCard';
-
-const RECOMMENDED_GRID_CLASS =
-  'grid grid-cols-2 gap-2 justify-items-center md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5 xl:gap-10';
+import { PRODUCT_CARD_GRID_CLASS } from '@/components/sections/ProductListing/productListingGrid';
 
 const SECTION_HEADING_CLASS = 'mb-5 sop-body-lg-medium text-sop-neutral-gray-200';
 
 function RecommendedSkeletonGrid() {
   return (
-    <ul className={RECOMMENDED_GRID_CLASS} aria-hidden="true">
+    <ul className={PRODUCT_CARD_GRID_CLASS} aria-hidden="true">
       {Array.from({ length: 10 }).map((_, index) => (
         <li
           key={index}
@@ -66,7 +64,7 @@ export function HomeRecommendedProductSection({
     <section className="w-full">
       <h2 className={SECTION_HEADING_CLASS}>{heading}</h2>
       <div className="w-full">
-        <ul className={RECOMMENDED_GRID_CLASS}>
+        <ul className={PRODUCT_CARD_GRID_CLASS}>
           {products.map((product) => (
             <li key={product.id}>
               <ProductCard product={product} />

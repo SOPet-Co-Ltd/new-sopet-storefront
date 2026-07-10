@@ -145,13 +145,21 @@ export default function ProductDetailsPage({
           heading="สินค้าจากร้านเดียวกัน"
           storeId={product.storeId}
           excludeProductId={product.id}
+          sameStoreOnly
           layout="grid"
+          viewAllHref={product.store ? `/sellers/${product.store.slug}` : '/categories'}
         />
 
         <HomeProductSection
           heading="สินค้าที่คุณอาจจะชอบ"
-          excludeProductId={product.id}
+          referenceProduct={{
+            id: product.id,
+            category: product.category,
+            tags: product.tags,
+            storeId: product.storeId,
+          }}
           layout="grid"
+          viewAllHref={product.category ? `/categories/${product.category}` : '/categories'}
         />
       </div>
     </div>

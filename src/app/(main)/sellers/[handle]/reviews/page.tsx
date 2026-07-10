@@ -8,7 +8,7 @@ export default async function SellerReviewsPage({ params }: Props) {
   const { handle } = await params;
 
   return (
-    <main className="container lg:px-20 px-4 py-4">
+    <main className="w-full min-h-[calc(100dvh-109px)] px-4 py-4 lg:px-20">
       <SellerStorefront handle={handle} activeTab="reviews" />
     </main>
   );

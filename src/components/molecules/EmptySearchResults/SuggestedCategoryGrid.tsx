@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { Category } from '@/lib/hooks/useCategories';
+import { buildCategoryHref } from '@/lib/routing/categoryRoutes';
 
 const PLACEHOLDER_IMAGE = '/images/placeholder.svg';
 
@@ -17,7 +18,7 @@ function SuggestedCategoryLink({ category }: { category: Category }) {
 
   return (
     <Link
-      href={`/categories/${category.slug}`}
+      href={buildCategoryHref(category.slug)}
       className="flex min-h-12 items-center gap-2.5 rounded-sop-16px border border-sop-additionalblue-200 bg-sop-additionalblue-100 px-3 py-2.5 transition-opacity hover:opacity-90"
       aria-label={`ดูหมวดหมู่ ${category.name}`}
     >

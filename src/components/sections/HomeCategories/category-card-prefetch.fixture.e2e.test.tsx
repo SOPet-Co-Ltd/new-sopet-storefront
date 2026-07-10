@@ -63,7 +63,7 @@ describe('Home to category prefetch journey', () => {
     server.use(
       graphql.query('Products', ({ variables }) => {
         productsCallCount += 1;
-        expect(variables).toMatchObject({ category: 'dog-food', page: 1 });
+        expect(variables).toMatchObject({ category: 'อาหารสุนัข', page: 1 });
         return HttpResponse.json({
           data: {
             products: {

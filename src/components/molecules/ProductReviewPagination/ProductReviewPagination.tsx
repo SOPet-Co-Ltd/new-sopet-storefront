@@ -2,6 +2,7 @@
 
 import { GreaterThanIcon } from '@/components/atoms/icons/filled/GreaterThanIcon';
 import { LessThanIcon } from '@/components/atoms/icons/filled/LessThanIcon';
+import { cn } from '@/lib/utils';
 
 type ProductReviewPaginationProps = {
   page: number;
@@ -9,31 +10,28 @@ type ProductReviewPaginationProps = {
   onPageChange: (page: number) => void;
 };
 
-function getPaginationButtons(page: number, totalPages: number): Array<number | '...'> {
-  if (totalPages < 1) return [];
-
-  const buttons: Array<number | '...'> = [];
-  const range = 2;
-
-  buttons.push(1);
-
-  if (page > range + 2) {
-    buttons.push('...');
+export function getPaginationButtons(page: number, totalPages: number): Array<number | '...'> {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
 
-  for (let index = Math.max(2, page - range); index <= Math.min(totalPages - 1, page + range); index += 1) {
-    buttons.push(index);
+  if (page <= 4) {
+    return [1, 2, 3, 4, 5, '...', totalPages];
   }
 
-  if (page < totalPages - (range + 1)) {
-    buttons.push('...');
+  if (page >= totalPages - 3) {
+    return [
+      1,
+      '...',
+      totalPages - 4,
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
   }
 
-  if (totalPages > 1) {
-    buttons.push(totalPages);
-  }
-
-  return buttons;
+  return [1, '...', page - 1, page, page + 1, '...', totalPages];
 }
 
 export function ProductReviewPagination({
@@ -46,36 +44,41 @@ export function ProductReviewPagination({
   const buttons = getPaginationButtons(page, totalPages);
 
   return (
-    <div className="flex items-center justify-center gap-4" data-testid="product-review-pagination">
+    <div className="flex items-center justify-center gap-5" data-testid="product-review-pagination">
       <button
         type="button"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
-        className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-sop-28px w-sop-28px cursor-pointer items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="หน้าก่อนหน้า"
       >
         <LessThanIcon
           size={{ mobile: 12, desktop: 18 }}
-          color={page <= 1 ? '#22222947' : '#22222929'}
+          color={page <= 1 ? '#22222947' : '#454547'}
         />
       </button>
 
-      <div className="flex gap-4">
+      <div className="flex items-center gap-5">
         {buttons.map((label, index) =>
           typeof label === 'number' ? (
             <button
               key={`${label}-${index}`}
               type="button"
-              disabled={label === page}
-              onClick={() => onPageChange(label)}
-              className="cursor-pointer aspect-square md:h-sop-28px md:w-sop-28px h-sop-20px w-sop-20px md:sop-body-md-light sop-body-xs-light rounded-md border border-sop-neutral-gray-300 text-sop-neutral-gray-300 disabled:bg-sop-neutral-gray-300 disabled:text-sop-base-white"
+              aria-current={label === page ? 'page' : undefined}
+              onClick={() => {
+                if (label !== page) onPageChange(label);
+              }}
+              className={cn(
+                'flex h-sop-28px w-sop-28px cursor-pointer items-center justify-center rounded-md border border-sop-neutral-gray-300 sop-body-sm-light text-sop-neutral-gray-300',
+                label === page && 'cursor-default border-sop-neutral-gray-300 bg-sop-neutral-gray-300 text-sop-base-white',
+              )}
             >
               {label}
             </button>
           ) : (
             <span
               key={`${label}-${index}`}
-              className="self-end text-center md:w-sop-20px w-sop-12px md:sop-body-md-light sop-body-xs-light cursor-default select-none"
+              className="w-sop-20px cursor-default select-none text-center sop-body-sm-light text-sop-neutral-gray-300"
             >
               {label}
             </span>
@@ -87,12 +90,12 @@ export function ProductReviewPagination({
         type="button"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
-        className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-sop-28px w-sop-28px cursor-pointer items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="หน้าถัดไป"
       >
         <GreaterThanIcon
           size={{ mobile: 12, desktop: 18 }}
-          color={page >= totalPages ? '#22222947' : '#22222929'}
+          color={page >= totalPages ? '#22222947' : '#454547'}
         />
       </button>
     </div>

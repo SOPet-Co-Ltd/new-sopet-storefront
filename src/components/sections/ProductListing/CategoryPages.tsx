@@ -5,17 +5,25 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { useCategories } from '@/lib/hooks/useCategories';
 import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
+import {
+  buildCategoryHref,
+  resolveCategoryBySlug,
+  resolveCategoryFilterName,
+} from '@/lib/routing/categoryRoutes';
+import { prefetchProductsListing } from '@/lib/catalog/prefetchProductsListing';
 import { ProductListing } from './ProductListing';
 import { ProductListingSkeleton } from './ProductListingSkeleton';
 
 type CategoryPLPProps = {
   categorySlug: string;
+  categoryFilter?: string;
   initialProducts?: ProductsQuery['products']['items'];
+  initialPage?: number;
 };
 
 function CategoryHeader({ categorySlug }: { categorySlug: string }) {
   const { categories, loading } = useCategories();
-  const category = categories.find((item) => item.slug === categorySlug);
+  const category = resolveCategoryBySlug(categories, categorySlug);
   const title = loading ? categorySlug : (category?.name ?? categorySlug);
 
   return (
@@ -25,23 +33,44 @@ function CategoryHeader({ categorySlug }: { categorySlug: string }) {
   );
 }
 
-export function CategoryPLP({ categorySlug, initialProducts }: CategoryPLPProps) {
+export function CategoryPLP({
+  categorySlug,
+  categoryFilter: initialCategoryFilter,
+  initialProducts,
+  initialPage,
+}: CategoryPLPProps) {
+  const { categories, loading } = useCategories();
+  const categoryFilter =
+    loading && initialCategoryFilter
+      ? initialCategoryFilter
+      : resolveCategoryFilterName(categories, categorySlug);
+
   return (
     <>
       <CategoryHeader categorySlug={categorySlug} />
       <Suspense fallback={<ProductListingSkeleton />}>
-        <ProductListing category={categorySlug} initialProducts={initialProducts} />
+        <ProductListing
+          category={categoryFilter}
+          initialProducts={initialProducts}
+          initialPage={initialPage}
+        />
       </Suspense>
     </>
   );
 }
 
 function CategoryCard({ name, slug }: { name: string; slug: string }) {
+  const handlePrefetch = () => {
+    prefetchProductsListing({ category: name, page: 1 });
+  };
+
   return (
     <Link
-      href={`/categories/${slug}`}
+      href={buildCategoryHref(slug)}
       className="relative flex flex-col items-center border rounded-xs bg-component transition-all hover:rounded-full w-full max-w-[233px] aspect-square"
       aria-label={`ดูหมวดหมู่ ${name}`}
+      onMouseEnter={handlePrefetch}
+      onFocus={handlePrefetch}
     >
       <div className="flex relative aspect-square overflow-hidden w-[200px]">
         <Image
@@ -81,7 +110,7 @@ export function CategoryIndexPage() {
 
   if (loading) {
     return (
-      <main className="container lg:px-20 px-4 py-8" aria-busy="true">
+      <main className="w-full px-4 py-8 lg:px-20" aria-busy="true">
         <h1 className="sop-headline-md-medium text-sop-neutral-gray-300 mb-6">หมวดหมู่สินค้า</h1>
         <CategoryIndexSkeleton />
       </main>
@@ -90,7 +119,7 @@ export function CategoryIndexPage() {
 
   if (error) {
     return (
-      <main className="container lg:px-20 px-4 py-8">
+      <main className="w-full px-4 py-8 lg:px-20">
         <h1 className="sop-headline-md-medium text-sop-neutral-gray-300 mb-6">หมวดหมู่สินค้า</h1>
         <button
           type="button"
@@ -104,7 +133,7 @@ export function CategoryIndexPage() {
   }
 
   return (
-    <main className="container lg:px-20 px-4 py-8" data-testid="category-index-page">
+    <main className="w-full px-4 py-8 lg:px-20" data-testid="category-index-page">
       <h1 className="sop-headline-md-medium text-sop-neutral-gray-300 mb-6">หมวดหมู่สินค้า</h1>
       {categories.length === 0 ? (
         <p className="sop-body-sm-regular text-sop-neutral-gray-300">ไม่พบหมวดหมู่</p>

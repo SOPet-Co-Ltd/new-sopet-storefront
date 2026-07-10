@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountEmptyState } from '@/components/molecules/account/AccountEmptyState';
@@ -17,18 +17,38 @@ import {
   type OrderListFilterId,
 } from '@/lib/constants/orderListFilters';
 import { useOrders } from '@/lib/hooks/useOrders';
+import { useOrdersReviewStatus } from '@/lib/hooks/useOrdersReviewStatus';
+import { saveOrdersListReturnUrl } from '@/lib/orders/orderListReturnUrl';
 
 export default function UserOrdersPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const filter = parseOrderListFilter(searchParams.get('filter'));
   const page = parseOrdersPage(searchParams.get('page'));
 
-  const { orders, loading, pagination } = useOrders({
+  const { orders, loading, pagination, refetch } = useOrders({
     page,
     limit: ORDERS_PAGE_SIZE,
     filter,
   });
+  const { isOrderFullyReviewed } = useOrdersReviewStatus(orders);
+
+  useEffect(() => {
+    const query = searchParams.toString();
+    saveOrdersListReturnUrl(query ? `${pathname}?${query}` : pathname);
+  }, [pathname, searchParams]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refetch();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [refetch]);
 
   const updateSearchParams = useCallback(
     (updates: { page?: number; filter?: OrderListFilterId }) => {
@@ -77,7 +97,11 @@ export default function UserOrdersPage() {
         ) : (
           <div className="space-y-3">
             {orders.map((order) => (
-              <OrderListItem key={order.id} order={order} />
+              <OrderListItem
+                key={order.id}
+                order={order}
+                showReviewedTag={isOrderFullyReviewed(order.id, order.status)}
+              />
             ))}
           </div>
         )}

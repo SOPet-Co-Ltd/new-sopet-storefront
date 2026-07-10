@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ArrowLeftIcon } from '@/components/atoms/icons';
 import { Button } from '@/components/atoms/Button';
+import { AccountBackLink } from '@/components/molecules/account/AccountBackLink';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { cn } from '@/lib/utils';
 
@@ -73,13 +73,7 @@ export function ProfileContactEditLayout({
 }: ProfileContactEditLayoutProps) {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4">
-      <Link
-        href="/user/profile"
-        className="inline-flex items-center gap-1.5 sop-body-sm-medium text-sop-secondary-500 transition-colors hover:text-sop-secondary-600"
-      >
-        <ArrowLeftIcon size={{ mobile: 16, desktop: 16 }} />
-        กลับไปข้อมูลส่วนตัว
-      </Link>
+      <AccountBackLink href="/user/profile" label="กลับไปข้อมูลส่วนตัว" />
 
       <AccountCard padding="md" className="w-full">
         <div className="mb-6 flex items-start gap-3">

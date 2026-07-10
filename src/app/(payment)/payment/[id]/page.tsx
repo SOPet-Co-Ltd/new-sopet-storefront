@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm';
 import { clearPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { invalidateCustomerOrders } from '@/lib/orders/invalidateCustomerOrders';
 import { usePayment } from '@/lib/hooks/usePayment';
 
 type LookupMode = 'paymentId' | 'orderId';
@@ -57,6 +58,7 @@ export default function PaymentPage() {
 
     hasRedirected.current = true;
     clearPendingCheckout();
+    void invalidateCustomerOrders();
     router.replace(`/thank-you/${payment.orderId}`);
   }, [payment?.orderId, payment?.status, router]);
 

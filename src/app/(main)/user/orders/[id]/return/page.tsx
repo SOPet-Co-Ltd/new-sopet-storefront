@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { AccountBackLink } from '@/components/molecules/account/AccountBackLink';
+import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { Button } from '@/components/atoms/Button';
 import { useDisputes } from '@/lib/hooks/useDisputes';
 
@@ -45,7 +47,13 @@ export default function CreateReturnPage() {
 
   return (
     <AccountLayout title="ขอคืนสินค้า">
-      <form onSubmit={(e) => void handleSubmit(e)} className="max-w-lg space-y-4">
+      <div className="space-y-4">
+        <AccountBackLink
+          href={`/user/orders/${params.id}`}
+          label="กลับไปรายละเอียดคำสั่งซื้อ"
+        />
+        <AccountCard padding="md" className="w-full">
+          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
         <div>
           <p className="mb-2 sop-body-sm-medium text-sop-neutral-gray-200">ประเภทปัญหา</p>
           <div className="space-y-2">
@@ -91,7 +99,9 @@ export default function CreateReturnPage() {
         <Button type="submit" fill loading={creating} disabled={creating}>
           ส่งคำขอคืนสินค้า
         </Button>
-      </form>
+          </form>
+        </AccountCard>
+      </div>
     </AccountLayout>
   );
 }

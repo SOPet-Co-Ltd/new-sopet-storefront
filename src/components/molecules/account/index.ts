@@ -1,3 +1,4 @@
+export { AccountBackLink } from './AccountBackLink';
 export { AccountCard } from './AccountCard';
 export { AccountEmptyState } from './AccountEmptyState';
 export { AccountStatusBadge } from './AccountStatusBadge';

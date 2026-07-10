@@ -14,6 +14,11 @@ import { getApolloClient } from '@/lib/graphql/client';
 import { ORDERS_PAGE_SIZE } from '@/lib/constants/orderListFilters';
 import { useAuth } from '@/lib/hooks/useAuth';
 
+const CONFIRM_ORDER_DELIVERED_MUTATION_OPTIONS = {
+  refetchQueries: [{ query: OrdersDocument }, { query: OrderDocument }],
+  awaitRefetchQueries: true,
+} as const;
+
 export type OrderSummary = OrdersQuery['orders']['items'][number];
 export type OrderDetail = NonNullable<OrderQuery['order']>;
 export type OrdersPagination = OrdersQuery['orders']['pagination'];
@@ -57,6 +62,8 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
   const { data, loading, error, refetch } = useQuery(OrdersDocument, {
     skip: !isAuthenticated,
     variables: { page, limit, filter },
+    fetchPolicy: 'cache-and-network',
+    nextFetchPolicy: 'cache-first',
   });
 
   const fetchOrder = useCallback(async (id: string) => {
@@ -70,6 +77,7 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
 
   const [confirmDeliveryMutation, { loading: confirmingDelivery }] = useMutation(
     ConfirmOrderDeliveredDocument,
+    CONFIRM_ORDER_DELIVERED_MUTATION_OPTIONS,
   );
 
   const confirmOrderDelivered = useCallback(
@@ -105,6 +113,7 @@ export function useOrderDetail(orderId: string | undefined): UseOrderDetailResul
 
   const [confirmDeliveryMutation, { loading: confirmingDelivery }] = useMutation(
     ConfirmOrderDeliveredDocument,
+    CONFIRM_ORDER_DELIVERED_MUTATION_OPTIONS,
   );
 
   const confirmOrderDelivered = useCallback(

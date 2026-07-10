@@ -14,9 +14,10 @@ function formatPrice(amount: number): string {
 
 type OrderListItemProps = {
   order: OrderSummary;
+  showReviewedTag?: boolean;
 };
 
-export function OrderListItem({ order }: OrderListItemProps) {
+export function OrderListItem({ order, showReviewedTag = false }: OrderListItemProps) {
   const router = useRouter();
   const statusLabel = ORDER_STATUS_LABELS[order.status] ?? order.status;
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -44,9 +45,14 @@ export function OrderListItem({ order }: OrderListItemProps) {
             {formatThaiDateTime(order.createdAt)}
           </p>
         </div>
-        <AccountStatusBadge variant={getOrderStatusBadgeVariant(order.status)}>
-          {statusLabel}
-        </AccountStatusBadge>
+        <div className="flex flex-wrap items-center gap-2">
+          {showReviewedTag ? (
+            <AccountStatusBadge variant="default">รีวิวแล้ว</AccountStatusBadge>
+          ) : null}
+          <AccountStatusBadge variant={getOrderStatusBadgeVariant(order.status)}>
+            {statusLabel}
+          </AccountStatusBadge>
+        </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <p className="sop-body-sm-regular text-sop-neutral-gray-300">

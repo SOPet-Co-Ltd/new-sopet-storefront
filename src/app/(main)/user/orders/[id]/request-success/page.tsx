@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { AccountBackLink } from '@/components/molecules/account/AccountBackLink';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { Button } from '@/components/atoms/Button';
 
@@ -11,7 +12,12 @@ export default function ReturnRequestSuccessPage() {
 
   return (
     <AccountLayout title="ส่งคำขอสำเร็จ">
-      <AccountCard className="max-w-lg text-center" padding="md">
+      <div className="space-y-4">
+        <AccountBackLink
+          href={`/user/orders/${params.id}`}
+          label="กลับไปรายละเอียดคำสั่งซื้อ"
+        />
+        <AccountCard className="w-full text-center" padding="md">
         <p className="sop-body-lg-medium text-sop-system-success-500">ส่งคำขอคืนสินค้าเรียบร้อยแล้ว</p>
         <p className="mt-2 sop-body-sm-regular text-sop-neutral-gray-400">
           ทีมงานจะตรวจสอบและติดต่อกลับโดยเร็วที่สุด
@@ -27,6 +33,7 @@ export default function ReturnRequestSuccessPage() {
           </Link>
         </div>
       </AccountCard>
+      </div>
     </AccountLayout>
   );
 }

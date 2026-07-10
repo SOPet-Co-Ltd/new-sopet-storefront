@@ -1,14 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import OrderDetailPage from './page';
 import type { OrderDetail } from '@/lib/hooks/useOrders';
 
-const { mockUseOrderDetail } = vi.hoisted(() => ({
+const { mockUseOrderDetail, mockUseOrderPendingReviews } = vi.hoisted(() => ({
   mockUseOrderDetail: vi.fn(),
+  mockUseOrderPendingReviews: vi.fn(),
 }));
 
 vi.mock('@/lib/hooks/useOrders', () => ({
   useOrderDetail: (...args: unknown[]) => mockUseOrderDetail(...args),
+}));
+
+vi.mock('@/lib/hooks/useOrderPendingReviews', () => ({
+  useOrderPendingReviews: (...args: unknown[]) => mockUseOrderPendingReviews(...args),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -48,6 +53,14 @@ function createOrder(status: string): OrderDetail {
 }
 
 describe('OrderDetailPage', () => {
+  beforeEach(() => {
+    mockUseOrderPendingReviews.mockReturnValue({
+      pendingReviewItems: [],
+      hasPendingReviews: false,
+      loading: false,
+    });
+  });
+
   it('renders pending_payment status label', async () => {
     mockUseOrderDetail.mockReturnValue({
       order: createOrder('pending_payment'),
@@ -154,7 +167,12 @@ describe('OrderDetailPage', () => {
     });
   });
 
-  it('renders review CTA link when order is delivered', async () => {
+  it('renders review CTA link when order is delivered and reviews are pending', async () => {
+    mockUseOrderPendingReviews.mockReturnValue({
+      pendingReviewItems: [{ orderId: 'order-1' }],
+      hasPendingReviews: true,
+      loading: false,
+    });
     mockUseOrderDetail.mockReturnValue({
       order: createOrder('delivered'),
       loading: false,
@@ -166,6 +184,10 @@ describe('OrderDetailPage', () => {
     render(<OrderDetailPage />);
 
     await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'กลับไปรายการคำสั่งซื้อ' })).toHaveAttribute(
+        'href',
+        '/user/orders',
+      );
       expect(screen.getByRole('link', { name: 'เขียนรีวิว' })).toHaveAttribute(
         'href',
         '/user/reviews?tab=pending',
@@ -174,6 +196,28 @@ describe('OrderDetailPage', () => {
         'href',
         '/user/orders/order-1/return',
       );
+    });
+  });
+
+  it('disables review CTA when all products from the order are already reviewed', async () => {
+    mockUseOrderPendingReviews.mockReturnValue({
+      pendingReviewItems: [],
+      hasPendingReviews: false,
+      loading: false,
+    });
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('delivered'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
+
+    render(<OrderDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'เขียนรีวิวแล้ว' })).toBeDisabled();
+      expect(screen.queryByRole('link', { name: 'เขียนรีวิว' })).not.toBeInTheDocument();
     });
   });
 });

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { AccountBackLink } from '@/components/molecules/account/AccountBackLink';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { Button } from '@/components/atoms/Button';
@@ -15,13 +16,25 @@ import {
   isReturnEligibleOrderStatus,
 } from '@/lib/constants/orderStatus';
 import { useOrderDetail } from '@/lib/hooks/useOrders';
+import { useOrderPendingReviews } from '@/lib/hooks/useOrderPendingReviews';
+import { getOrdersListReturnUrl } from '@/lib/orders/orderListReturnUrl';
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
+  const [ordersReturnUrl, setOrdersReturnUrl] = useState('/user/orders');
   const { order, loading, error, confirmOrderDelivered, confirmingDelivery } = useOrderDetail(
     params.id,
   );
+  const isDelivered = order?.status === 'delivered';
+  const { hasPendingReviews, loading: pendingReviewsLoading } = useOrderPendingReviews(
+    order?.id,
+    isDelivered,
+  );
   const [actionError, setActionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOrdersReturnUrl(getOrdersListReturnUrl());
+  }, []);
 
   const handleConfirmDelivery = async () => {
     if (!order) return;
@@ -36,7 +49,10 @@ export default function OrderDetailPage() {
   if (loading) {
     return (
       <AccountLayout title="รายละเอียดคำสั่งซื้อ">
-        <p className="sop-body-sm-regular text-sop-neutral-gray-400">กำลังโหลด...</p>
+        <div className="space-y-4">
+          <AccountBackLink href={ordersReturnUrl} label="กลับไปรายการคำสั่งซื้อ" />
+          <p className="sop-body-sm-regular text-sop-neutral-gray-400">กำลังโหลด...</p>
+        </div>
       </AccountLayout>
     );
   }
@@ -44,12 +60,12 @@ export default function OrderDetailPage() {
   if (!order) {
     return (
       <AccountLayout title="รายละเอียดคำสั่งซื้อ">
-        <p className="sop-body-sm-regular text-sop-system-error-400">
-          {error?.message ?? 'ไม่พบคำสั่งซื้อ'}
-        </p>
-        <Link href="/user/orders" className="mt-4 inline-block sop-body-sm-medium text-sop-secondary-500 underline">
-          กลับไปรายการคำสั่งซื้อ
-        </Link>
+        <div className="space-y-4">
+          <AccountBackLink href={ordersReturnUrl} label="กลับไปรายการคำสั่งซื้อ" />
+          <p className="sop-body-sm-regular text-sop-system-error-400">
+            {error?.message ?? 'ไม่พบคำสั่งซื้อ'}
+          </p>
+        </div>
       </AccountLayout>
     );
   }
@@ -77,6 +93,8 @@ export default function OrderDetailPage() {
   return (
     <AccountLayout title="รายละเอียดคำสั่งซื้อ">
       <div className="space-y-6">
+        <AccountBackLink href={ordersReturnUrl} label="กลับไปรายการคำสั่งซื้อ" />
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <AccountStatusBadge
             className="px-3 py-1 sop-body-sm-medium"
@@ -99,10 +117,20 @@ export default function OrderDetailPage() {
                 {confirmingDelivery ? 'กำลังยืนยัน...' : 'ยืนยันได้รับสินค้าแล้ว'}
               </Button>
             ) : null}
-            {order.status === 'delivered' ? (
-              <Link href="/user/reviews?tab=pending">
-                <Button variant="primary">เขียนรีวิว</Button>
-              </Link>
+            {isDelivered ? (
+              hasPendingReviews ? (
+                <Link href="/user/reviews?tab=pending">
+                  <Button variant="primary">เขียนรีวิว</Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="primary"
+                  disabled
+                  title="รีวิวสินค้าจากคำสั่งซื้อนี้ครบแล้ว"
+                >
+                  {pendingReviewsLoading ? 'กำลังตรวจสอบ...' : 'เขียนรีวิวแล้ว'}
+                </Button>
+              )
             ) : null}
             {!isPendingPaymentStatus(order.status) && isReturnEligibleOrderStatus(order.status) ? (
               <Link href={`/user/orders/${order.id}/return`}>
@@ -157,10 +185,6 @@ export default function OrderDetailPage() {
         ) : null}
 
         <OrderConfirmationSummary order={order} />
-
-        <Link href="/user/orders" className="inline-block sop-body-sm-medium text-sop-secondary-500 underline">
-          กลับไปรายการคำสั่งซื้อ
-        </Link>
       </div>
     </AccountLayout>
   );

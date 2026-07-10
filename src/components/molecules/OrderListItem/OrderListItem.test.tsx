@@ -63,4 +63,17 @@ describe('OrderListItem', () => {
     expect(badge).toHaveTextContent('ส่งสำเร็จ');
     expect(badge).toHaveClass('bg-sop-system-success-100', 'text-sop-system-success-500');
   });
+
+  it('renders reviewed tag when all products are already reviewed', () => {
+    render(<OrderListItem order={createOrder('delivered')} showReviewedTag />);
+
+    expect(screen.getByText('รีวิวแล้ว')).toBeInTheDocument();
+    expect(screen.getByText('ส่งสำเร็จ')).toBeInTheDocument();
+  });
+
+  it('does not render reviewed tag when showReviewedTag is false', () => {
+    render(<OrderListItem order={createOrder('delivered')} />);
+
+    expect(screen.queryByText('รีวิวแล้ว')).not.toBeInTheDocument();
+  });
 });

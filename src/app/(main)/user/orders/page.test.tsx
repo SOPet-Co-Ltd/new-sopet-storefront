@@ -9,6 +9,13 @@ vi.mock('@/lib/hooks/useOrders', () => ({
   useOrders: vi.fn(),
 }));
 
+vi.mock('@/lib/hooks/useOrdersReviewStatus', () => ({
+  useOrdersReviewStatus: vi.fn(() => ({
+    isOrderFullyReviewed: () => false,
+    loading: false,
+  })),
+}));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/user/orders',
   useRouter: () => ({ push: mockPush }),
@@ -39,6 +46,7 @@ describe('UserOrdersPage', () => {
       fetchOrder: vi.fn(),
       confirmOrderDelivered: vi.fn(),
       confirmingDelivery: false,
+      refetch: vi.fn(),
     } as ReturnType<typeof useOrders>);
 
     render(<UserOrdersPage />);
@@ -64,6 +72,7 @@ describe('UserOrdersPage', () => {
       fetchOrder: vi.fn(),
       confirmOrderDelivered: vi.fn(),
       confirmingDelivery: false,
+      refetch: vi.fn(),
     } as ReturnType<typeof useOrders>);
 
     render(<UserOrdersPage />);
@@ -88,6 +97,7 @@ describe('UserOrdersPage', () => {
       fetchOrder: vi.fn(),
       confirmOrderDelivered: vi.fn(),
       confirmingDelivery: false,
+      refetch: vi.fn(),
     } as ReturnType<typeof useOrders>);
 
     render(<UserOrdersPage />);
@@ -104,6 +114,7 @@ describe('UserOrdersPage', () => {
       fetchOrder: vi.fn(),
       confirmOrderDelivered: vi.fn(),
       confirmingDelivery: false,
+      refetch: vi.fn(),
     } as ReturnType<typeof useOrders>);
 
     render(<UserOrdersPage />);

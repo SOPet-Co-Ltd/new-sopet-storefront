@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { AccountCard } from '@/components/molecules/account/AccountCard';
 
 const FAQ_ITEMS = [
   {
@@ -36,18 +37,17 @@ export default function UserHelpPage() {
     <AccountLayout title="ศูนย์ช่วยเหลือ">
       <div className="max-w-2xl space-y-4">
         {FAQ_ITEMS.map((item) => (
-          <details
-            key={item.question}
-            className="rounded-sop-12px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-4"
-          >
-            <summary className="cursor-pointer sop-body-sm-medium text-sop-neutral-gray-200">
-              {item.question}
-            </summary>
-            <p className="mt-3 sop-body-sm-regular text-sop-neutral-gray-400">{item.answer}</p>
-          </details>
+          <AccountCard key={item.question}>
+            <details>
+              <summary className="cursor-pointer sop-body-sm-medium text-sop-neutral-gray-200">
+                {item.question}
+              </summary>
+              <p className="mt-3 sop-body-sm-regular text-sop-neutral-gray-400">{item.answer}</p>
+            </details>
+          </AccountCard>
         ))}
 
-        <div className="rounded-sop-12px border border-sop-primary-200 bg-sop-primary-50 p-4">
+        <AccountCard className="border-sop-primary-200 bg-sop-primary-50">
           <p className="sop-body-sm-medium text-sop-neutral-gray-200">ต้องการความช่วยเหลือเพิ่มเติม?</p>
           <p className="mt-1 sop-body-sm-regular text-sop-neutral-gray-400">
             ดูคำสั่งซื้อหรือคำขอคืนสินค้าของคุณได้จากเมนูด้านซ้าย
@@ -60,7 +60,7 @@ export default function UserHelpPage() {
               คำขอคืนสินค้า
             </Link>
           </div>
-        </div>
+        </AccountCard>
       </div>
     </AccountLayout>
   );

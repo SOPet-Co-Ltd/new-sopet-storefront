@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@apollo/client/react';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { Button } from '@/components/atoms/Button';
 import { RequestAccountDeletionDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -34,13 +35,13 @@ export default function DeleteAccountPage() {
   return (
     <AccountLayout title="คำขอลบบัญชี">
       <div className="max-w-lg space-y-6">
-        <div className="rounded-sop-12px border border-sop-system-error-200 bg-sop-system-error-50 p-6">
+        <AccountCard padding="md" variant="error">
           <p className="sop-body-md-medium text-sop-system-error-500">คำเตือน</p>
           <p className="mt-2 sop-body-sm-regular text-sop-neutral-gray-300">
             การลบบัญชีจะทำให้ไม่สามารถเข้าถึงข้อมูลคำสั่งซื้อ ที่อยู่ และรายการโปรดได้
             การดำเนินการนี้อาจไม่สามารถย้อนกลับได้
           </p>
-        </div>
+        </AccountCard>
 
         <label className="flex items-start gap-3 sop-body-sm-regular text-sop-neutral-gray-300">
           <input

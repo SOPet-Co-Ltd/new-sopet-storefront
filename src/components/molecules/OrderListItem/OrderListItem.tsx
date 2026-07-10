@@ -1,17 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { ORDER_STATUS_LABELS } from '@/lib/constants/orderStatus';
+import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import type { OrderSummary } from '@/lib/hooks/useOrders';
-
-const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending: 'รอชำระเงิน',
-  paid: 'ชำระเงินแล้ว',
-  processing: 'กำลังเตรียมสินค้า',
-  shipped: 'จัดส่งแล้ว',
-  delivered: 'ส่งสำเร็จ',
-  cancelled: 'ยกเลิก',
-  refunded: 'คืนเงินแล้ว',
-};
 
 function formatPrice(amount: number): string {
   return `฿${amount.toLocaleString('th-TH')}`;
@@ -46,9 +38,7 @@ export function OrderListItem({ order }: OrderListItemProps) {
             {formatOrderDate(order.createdAt)}
           </p>
         </div>
-        <span className="rounded-sop-8px bg-sop-primary-100 px-2 py-0.5 sop-body-xs-medium text-sop-primary-600">
-          {statusLabel}
-        </span>
+        <AccountStatusBadge>{statusLabel}</AccountStatusBadge>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <p className="sop-body-sm-regular text-sop-neutral-gray-300">

@@ -27,7 +27,7 @@ export function useSearchSuggestions(query: string, enabled = true) {
   const isDebouncing = canFetch && trimmed !== debouncedQuery;
   const readyToFetch = canFetch && !isDebouncing && sessionId !== undefined;
 
-  const { data, loading, error, called } = useQuery(SearchSuggestionsDocument, {
+  const { data, loading, error } = useQuery(SearchSuggestionsDocument, {
     variables: {
       query: debouncedQuery,
       limit: SEARCH_SUGGESTIONS_LIMIT,
@@ -42,6 +42,5 @@ export function useSearchSuggestions(query: string, enabled = true) {
     queries: readyToFetch ? (data?.searchSuggestions.queries ?? []) : [],
     loading: readyToFetch && loading,
     error: readyToFetch ? (error as Error | undefined) : undefined,
-    called: readyToFetch && called,
   };
 }

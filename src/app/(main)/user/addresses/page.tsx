@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { AccountCard } from '@/components/molecules/account/AccountCard';
+import { AccountEmptyState } from '@/components/molecules/account/AccountEmptyState';
+import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { Button } from '@/components/atoms/Button';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 
@@ -41,16 +44,13 @@ export default function UserAddressesPage() {
         {loading ? (
           <p className="sop-body-sm-regular text-sop-neutral-gray-400">กำลังโหลด...</p>
         ) : addresses.length === 0 ? (
-          <div className="rounded-sop-12px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-12 text-center">
-            <p className="sop-body-sm-regular text-sop-neutral-gray-400">ยังไม่มีที่อยู่จัดส่ง</p>
-          </div>
+          <AccountCard padding="lg">
+            <AccountEmptyState message="ยังไม่มีที่อยู่จัดส่ง" />
+          </AccountCard>
         ) : (
           <div className="space-y-3">
             {addresses.map((address) => (
-              <div
-                key={address.id}
-                className="rounded-sop-12px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-4"
-              >
+              <AccountCard key={address.id}>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
@@ -58,9 +58,7 @@ export default function UserAddressesPage() {
                         {address.label || 'ที่อยู่'}
                       </p>
                       {address.isDefault ? (
-                        <span className="rounded-sop-8px bg-sop-primary-100 px-2 py-0.5 sop-body-xs-medium text-sop-primary-600">
-                          ที่อยู่หลัก
-                        </span>
+                        <AccountStatusBadge>ที่อยู่หลัก</AccountStatusBadge>
                       ) : null}
                     </div>
                     <p className="mt-1 sop-body-sm-regular text-sop-neutral-gray-300">
@@ -102,7 +100,7 @@ export default function UserAddressesPage() {
                     ลบ
                   </Button>
                 </div>
-              </div>
+              </AccountCard>
             ))}
           </div>
         )}

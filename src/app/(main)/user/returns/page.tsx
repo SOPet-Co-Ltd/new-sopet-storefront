@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { AccountCard } from '@/components/molecules/account/AccountCard';
+import { AccountEmptyState } from '@/components/molecules/account/AccountEmptyState';
+import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { useDisputes } from '@/lib/hooks/useDisputes';
 
 const DISPUTE_STATUS_LABELS: Record<string, string> = {
@@ -27,22 +30,16 @@ export default function UserReturnsPage() {
       {loading ? (
         <p className="sop-body-sm-regular text-sop-neutral-gray-400">กำลังโหลด...</p>
       ) : disputes.length === 0 ? (
-        <div className="rounded-sop-12px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-12 text-center">
-          <p className="sop-body-sm-regular text-sop-neutral-gray-400">ยังไม่มีคำขอคืนสินค้า</p>
-          <Link
-            href="/user/orders"
-            className="mt-4 inline-block sop-body-sm-medium text-sop-secondary-500 underline"
-          >
-            ดูคำสั่งซื้อ
-          </Link>
-        </div>
+        <AccountCard padding="lg">
+          <AccountEmptyState
+            cta={{ href: '/user/orders', label: 'ดูคำสั่งซื้อ' }}
+            message="ยังไม่มีคำขอคืนสินค้า"
+          />
+        </AccountCard>
       ) : (
         <div className="space-y-3">
           {disputes.map((dispute) => (
-            <div
-              key={dispute.id}
-              className="rounded-sop-12px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-4"
-            >
+            <AccountCard key={dispute.id}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="sop-body-sm-medium text-sop-neutral-gray-200">
@@ -52,9 +49,9 @@ export default function UserReturnsPage() {
                     {new Date(dispute.createdAt).toLocaleString('th-TH')}
                   </p>
                 </div>
-                <span className="rounded-sop-8px bg-sop-primary-100 px-2 py-0.5 sop-body-xs-medium text-sop-primary-600">
+                <AccountStatusBadge>
                   {DISPUTE_STATUS_LABELS[dispute.status] ?? dispute.status}
-                </span>
+                </AccountStatusBadge>
               </div>
               <p className="mt-2 sop-body-sm-regular text-sop-neutral-gray-300">{dispute.reason}</p>
               <Link
@@ -63,7 +60,7 @@ export default function UserReturnsPage() {
               >
                 ดูคำสั่งซื้อ
               </Link>
-            </div>
+            </AccountCard>
           ))}
         </div>
       )}

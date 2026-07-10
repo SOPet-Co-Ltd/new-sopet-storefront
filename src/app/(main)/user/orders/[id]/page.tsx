@@ -4,19 +4,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { AccountCard } from '@/components/molecules/account/AccountCard';
+import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { Button } from '@/components/atoms/Button';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
+import { ORDER_STATUS_LABELS } from '@/lib/constants/orderStatus';
 import { useOrders, type OrderDetail } from '@/lib/hooks/useOrders';
-
-const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending_payment: 'รอชำระเงิน',
-  paid: 'ชำระเงินแล้ว',
-  processing: 'กำลังเตรียมสินค้า',
-  shipped: 'จัดส่งแล้ว',
-  delivered: 'ส่งสำเร็จ',
-  cancelled: 'ยกเลิก',
-  refunded: 'คืนเงินแล้ว',
-};
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
@@ -93,9 +86,9 @@ export default function OrderDetailPage() {
     <AccountLayout title="รายละเอียดคำสั่งซื้อ">
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="rounded-sop-8px bg-sop-primary-100 px-3 py-1 sop-body-sm-medium text-sop-primary-600">
+          <AccountStatusBadge className="px-3 py-1 sop-body-sm-medium">
             {statusLabel}
-          </span>
+          </AccountStatusBadge>
           <div className="flex flex-wrap gap-2">
             {order.status === 'shipped' ? (
               <Button
@@ -105,6 +98,11 @@ export default function OrderDetailPage() {
               >
                 {confirmingDelivery ? 'กำลังยืนยัน...' : 'ยืนยันได้รับสินค้าแล้ว'}
               </Button>
+            ) : null}
+            {order.status === 'delivered' ? (
+              <Link href="/user/reviews?tab=pending">
+                <Button variant="primary">เขียนรีวิว</Button>
+              </Link>
             ) : null}
             <Link href={`/user/orders/${order.id}/return`}>
               <Button variant="outline">ขอคืนสินค้า</Button>
@@ -119,7 +117,7 @@ export default function OrderDetailPage() {
         ) : null}
 
         {shipments.size > 0 ? (
-          <div className="rounded-sop-16px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-4">
+          <AccountCard>
             <p className="mb-2 sop-body-sm-medium text-sop-neutral-gray-200">ติดตามพัสดุ</p>
             <ul className="space-y-3">
               {[...shipments.entries()].map(([storeId, shipment]) => (
@@ -153,7 +151,7 @@ export default function OrderDetailPage() {
                 </li>
               ))}
             </ul>
-          </div>
+          </AccountCard>
         ) : null}
 
         <OrderConfirmationSummary order={order} />

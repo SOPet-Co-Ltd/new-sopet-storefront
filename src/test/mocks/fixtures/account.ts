@@ -34,3 +34,28 @@ export const samplePaymentMethod = {
   expiryYear: 2028,
   isDefault: true,
 };
+
+export const sampleReviewableItem = {
+  orderId: 'order-1',
+  orderNumber: 'ORD-001',
+  orderItemId: 'item-1',
+  productId: 'prod-1',
+  productName: 'อาหารแมว Premium',
+  productSlug: 'cat-food-premium',
+  productImageUrl: 'https://example.com/cat-food.jpg',
+  deliveredAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  reviewDeadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+export const sampleMyReview = {
+  id: 'review-1',
+  productId: 'prod-1',
+  productName: 'อาหารแมว Premium',
+  productSlug: 'cat-food-premium',
+  productImageUrl: 'https://example.com/cat-food.jpg',
+  orderId: 'order-1',
+  rating: 5,
+  comment: 'ดีมาก',
+  status: 'pending',
+  createdAt: '2026-07-01T10:00:00.000Z',
+};

@@ -2,7 +2,7 @@ import type { StorePromotionSelection } from '@/lib/checkout/storePromotionUtils
 
 export type CheckoutShippingSelection = {
   shippingOptionId: string;
-  shippingFee: number;
+  shippingFee?: number;
 };
 
 export type CheckoutTotalsInput = {

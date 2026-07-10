@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -35,7 +36,7 @@ function RegisterForm({ customerId, initialFullName, initialEmail }: RegisterFor
         fullName: fullName.trim(),
         email: email.trim() || undefined,
       });
-      router.push('/user');
+      router.push('/user/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถบันทึกข้อมูลได้');
     }
@@ -76,12 +77,14 @@ export default function UserRegisterPage() {
         <p className="sop-body-sm-regular text-sop-neutral-gray-400">
           กรอกข้อมูลเพิ่มเติมเพื่อเริ่มใช้งานบัญชีของคุณ
         </p>
-        <RegisterForm
+        <AccountCard>
+          <RegisterForm
           key={customer?.id ?? 'guest'}
           customerId={customer?.id ?? 'guest'}
           initialFullName={customer?.fullName ?? ''}
           initialEmail={customer?.email ?? ''}
         />
+        </AccountCard>
       </div>
     </AccountLayout>
   );

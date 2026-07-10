@@ -13,6 +13,10 @@ import {
 import { useAuth } from "@/lib/hooks/useAuth"
 import { cn } from "@/lib/utils"
 import type { CustomerProfile } from "@/lib/graphql/generated/graphql"
+import {
+  getNavItems,
+  type AccountNavItem,
+} from "@/components/templates/AccountLayout/accountNavConfig"
 
 import { Button } from "../atoms/Button"
 import type { FilledIconProps } from "../atoms/icons/FilledIcon"
@@ -37,24 +41,24 @@ type NavbarUserMenuProps = {
   variant: "desktop" | "mobile"
 }
 
-type UserSegmentConfig = {
-  label: string
-  Icon: ComponentType<Omit<FilledIconProps, "children">>
+export const NAVBAR_SEGMENT_ICONS: Record<
+  string,
+  ComponentType<Omit<FilledIconProps, "children">>
+> = {
+  profile: UserManagementUserIcon,
+  orders: UserManagementClipboardIcon,
+  addresses: UserManagementLocationIcon,
+  credit: UserManagementCardIcon,
+  notifications: UserManagementBellIcon,
+  favorites: UserManagementHeartIcon,
+  help: UserManagementHelpIcon,
+  delete: UserManagementBinIcon,
 }
 
-const USER_SEGMENT_LABELS: Record<string, UserSegmentConfig> = {
-  profile: { label: "ข้อมูลส่วนตัว", Icon: UserManagementUserIcon },
-  orders: { label: "คำสั่งซื้อสินค้า", Icon: UserManagementClipboardIcon },
-  addresses: { label: "ที่อยู่สำหรับจัดส่ง", Icon: UserManagementLocationIcon },
-  credit: { label: "บัตรเครดิต/เดบิต", Icon: UserManagementCardIcon },
-  notifications: { label: "การแจ้งเตือน", Icon: UserManagementBellIcon },
-  favorites: { label: "รายการโปรด", Icon: UserManagementHeartIcon },
-  help: { label: "ศูนย์ช่วยเหลือ", Icon: UserManagementHelpIcon },
-  delete: { label: "คำขอลบบัญชี", Icon: UserManagementBinIcon },
-}
+const MOBILE_SEPARATOR_SEGMENTS = new Set(["favorites", "help", "delete"])
+const MOBILE_COLORED_SEGMENTS = new Set(["profile"])
 
-const MOBILE_SEPARATOR_ITEMS = new Set(["favorites", "help", "delete"])
-const MOBILE_COLORED_ITEMS = new Set(["profile"])
+const NAVBAR_MENU_ITEMS = getNavItems("showInNavbarMenu")
 
 function getDisplayName(customer: CustomerProfile): string {
   return (
@@ -155,6 +159,52 @@ function MobileListItem({
   )
 }
 
+function NavbarMenuLink({
+  item,
+  onNavigate,
+  mobile,
+}: {
+  item: AccountNavItem
+  onNavigate: () => void
+  mobile?: boolean
+}) {
+  const segment = item.segment ?? ""
+  const Icon = NAVBAR_SEGMENT_ICONS[segment]
+
+  if (mobile) {
+    return (
+      <Link
+        href={item.href}
+        onClick={onNavigate}
+        className={cn(
+          "flex w-full items-center gap-3 px-4 py-2.5",
+          MOBILE_COLORED_SEGMENTS.has(segment) && "bg-sop-primary-200",
+          MOBILE_SEPARATOR_SEGMENTS.has(segment) &&
+            "border-b border-sop-neutral-gray-500",
+        )}
+      >
+        {Icon ? (
+          <Icon size={{ mobile: 14, desktop: 14 }} color="#454547" />
+        ) : null}
+        <p className="sop-body-sm-regular">{item.label}</p>
+      </Link>
+    )
+  }
+
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      className="flex w-full cursor-pointer items-center gap-sop-12px px-sop-16px py-2.5 hover:bg-sop-neutral-gray-500"
+    >
+      {Icon ? (
+        <Icon size={{ mobile: 14, desktop: 14 }} color="#454547" />
+      ) : null}
+      <p className="sop-body-sm-regular">{item.label}</p>
+    </Link>
+  )
+}
+
 function NavbarUserMenuDesktop() {
   const { customer, isAuthenticated, isLoading, logout } = useAuth()
   const [open, setOpen] = useState(false)
@@ -222,16 +272,12 @@ function NavbarUserMenuDesktop() {
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-[240px] overflow-hidden rounded-sop-8px border border-sop-neutral-gray-500 bg-sop-neutral-gray-600 shadow-lg">
-          {Object.entries(USER_SEGMENT_LABELS).map(([segment, config]) => (
-            <Link
-              key={segment}
-              href={`/user/${segment}`}
-              onClick={() => setOpen(false)}
-              className="flex w-full cursor-pointer items-center gap-sop-12px px-sop-16px py-2.5 hover:bg-sop-neutral-gray-500"
-            >
-              <config.Icon size={{ mobile: 14, desktop: 14 }} color="#454547" />
-              <p className="sop-body-sm-regular">{config.label}</p>
-            </Link>
+          {NAVBAR_MENU_ITEMS.map((item) => (
+            <NavbarMenuLink
+              key={item.href}
+              item={item}
+              onNavigate={() => setOpen(false)}
+            />
           ))}
           <DesktopDropdownItem
             icon={<SignOutIcon size={{ mobile: 14, desktop: 14 }} color="#454547" />}
@@ -325,21 +371,13 @@ function NavbarUserMenuMobile() {
                   <UserAvatar customer={customer} size="small" />
                   <span className="sop-body-sm-regular">{firstName}</span>
                 </div>
-                {Object.entries(USER_SEGMENT_LABELS).map(([segment, config]) => (
-                  <Link
-                    key={segment}
-                    href={`/user/${segment}`}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex w-full items-center gap-3 px-4 py-2.5",
-                      MOBILE_COLORED_ITEMS.has(segment) && "bg-sop-primary-200",
-                      MOBILE_SEPARATOR_ITEMS.has(segment) &&
-                        "border-b border-sop-neutral-gray-500",
-                    )}
-                  >
-                    <config.Icon size={{ mobile: 14, desktop: 14 }} color="#454547" />
-                    <p className="sop-body-sm-regular">{config.label}</p>
-                  </Link>
+                {NAVBAR_MENU_ITEMS.map((item) => (
+                  <NavbarMenuLink
+                    key={item.href}
+                    item={item}
+                    mobile
+                    onNavigate={() => setOpen(false)}
+                  />
                 ))}
                 <MobileListItem
                   icon={<SignOutIcon size={{ mobile: 14, desktop: 14 }} color="#454547" />}

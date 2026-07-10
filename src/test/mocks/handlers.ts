@@ -26,7 +26,9 @@ import {
 import {
   sampleDispute,
   sampleFavorite,
+  sampleMyReview,
   samplePaymentMethod,
+  sampleReviewableItem,
 } from './fixtures/account';
 
 /**
@@ -116,6 +118,34 @@ export const handlers = [
   graphql.query('StoreReviewSummary', () => {
     return HttpResponse.json({
       data: { storeReviewSummary: sampleStoreReviewSummary },
+    });
+  }),
+
+  graphql.query('CustomerReviewableItems', () => {
+    return HttpResponse.json({
+      data: { customerReviewableItems: [sampleReviewableItem] },
+    });
+  }),
+
+  graphql.query('MyReviews', () => {
+    return HttpResponse.json({
+      data: { myReviews: [sampleMyReview] },
+    });
+  }),
+
+  graphql.mutation('CreateReview', () => {
+    return HttpResponse.json({
+      data: {
+        createReview: {
+          id: 'review-new',
+          productId: sampleMyReview.productId,
+          rating: 5,
+          comment: 'Great',
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          customerName: 'ลูกค้า',
+        },
+      },
     });
   }),
 

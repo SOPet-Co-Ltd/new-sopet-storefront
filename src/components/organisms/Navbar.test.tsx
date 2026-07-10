@@ -14,6 +14,10 @@ vi.mock('../molecules/UnreadBadge', () => ({
   UnreadBadge: () => null,
 }));
 
+vi.mock('../molecules/NavbarSearch', () => ({
+  NavbarSearch: () => <div data-testid="navbar-search-mock" />,
+}));
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));

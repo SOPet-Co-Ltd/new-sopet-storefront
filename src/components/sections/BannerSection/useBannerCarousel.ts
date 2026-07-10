@@ -6,6 +6,7 @@ import type { DragEvent, SyntheticEvent, TransitionEvent } from 'react';
 export type BannerCarouselItem = {
   id: string;
   image_url: string;
+  mobile_image_url?: string;
   name?: string;
   href?: string;
   order: number;

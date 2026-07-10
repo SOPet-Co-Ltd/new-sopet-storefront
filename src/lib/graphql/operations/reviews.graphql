@@ -50,3 +50,32 @@ mutation CreateReview($input: CreateReviewInput!) {
     customerName
   }
 }
+
+query CustomerReviewableItems {
+  customerReviewableItems {
+    orderId
+    orderNumber
+    orderItemId
+    productId
+    productName
+    productSlug
+    productImageUrl
+    deliveredAt
+    reviewDeadline
+  }
+}
+
+query MyReviews($limit: Int, $offset: Int) {
+  myReviews(limit: $limit, offset: $offset) {
+    id
+    productId
+    productName
+    productSlug
+    productImageUrl
+    orderId
+    rating
+    comment
+    status
+    createdAt
+  }
+}

@@ -2,13 +2,12 @@ import { HttpLink } from '@apollo/client';
 import { split } from '@apollo/client';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { getMainDefinition } from '@apollo/client/utilities';
-import {
-  ApolloClient,
-  InMemoryCache,
-  type DocumentNode,
-  type OperationVariables,
-  type TypedDocumentNode,
-} from '@apollo/client-integration-nextjs';
+import type {
+  DocumentNode,
+  OperationVariables,
+  TypedDocumentNode,
+} from '@apollo/client';
+import { ApolloClient, InMemoryCache } from '@apollo/client-integration-nextjs';
 import { from } from '@apollo/client/link';
 import { createClient } from 'graphql-ws';
 import { getGraphqlWsUrl, GRAPHQL_URL } from '@/lib/config';

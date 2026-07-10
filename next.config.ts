@@ -5,6 +5,20 @@ const graphqlBackendOrigin =
   "http://localhost:3002";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/user/wishlist",
+        destination: "/user/favorites",
+        permanent: true,
+      },
+      {
+        source: "/user/reviews/written",
+        destination: "/user/reviews?tab=written",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

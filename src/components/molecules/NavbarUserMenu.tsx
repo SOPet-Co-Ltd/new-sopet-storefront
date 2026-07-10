@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   useEffect,
   useId,
@@ -12,6 +13,10 @@ import {
 
 import { useAuth } from "@/lib/hooks/useAuth"
 import { cn } from "@/lib/utils"
+import {
+  createAccountPagePrefetchHandlers,
+  prefetchAccountPage,
+} from "@/lib/account/prefetchAccountPage"
 import type { CustomerProfile } from "@/lib/graphql/generated/graphql"
 import {
   getNavItems,
@@ -32,7 +37,6 @@ import {
   UserManagementCardIcon,
   UserManagementClipboardIcon,
   UserManagementHeartIcon,
-  UserManagementHelpIcon,
   UserManagementLocationIcon,
   UserManagementUserIcon,
 } from "../atoms/icons"
@@ -51,11 +55,10 @@ export const NAVBAR_SEGMENT_ICONS: Record<
   credit: UserManagementCardIcon,
   notifications: UserManagementBellIcon,
   favorites: UserManagementHeartIcon,
-  help: UserManagementHelpIcon,
   delete: UserManagementBinIcon,
 }
 
-const MOBILE_SEPARATOR_SEGMENTS = new Set(["favorites", "help", "delete"])
+const MOBILE_SEPARATOR_SEGMENTS = new Set(["favorites", "delete"])
 const MOBILE_COLORED_SEGMENTS = new Set(["profile"])
 
 const NAVBAR_MENU_ITEMS = getNavItems("showInNavbarMenu")
@@ -168,8 +171,12 @@ function NavbarMenuLink({
   onNavigate: () => void
   mobile?: boolean
 }) {
+  const router = useRouter()
   const segment = item.segment ?? ""
   const Icon = NAVBAR_SEGMENT_ICONS[segment]
+  const prefetchHandlers = createAccountPagePrefetchHandlers(item.href, () =>
+    router.prefetch(item.href),
+  )
 
   if (mobile) {
     return (
@@ -182,6 +189,7 @@ function NavbarMenuLink({
           MOBILE_SEPARATOR_SEGMENTS.has(segment) &&
             "border-b border-sop-neutral-gray-500",
         )}
+        {...prefetchHandlers}
       >
         {Icon ? (
           <Icon size={{ mobile: 14, desktop: 14 }} color="#454547" />
@@ -196,6 +204,7 @@ function NavbarMenuLink({
       href={item.href}
       onClick={onNavigate}
       className="flex w-full cursor-pointer items-center gap-sop-12px px-sop-16px py-2.5 hover:bg-sop-neutral-gray-500"
+      {...prefetchHandlers}
     >
       {Icon ? (
         <Icon size={{ mobile: 14, desktop: 14 }} color="#454547" />
@@ -207,11 +216,17 @@ function NavbarMenuLink({
 
 function NavbarUserMenuDesktop() {
   const { customer, isAuthenticated, isLoading, logout } = useAuth()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
+
+    NAVBAR_MENU_ITEMS.forEach((item) => {
+      router.prefetch(item.href)
+      prefetchAccountPage(item.href)
+    })
 
     const handlePointerDown = (event: MouseEvent) => {
       if (!menuRef.current?.contains(event.target as Node)) {
@@ -232,7 +247,7 @@ function NavbarUserMenuDesktop() {
       document.removeEventListener("mousedown", handlePointerDown)
       document.removeEventListener("keydown", handleEscape)
     }
-  }, [open])
+  }, [open, router])
 
   if (isLoading) {
     return (

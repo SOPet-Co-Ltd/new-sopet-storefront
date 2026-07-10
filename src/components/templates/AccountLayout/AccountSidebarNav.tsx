@@ -1,5 +1,9 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { createAccountPagePrefetchHandlers } from '@/lib/account/prefetchAccountPage';
 import { getNavItems, isAccountNavActive } from './accountNavConfig';
 
 type AccountNavLinkProps = {
@@ -10,6 +14,9 @@ type AccountNavLinkProps = {
 };
 
 export function AccountNavLink({ href, label, active, layout }: AccountNavLinkProps) {
+  const router = useRouter();
+  const prefetchHandlers = createAccountPagePrefetchHandlers(href, () => router.prefetch(href));
+
   return (
     <Link
       aria-current={active ? 'page' : undefined}
@@ -24,6 +31,7 @@ export function AccountNavLink({ href, label, active, layout }: AccountNavLinkPr
             : 'bg-sop-neutral-gray-500 text-sop-neutral-gray-300 hover:bg-sop-neutral-grayalpha-100',
       )}
       href={href}
+      {...prefetchHandlers}
     >
       {label}
     </Link>

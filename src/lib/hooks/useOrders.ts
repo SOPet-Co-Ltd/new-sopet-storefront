@@ -25,6 +25,14 @@ export type UseOrdersResult = {
   confirmingDelivery: boolean;
 };
 
+export type UseOrderDetailResult = {
+  order: OrderDetail | null | undefined;
+  loading: boolean;
+  error: Error | undefined;
+  confirmOrderDelivered: (orderId: string) => Promise<OrderDetail | null | undefined>;
+  confirmingDelivery: boolean;
+};
+
 function toHookError(error: unknown): Error | undefined {
   if (!error) return undefined;
   return error as Error;
@@ -41,7 +49,7 @@ export function useOrders(): UseOrdersResult {
     const result = await getApolloClient().query({
       query: OrderDocument,
       variables: { id },
-      fetchPolicy: 'network-only',
+      fetchPolicy: 'cache-first',
     });
     return result.data?.order;
   }, []);
@@ -66,6 +74,42 @@ export function useOrders(): UseOrdersResult {
     error: toHookError(error),
     refetch: () => refetch(),
     fetchOrder,
+    confirmOrderDelivered,
+    confirmingDelivery,
+  };
+}
+
+export function useOrderDetail(orderId: string | undefined): UseOrderDetailResult {
+  const { isAuthenticated } = useAuth();
+
+  const { data, loading, error, refetch } = useQuery(OrderDocument, {
+    variables: { id: orderId! },
+    skip: !isAuthenticated || !orderId,
+    fetchPolicy: 'cache-first',
+  });
+
+  const [confirmDeliveryMutation, { loading: confirmingDelivery }] = useMutation(
+    ConfirmOrderDeliveredDocument,
+  );
+
+  const confirmOrderDelivered = useCallback(
+    async (id: string) => {
+      const result = await confirmDeliveryMutation({
+        variables: { input: { orderId: id } },
+      });
+      const updated = result.data?.confirmOrderDelivered;
+      if (updated) {
+        await refetch();
+      }
+      return updated;
+    },
+    [confirmDeliveryMutation, refetch],
+  );
+
+  return {
+    order: data?.order,
+    loading: isAuthenticated && loading,
+    error: toHookError(error),
     confirmOrderDelivered,
     confirmingDelivery,
   };

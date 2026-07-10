@@ -1,47 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { Button } from '@/components/atoms/Button';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
 import { ORDER_STATUS_LABELS } from '@/lib/constants/orderStatus';
-import { useOrders, type OrderDetail } from '@/lib/hooks/useOrders';
+import { useOrderDetail } from '@/lib/hooks/useOrders';
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
-  const { fetchOrder, confirmOrderDelivered, confirmingDelivery } = useOrders();
-  const [order, setOrder] = useState<OrderDetail | null | undefined>(undefined);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!params.id) return;
-
-    void fetchOrder(params.id)
-      .then((result) => setOrder(result ?? null))
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'ไม่สามารถโหลดคำสั่งซื้อได้');
-        setOrder(null);
-      });
-  }, [params.id, fetchOrder]);
+  const { order, loading, error, confirmOrderDelivered, confirmingDelivery } = useOrderDetail(
+    params.id,
+  );
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleConfirmDelivery = async () => {
     if (!order) return;
-    setError(null);
+    setActionError(null);
     try {
-      const updated = await confirmOrderDelivered(order.id);
-      if (updated) {
-        setOrder(updated);
-      }
+      await confirmOrderDelivered(order.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ยืนยันการรับสินค้าไม่สำเร็จ');
+      setActionError(err instanceof Error ? err.message : 'ยืนยันการรับสินค้าไม่สำเร็จ');
     }
   };
 
-  if (order === undefined) {
+  if (loading) {
     return (
       <AccountLayout title="รายละเอียดคำสั่งซื้อ">
         <p className="sop-body-sm-regular text-sop-neutral-gray-400">กำลังโหลด...</p>
@@ -53,7 +40,7 @@ export default function OrderDetailPage() {
     return (
       <AccountLayout title="รายละเอียดคำสั่งซื้อ">
         <p className="sop-body-sm-regular text-sop-system-error-400">
-          {error ?? 'ไม่พบคำสั่งซื้อ'}
+          {error?.message ?? 'ไม่พบคำสั่งซื้อ'}
         </p>
         <Link href="/user/orders" className="mt-4 inline-block sop-body-sm-medium text-sop-secondary-500 underline">
           กลับไปรายการคำสั่งซื้อ
@@ -110,9 +97,9 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {error ? (
+        {actionError ? (
           <p className="sop-body-sm-regular text-sop-system-error-400" role="alert">
-            {error}
+            {actionError}
           </p>
         ) : null}
 

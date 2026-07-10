@@ -88,15 +88,6 @@ export const ACCOUNT_NAV_ITEMS: AccountNavItem[] = [
     showInSettings: false,
   },
   {
-    href: '/user/help',
-    label: 'ศูนย์ช่วยเหลือ',
-    segment: 'help',
-    showInSidebar: true,
-    showInMobileNav: true,
-    showInNavbarMenu: true,
-    showInSettings: true,
-  },
-  {
     href: '/user/delete',
     label: 'คำขอลบบัญชี',
     segment: 'delete',

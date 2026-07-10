@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ORDER_STATUS_LABELS } from '@/lib/constants/orderStatus';
+import { prefetchOrderDetail } from '@/lib/account/prefetchAccountPage';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import type { OrderSummary } from '@/lib/hooks/useOrders';
 
@@ -21,13 +23,23 @@ type OrderListItemProps = {
 };
 
 export function OrderListItem({ order }: OrderListItemProps) {
+  const router = useRouter();
   const statusLabel = ORDER_STATUS_LABELS[order.status] ?? order.status;
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const orderHref = `/user/orders/${order.id}`;
 
   return (
     <Link
-      href={`/user/orders/${order.id}`}
+      href={orderHref}
       className="block rounded-sop-12px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-4 transition-colors hover:border-sop-primary-300 hover:bg-sop-primary-50"
+      onMouseEnter={() => {
+        router.prefetch(orderHref);
+        prefetchOrderDetail(order.id);
+      }}
+      onFocus={() => {
+        router.prefetch(orderHref);
+        prefetchOrderDetail(order.id);
+      }}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>

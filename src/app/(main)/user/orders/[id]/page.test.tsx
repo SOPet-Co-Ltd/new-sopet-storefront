@@ -3,21 +3,18 @@ import { describe, expect, it, vi } from 'vitest';
 import OrderDetailPage from './page';
 import type { OrderDetail } from '@/lib/hooks/useOrders';
 
-const { mockFetchOrder } = vi.hoisted(() => ({
-  mockFetchOrder: vi.fn(),
+const { mockUseOrderDetail } = vi.hoisted(() => ({
+  mockUseOrderDetail: vi.fn(),
 }));
 
 vi.mock('@/lib/hooks/useOrders', () => ({
-  useOrders: () => ({
-    fetchOrder: mockFetchOrder,
-    confirmOrderDelivered: vi.fn(),
-    confirmingDelivery: false,
-  }),
+  useOrderDetail: (...args: unknown[]) => mockUseOrderDetail(...args),
 }));
 
 vi.mock('next/navigation', () => ({
   useParams: () => ({ id: 'order-1' }),
   usePathname: () => '/user/orders/order-1',
+  useRouter: () => ({ prefetch: vi.fn() }),
 }));
 
 function createOrder(status: string): OrderDetail {
@@ -52,7 +49,13 @@ function createOrder(status: string): OrderDetail {
 
 describe('OrderDetailPage', () => {
   it('renders pending_payment status label', async () => {
-    mockFetchOrder.mockResolvedValue(createOrder('pending_payment'));
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('pending_payment'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
 
     render(<OrderDetailPage />);
 
@@ -62,7 +65,13 @@ describe('OrderDetailPage', () => {
   });
 
   it('renders legacy pending status label', async () => {
-    mockFetchOrder.mockResolvedValue(createOrder('pending'));
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('pending'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
 
     render(<OrderDetailPage />);
 
@@ -72,7 +81,13 @@ describe('OrderDetailPage', () => {
   });
 
   it('renders review CTA link when order is delivered', async () => {
-    mockFetchOrder.mockResolvedValue(createOrder('delivered'));
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('delivered'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
 
     render(<OrderDetailPage />);
 

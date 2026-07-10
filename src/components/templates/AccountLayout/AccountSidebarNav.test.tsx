@@ -1,6 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AccountSidebarNav } from './AccountSidebarNav';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ prefetch: vi.fn() }),
+}));
 
 describe('AccountSidebarNav', () => {
   it('renders sidebar nav with aria-label and sticky top-24', () => {
@@ -11,11 +15,11 @@ describe('AccountSidebarNav', () => {
     expect(nav.closest('aside')).toHaveClass('hidden', 'lg:block');
   });
 
-  it('renders 10 sidebar destinations from getNavItems', () => {
+  it('renders 9 sidebar destinations from getNavItems', () => {
     render(<AccountSidebarNav pathname="/user/orders" />);
 
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(10);
+    expect(links).toHaveLength(9);
   });
 
   it('marks active item with aria-current on matching pathname', () => {

@@ -18,7 +18,7 @@ export function AccountLayout({ title, children }: AccountLayoutProps) {
   const pathname = usePathname();
 
   return (
-    <div className="w-full px-4 py-8 lg:px-20">
+    <div className="w-full min-h-[calc(100vh-109px)] px-4 py-8 lg:px-20">
       <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
         <AccountSidebarNav pathname={pathname} />
 

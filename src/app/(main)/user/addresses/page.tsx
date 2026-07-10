@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountEmptyState } from '@/components/molecules/account/AccountEmptyState';
-import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
+import { AddressCard } from '@/components/molecules/AddressCard/AddressCard';
 import { Button } from '@/components/atoms/Button';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 
@@ -51,55 +51,12 @@ export default function UserAddressesPage() {
           <div className="space-y-3">
             {addresses.map((address) => (
               <AccountCard key={address.id}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="sop-body-sm-medium text-sop-neutral-gray-200">
-                        {address.label || 'ที่อยู่'}
-                      </p>
-                      {address.isDefault ? (
-                        <AccountStatusBadge>ที่อยู่หลัก</AccountStatusBadge>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 sop-body-sm-regular text-sop-neutral-gray-300">
-                      {address.fullName} · {address.phone}
-                    </p>
-                    <p className="mt-1 sop-body-sm-regular text-sop-neutral-gray-400">
-                      {address.addressLine1}
-                      {address.addressLine2 ? ` ${address.addressLine2}` : ''}
-                      {address.tumbon ? ` ต.${address.tumbon}` : ''} อ.{address.amphoe} จ.
-                      {address.province} {address.postalCode}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/user/addresses/${address.id}/edit`}
-                    className="sop-body-sm-medium text-sop-secondary-500 underline"
-                  >
-                    แก้ไข
-                  </Link>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {!address.isDefault ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      loading={actionId === address.id}
-                      disabled={actionId === address.id}
-                      onClick={() => void handleSetDefault(address.id)}
-                    >
-                      ตั้งเป็นที่อยู่หลัก
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    loading={actionId === address.id}
-                    disabled={actionId === address.id}
-                    onClick={() => void handleDelete(address.id)}
-                  >
-                    ลบ
-                  </Button>
-                </div>
+                <AddressCard
+                  address={address}
+                  isActionLoading={actionId === address.id}
+                  onSetDefault={handleSetDefault}
+                  onDelete={handleDelete}
+                />
               </AccountCard>
             ))}
           </div>

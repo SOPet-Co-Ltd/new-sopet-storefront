@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ORDER_STATUS_LABELS } from '@/lib/constants/orderStatus';
+import { ORDER_STATUS_LABELS, getOrderStatusBadgeVariant } from '@/lib/constants/orderStatus';
 import { prefetchOrderDetail } from '@/lib/account/prefetchAccountPage';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
@@ -44,7 +44,9 @@ export function OrderListItem({ order }: OrderListItemProps) {
             {formatThaiDateTime(order.createdAt)}
           </p>
         </div>
-        <AccountStatusBadge>{statusLabel}</AccountStatusBadge>
+        <AccountStatusBadge variant={getOrderStatusBadgeVariant(order.status)}>
+          {statusLabel}
+        </AccountStatusBadge>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <p className="sop-body-sm-regular text-sop-neutral-gray-300">

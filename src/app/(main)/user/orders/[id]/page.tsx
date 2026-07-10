@@ -8,7 +8,7 @@ import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { Button } from '@/components/atoms/Button';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
-import { ORDER_STATUS_LABELS } from '@/lib/constants/orderStatus';
+import { ORDER_STATUS_LABELS, getOrderStatusBadgeVariant } from '@/lib/constants/orderStatus';
 import { useOrderDetail } from '@/lib/hooks/useOrders';
 
 export default function OrderDetailPage() {
@@ -73,7 +73,10 @@ export default function OrderDetailPage() {
     <AccountLayout title="รายละเอียดคำสั่งซื้อ">
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <AccountStatusBadge className="px-3 py-1 sop-body-sm-medium">
+          <AccountStatusBadge
+            className="px-3 py-1 sop-body-sm-medium"
+            variant={getOrderStatusBadgeVariant(order.status)}
+          >
             {statusLabel}
           </AccountStatusBadge>
           <div className="flex flex-wrap gap-2">

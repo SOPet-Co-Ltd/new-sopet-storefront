@@ -60,6 +60,14 @@ export default function PaymentPage() {
     router.replace(`/thank-you/${payment.orderId}`);
   }, [payment?.orderId, payment?.status, router]);
 
+  useEffect(() => {
+    if (payment?.status !== 'failed') {
+      return;
+    }
+
+    clearPendingCheckout();
+  }, [payment?.status]);
+
   return (
     <main className="flex min-h-dvh items-center justify-center bg-sop-primary-100 px-4 py-8">
       <OrderPaymentForm
@@ -67,6 +75,9 @@ export default function PaymentPage() {
         loading={loading}
         error={error}
         onRetry={() => {
+          void refetch();
+        }}
+        onExpired={() => {
           void refetch();
         }}
       />

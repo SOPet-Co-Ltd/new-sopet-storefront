@@ -3,12 +3,15 @@
 import { Button } from '@/components/atoms/Button';
 import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
+import { formatCountdown, usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
+import { useCallback } from 'react';
 
 export type OrderPaymentFormProps = {
   payment: PaymentRecord | null;
   loading: boolean;
   error: Error | undefined;
   onRetry?: () => void;
+  onExpired?: () => void;
 };
 
 function formatAmount(amount: number, currency: string): string {
@@ -23,7 +26,17 @@ export function OrderPaymentForm({
   loading,
   error,
   onRetry,
+  onExpired,
 }: OrderPaymentFormProps) {
+  const hasQrCode = Boolean(payment?.qrCodeUrl);
+  const handleExpire = useCallback(() => {
+    onExpired?.();
+  }, [onExpired]);
+  const { remainingMs, isExpired } = usePaymentCountdown(
+    hasQrCode && payment?.status === 'pending' ? payment.expiresAt : null,
+    handleExpire,
+  );
+
   if (error && !payment) {
     return (
       <section
@@ -78,6 +91,8 @@ export function OrderPaymentForm({
   }
 
   if (payment.status === 'failed') {
+    const isQrExpired = Boolean(payment.expiresAt);
+
     return (
       <section
         className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
@@ -91,7 +106,11 @@ export function OrderPaymentForm({
           role="alert"
           aria-live="polite"
         >
-          <p className="font-medium text-red-600">การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</p>
+          <p className="font-medium text-red-600">
+            {isQrExpired
+              ? 'QR Code หมดอายุแล้ว กรุณาทำรายการใหม่จากหน้าชำระเงิน'
+              : 'การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'}
+          </p>
         </div>
       </section>
     );
@@ -109,8 +128,27 @@ export function OrderPaymentForm({
     );
   }
 
-  const hasQrCode = Boolean(payment.qrCodeUrl);
   const hasRedirectUri = Boolean(payment.authorizeUri);
+
+  if (hasQrCode && isExpired && payment.status === 'pending') {
+    return (
+      <section
+        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
+        aria-labelledby="payment-expired-title"
+      >
+        <h1 id="payment-expired-title" className="text-xl font-bold text-gray-900">
+          ชำระเงิน
+        </h1>
+        <div
+          className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4"
+          role="alert"
+          aria-live="polite"
+        >
+          <p className="font-medium text-amber-800">QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -127,6 +165,11 @@ export function OrderPaymentForm({
             ? 'ชำระเงินผ่าน QR code ภายในแอปธนาคารของคุณ'
             : 'กรุณาดำเนินการชำระเงินให้เสร็จสิ้น'}
         </p>
+        {hasQrCode && remainingMs !== null ? (
+          <p className="mt-2 text-sm font-medium text-gray-900" aria-live="polite">
+            เวลาที่เหลือ: {formatCountdown(remainingMs)}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-center justify-between py-3">

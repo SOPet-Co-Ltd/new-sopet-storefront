@@ -14,7 +14,7 @@ type OrderConfirmationSummaryProps = {
 export function OrderConfirmationSummary({ order }: OrderConfirmationSummaryProps) {
   return (
     <div
-      className="w-full max-w-3xl rounded-sop-24px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-6 shadow-sm md:p-8"
+      className="w-full rounded-sop-24px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-6 shadow-sm md:p-8"
       data-testid="order-confirmation-summary"
     >
       <div className="mb-6 flex flex-col gap-2 border-b border-sop-neutral-grayalpha-200 pb-4">

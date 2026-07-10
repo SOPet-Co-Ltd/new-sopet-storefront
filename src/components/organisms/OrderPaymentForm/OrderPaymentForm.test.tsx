@@ -51,7 +51,7 @@ describe('OrderPaymentForm', () => {
   it('shows Thai error message when payment status is failed', () => {
     render(
       <OrderPaymentForm
-        payment={{ ...basePayment, status: 'failed' }}
+        payment={{ ...basePayment, status: 'failed', expiresAt: null }}
         loading={false}
         error={undefined}
       />,
@@ -59,6 +59,20 @@ describe('OrderPaymentForm', () => {
 
     expect(
       screen.getByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows QR expired message when failed PromptPay payment had expiresAt', () => {
+    render(
+      <OrderPaymentForm
+        payment={{ ...basePayment, status: 'failed' }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(
+      screen.getByText('QR Code หมดอายุแล้ว กรุณาทำรายการใหม่จากหน้าชำระเงิน'),
     ).toBeInTheDocument();
   });
 

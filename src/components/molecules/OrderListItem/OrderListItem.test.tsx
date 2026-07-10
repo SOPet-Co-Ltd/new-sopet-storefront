@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { OrderListItem } from './OrderListItem';
 import type { OrderSummary } from '@/lib/hooks/useOrders';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ prefetch: vi.fn() }),
+}));
 
 function createOrder(status: string): OrderSummary {
   return {
@@ -42,5 +46,21 @@ describe('OrderListItem', () => {
   it('renders legacy pending status label', () => {
     render(<OrderListItem order={createOrder('pending')} />);
     expect(screen.getByText('รอชำระเงิน')).toBeInTheDocument();
+  });
+
+  it('renders cancelled status with error badge variant', () => {
+    render(<OrderListItem order={createOrder('cancelled')} />);
+
+    const badge = screen.getByTestId('account-status-badge');
+    expect(badge).toHaveTextContent('ยกเลิก');
+    expect(badge).toHaveClass('bg-sop-system-error-100', 'text-sop-system-error-500');
+  });
+
+  it('renders delivered status with success badge variant', () => {
+    render(<OrderListItem order={createOrder('delivered')} />);
+
+    const badge = screen.getByTestId('account-status-badge');
+    expect(badge).toHaveTextContent('ส่งสำเร็จ');
+    expect(badge).toHaveClass('bg-sop-system-success-100', 'text-sop-system-success-500');
   });
 });

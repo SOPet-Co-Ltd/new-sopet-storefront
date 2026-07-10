@@ -49,6 +49,7 @@ export type CreateOrderCheckoutContext = {
   promotionCode: string | null;
   storePromotionCodes: string[];
   paymentMethod: PaymentMethod | null;
+  sessionId?: string | null;
 };
 
 const GUEST_PHONE_REQUIRED_MESSAGE = 'กรุณากรอกเบอร์โทรศัพท์ของคุณ';
@@ -280,7 +281,12 @@ export function toCreateOrderInput(
     items: mapCartItems(cart.items),
     paymentMethod: mapCheckoutPaymentMethodForApi(checkoutContext.paymentMethod),
     storeShipping: mapStoreShipping(checkoutContext.shippingByStoreId),
+    cartItemIds: cart.items.map((item) => item.id),
   };
+
+  if (checkoutContext.sessionId) {
+    input.sessionId = checkoutContext.sessionId;
+  }
 
   if (checkoutContext.promotionCode?.trim()) {
     input.platformPromotionCode = checkoutContext.promotionCode.trim();

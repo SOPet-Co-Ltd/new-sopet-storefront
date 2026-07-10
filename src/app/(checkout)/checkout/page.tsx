@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckoutErrorToast } from '@/components/atoms/CheckoutErrorToast/CheckoutErrorToast';
 import { CheckoutMobileBottomBar } from '@/components/molecules/CheckoutMobileBottomBar/CheckoutMobileBottomBar';
@@ -13,6 +13,10 @@ import type {
   GuestCheckoutField,
   GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import {
+  consumeCheckoutEntryAllowed,
+  getPendingCheckout,
+} from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { useCart } from '@/lib/providers/CartProvider';
@@ -57,7 +61,7 @@ function CheckoutPageReset() {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { selectedItemCount: itemCount, loading } = useCart();
+  const { selectedItemCount, loading } = useCart();
   const { setAddress } = useCheckout();
   const {
     addresses,
@@ -110,13 +114,38 @@ export default function CheckoutPage() {
     }
   };
 
+  // Resume pending payment immediately for direct /checkout visits — do not wait
+  // for the cart query, because checked-out items are already removed from cart.
+  useLayoutEffect(() => {
+    const pendingCheckout = getPendingCheckout();
+    if (!pendingCheckout) {
+      return;
+    }
+
+    const allowedEntry = consumeCheckoutEntryAllowed();
+    if (!allowedEntry) {
+      router.replace(`/payment/${pendingCheckout.paymentId}`);
+    }
+  }, [router]);
+
   useEffect(() => {
-    if (!loading && itemCount === 0) {
+    if (loading) {
+      return;
+    }
+
+    const pendingCheckout = getPendingCheckout();
+
+    if (pendingCheckout && selectedItemCount === 0) {
+      router.replace(`/payment/${pendingCheckout.paymentId}`);
+      return;
+    }
+
+    if (selectedItemCount === 0) {
       router.replace('/cart');
     }
-  }, [itemCount, loading, router]);
+  }, [loading, router, selectedItemCount]);
 
-  if (!loading && itemCount === 0) {
+  if (!loading && selectedItemCount === 0) {
     return null;
   }
 

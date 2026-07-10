@@ -51,6 +51,7 @@ export type CartContextValue = {
   updateItem: (itemId: string, quantity: number) => Promise<void>;
   changeItemVariant: (itemId: string, variantId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
+  pruneDeselectedIds: (itemIds: string[]) => void;
   refetch: () => Promise<unknown>;
 };
 
@@ -198,6 +199,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     [items],
   );
+
+  const pruneDeselectedIds = useCallback((itemIds: string[]) => {
+    if (itemIds.length === 0) return;
+    setDeselectedIds((prev) => {
+      const next = new Set(prev);
+      for (const itemId of itemIds) {
+        next.delete(itemId);
+      }
+      return next;
+    });
+  }, []);
 
   const runCartMutation = useCallback(async (operation: () => Promise<unknown>, errorMessage: string) => {
       try {
@@ -374,6 +386,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateItem,
       changeItemVariant,
       removeItem,
+      pruneDeselectedIds,
       refetch: () => refetch(),
     }),
     [
@@ -389,6 +402,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       itemsByStore,
       loading,
+      pruneDeselectedIds,
       refetch,
       removeItem,
       selectedItemCount,

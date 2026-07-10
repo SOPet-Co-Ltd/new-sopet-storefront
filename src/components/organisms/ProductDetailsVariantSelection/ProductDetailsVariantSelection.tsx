@@ -13,6 +13,7 @@ import { MessengerCustomIcon } from '@/components/atoms/icons/filled/MessengerCu
 import { ProductDetailQuantitySelection } from '@/components/molecules/ProductDetailQuantitySelection/ProductDetailQuantitySelection';
 import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import { ProductVariants } from '@/components/molecules/ProductVariants/ProductVariants';
+import { markCheckoutEntryAllowed } from '@/lib/checkout/pendingCheckout';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
@@ -296,6 +297,7 @@ export default function ProductDetailsVariantSelection({
     try {
       setIsBuyingNow(true);
       await addItem(variantId, safeQuantity);
+      markCheckoutEntryAllowed();
       router.push('/checkout');
     } finally {
       setIsBuyingNow(false);

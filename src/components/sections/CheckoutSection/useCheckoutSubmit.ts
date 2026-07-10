@@ -20,11 +20,13 @@ import {
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
 import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
+import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
+import { ensureSessionId } from '@/lib/session';
 
 export type AddressSubmitContext = {
   createAddress: UseAddressesResult['createAddress'];
@@ -45,7 +47,8 @@ export function useCheckoutSubmit(
 ) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const { selectedItems: items, selectedSubtotal: subtotal } = useCart();
+  const { selectedItems: items, selectedSubtotal: subtotal, refetch, pruneDeselectedIds } =
+    useCart();
   const checkoutMutations = useCheckoutMutations();
   const {
     step,
@@ -87,6 +90,7 @@ export function useCheckoutSubmit(
         .map((promotion) => promotion?.code?.trim())
         .filter((code): code is string => Boolean(code)),
       paymentMethod,
+      sessionId: isGuestCheckout ? ensureSessionId() : null,
     }),
     [
       isAuthenticated,
@@ -141,6 +145,14 @@ export function useCheckoutSubmit(
           submitGuardRef.current,
         );
 
+        const checkedOutItemIds = items.map((item) => item.id);
+        setPendingCheckout({
+          paymentId: result.paymentId,
+          orderId: result.orderId,
+        });
+        pruneDeselectedIds(checkedOutItemIds);
+        await refetch();
+
         router.push(result.redirectPath);
       } catch (error) {
         const message =
@@ -160,6 +172,8 @@ export function useCheckoutSubmit(
       isGuestCheckout,
       items,
       paymentMethod,
+      pruneDeselectedIds,
+      refetch,
       router,
       step,
       subtotal,

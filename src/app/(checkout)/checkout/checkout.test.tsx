@@ -17,8 +17,9 @@ import {
 } from '@/lib/providers/CheckoutProvider';
 import { SESSION_ID_COOKIE } from '@/lib/session';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
+import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { sampleCart } from '@/test/mocks/fixtures/cart';
-import { samplePromotionValidation } from '@/test/mocks/fixtures/checkout';
+import { CHECKOUT_PAYMENT_ID, samplePromotionValidation } from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
 
 const mockReplace = vi.fn();
@@ -105,6 +106,7 @@ function CheckoutStateProbe({
 describe('CheckoutPage', () => {
   beforeEach(() => {
     document.cookie = `${SESSION_ID_COOKIE}=${TEST_SESSION_ID}; path=/`;
+    sessionStorage.clear();
     mockReplace.mockReset();
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -117,6 +119,36 @@ describe('CheckoutPage', () => {
         dispatchEvent: vi.fn(),
       })),
     });
+  });
+
+  it('redirects to payment when cart is empty but checkout payment is pending', async () => {
+    setPendingCheckout({ paymentId: CHECKOUT_PAYMENT_ID, orderId: 'ord-1' });
+
+    render(
+      <MockedProvider
+        mocks={[
+          {
+            request: { query: CartDocument, variables: { sessionId: TEST_SESSION_ID } },
+            result: {
+              data: {
+                cart: { id: 'cart-1', sessionId: TEST_SESSION_ID, customerId: null, items: [] },
+              },
+            },
+          },
+        ]}
+      >
+        <CartProvider>
+          <CheckoutProvider>
+            <CheckoutPage />
+          </CheckoutProvider>
+        </CartProvider>
+      </MockedProvider>,
+    );
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
+    });
+    expect(mockReplace).not.toHaveBeenCalledWith('/cart');
   });
 
   it('redirects away when cart is empty', async () => {

@@ -219,6 +219,7 @@ export type CreateDisputeInput = {
 };
 
 export type CreateOrderInput = {
+  cartItemIds?: InputMaybe<Array<Scalars['String']['input']>>;
   guestEmail?: InputMaybe<Scalars['String']['input']>;
   guestName?: InputMaybe<Scalars['String']['input']>;
   guestPhone?: InputMaybe<Scalars['String']['input']>;
@@ -228,6 +229,7 @@ export type CreateOrderInput = {
   platformPromotionCode?: InputMaybe<Scalars['String']['input']>;
   promotionCode?: InputMaybe<Scalars['String']['input']>;
   savedAddressId?: InputMaybe<Scalars['String']['input']>;
+  sessionId?: InputMaybe<Scalars['String']['input']>;
   shippingAddress?: InputMaybe<ShippingAddressInput>;
   storePromotionCodes?: InputMaybe<Array<Scalars['String']['input']>>;
   storeShipping?: InputMaybe<Array<StoreShippingSelectionInput>>;

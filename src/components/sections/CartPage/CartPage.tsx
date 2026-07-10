@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/atoms/Checkbox';
 import { InfoIcon } from '@/components/atoms/icons/outline/InfoIcon';
 import { CartEmptyState } from '@/components/sections/CartPage/CartEmptyState';
 import { CartItemRow } from '@/components/organisms/CartItemRow/CartItemRow';
+import { markCheckoutEntryAllowed } from '@/lib/checkout/pendingCheckout';
 import { useCart } from '@/lib/providers/CartProvider';
 
 function formatPrice(amount: number): string {
@@ -176,6 +177,11 @@ export default function CartPage() {
               aria-disabled={!hasSelection}
               className={`sm:max-w-xs sm:flex-1 ${hasSelection ? '' : 'pointer-events-none'}`}
               tabIndex={hasSelection ? undefined : -1}
+              onClick={() => {
+                if (hasSelection) {
+                  markCheckoutEntryAllowed();
+                }
+              }}
             >
               <Button
                 type="button"

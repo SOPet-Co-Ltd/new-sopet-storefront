@@ -94,6 +94,7 @@ describe('toCreateOrderInput', () => {
     const input = toCreateOrderInput(validGuestForm, sampleCart, guestCheckoutContext);
 
     expect(input).toEqual({
+      cartItemIds: [sampleCartItem.id],
       guestPhone: '0812345678',
       guestName: 'Somchai',
       items: [
@@ -132,6 +133,7 @@ describe('toCreateOrderInput', () => {
     expect(input.shippingAddress).toBeUndefined();
     expect(input.savedAddressId).toBe(SAVED_ADDRESS_ID);
     expect(input.platformPromotionCode).toBe('SAVE10');
+    expect(input.cartItemIds).toEqual([sampleCartItem.id]);
     expect(input.items).toHaveLength(1);
     expect(input.storeShipping).toEqual([
       {

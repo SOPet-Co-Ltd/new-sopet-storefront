@@ -1254,6 +1254,41 @@ export type OrderStoreShippingType = {
   storeId: Scalars['String']['output'];
 };
 
+export type OrderTrackingItemType = {
+  __typename?: 'OrderTrackingItemType';
+  fulfillmentProvider?: Maybe<Scalars['String']['output']>;
+  fulfillmentStatus: Scalars['String']['output'];
+  productId?: Maybe<Scalars['String']['output']>;
+  productImageUrl?: Maybe<Scalars['String']['output']>;
+  productName: Scalars['String']['output'];
+  quantity: Scalars['Int']['output'];
+  storeId: Scalars['String']['output'];
+  subtotal: Scalars['Float']['output'];
+  trackingNumber?: Maybe<Scalars['String']['output']>;
+  trackingUrl?: Maybe<Scalars['String']['output']>;
+  unitPrice: Scalars['Float']['output'];
+};
+
+export type OrderTrackingStoreShippingType = {
+  __typename?: 'OrderTrackingStoreShippingType';
+  optionName: Scalars['String']['output'];
+  shippingFee: Scalars['Float']['output'];
+  storeId: Scalars['String']['output'];
+};
+
+export type OrderTrackingType = {
+  __typename?: 'OrderTrackingType';
+  createdAt: Scalars['DateTime']['output'];
+  discountAmount: Scalars['Float']['output'];
+  items: Array<OrderTrackingItemType>;
+  orderNumber: Scalars['String']['output'];
+  shippingFee: Scalars['Float']['output'];
+  status: Scalars['String']['output'];
+  storeShippings: Array<OrderTrackingStoreShippingType>;
+  subtotal: Scalars['Float']['output'];
+  total: Scalars['Float']['output'];
+};
+
 export type OrderType = {
   __typename?: 'OrderType';
   createdAt: Scalars['DateTime']['output'];
@@ -1517,6 +1552,7 @@ export type Query = {
   myTagProposals: Array<TagType>;
   notifications: Array<NotificationType>;
   order: OrderType;
+  orderTracking: OrderTrackingType;
   orders: OrderConnection;
   payment: PaymentType;
   paymentByOrderId: PaymentType;
@@ -1651,6 +1687,10 @@ export type QueryNotificationsArgs = {
 
 export type QueryOrderArgs = {
   id: Scalars['String']['input'];
+};
+
+export type QueryOrderTrackingArgs = {
+  orderNumber: Scalars['String']['input'];
 };
 
 export type QueryOrdersArgs = {
@@ -3207,6 +3247,60 @@ export type MarkAllNotificationsReadMutationVariables = Exact<{ [key: string]: n
 
 export type MarkAllNotificationsReadMutation = { markAllNotificationsRead: boolean };
 
+export type OrderTrackingFieldsFragment = {
+  orderNumber: string;
+  status: string;
+  createdAt: string;
+  subtotal: number;
+  shippingFee: number;
+  discountAmount: number;
+  total: number;
+  items: Array<{
+    storeId: string;
+    productId: string | null;
+    productName: string;
+    productImageUrl: string | null;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+    fulfillmentStatus: string;
+    trackingNumber: string | null;
+    fulfillmentProvider: string | null;
+    trackingUrl: string | null;
+  }>;
+  storeShippings: Array<{ storeId: string; optionName: string; shippingFee: number }>;
+};
+
+export type OrderTrackingQueryVariables = Exact<{
+  orderNumber: string;
+}>;
+
+export type OrderTrackingQuery = {
+  orderTracking: {
+    orderNumber: string;
+    status: string;
+    createdAt: string;
+    subtotal: number;
+    shippingFee: number;
+    discountAmount: number;
+    total: number;
+    items: Array<{
+      storeId: string;
+      productId: string | null;
+      productName: string;
+      productImageUrl: string | null;
+      quantity: number;
+      unitPrice: number;
+      subtotal: number;
+      fulfillmentStatus: string;
+      trackingNumber: string | null;
+      fulfillmentProvider: string | null;
+      trackingUrl: string | null;
+    }>;
+    storeShippings: Array<{ storeId: string; optionName: string; shippingFee: number }>;
+  };
+};
+
 export type OrderListFieldsFragment = {
   id: string;
   orderNumber: string;
@@ -4367,6 +4461,60 @@ export const FavoriteProductFieldsFragmentDoc = {
     },
   ],
 } as unknown as DocumentNode<FavoriteProductFieldsFragment, unknown>;
+export const OrderTrackingFieldsFragmentDoc = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'OrderTrackingFields' },
+      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'OrderTrackingType' } },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'orderNumber' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'subtotal' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'shippingFee' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'discountAmount' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'total' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'items' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'storeId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'productId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'productName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'productImageUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'quantity' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'unitPrice' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'subtotal' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentStatus' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'trackingNumber' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentProvider' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'trackingUrl' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'storeShippings' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'storeId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'optionName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'shippingFee' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<OrderTrackingFieldsFragment, unknown>;
 export const OrderListFieldsFragmentDoc = {
   kind: 'Document',
   definitions: [
@@ -6537,6 +6685,97 @@ export const MarkAllNotificationsReadDocument = {
   MarkAllNotificationsReadMutation,
   MarkAllNotificationsReadMutationVariables
 >;
+export const OrderTrackingDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'OrderTracking' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'orderNumber' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'orderTracking' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'orderNumber' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'orderNumber' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'OrderTrackingFields' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'OrderTrackingFields' },
+      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'OrderTrackingType' } },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'orderNumber' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'subtotal' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'shippingFee' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'discountAmount' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'total' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'items' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'storeId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'productId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'productName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'productImageUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'quantity' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'unitPrice' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'subtotal' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentStatus' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'trackingNumber' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentProvider' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'trackingUrl' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'storeShippings' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'storeId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'optionName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'shippingFee' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<OrderTrackingQuery, OrderTrackingQueryVariables>;
 export const OrdersDocument = {
   kind: 'Document',
   definitions: [

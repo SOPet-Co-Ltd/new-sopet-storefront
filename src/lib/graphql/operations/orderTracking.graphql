@@ -1,0 +1,33 @@
+fragment OrderTrackingFields on OrderTrackingType {
+  orderNumber
+  status
+  createdAt
+  subtotal
+  shippingFee
+  discountAmount
+  total
+  items {
+    storeId
+    productId
+    productName
+    productImageUrl
+    quantity
+    unitPrice
+    subtotal
+    fulfillmentStatus
+    trackingNumber
+    fulfillmentProvider
+    trackingUrl
+  }
+  storeShippings {
+    storeId
+    optionName
+    shippingFee
+  }
+}
+
+query OrderTracking($orderNumber: String!) {
+  orderTracking(orderNumber: $orderNumber) {
+    ...OrderTrackingFields
+  }
+}

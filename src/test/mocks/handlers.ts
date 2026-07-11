@@ -30,6 +30,7 @@ import {
   samplePaymentMethod,
   sampleReviewableItem,
 } from './fixtures/account';
+import { sampleOrderTracking } from './fixtures/order-tracking';
 
 /**
  * Default MSW handlers for Vitest. Phase-specific handlers are added per test
@@ -293,6 +294,20 @@ export const handlers = [
         order: {
           ...sampleOrder,
           id: variables.id ?? sampleOrder.id,
+        },
+      },
+    });
+  }),
+
+  graphql.query('OrderTracking', ({ variables }) => {
+    return HttpResponse.json({
+      data: {
+        orderTracking: {
+          ...sampleOrderTracking,
+          orderNumber:
+            typeof variables.orderNumber === 'string'
+              ? variables.orderNumber
+              : sampleOrderTracking.orderNumber,
         },
       },
     });

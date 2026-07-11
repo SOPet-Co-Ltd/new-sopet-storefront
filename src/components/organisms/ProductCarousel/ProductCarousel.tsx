@@ -7,7 +7,6 @@ import { CloseIcon } from '@/components/atoms/icons/filled/CloseIcon';
 import { LeftArrowIcon } from '@/components/atoms/icons/filled/LeftArrowIcon';
 import { RightArrowIcon } from '@/components/atoms/icons/filled/RightArrowIcon';
 import { ProductCarouselIndicator } from '@/components/molecules/ProductCarouselIndicator/ProductCarouselIndicator';
-import { ProductGalleryTrustBadges } from '@/components/molecules/ProductGalleryTrustBadges/ProductGalleryTrustBadges';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 
 type ProductImage = NonNullable<ProductDetail['images']>[number];
@@ -57,9 +56,7 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
 
   const gallerySlides = resolveSlides(slides, thumbnailUrl);
   const activeIndex =
-    gallerySlides.length === 0
-      ? 0
-      : Math.min(selectedIndex, gallerySlides.length - 1);
+    gallerySlides.length === 0 ? 0 : Math.min(selectedIndex, gallerySlides.length - 1);
   const currentSlide = gallerySlides[activeIndex];
 
   useEffect(() => {

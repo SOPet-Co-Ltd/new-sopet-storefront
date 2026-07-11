@@ -50,9 +50,12 @@ yarn test:watch
 **Patterns:**
 
 - Mock hooks at boundaries: `vi.mock('@/lib/hooks/useAuth')`
-- MSW for GraphQL: override `server.use()` per test
-- Integration: `*.int.test.tsx` for multi-component flows
-- E2E skeletons: `*.fixture.e2e.skeleton.tsx` (placeholders)
+- MSW for GraphQL: override `server.use()` per test; shared fixtures in `src/test/mocks/fixtures/`
+- Apollo wrapper: `createApolloTestWrapper()` from `src/test/createApolloTestWrapper.tsx`
+- Unit/component: `*.test.tsx` co-located with source
+- Integration: `*.int.test.tsx` for multi-module flows (SSR props, hook wiring)
+- Fixture E2E (RTL+MSW journeys): `*.fixture.e2e.test.tsx` — multi-step user flows from design-doc ACs; colocated with the feature under test or under `src/app/(main)/…` for route-level journeys
+- Skeleton workflow: `*.fixture.e2e.skeleton.tsx` / `*.int.skeleton.tsx` document AC proof obligations; implement the paired `*.fixture.e2e.test.tsx` or `*.int.test.tsx` target named in the skeleton header, then remove the skeleton
 
 ## CI
 

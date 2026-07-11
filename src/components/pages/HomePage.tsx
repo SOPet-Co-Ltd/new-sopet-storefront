@@ -3,7 +3,6 @@
 import { BannerSection } from '@/components/sections/BannerSection';
 import { HomeCategories } from '@/components/sections/HomeCategories';
 import { HomeFaqSection, type HomeFaqItem } from '@/components/sections/HomeFaqSection';
-import { HomeProductSection } from '@/components/sections/HomeProductSection';
 import { HomeRecentOrdersSection } from '@/components/sections/HomeRecentOrdersSection';
 import { HomeRecommendedProductSection } from '@/components/sections/HomeRecommendedProductSection';
 import { ChatWithAdminFloatingButton } from '@/components/molecules/ChatWithAdminFloatingButton/ChatWithAdminFloatingButton';
@@ -32,8 +31,7 @@ export const HOME_FAQ_ITEMS: HomeFaqItem[] = [
   {
     id: 'contact-us',
     question: 'หากพบปัญหา สามารถสอบถาม และติดต่อผ่านช่องทางไหนได้บ้าง ?',
-    answer:
-      'สามารถกดที่ปุ่ม "ติดต่อทีมงาน" มุมขวาล่าง หรือโทร 096-876-5031 ได้เลย',
+    answer: 'สามารถกดที่ปุ่ม "ติดต่อทีมงาน" มุมขวาล่าง หรือโทร 096-876-5031 ได้เลย',
   },
   {
     id: 'about-us',
@@ -56,7 +54,6 @@ export default function HomePage({
       <section className="relative w-full">
         <ChatWithAdminFloatingButton />
         <section className="flex flex-col gap-5 md:gap-10 w-full p-4 lg:py-10 lg:px-20">
-
           <div className="w-full">
             <HomeRecentOrdersSection />
           </div>

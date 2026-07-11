@@ -19,6 +19,7 @@ flowchart TD
   ROOT --> LOGIN["/login"]
   ROOT --> CHECKOUT["/checkout"]
   ROOT --> PAYMENT["/payment/[id]"]
+  ROOT --> TRACK["/track/[orderNumber]"]
 
   USER --> PROFILE["/user/profile"]
   USER --> ORDERS["/user/orders"]
@@ -59,6 +60,10 @@ Single route `/checkout`. Uses `CheckoutProvider` state from root providers.
 ### `(payment)` — `src/app/(payment)/`
 
 `/payment/[id]` — payment status page. Minimal layout (no header).
+
+### `(main)` — `/track/[orderNumber]`
+
+Public, unauthenticated order tracking page (capability URL — no login, no nav/footer links to it). Renders status, items, totals, shipping, and carrier link via `useOrderTracking` (`fetchPolicy: 'network-only'`); unknown/malformed order numbers and network errors render the same `OrderTrackingNotFoundState` copy for one, distinct `OrderTrackingErrorState` for the other. Shared with the authenticated order detail page via `OrderShipmentTrackingList`. Linked from the admin vendor orders action menu (copy-link dialog), not surfaced anywhere in storefront navigation.
 
 ## Page patterns
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { BellIcon } from '@/components/atoms/icons/inline';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountEmptyState } from '@/components/molecules/account/AccountEmptyState';
@@ -57,7 +56,6 @@ const DEFAULT_NOTIFICATION_TYPE_CONFIG: NotificationTypeConfig = {
 };
 
 export default function UserNotificationsPage() {
-  const router = useRouter();
   const [tab, setTab] = useState<'all' | 'unread'>('all');
   const { notifications, loading, refetch } = useNotifications(tab === 'unread');
   const [markRead] = useMarkNotificationRead();
@@ -119,12 +117,7 @@ export default function UserNotificationsPage() {
           </AccountCard>
         ) : (
           notifications.map((n) => (
-            <NotificationCard
-              key={n.id}
-              notification={n}
-              onNavigate={(href) => router.push(href)}
-              onMarkRead={() => handleMarkRead(n.id)}
-            />
+            <NotificationCard key={n.id} notification={n} onMarkRead={() => handleMarkRead(n.id)} />
           ))
         )}
       </div>
@@ -134,7 +127,6 @@ export default function UserNotificationsPage() {
 
 function NotificationCard({
   notification,
-  onNavigate,
   onMarkRead,
 }: {
   notification: {
@@ -146,7 +138,6 @@ function NotificationCard({
     isRead: boolean;
     createdAt: string;
   };
-  onNavigate: (href: string) => void;
   onMarkRead: () => void;
 }) {
   const typeConfig = NOTIFICATION_TYPE_CONFIG[notification.type] ?? {

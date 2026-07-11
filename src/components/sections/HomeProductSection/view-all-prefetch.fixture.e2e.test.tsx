@@ -51,7 +51,7 @@ describe('View-all to search prefetch journey', () => {
     let productsCallCount = 0;
 
     server.use(
-      graphql.query('Products', ({ variables }) => {
+      graphql.query('Products', () => {
         productsCallCount += 1;
         return HttpResponse.json({
           data: {

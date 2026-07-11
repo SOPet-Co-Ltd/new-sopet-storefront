@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EmptySearchResults } from '@/components/molecules/EmptySearchResults';
 import { Pagination } from '@/components/molecules/Pagination';
 import { SearchSortBar, type SearchSortValue } from '@/components/molecules/SearchSortBar';
@@ -30,6 +30,7 @@ export type ProductListingProps = {
   limit?: number;
   initialProducts?: ProductsQuery['products']['items'];
   initialPage?: number;
+  skip?: boolean;
 };
 
 export function ProductListing({
@@ -42,6 +43,7 @@ export function ProductListing({
   limit: limitProp,
   initialProducts,
   initialPage = 1,
+  skip = false,
 }: ProductListingProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -50,21 +52,25 @@ export function ProductListing({
   const sortParam = searchParams.get('sort') as SearchSortValue | null;
   const searchFilters = parseSearchFilters(searchParams);
   const filterVariables = toProductsFilterVariables(searchFilters);
+  const effectiveTag = tag ?? filterVariables.tag;
   const listingParamsKey = useMemo(
     () =>
       JSON.stringify({
         category: category ?? null,
         search: search ?? null,
         storeId: storeId ?? null,
-        tag: tag ?? null,
+        tag: effectiveTag ?? null,
         sort: sortParam,
         page: currentPage,
-        ...filterVariables,
+        petTypeIds: filterVariables.petTypeIds ?? null,
+        brandIds: filterVariables.brandIds ?? null,
+        minPrice: filterVariables.minPrice ?? null,
+        maxPrice: filterVariables.maxPrice ?? null,
       }),
-    [category, search, storeId, tag, sortParam, currentPage, filterVariables],
+    [category, search, storeId, effectiveTag, sortParam, currentPage, filterVariables],
   );
-  const initialListingParamsKeyRef = useRef(listingParamsKey);
-  const listingParamsChanged = listingParamsKey !== initialListingParamsKeyRef.current;
+  const [initialListingParamsKey] = useState(listingParamsKey);
+  const listingParamsChanged = listingParamsKey !== initialListingParamsKey;
   const { sortBy, sortOrder } =
     variant === 'search' ? parseSearchSort(sortParam) : { sortBy: undefined, sortOrder: undefined };
   const limit = limitProp ?? (variant === 'search' ? SEARCH_PRODUCT_LIMIT : DEFAULT_PRODUCT_LIMIT);
@@ -78,7 +84,7 @@ export function ProductListing({
             search,
             category,
             storeId,
-            tag,
+            tag: effectiveTag,
             limit,
             sortBy,
             sortOrder,
@@ -86,13 +92,22 @@ export function ProductListing({
             searchContext,
             ...filterVariables,
           }
-        : { category, search, storeId, tag, limit, sortBy, sortOrder, ...filterVariables },
+        : {
+            category,
+            search,
+            storeId,
+            tag: effectiveTag,
+            limit,
+            sortBy,
+            sortOrder,
+            ...filterVariables,
+          },
     [
       variant,
       search,
       category,
       storeId,
-      tag,
+      effectiveTag,
       limit,
       sortBy,
       sortOrder,
@@ -113,14 +128,15 @@ export function ProductListing({
     category,
     search,
     storeId,
-    tag,
     ...filterVariables,
+    tag: effectiveTag,
     page: currentPage,
     limit,
     sortBy,
     sortOrder,
     sessionId,
     searchContext,
+    skip,
   });
 
   const useInitialProducts =

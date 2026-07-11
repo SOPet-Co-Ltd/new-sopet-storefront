@@ -160,7 +160,7 @@ export default function ProductDetailsPage({ productId, initialProduct }: Produc
             storeId: product.storeId,
           }}
           layout="grid"
-          viewAllHref={product.category ? `/categories/${product.category}` : '/products'}
+          viewAllHref={`/recommend?from=${product.id}`}
         />
       </div>
     </div>

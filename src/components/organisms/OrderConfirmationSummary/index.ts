@@ -1,1 +1,4 @@
-export { OrderConfirmationSummary } from './OrderConfirmationSummary';
+export {
+  OrderConfirmationSummary,
+  type OrderSummaryDisplayOrder,
+} from './OrderConfirmationSummary';

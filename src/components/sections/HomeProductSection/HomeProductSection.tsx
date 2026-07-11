@@ -201,6 +201,10 @@ export function HomeProductSection({
   const displayProducts = visibleProducts.slice(0, productLimit);
 
   const handleViewAllPrefetch = () => {
+    if (viewAllHref.startsWith('/recommend')) {
+      return;
+    }
+
     prefetchProductsListing({
       page: 1,
       limit: 10,

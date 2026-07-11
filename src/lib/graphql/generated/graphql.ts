@@ -429,13 +429,17 @@ export type CustomerReviewableItemType = {
 
 export type DeleteTaxonomyInput = {
   id: Scalars['String']['input'];
+  replacementCategoryId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type DeleteTaxonomyResultType = {
   __typename?: 'DeleteTaxonomyResultType';
+  deletedCategoryId?: Maybe<Scalars['String']['output']>;
   deletedId: Scalars['String']['output'];
   detachedProductCount: Scalars['Int']['output'];
   notifiedStoreCount: Scalars['Int']['output'];
+  reassignedProductCount?: Maybe<Scalars['Int']['output']>;
+  replacementCategoryId?: Maybe<Scalars['String']['output']>;
   success: Scalars['Boolean']['output'];
 };
 
@@ -1583,6 +1587,8 @@ export type Query = {
   productReviews: Array<ReviewType>;
   products: ProductConnection;
   recommendedProducts: Array<ProductType>;
+  rejectedCategories: Array<CategoryType>;
+  rejectedTags: Array<TagType>;
   searchAnalyticsSuggestionCtr: Array<SearchSuggestionCtrRowType>;
   searchAnalyticsSummary: SearchAnalyticsSummaryType;
   searchAnalyticsTopQueries: Array<SearchAnalyticsQueryRowType>;
@@ -1775,7 +1781,11 @@ export type QueryProductsArgs = {
 };
 
 export type QueryRecommendedProductsArgs = {
+  excludeProductIds?: InputMaybe<Array<Scalars['String']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  searchContext?: InputMaybe<SearchContextInput>;
+  sessionId?: InputMaybe<Scalars['String']['input']>;
+  shuffleSeed?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QuerySearchAnalyticsSuggestionCtrArgs = {
@@ -1892,9 +1902,13 @@ export type QueryVendorProductArgs = {
 };
 
 export type QueryVendorProductsArgs = {
+  brandIds?: InputMaybe<Array<Scalars['String']['input']>>;
   category?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  maxPrice?: InputMaybe<Scalars['Float']['input']>;
+  minPrice?: InputMaybe<Scalars['Float']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
+  petTypeIds?: InputMaybe<Array<Scalars['String']['input']>>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -3836,6 +3850,10 @@ export type ActivePlatformPromotionsQuery = {
 
 export type RecommendedProductsQueryVariables = Exact<{
   limit?: number | null | undefined;
+  sessionId?: string | null | undefined;
+  searchContext?: SearchContextInput | null | undefined;
+  excludeProductIds?: Array<string> | string | null | undefined;
+  shuffleSeed?: string | null | undefined;
 }>;
 
 export type RecommendedProductsQuery = {
@@ -4072,6 +4090,10 @@ export type ApprovedPetTypesQuery = { approvedPetTypes: Array<{ id: string; name
 export type ApprovedBrandsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type ApprovedBrandsQuery = { approvedBrands: Array<{ id: string; name: string }> };
+
+export type ApprovedTagsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type ApprovedTagsQuery = { approvedTags: Array<{ id: string; name: string; slug: string }> };
 
 export type UploadImageMutationVariables = Exact<{
   base64: string;
@@ -8246,6 +8268,32 @@ export const RecommendedProductsDocument = {
           variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'searchContext' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'SearchContextInput' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'excludeProductIds' } },
+          type: {
+            kind: 'ListType',
+            type: {
+              kind: 'NonNullType',
+              type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'shuffleSeed' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -8258,6 +8306,26 @@ export const RecommendedProductsDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'limit' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'sessionId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'sessionId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'searchContext' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'searchContext' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'excludeProductIds' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'excludeProductIds' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'shuffleSeed' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'shuffleSeed' } },
               },
             ],
             selectionSet: {
@@ -9054,6 +9122,33 @@ export const ApprovedBrandsDocument = {
     },
   ],
 } as unknown as DocumentNode<ApprovedBrandsQuery, ApprovedBrandsQueryVariables>;
+export const ApprovedTagsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ApprovedTags' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'approvedTags' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ApprovedTagsQuery, ApprovedTagsQueryVariables>;
 export const UploadImageDocument = {
   kind: 'Document',
   definitions: [

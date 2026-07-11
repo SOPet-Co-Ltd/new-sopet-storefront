@@ -1,13 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/atoms/Button';
 import { Checkbox } from '@/components/atoms/Checkbox';
 import { UpArrowIcon } from '@/components/atoms/icons/filled/UpArrowIcon';
 import { FilterFunnelIcon } from '@/components/atoms/icons/filled/FilterFunnelIcon';
-import { ApprovedBrandsDocument, ApprovedPetTypesDocument } from '@/lib/graphql/generated/graphql';
+import {
+  ApprovedBrandsDocument,
+  ApprovedPetTypesDocument,
+  ApprovedTagsDocument,
+} from '@/lib/graphql/generated/graphql';
 import { createSearchFilterSectionPrefetchHandlers } from '@/lib/catalog/prefetchSearchFilterTaxonomy';
 import { cn } from '@/lib/utils';
 import { parseSearchFilters } from '@/lib/search/searchFilters';
@@ -20,6 +24,7 @@ import {
 const FILTER_SECTIONS = [
   { id: 'pet-type', label: 'ประเภทสัตว์เลี้ยง' },
   { id: 'brand', label: 'แบรนด์' },
+  { id: 'tag', label: 'แท็ก' },
   { id: 'price', label: 'ราคา' },
 ] as const;
 
@@ -54,6 +59,10 @@ function parseBrandIdList(value: string | null): Set<string> {
   return new Set(parseSearchFilters({ get: (key) => (key === 'brand' ? value : null) }).brandIds);
 }
 
+function parseTagId(value: string | null): string | null {
+  return parseSearchFilters({ get: (key) => (key === 'tag' ? value : null) }).tagId ?? null;
+}
+
 function parseMinPrice(value: string | null): number {
   return (
     parseSearchFilters({ get: (key) => (key === 'minPrice' ? value : null) }).minPrice ??
@@ -71,6 +80,7 @@ function parseMaxPrice(value: string | null): number {
 type FilterState = {
   petTypeIds: Set<string>;
   brandIds: Set<string>;
+  tagId: string | null;
   minPrice: number;
   maxPrice: number;
 };
@@ -91,6 +101,12 @@ function buildFilterSearchParams(
     params.set('brand', [...filters.brandIds].join(','));
   } else {
     params.delete('brand');
+  }
+
+  if (filters.tagId) {
+    params.set('tag', filters.tagId);
+  } else {
+    params.delete('tag');
   }
 
   if (filters.minPrice > SEARCH_FILTER_PRICE_MIN) {
@@ -177,6 +193,75 @@ function FilterCheckboxGrid({
   );
 }
 
+function SearchFilterPriceSection({
+  initialMinPrice,
+  initialMaxPrice,
+  urlFilters,
+  pushFilters,
+}: {
+  initialMinPrice: number;
+  initialMaxPrice: number;
+  urlFilters: FilterState;
+  pushFilters: (filters: FilterState) => void;
+}) {
+  const [minPrice, setMinPrice] = useState(initialMinPrice);
+  const [maxPrice, setMaxPrice] = useState(initialMaxPrice);
+
+  const handleClearPrice = useCallback(() => {
+    const clearedMinPrice = SEARCH_FILTER_PRICE_MIN;
+    const clearedMaxPrice = SEARCH_FILTER_PRICE_MAX;
+
+    setMinPrice(clearedMinPrice);
+    setMaxPrice(clearedMaxPrice);
+    pushFilters({
+      ...urlFilters,
+      minPrice: clearedMinPrice,
+      maxPrice: clearedMaxPrice,
+    });
+  }, [pushFilters, urlFilters]);
+
+  const handleApplyPrice = useCallback(() => {
+    pushFilters({
+      ...urlFilters,
+      minPrice,
+      maxPrice,
+    });
+  }, [maxPrice, minPrice, pushFilters, urlFilters]);
+
+  return (
+    <div className="flex flex-col">
+      <SearchFilterPriceRange
+        minValue={minPrice}
+        maxValue={maxPrice}
+        onMinChange={setMinPrice}
+        onMaxChange={setMaxPrice}
+      />
+
+      <div className="flex items-start justify-center gap-3 px-4 pt-5">
+        <Button
+          type="button"
+          size="sm"
+          rounded="full"
+          variant="outline"
+          className="h-8 w-[130px] min-w-[130px] border-sop-additionalblue-400 bg-transparent text-sop-additionalblue-400 hover:bg-sop-additionalblue-100"
+          onClick={handleClearPrice}
+        >
+          ล้างค่า
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          rounded="full"
+          className="h-8 w-[130px] min-w-[130px] border-transparent bg-sop-additionalblue-400 text-sop-neutral-grayfixed-600 hover:bg-sop-additionalblue-500"
+          onClick={handleApplyPrice}
+        >
+          ตกลง
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -188,12 +273,20 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
 
   const petTypeExpanded = expandedSections.has('pet-type');
   const brandExpanded = expandedSections.has('brand');
+  const tagExpanded = expandedSections.has('tag');
 
   const { data: petTypesData } = useQuery(ApprovedPetTypesDocument, {
     skip: !petTypeExpanded,
   });
   const { data: brandsData } = useQuery(ApprovedBrandsDocument, {
     skip: !brandExpanded,
+  });
+  const {
+    data: tagsData,
+    loading: tagsLoading,
+    error: tagsError,
+  } = useQuery(ApprovedTagsDocument, {
+    skip: !tagExpanded,
   });
 
   const petTypeOptions = useMemo<FilterOption[]>(
@@ -214,35 +307,42 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
     [brandsData?.approvedBrands],
   );
 
-  const [selectedPetTypeIds, setSelectedPetTypeIds] = useState<Set<string>>(() =>
-    parsePetTypeIds(searchParams.get('petType')),
+  const tagOptions = useMemo<FilterOption[]>(
+    () =>
+      (tagsData?.approvedTags ?? []).map((tag) => ({
+        id: tag.id,
+        label: tag.name,
+      })),
+    [tagsData?.approvedTags],
   );
-  const [selectedBrandIds, setSelectedBrandIds] = useState<Set<string>>(() =>
-    parseBrandIdList(searchParams.get('brand')),
+
+  const urlFilters = useMemo<FilterState>(
+    () => ({
+      petTypeIds: parsePetTypeIds(searchParams.get('petType')),
+      brandIds: parseBrandIdList(searchParams.get('brand')),
+      tagId: parseTagId(searchParams.get('tag')),
+      minPrice: parseMinPrice(searchParams.get('minPrice')),
+      maxPrice: parseMaxPrice(searchParams.get('maxPrice')),
+    }),
+    [searchParams],
   );
-  const [minPrice, setMinPrice] = useState(() => parseMinPrice(searchParams.get('minPrice')));
-  const [maxPrice, setMaxPrice] = useState(() => parseMaxPrice(searchParams.get('maxPrice')));
 
-  useEffect(() => {
-    setSelectedPetTypeIds(parsePetTypeIds(searchParams.get('petType')));
-    setSelectedBrandIds(parseBrandIdList(searchParams.get('brand')));
-    setMinPrice(parseMinPrice(searchParams.get('minPrice')));
-    setMaxPrice(parseMaxPrice(searchParams.get('maxPrice')));
-  }, [searchParams]);
+  const [selectedPetTypeIds, setSelectedPetTypeIds] = useState<Set<string>>(
+    () => urlFilters.petTypeIds,
+  );
+  const [selectedBrandIds, setSelectedBrandIds] = useState<Set<string>>(() => urlFilters.brandIds);
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(() => urlFilters.tagId);
 
-  const toggleSection = useCallback((sectionId: FilterSectionId) => {
-    setExpandedSections((current) => {
-      const next = new Set(current);
-
-      if (next.has(sectionId)) {
-        next.delete(sectionId);
-      } else {
-        next.add(sectionId);
-      }
-
-      return next;
-    });
-  }, []);
+  const activeFilters = useMemo<FilterState>(
+    () => ({
+      petTypeIds: selectedPetTypeIds,
+      brandIds: selectedBrandIds,
+      tagId: selectedTagId,
+      minPrice: urlFilters.minPrice,
+      maxPrice: urlFilters.maxPrice,
+    }),
+    [selectedBrandIds, selectedPetTypeIds, selectedTagId, urlFilters.maxPrice, urlFilters.minPrice],
+  );
 
   const pushFilters = useCallback(
     (filters: FilterState) => {
@@ -265,13 +365,11 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
 
       setSelectedPetTypeIds(nextPetTypeIds);
       pushFilters({
+        ...activeFilters,
         petTypeIds: nextPetTypeIds,
-        brandIds: selectedBrandIds,
-        minPrice,
-        maxPrice,
       });
     },
-    [maxPrice, minPrice, pushFilters, selectedBrandIds, selectedPetTypeIds],
+    [activeFilters, pushFilters, selectedPetTypeIds],
   );
 
   const toggleBrand = useCallback(
@@ -286,38 +384,44 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
 
       setSelectedBrandIds(nextBrandIds);
       pushFilters({
-        petTypeIds: selectedPetTypeIds,
+        ...activeFilters,
         brandIds: nextBrandIds,
-        minPrice,
-        maxPrice,
       });
     },
-    [maxPrice, minPrice, pushFilters, selectedBrandIds, selectedPetTypeIds],
+    [activeFilters, pushFilters, selectedBrandIds],
   );
 
-  const handleClear = useCallback(() => {
-    const clearedFilters: FilterState = {
-      petTypeIds: new Set(),
-      brandIds: new Set(),
-      minPrice: SEARCH_FILTER_PRICE_MIN,
-      maxPrice: SEARCH_FILTER_PRICE_MAX,
-    };
+  const toggleTag = useCallback(
+    (id: string, checked: boolean) => {
+      const nextTagId = checked ? id : null;
 
-    setSelectedPetTypeIds(clearedFilters.petTypeIds);
-    setSelectedBrandIds(clearedFilters.brandIds);
-    setMinPrice(clearedFilters.minPrice);
-    setMaxPrice(clearedFilters.maxPrice);
-    pushFilters(clearedFilters);
-  }, [pushFilters]);
+      setSelectedTagId(nextTagId);
+      pushFilters({
+        ...activeFilters,
+        tagId: nextTagId,
+      });
+    },
+    [activeFilters, pushFilters],
+  );
 
-  const handleApplyPrice = useCallback(() => {
-    pushFilters({
-      petTypeIds: selectedPetTypeIds,
-      brandIds: selectedBrandIds,
-      minPrice,
-      maxPrice,
+  const selectedTagIds = useMemo(
+    () => new Set(selectedTagId ? [selectedTagId] : []),
+    [selectedTagId],
+  );
+
+  const toggleSection = useCallback((sectionId: FilterSectionId) => {
+    setExpandedSections((current) => {
+      const next = new Set(current);
+
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+
+      return next;
     });
-  }, [maxPrice, minPrice, pushFilters, selectedBrandIds, selectedPetTypeIds]);
+  }, []);
 
   return (
     <aside
@@ -372,37 +476,32 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
                 />
               )}
 
-              {isExpanded && section.id === 'price' && (
-                <div className="flex flex-col">
-                  <SearchFilterPriceRange
-                    minValue={minPrice}
-                    maxValue={maxPrice}
-                    onMinChange={setMinPrice}
-                    onMaxChange={setMaxPrice}
-                  />
-
-                  <div className="flex items-start justify-center gap-3 px-4 pt-5">
-                    <Button
-                      type="button"
-                      size="sm"
-                      rounded="full"
-                      variant="outline"
-                      className="h-8 w-[130px] min-w-[130px] border-sop-additionalblue-400 bg-transparent text-sop-additionalblue-400 hover:bg-sop-additionalblue-100"
-                      onClick={handleClear}
-                    >
-                      ล้างค่า
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      rounded="full"
-                      className="h-8 w-[130px] min-w-[130px] border-transparent bg-sop-additionalblue-400 text-sop-neutral-grayfixed-600 hover:bg-sop-additionalblue-500"
-                      onClick={handleApplyPrice}
-                    >
-                      ตกลง
-                    </Button>
-                  </div>
+              {isExpanded && section.id === 'tag' && (
+                <div className="flex flex-col gap-2">
+                  {tagsError ? (
+                    <p className="px-4 sop-body-sm-regular text-sop-semantic-error-500">
+                      โหลดแท็กไม่สำเร็จ
+                    </p>
+                  ) : tagsLoading ? null : tagOptions.length === 0 ? (
+                    <p className="px-4 sop-body-sm-regular text-sop-neutral-gray-200">ไม่มีแท็ก</p>
+                  ) : (
+                    <FilterCheckboxGrid
+                      options={tagOptions}
+                      selectedIds={selectedTagIds}
+                      onToggle={toggleTag}
+                    />
+                  )}
                 </div>
+              )}
+
+              {isExpanded && section.id === 'price' && (
+                <SearchFilterPriceSection
+                  key={`${urlFilters.minPrice}-${urlFilters.maxPrice}`}
+                  initialMinPrice={urlFilters.minPrice}
+                  initialMaxPrice={urlFilters.maxPrice}
+                  urlFilters={activeFilters}
+                  pushFilters={pushFilters}
+                />
               )}
             </div>
           );

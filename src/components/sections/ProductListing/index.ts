@@ -1,3 +1,3 @@
 export { ProductListing, type ProductListingProps } from './ProductListing';
 export { ProductListingSkeleton } from './ProductListingSkeleton';
-export { CategoryPLP, CategoryIndexPage } from './CategoryPages';
+export { CategoryPLP } from './CategoryPages';

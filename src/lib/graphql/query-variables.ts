@@ -75,10 +75,25 @@ export function buildApprovedBrandsVariables(): Record<string, never> {
 
 export function buildRecommendedProductsVariables({
   limit = 25,
+  sessionId,
+  searchContext,
+  excludeProductIds,
+  shuffleSeed,
 }: {
   limit?: number;
+  sessionId?: string | null;
+  searchContext?: SearchContextInput | null;
+  excludeProductIds?: string[] | null;
+  shuffleSeed?: string | null;
 } = {}): RecommendedProductsQueryVariables {
-  return { limit };
+  return {
+    limit,
+    sessionId: sessionId ?? undefined,
+    searchContext: searchContext ?? undefined,
+    excludeProductIds:
+      excludeProductIds && excludeProductIds.length > 0 ? excludeProductIds : undefined,
+    shuffleSeed: shuffleSeed ?? undefined,
+  };
 }
 
 export function buildProductByIdVariables({ id }: { id: string }): ProductByIdQueryVariables {

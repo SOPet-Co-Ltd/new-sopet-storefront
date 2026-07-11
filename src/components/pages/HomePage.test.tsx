@@ -261,7 +261,7 @@ describe('HomePage', () => {
     await screen.findByRole('heading', { name: 'สินค้าแนะนำ' });
     expect(screen.getByRole('link', { name: /ดูสินค้าทั้งหมด/ })).toHaveAttribute(
       'href',
-      '/products',
+      '/recommend',
     );
   });
 

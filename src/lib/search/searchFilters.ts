@@ -6,6 +6,7 @@ import {
 export type SearchFilters = {
   petTypeIds: string[];
   brandIds: string[];
+  tagId?: string;
   minPrice?: number;
   maxPrice?: number;
 };
@@ -19,10 +20,7 @@ function parseIdList(value: string | null | undefined): string[] {
     .filter(Boolean);
 }
 
-function parsePriceParam(
-  value: string | null | undefined,
-  fallback: number,
-): number {
+function parsePriceParam(value: string | null | undefined, fallback: number): number {
   if (!value) return fallback;
 
   const parsed = Number(value.replace(/[^\d]/g, ''));
@@ -31,17 +29,18 @@ function parsePriceParam(
   return Math.min(SEARCH_FILTER_PRICE_MAX, Math.max(SEARCH_FILTER_PRICE_MIN, parsed));
 }
 
-export function parseSearchFilters(
-  params: Pick<URLSearchParams, 'get'>,
-): SearchFilters {
+export function parseSearchFilters(params: Pick<URLSearchParams, 'get'>): SearchFilters {
   const petTypeIds = parseIdList(params.get('petType'));
   const brandIds = parseIdList(params.get('brand'));
+  const tagParam = params.get('tag')?.trim();
+  const tagId = tagParam || undefined;
   const minPrice = parsePriceParam(params.get('minPrice'), SEARCH_FILTER_PRICE_MIN);
   const maxPrice = parsePriceParam(params.get('maxPrice'), SEARCH_FILTER_PRICE_MAX);
 
   return {
     petTypeIds,
     brandIds,
+    tagId,
     minPrice: minPrice > SEARCH_FILTER_PRICE_MIN ? minPrice : undefined,
     maxPrice: maxPrice < SEARCH_FILTER_PRICE_MAX ? maxPrice : undefined,
   };
@@ -51,6 +50,7 @@ export function hasSearchFilters(filters: SearchFilters): boolean {
   return (
     filters.petTypeIds.length > 0 ||
     filters.brandIds.length > 0 ||
+    filters.tagId !== undefined ||
     filters.minPrice !== undefined ||
     filters.maxPrice !== undefined
   );
@@ -59,12 +59,14 @@ export function hasSearchFilters(filters: SearchFilters): boolean {
 export function toProductsFilterVariables(filters: SearchFilters): {
   petTypeIds?: string[];
   brandIds?: string[];
+  tag?: string;
   minPrice?: number;
   maxPrice?: number;
 } {
   return {
     petTypeIds: filters.petTypeIds.length > 0 ? filters.petTypeIds : undefined,
     brandIds: filters.brandIds.length > 0 ? filters.brandIds : undefined,
+    tag: filters.tagId,
     minPrice: filters.minPrice,
     maxPrice: filters.maxPrice,
   };

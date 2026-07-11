@@ -11,3 +11,11 @@ query ApprovedBrands {
     name
   }
 }
+
+query ApprovedTags {
+  approvedTags {
+    id
+    name
+    slug
+  }
+}

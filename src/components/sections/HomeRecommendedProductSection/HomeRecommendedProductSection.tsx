@@ -36,7 +36,7 @@ type HomeRecommendedProductSectionProps = {
 export function HomeRecommendedProductSection({
   heading = 'สินค้าแนะนำ',
   limit = 25,
-  viewAllHref = '/products',
+  viewAllHref = '/recommend',
   initialRecommendedProducts,
 }: HomeRecommendedProductSectionProps) {
   const { data, loading, error } = useQuery(RecommendedProductsDocument, {

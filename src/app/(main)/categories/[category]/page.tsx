@@ -5,24 +5,40 @@ import {
 } from '@/lib/graphql/generated/graphql';
 import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
 import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
-import {
-  decodeRouteParam,
-  resolveCategoryFilterName,
-} from '@/lib/routing/categoryRoutes';
+import { decodeRouteParam, resolveCategoryFilterName } from '@/lib/routing/categoryRoutes';
+import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { CategoryPLP } from '@/components/sections/ProductListing';
 
 export const revalidate = 60;
 
 type Props = {
   params: Promise<{ category: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    petType?: string;
+    brand?: string;
+    tag?: string;
+    minPrice?: string;
+    maxPrice?: string;
+  }>;
 };
 
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { category: rawCategory } = await params;
-  const { page: pageParam } = await searchParams;
+  const resolvedSearchParams = await searchParams;
+  const { page: pageParam, petType, brand, tag, minPrice, maxPrice } = resolvedSearchParams;
   const categorySlug = decodeRouteParam(rawCategory);
   const currentPage = Math.max(1, Number(pageParam ?? 1));
+  const filters = parseSearchFilters({
+    get: (key) => {
+      if (key === 'petType') return petType ?? null;
+      if (key === 'brand') return brand ?? null;
+      if (key === 'tag') return tag ?? null;
+      if (key === 'minPrice') return minPrice ?? null;
+      if (key === 'maxPrice') return maxPrice ?? null;
+      return null;
+    },
+  });
 
   let categoryFilter = categorySlug;
 
@@ -41,6 +57,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const variables = buildProductsListingVariables({
     category: categoryFilter,
     page: currentPage,
+    ...toProductsFilterVariables(filters),
   });
 
   let initialProducts: ProductsQuery['products']['items'] | undefined;

@@ -1,5 +1,17 @@
-query RecommendedProducts($limit: Int) {
-  recommendedProducts(limit: $limit) {
+query RecommendedProducts(
+  $limit: Int
+  $sessionId: String
+  $searchContext: SearchContextInput
+  $excludeProductIds: [String!]
+  $shuffleSeed: String
+) {
+  recommendedProducts(
+    limit: $limit
+    sessionId: $sessionId
+    searchContext: $searchContext
+    excludeProductIds: $excludeProductIds
+    shuffleSeed: $shuffleSeed
+  ) {
     ...ProductCardFields
   }
 }

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ProductCard, { buildProductHref } from '@/components/organisms/ProductCard';
-import { CategoryIndexPage, ProductListing } from '@/components/sections/ProductListing';
+import { ProductListing } from '@/components/sections/ProductListing';
 import { PRODUCT_CARD_GRID_CLASS } from '@/components/sections/ProductListing/productListingGrid';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from '@/test/mocks/server';
@@ -127,6 +127,33 @@ describe('ProductListing', () => {
     expect(push).toHaveBeenCalledWith('/categories/dog-food?page=2');
   });
 
+  it('passes tag from URL to products query variables (AC-021)', async () => {
+    searchParams = new URLSearchParams({ tag: 'tag-grain-free-id' });
+
+    server.use(
+      graphql.query('Products', ({ variables }) => {
+        expect(variables).toMatchObject({
+          category: 'dog-food',
+          tag: 'tag-grain-free-id',
+          page: 1,
+          limit: 24,
+        });
+        return HttpResponse.json({
+          data: {
+            products: {
+              items: [SAMPLE_PRODUCT],
+              pagination: { page: 1, limit: 24, total: 1, totalPages: 1 },
+            },
+          },
+        });
+      }),
+    );
+
+    render(<ProductListing category="dog-food" />, { wrapper: createWrapper() });
+
+    expect(await screen.findByText('Premium Dog Food 5kg')).toBeInTheDocument();
+  });
+
   it('shows empty state when category has no products', async () => {
     server.use(
       graphql.query('Products', () =>
@@ -149,21 +176,5 @@ describe('ProductListing', () => {
     expect(await screen.findByTestId('empty-search-results')).toBeInTheDocument();
     expect(screen.getByText('ไม่พบสินค้า')).toBeInTheDocument();
     expect(await screen.findByText('อาหารสุนัข')).toBeInTheDocument();
-  });
-});
-
-describe('CategoryIndexPage', () => {
-  it('renders approved categories grid', async () => {
-    server.use(
-      graphql.query('ApprovedCategories', () =>
-        HttpResponse.json({ data: { approvedCategories: SAMPLE_CATEGORIES } }),
-      ),
-    );
-
-    render(<CategoryIndexPage />, { wrapper: createWrapper() });
-
-    expect(await screen.findByTestId('category-index-page')).toBeInTheDocument();
-    expect(screen.getByText('อาหารสุนัข')).toBeInTheDocument();
-    expect(screen.getByText('อาหารแมว')).toBeInTheDocument();
   });
 });

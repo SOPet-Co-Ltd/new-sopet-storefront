@@ -1,7 +1,4 @@
-import {
-  ProductsDocument,
-  type ProductsQueryVariables,
-} from '@/lib/graphql/generated/graphql';
+import { ProductsDocument, type ProductsQueryVariables } from '@/lib/graphql/generated/graphql';
 import { getApolloClient } from '@/lib/graphql/client';
 
 export type ProductsListingPrefetchParams = Pick<
@@ -18,12 +15,14 @@ export type ProductsListingPrefetchParams = Pick<
   | 'limit'
   | 'sortBy'
   | 'sortOrder'
+  | 'sessionId'
+  | 'searchContext'
 >;
 
 const prefetchedListingKeys = new Set<string>();
 const inflightListingPrefetches = new Map<string, Promise<unknown>>();
 
-function buildProductsListingCacheKey(variables: ProductsListingPrefetchParams): string {
+export function buildProductsListingCacheKey(variables: ProductsListingPrefetchParams): string {
   return JSON.stringify({
     category: variables.category ?? null,
     search: variables.search ?? null,
@@ -37,12 +36,12 @@ function buildProductsListingCacheKey(variables: ProductsListingPrefetchParams):
     limit: variables.limit ?? 24,
     sortBy: variables.sortBy ?? null,
     sortOrder: variables.sortOrder ?? null,
+    sessionId: variables.sessionId ?? null,
+    searchContext: variables.searchContext ?? null,
   });
 }
 
-export function createListingPrefetchHandlers(
-  params: ProductsListingPrefetchParams,
-): {
+export function createListingPrefetchHandlers(params: ProductsListingPrefetchParams): {
   onMouseEnter: () => void;
   onFocus: () => void;
 } {

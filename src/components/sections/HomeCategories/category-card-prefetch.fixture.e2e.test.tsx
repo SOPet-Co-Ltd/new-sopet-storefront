@@ -3,6 +3,7 @@ import { graphql, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import { HomeCategories } from '@/components/sections/HomeCategories';
 import { ProductListing } from '@/components/sections/ProductListing';
+import { buildProductsListingCacheKey } from '@/lib/catalog/prefetchProductsListing';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from '@/test/mocks/server';
 
@@ -106,6 +107,60 @@ describe('Home to category prefetch journey', () => {
     );
 
     render(<ProductListing category="dog-food" initialProducts={[SAMPLE_PRODUCT]} />, {
+      wrapper: createWrapper(),
+    });
+
+    expect(await screen.findByText('Premium Dog Food 5kg')).toBeInTheDocument();
+    expect(screen.queryByTestId('product-listing-skeleton')).not.toBeInTheDocument();
+  });
+
+  it('uses distinct prefetch cache keys when sessionId differs (AC-023)', () => {
+    const base = { category: 'อาหารสุนัข', page: 1 };
+    const anonymousKey = buildProductsListingCacheKey(base);
+    const sessionKey = buildProductsListingCacheKey({ ...base, sessionId: 'sess-test' });
+
+    expect(anonymousKey).not.toBe(sessionKey);
+  });
+
+  it('uses distinct prefetch cache keys when searchContext differs (AC-023)', () => {
+    const base = { category: 'อาหารสุนัข', page: 1 };
+    const anonymousKey = buildProductsListingCacheKey(base);
+    const contextKey = buildProductsListingCacheKey({
+      ...base,
+      searchContext: { recentQueries: ['dog food'] },
+    });
+
+    expect(anonymousKey).not.toBe(contextKey);
+  });
+
+  it('hydrates PLP without skeleton after hover prefetch warms listing data (AC-024)', async () => {
+    server.use(
+      graphql.query('Products', ({ variables }) => {
+        expect(variables).toMatchObject({ category: 'อาหารสุนัข', page: 1 });
+        return HttpResponse.json({
+          data: {
+            products: {
+              items: [SAMPLE_PRODUCT],
+              pagination: { page: 1, limit: 24, total: 1, totalPages: 1 },
+            },
+          },
+        });
+      }),
+    );
+
+    render(<HomeCategories initialCategories={SAMPLE_CATEGORIES} />, {
+      wrapper: createWrapper(),
+    });
+
+    const categoryLink = screen.getByRole('link', { name: 'ดูหมวดหมู่ อาหารสุนัข' });
+    fireEvent.mouseEnter(categoryLink);
+    fireEvent.focus(categoryLink);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'ดูหมวดหมู่ อาหารสุนัข' })).toBeInTheDocument();
+    });
+
+    render(<ProductListing category="อาหารสุนัข" initialProducts={[SAMPLE_PRODUCT]} />, {
       wrapper: createWrapper(),
     });
 

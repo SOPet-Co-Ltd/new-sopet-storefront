@@ -32,6 +32,22 @@ import {
 } from './fixtures/account';
 import { sampleOrderTracking } from './fixtures/order-tracking';
 
+/** Shared approved tag fixtures for MSW and taxonomy filter tests. */
+export const sampleApprovedTags = [
+  {
+    __typename: 'TagType' as const,
+    id: 'tag-grain-free-id',
+    name: 'Grain Free',
+    slug: 'tag-grain-free',
+  },
+  {
+    __typename: 'TagType' as const,
+    id: 'tag-organic-id',
+    name: 'Organic',
+    slug: 'tag-organic',
+  },
+];
+
 /**
  * Default MSW handlers for Vitest. Phase-specific handlers are added per test
  * via `server.use()` or extended in feature-scoped handler modules.
@@ -101,6 +117,12 @@ export const handlers = [
   graphql.query('ApprovedBrands', () => {
     return HttpResponse.json({
       data: { approvedBrands: sampleBrands },
+    });
+  }),
+
+  graphql.query('ApprovedTags', () => {
+    return HttpResponse.json({
+      data: { approvedTags: sampleApprovedTags },
     });
   }),
 

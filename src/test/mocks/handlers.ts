@@ -9,11 +9,9 @@ import {
   sampleProductCard,
   sampleProductDetail,
   sampleProductReview,
-  sampleProductReviewWithReply,
   sampleStore,
   sampleStoreReview,
   sampleStoreReviewSummary,
-  sampleStoreReviewWithReply,
 } from './fixtures/catalog';
 import { sampleCart, sampleEmptyCart } from './fixtures/cart';
 import { sampleSearchRecoverySuggestions, sampleSearchSuggestionsPayload } from './fixtures/search';
@@ -27,7 +25,6 @@ import {
   samplePlatformPromotion,
 } from './fixtures/checkout';
 import {
-  sampleDispute,
   sampleFavorite,
   sampleMyReview,
   samplePaymentMethod,
@@ -323,12 +320,6 @@ export const handlers = [
   graphql.query('Favorites', () => {
     return HttpResponse.json({
       data: { favorites: [sampleFavorite] },
-    });
-  }),
-
-  graphql.query('MyDisputes', () => {
-    return HttpResponse.json({
-      data: { myDisputes: [sampleDispute] },
     });
   }),
 

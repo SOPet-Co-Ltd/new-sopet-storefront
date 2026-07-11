@@ -1,8 +1,5 @@
 export type NavVisibilityFlag =
-  | 'showInSidebar'
-  | 'showInMobileNav'
-  | 'showInNavbarMenu'
-  | 'showInSettings';
+  'showInSidebar' | 'showInMobileNav' | 'showInNavbarMenu' | 'showInSettings';
 
 export type AccountNavItem = {
   href: string;
@@ -77,15 +74,6 @@ export const ACCOUNT_NAV_ITEMS: AccountNavItem[] = [
     showInMobileNav: true,
     showInNavbarMenu: true,
     showInSettings: true,
-  },
-  {
-    href: '/user/returns',
-    label: 'คำขอคืนสินค้า',
-    segment: 'returns',
-    showInSidebar: true,
-    showInMobileNav: true,
-    showInNavbarMenu: false,
-    showInSettings: false,
   },
   {
     href: '/user/delete',

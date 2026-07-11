@@ -13,7 +13,6 @@ import {
   ORDER_STATUS_LABELS,
   getOrderStatusBadgeVariant,
   isPendingPaymentStatus,
-  isReturnEligibleOrderStatus,
 } from '@/lib/constants/orderStatus';
 import { useOrderDetail } from '@/lib/hooks/useOrders';
 import { useOrderPendingReviews } from '@/lib/hooks/useOrderPendingReviews';
@@ -74,7 +73,11 @@ export default function OrderDetailPage() {
   const shipments = order.items.reduce<
     Map<
       string,
-      { fulfillmentProvider?: string | null; trackingNumber?: string | null; trackingUrl?: string | null }
+      {
+        fulfillmentProvider?: string | null;
+        trackingNumber?: string | null;
+        trackingUrl?: string | null;
+      }
     >
   >((map, item) => {
     if (!item.trackingNumber && !item.fulfillmentProvider && !item.trackingUrl) {
@@ -123,19 +126,10 @@ export default function OrderDetailPage() {
                   <Button variant="primary">เขียนรีวิว</Button>
                 </Link>
               ) : (
-                <Button
-                  variant="primary"
-                  disabled
-                  title="รีวิวสินค้าจากคำสั่งซื้อนี้ครบแล้ว"
-                >
+                <Button variant="primary" disabled title="รีวิวสินค้าจากคำสั่งซื้อนี้ครบแล้ว">
                   {pendingReviewsLoading ? 'กำลังตรวจสอบ...' : 'เขียนรีวิวแล้ว'}
                 </Button>
               )
-            ) : null}
-            {!isPendingPaymentStatus(order.status) && isReturnEligibleOrderStatus(order.status) ? (
-              <Link href={`/user/orders/${order.id}/return`}>
-                <Button variant="outline">ขอคืนสินค้า</Button>
-              </Link>
             ) : null}
           </div>
         </div>

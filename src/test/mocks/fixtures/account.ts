@@ -1,5 +1,3 @@
-import { sampleOrder } from './checkout';
-
 export const sampleFavorite = {
   id: 'fav-1',
   productId: 'prod-1',
@@ -11,18 +9,6 @@ export const sampleFavorite = {
     thumbnailUrl: 'https://example.com/cat-food.jpg',
     images: [],
   },
-};
-
-export const sampleDispute = {
-  id: 'dispute-1',
-  orderId: sampleOrder.id,
-  reason: 'สินค้าเสียหาย',
-  issueType: 'damaged',
-  status: 'open',
-  createdAt: '2026-07-01T10:00:00.000Z',
-  updatedAt: '2026-07-01T10:00:00.000Z',
-  messages: [],
-  images: [],
 };
 
 export const samplePaymentMethod = {

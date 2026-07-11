@@ -3,7 +3,6 @@ import {
   AddressesDocument,
   CustomerReviewableItemsDocument,
   FavoritesDocument,
-  MyDisputesDocument,
   MyReviewsDocument,
   NotificationsDocument,
   OrderDocument,
@@ -44,7 +43,6 @@ const ACCOUNT_PREFETCH_SPECS: Record<string, AccountPrefetchSpec[] | null> = {
   ],
   '/user/notifications': [{ query: NotificationsDocument, variables: { unreadOnly: false } }],
   '/user/credit': [{ query: PaymentMethodsDocument }],
-  '/user/returns': [{ query: MyDisputesDocument }],
   '/user/delete': null,
 };
 

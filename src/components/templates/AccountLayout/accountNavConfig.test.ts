@@ -14,14 +14,13 @@ const EXPECTED_HREFS = [
   '/user/reviews',
   '/user/notifications',
   '/user/credit',
-  '/user/returns',
   '/user/delete',
 ];
 
 describe('accountNavConfig', () => {
   describe('ACCOUNT_NAV_ITEMS', () => {
-    it('contains exactly 9 destinations in contract order', () => {
-      expect(ACCOUNT_NAV_ITEMS).toHaveLength(9);
+    it('contains exactly 8 destinations in contract order', () => {
+      expect(ACCOUNT_NAV_ITEMS).toHaveLength(8);
       expect(ACCOUNT_NAV_ITEMS.map((item) => item.href)).toEqual(EXPECTED_HREFS);
     });
 
@@ -38,15 +37,15 @@ describe('accountNavConfig', () => {
   });
 
   describe('getNavItems', () => {
-    it('returns 9 sidebar items in stable order', () => {
+    it('returns 8 sidebar items in stable order', () => {
       const items = getNavItems('showInSidebar');
-      expect(items).toHaveLength(9);
+      expect(items).toHaveLength(8);
       expect(items.map((item) => item.href)).toEqual(EXPECTED_HREFS);
     });
 
-    it('returns 9 mobile nav items in stable order', () => {
+    it('returns 8 mobile nav items in stable order', () => {
       const items = getNavItems('showInMobileNav');
-      expect(items).toHaveLength(9);
+      expect(items).toHaveLength(8);
       expect(items.map((item) => item.href)).toEqual(EXPECTED_HREFS);
     });
 

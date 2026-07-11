@@ -109,7 +109,7 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
               เราได้รับข้อมูลคำสั่งซื้อของคุณเรียบร้อยแล้ว
             </p>
           </div>
-          <ThankYouAction isGuest={isGuest} orderId={orderId} />
+          <ThankYouAction isGuest={isGuest} orderNumber={order?.orderNumber ?? orderId} />
         </div>
       </section>
 
@@ -121,10 +121,7 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
         </section>
       ) : null}
 
-      <section
-        className="w-full md:px-20 px-4 md:py-0 py-4 mb-20"
-        aria-label="สินค้าแนะนำ"
-      >
+      <section className="w-full md:px-20 px-4 md:py-0 py-4 mb-20" aria-label="สินค้าแนะนำ">
         <ThankYouRecommendedProductSection />
       </section>
     </main>

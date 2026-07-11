@@ -18,15 +18,18 @@ export function AccountLayout({ title, children }: AccountLayoutProps) {
   const pathname = usePathname();
 
   return (
-    <div className="w-full min-h-[calc(100vh-109px)] px-4 py-8 lg:px-20">
-      <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
-        <AccountSidebarNav pathname={pathname} />
+    <div className="w-full min-h-[calc(100vh-109px)] lg:px-20">
+      <AccountMobileNav pathname={pathname} />
 
-        <section className="min-w-0">
-          <AccountMobileNav pathname={pathname} />
-          {title ? <AccountPageTitle title={title} /> : null}
-          <div className="w-full [&>*]:mx-auto">{children}</div>
-        </section>
+      <div className="px-4 pb-8 pt-4 lg:px-0 lg:py-8">
+        <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
+          <AccountSidebarNav pathname={pathname} />
+
+          <section className="min-w-0">
+            {title ? <AccountPageTitle title={title} /> : null}
+            <div className="w-full [&>*]:mx-auto">{children}</div>
+          </section>
+        </div>
       </div>
     </div>
   );

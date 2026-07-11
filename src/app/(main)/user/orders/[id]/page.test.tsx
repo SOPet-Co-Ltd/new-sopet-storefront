@@ -39,6 +39,8 @@ function createOrder(status: string): OrderDetail {
         variantId: 'variant-1',
         storeId: 'store-1',
         productName: 'Test Product',
+        productId: 'product-1',
+        productImageUrl: null,
         unitPrice: 900,
         quantity: 1,
         subtotal: 900,
@@ -148,7 +150,7 @@ describe('OrderDetailPage', () => {
     });
   });
 
-  it('renders return link when order is shipped', async () => {
+  it('hides return link for shipped orders until delivery is confirmed', async () => {
     mockUseOrderDetail.mockReturnValue({
       order: createOrder('shipped'),
       loading: false,
@@ -160,10 +162,32 @@ describe('OrderDetailPage', () => {
     render(<OrderDetailPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'ขอคืนสินค้า' })).toHaveAttribute(
-        'href',
-        '/user/orders/order-1/return',
-      );
+      expect(screen.getByRole('button', { name: 'ยืนยันได้รับสินค้าแล้ว' })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'ขอคืนสินค้า' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('does not render return link for delivered orders', async () => {
+    mockUseOrderDetail.mockReturnValue({
+      order: {
+        ...createOrder('delivered'),
+        items: [
+          {
+            ...createOrder('delivered').items[0],
+            fulfillmentStatus: 'delivered',
+          },
+        ],
+      },
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
+
+    render(<OrderDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('link', { name: 'ขอคืนสินค้า' })).not.toBeInTheDocument();
     });
   });
 
@@ -192,10 +216,7 @@ describe('OrderDetailPage', () => {
         'href',
         '/user/reviews?orderId=order-1',
       );
-      expect(screen.getByRole('link', { name: 'ขอคืนสินค้า' })).toHaveAttribute(
-        'href',
-        '/user/orders/order-1/return',
-      );
+      expect(screen.queryByRole('link', { name: 'ขอคืนสินค้า' })).not.toBeInTheDocument();
     });
   });
 

@@ -9,6 +9,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
     "graphql:codegen": "graphql-codegen --config codegen.ts && node ./scripts/fix-graphql-codegen-duplicates.mjs src/lib/graphql/generated/graphql.ts",
     "graphql:watch": "graphql-codegen --config codegen.ts --watch",
     "test": "vitest run",
@@ -52,10 +55,17 @@
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.8",
     "msw": "^2.14.6",
+    "prettier": "^3.9.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md,yml,yaml}": "prettier --write"
   }
 }

@@ -4,6 +4,7 @@ import { AccountLayout } from './AccountLayout';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/user/orders',
+  useRouter: () => ({ prefetch: vi.fn() }),
 }));
 
 describe('AccountLayout', () => {

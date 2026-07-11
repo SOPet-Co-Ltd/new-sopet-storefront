@@ -4,15 +4,15 @@ Shared React UI for the SOPET storefront, organized with [atomic design](https:/
 
 ## Folder structure
 
-| Folder | Atomic level | Purpose |
-|--------|--------------|---------|
-| `atoms/` | Atoms | Smallest reusable UI primitives |
-| `molecules/` | Molecules | Simple combinations of atoms |
-| `organisms/` | Organisms | Self-contained, feature-rich UI blocks |
-| `sections/` | Organisms (page sections) | Full-width or page-level content blocks composed for layouts |
-| `templates/` | Templates | Reusable page shells and slot-based layout structure |
-| `pages/` | Pages | Concrete page components with real data and route behavior |
-| `util/` | — | Non-visual helpers and wrappers (not a design tier) |
+| Folder       | Atomic level              | Purpose                                                      |
+| ------------ | ------------------------- | ------------------------------------------------------------ |
+| `atoms/`     | Atoms                     | Smallest reusable UI primitives                              |
+| `molecules/` | Molecules                 | Simple combinations of atoms                                 |
+| `organisms/` | Organisms                 | Self-contained, feature-rich UI blocks                       |
+| `sections/`  | Organisms (page sections) | Full-width or page-level content blocks composed for layouts |
+| `templates/` | Templates                 | Reusable page shells and slot-based layout structure         |
+| `pages/`     | Pages                     | Concrete page components with real data and route behavior   |
+| `util/`      | —                         | Non-visual helpers and wrappers (not a design tier)          |
 
 ## Templates & pages in Next.js
 
@@ -27,4 +27,4 @@ Route files in `src/app/**/layout.tsx` and `page.tsx` often map to templates and
 
 ## Current status
 
-Folders are scaffolded and ready for components. No component files exist yet.
+Components are actively used across catalog, checkout, account, and search surfaces. Add new UI in the appropriate tier and keep route files in `src/app/` thin by composing from `pages/` and `templates/`.

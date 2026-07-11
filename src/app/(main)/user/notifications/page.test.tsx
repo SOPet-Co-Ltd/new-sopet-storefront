@@ -35,6 +35,7 @@ vi.mock('@/lib/hooks/useNotifications', () => ({
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/user/notifications',
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 describe('UserNotificationsPage', () => {

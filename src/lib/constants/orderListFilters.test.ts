@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CustomerOrderListFilter } from '@/lib/graphql/generated/graphql';
 import {
   getOrderListEmptyMessage,
   ORDER_LIST_FILTERS,
@@ -9,21 +10,21 @@ import {
 describe('orderListFilters', () => {
   it('defines five filter tabs in order', () => {
     expect(ORDER_LIST_FILTERS.map((filter) => filter.id)).toEqual([
-      'ALL',
-      'PENDING_PAYMENT',
-      'IN_PROGRESS',
-      'DELIVERED',
-      'CANCELLED',
+      CustomerOrderListFilter.All,
+      CustomerOrderListFilter.PendingPayment,
+      CustomerOrderListFilter.InProgress,
+      CustomerOrderListFilter.Delivered,
+      CustomerOrderListFilter.Cancelled,
     ]);
   });
 
   it('parses known filter values', () => {
-    expect(parseOrderListFilter('DELIVERED')).toBe('DELIVERED');
+    expect(parseOrderListFilter('DELIVERED')).toBe(CustomerOrderListFilter.Delivered);
   });
 
   it('falls back to ALL for unknown filter values', () => {
-    expect(parseOrderListFilter('unknown')).toBe('ALL');
-    expect(parseOrderListFilter(null)).toBe('ALL');
+    expect(parseOrderListFilter('unknown')).toBe(CustomerOrderListFilter.All);
+    expect(parseOrderListFilter(null)).toBe(CustomerOrderListFilter.All);
   });
 
   it('parses page numbers safely', () => {
@@ -33,7 +34,9 @@ describe('orderListFilters', () => {
   });
 
   it('returns filter-aware empty messages', () => {
-    expect(getOrderListEmptyMessage('ALL')).toBe('ยังไม่มีคำสั่งซื้อ');
-    expect(getOrderListEmptyMessage('DELIVERED')).toBe('ไม่มีคำสั่งซื้อในหมวดนี้');
+    expect(getOrderListEmptyMessage(CustomerOrderListFilter.All)).toBe('ยังไม่มีคำสั่งซื้อ');
+    expect(getOrderListEmptyMessage(CustomerOrderListFilter.Delivered)).toBe(
+      'ไม่มีคำสั่งซื้อในหมวดนี้',
+    );
   });
 });

@@ -23,7 +23,7 @@ export function AccountNavLink({ href, label, active, layout }: AccountNavLinkPr
       className={cn(
         layout === 'sidebar'
           ? 'block rounded-sop-8px px-4 py-2.5 sop-body-sm-regular transition-colors'
-          : 'rounded-sop-8px px-4 py-2 sop-body-sm-regular whitespace-nowrap transition-colors',
+          : 'shrink-0 snap-start rounded-sop-8px px-4 py-2 sop-body-sm-regular whitespace-nowrap transition-colors',
         active
           ? 'bg-sop-primary-200 text-sop-primary-600'
           : layout === 'sidebar'

@@ -33,8 +33,8 @@ export function AccountAuthGuard({ children }: AccountAuthGuardProps) {
       return () => window.cancelIdleCallback(idleId);
     }
 
-    const timerId = window.setTimeout(warmAccountCache, 200);
-    return () => window.clearTimeout(timerId);
+    const timerId = globalThis.setTimeout(warmAccountCache, 200);
+    return () => globalThis.clearTimeout(timerId);
   }, [isAuthenticated, isLoading]);
 
   if (isLoading || !isAuthenticated) {

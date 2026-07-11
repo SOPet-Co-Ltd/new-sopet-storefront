@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BellIcon } from '@/components/atoms/icons/inline';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountEmptyState } from '@/components/molecules/account/AccountEmptyState';
@@ -8,7 +9,11 @@ import { AccountTabBar } from '@/components/molecules/account/AccountTabBar';
 import { cn } from '@/lib/utils';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
-import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/lib/hooks/useNotifications';
+import {
+  useNotifications,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+} from '@/lib/hooks/useNotifications';
 
 type NotificationTypeConfig = {
   label: string;
@@ -52,6 +57,7 @@ const DEFAULT_NOTIFICATION_TYPE_CONFIG: NotificationTypeConfig = {
 };
 
 export default function UserNotificationsPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<'all' | 'unread'>('all');
   const { notifications, loading, refetch } = useNotifications(tab === 'unread');
   const [markRead] = useMarkNotificationRead();
@@ -108,9 +114,7 @@ export default function UserNotificationsPage() {
           <AccountCard padding="lg">
             <AccountEmptyState
               icon={<BellIcon size={{ mobile: 48, desktop: 48 }} color="#9E9EA8" />}
-              message={
-                tab === 'unread' ? 'ไม่มีรายการที่ไม่ได้อ่าน' : 'ยังไม่มีแจ้งเตือน'
-              }
+              message={tab === 'unread' ? 'ไม่มีรายการที่ไม่ได้อ่าน' : 'ยังไม่มีแจ้งเตือน'}
             />
           </AccountCard>
         ) : (
@@ -118,6 +122,7 @@ export default function UserNotificationsPage() {
             <NotificationCard
               key={n.id}
               notification={n}
+              onNavigate={(href) => router.push(href)}
               onMarkRead={() => handleMarkRead(n.id)}
             />
           ))
@@ -129,6 +134,7 @@ export default function UserNotificationsPage() {
 
 function NotificationCard({
   notification,
+  onNavigate,
   onMarkRead,
 }: {
   notification: {
@@ -140,6 +146,7 @@ function NotificationCard({
     isRead: boolean;
     createdAt: string;
   };
+  onNavigate: (href: string) => void;
   onMarkRead: () => void;
 }) {
   const typeConfig = NOTIFICATION_TYPE_CONFIG[notification.type] ?? {
@@ -147,15 +154,20 @@ function NotificationCard({
     label: notification.type,
   };
 
+  const handleActivate = () => {
+    onMarkRead();
+  };
+
   return (
     <div
       className={cn(
         'cursor-pointer transition-all',
-        !notification.isRead && '[&_[data-testid=account-card]]:border-sop-primary-300 [&_[data-testid=account-card]]:shadow-sm',
+        !notification.isRead &&
+          '[&_[data-testid=account-card]]:border-sop-primary-300 [&_[data-testid=account-card]]:shadow-sm',
       )}
-      onClick={onMarkRead}
+      onClick={handleActivate}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') onMarkRead();
+        if (e.key === 'Enter' || e.key === ' ') handleActivate();
       }}
       role="button"
       tabIndex={0}
@@ -163,30 +175,30 @@ function NotificationCard({
     >
       <AccountCard>
         <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            'mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full',
-            notification.isRead ? 'bg-transparent' : 'bg-sop-primary-500',
-          )}
-        />
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-center gap-2">
-            <p className="sop-body-sm-medium text-sop-neutral-gray-200">{notification.title}</p>
-            <span
-              className={cn(
-                'inline-flex items-center rounded-full px-2.5 py-0.5 sop-body-xs-medium',
-                typeConfig.badgeClasses,
-              )}
-              data-testid={`notification-type-badge-${notification.type}`}
-            >
-              {typeConfig.label}
-            </span>
+          <div
+            className={cn(
+              'mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full',
+              notification.isRead ? 'bg-transparent' : 'bg-sop-primary-500',
+            )}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2">
+              <p className="sop-body-sm-medium text-sop-neutral-gray-200">{notification.title}</p>
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full px-2.5 py-0.5 sop-body-xs-medium',
+                  typeConfig.badgeClasses,
+                )}
+                data-testid={`notification-type-badge-${notification.type}`}
+              >
+                {typeConfig.label}
+              </span>
+            </div>
+            <p className="sop-body-sm-regular text-sop-neutral-gray-400">{notification.message}</p>
+            <p className="mt-2 sop-body-xs-regular text-sop-neutral-gray-400">
+              {formatThaiDateTime(notification.createdAt)}
+            </p>
           </div>
-          <p className="sop-body-sm-regular text-sop-neutral-gray-400">{notification.message}</p>
-          <p className="mt-2 sop-body-xs-regular text-sop-neutral-gray-400">
-            {formatThaiDateTime(notification.createdAt)}
-          </p>
-        </div>
         </div>
       </AccountCard>
     </div>

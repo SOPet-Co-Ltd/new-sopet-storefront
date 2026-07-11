@@ -4,9 +4,9 @@ import { useCallback } from 'react';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   ConfirmOrderDeliveredDocument,
+  CustomerOrderListFilter,
   OrdersDocument,
   OrderDocument,
-  type CustomerOrderListFilter,
   type OrdersQuery,
   type OrderQuery,
 } from '@/lib/graphql/generated/graphql';
@@ -17,7 +17,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 const CONFIRM_ORDER_DELIVERED_MUTATION_OPTIONS = {
   refetchQueries: [{ query: OrdersDocument }, { query: OrderDocument }],
   awaitRefetchQueries: true,
-} as const;
+};
 
 export type OrderSummary = OrdersQuery['orders']['items'][number];
 export type OrderDetail = NonNullable<OrderQuery['order']>;
@@ -57,7 +57,7 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
   const { isAuthenticated } = useAuth();
   const page = options.page ?? 1;
   const limit = options.limit ?? ORDERS_PAGE_SIZE;
-  const filter = options.filter ?? 'ALL';
+  const filter = options.filter ?? CustomerOrderListFilter.All;
 
   const { data, loading, error, refetch } = useQuery(OrdersDocument, {
     skip: !isAuthenticated,

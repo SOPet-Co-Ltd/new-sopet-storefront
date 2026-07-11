@@ -1,49 +1,46 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { useIsMobile } from "@/hooks/useIsMobile"
-import { toast } from "sonner"
-import { Button } from "../atoms/Button"
-import { Modal } from "../atoms/Modal"
-import { QrAddLineOAIcon } from "../atoms/icons"
-import { ContactCardIcon, CopyIcon } from "../atoms/icons/outline"
+import { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { toast } from 'sonner';
+import { Button } from '../atoms/Button';
+import { Modal } from '../atoms/Modal';
+import { QrAddLineOAIcon } from '../atoms/icons';
+import { ContactCardIcon, CopyIcon } from '../atoms/icons/outline';
 
-const LINE_OA_URL = "https://line.me/R/ti/p/@sopet"
-const LINE_ID = "@sopet"
+const LINE_OA_URL = 'https://line.me/R/ti/p/@sopet';
+const LINE_ID = '@sopet';
 
 type ThankYouActionsProps = {
-  isGuest: boolean
-  orderId: string
-}
+  isGuest: boolean;
+  orderNumber: string;
+};
 
-export function ThankYouAction({
-  isGuest,
-  orderId,
-}: ThankYouActionsProps) {
-  const [signupModalOpen, setSignupModalOpen] = useState(false)
-  const [lineModalOpen, setLineModalOpen] = useState(false)
+export function ThankYouAction({ isGuest, orderNumber }: ThankYouActionsProps) {
+  const [signupModalOpen, setSignupModalOpen] = useState(false);
+  const [lineModalOpen, setLineModalOpen] = useState(false);
 
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile();
 
   // Close modals on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (signupModalOpen) setSignupModalOpen(false)
-        if (lineModalOpen) setLineModalOpen(false)
+      if (e.key === 'Escape') {
+        if (signupModalOpen) setSignupModalOpen(false);
+        if (lineModalOpen) setLineModalOpen(false);
       }
-    }
-    window.addEventListener("keydown", handleEscape)
-    return () => window.removeEventListener("keydown", handleEscape)
-  }, [signupModalOpen, lineModalOpen])
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [signupModalOpen, lineModalOpen]);
 
   const handleSignupRedirect = () => {
-    window.location.href = '/login'
-  }
+    window.location.href = '/login';
+  };
 
   const handleLineRedirect = () => {
-    window.open(LINE_OA_URL, "_blank", "noopener,noreferrer")
-  }
+    window.open(LINE_OA_URL, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <>
@@ -94,7 +91,7 @@ export function ThankYouAction({
 
                 <div className="flex flex-col gap-2 justify-center items-center">
                   <Button
-                    size={isMobile ? "md" : "lg"}
+                    size={isMobile ? 'md' : 'lg'}
                     onClick={handleSignupRedirect}
                     fill
                     className="max-w-[230px]"
@@ -103,7 +100,7 @@ export function ThankYouAction({
                     สมัครเลย
                   </Button>
                   <Button
-                    size={isMobile ? "md" : "lg"}
+                    size={isMobile ? 'md' : 'lg'}
                     variant="filled"
                     fill
                     className="max-w-[230px]"
@@ -148,10 +145,9 @@ export function ThankYouAction({
               </p>
               <div className="flex items-center justify-center gap-1">
                 <p className="text-sop-neutral-gray-300 sop-body-sm-regular md:sop-body-md-regular">
-                  แจ้งรหัสคำสั่งซื้อ :{" "}
-                  <span className="text-sop-secondary-500">{orderId}</span>
+                  แจ้งรหัสคำสั่งซื้อ : <span className="text-sop-secondary-500">{orderNumber}</span>
                 </p>
-                <CopyOrderIdButton orderId={orderId} />
+                <CopyOrderIdButton orderNumber={orderNumber} />
               </div>
             </div>
             <div
@@ -197,18 +193,18 @@ export function ThankYouAction({
         </Modal>
       )}
     </>
-  )
+  );
 }
 
-export function CopyOrderIdButton({ orderId }: { orderId: string }) {
+export function CopyOrderIdButton({ orderNumber }: { orderNumber: string }) {
   const handleCopyOrderId = async () => {
     try {
-      await navigator.clipboard.writeText(orderId)
-      toast.success("คัดลอกรหัสคำสั่งซื้อแล้ว")
+      await navigator.clipboard.writeText(orderNumber);
+      toast.success('คัดลอกรหัสคำสั่งซื้อแล้ว');
     } catch {
-      toast.error("ไม่สามารถคัดลอกรหัสคำสั่งซื้อได้")
+      toast.error('ไม่สามารถคัดลอกรหัสคำสั่งซื้อได้');
     }
-  }
+  };
   return (
     <button
       type="button"
@@ -218,5 +214,5 @@ export function CopyOrderIdButton({ orderId }: { orderId: string }) {
     >
       <CopyIcon size={{ mobile: 16 }} color="#949495" />
     </button>
-  )
+  );
 }

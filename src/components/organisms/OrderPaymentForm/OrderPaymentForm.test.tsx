@@ -6,12 +6,18 @@ import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { CHECKOUT_ORDER_ID, samplePendingPayment } from '@/test/mocks/fixtures/checkout';
 
 const basePayment: PaymentRecord = samplePendingPayment;
+const futureExpiresAt = '2030-01-01T00:00:00.000Z';
+const pastExpiresAt = '2020-01-01T00:00:00.000Z';
 
 describe('OrderPaymentForm', () => {
-  it('renders QR image when qrCodeUrl is present', () => {
+  it('renders QR image when qrCodeUrl is present and payment has not expired', () => {
     render(
       <OrderPaymentForm
-        payment={{ ...basePayment, qrCodeUrl: 'https://example.com/qr.png' }}
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
         loading={false}
         error={undefined}
       />,
@@ -22,6 +28,24 @@ describe('OrderPaymentForm', () => {
       'https://example.com/qr.png',
     );
     expect(screen.getByText('แสกนเพื่อชำระเงินผ่านแอปธนาคารใดก็ได้')).toBeInTheDocument();
+    expect(screen.queryByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).not.toBeInTheDocument();
+  });
+
+  it('shows updating message when pending PromptPay QR countdown has expired', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: pastExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
   });
 
   it('shows redirect link when authorizeUri is present', () => {

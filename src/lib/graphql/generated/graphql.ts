@@ -17,6 +17,12 @@ export type Scalars = {
   DateTime: { input: string; output: string };
 };
 
+export type AcceptStoreMemberInvitationInput = {
+  fullName: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+  token: Scalars['String']['input'];
+};
+
 export type AcceptVendorInvitationInput = {
   fullName: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -490,6 +496,7 @@ export type MessagePayload = {
 export type Mutation = {
   __typename?: 'Mutation';
   acceptStoreInvitation: StoreMemberType;
+  acceptStoreMemberInvitation: VendorAuthPayload;
   acceptVendorInvitation: VendorAuthPayload;
   acknowledgeVendorOrder: OrderType;
   addFavorite: FavoriteType;
@@ -628,6 +635,10 @@ export type Mutation = {
 
 export type MutationAcceptStoreInvitationArgs = {
   token: Scalars['String']['input'];
+};
+
+export type MutationAcceptStoreMemberInvitationArgs = {
+  input: AcceptStoreMemberInvitationInput;
 };
 
 export type MutationAcceptVendorInvitationArgs = {
@@ -1541,6 +1552,7 @@ export type Query = {
   customerReviewableItems: Array<CustomerReviewableItemType>;
   exportSearchAnalyticsCsv: Scalars['String']['output'];
   favorites: Array<FavoriteType>;
+  getStoreInvitationByToken: StoreInvitationPreviewType;
   guestOrders: Array<OrderType>;
   /** GraphQL API health check */
   health: HealthStatus;
@@ -1674,6 +1686,10 @@ export type QueryCategoryDeleteImpactArgs = {
 export type QueryExportSearchAnalyticsCsvArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type QueryGetStoreInvitationByTokenArgs = {
+  token: Scalars['String']['input'];
 };
 
 export type QueryGuestOrdersArgs = {
@@ -2169,6 +2185,15 @@ export type StoreApiKeyType = {
   revokedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
+export type StoreInvitationPreviewType = {
+  __typename?: 'StoreInvitationPreviewType';
+  email: Scalars['String']['output'];
+  expiresAt: Scalars['String']['output'];
+  role: Scalars['String']['output'];
+  storeName: Scalars['String']['output'];
+  userExists: Scalars['Boolean']['output'];
+};
+
 export type StoreMemberInvitationType = {
   __typename?: 'StoreMemberInvitationType';
   email: Scalars['String']['output'];
@@ -2657,13 +2682,6 @@ export type VerifyCustomerOtpInput = {
   code: Scalars['String']['input'];
   phone: Scalars['String']['input'];
   sessionId?: InputMaybe<Scalars['String']['input']>;
-};
-
-export type UpdateProfileInput = {
-  dateOfBirth?: string | null | undefined;
-  email?: string | null | undefined;
-  fullName?: string | null | undefined;
-  profilePhotoUrl?: string | null | undefined;
 };
 
 export type RequestAccountDeletionMutationVariables = Exact<{ [key: string]: never }>;

@@ -8,6 +8,7 @@ vi.mock('@/lib/hooks/useFavorites', () => ({
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/user/favorites',
+  useRouter: () => ({ prefetch: vi.fn() }),
 }));
 
 import { useFavorites } from '@/lib/hooks/useFavorites';

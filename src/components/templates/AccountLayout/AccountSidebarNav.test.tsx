@@ -15,11 +15,11 @@ describe('AccountSidebarNav', () => {
     expect(nav.closest('aside')).toHaveClass('hidden', 'lg:block');
   });
 
-  it('renders 9 sidebar destinations from getNavItems', () => {
+  it('renders 8 sidebar destinations from getNavItems', () => {
     render(<AccountSidebarNav pathname="/user/orders" />);
 
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(9);
+    expect(links).toHaveLength(8);
   });
 
   it('marks active item with aria-current on matching pathname', () => {

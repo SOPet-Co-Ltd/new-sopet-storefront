@@ -25,11 +25,11 @@ describe('AccountMobileNav', () => {
     expect(nav).not.toHaveClass('sticky', 'top-20', 'z-10');
   });
 
-  it('renders 9 mobile nav destinations', () => {
+  it('renders 8 mobile nav destinations', () => {
     render(<AccountMobileNav pathname="/user/orders" />);
 
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(9);
+    expect(links).toHaveLength(8);
   });
 
   it('applies active chip token classes on matching pathname', () => {

@@ -65,6 +65,6 @@ describe('prefetchAccountPage', () => {
   it('warms all account list routes', () => {
     prefetchAllAccountPages();
 
-    expect(mockQuery).toHaveBeenCalledTimes(8);
+    expect(mockQuery).toHaveBeenCalledTimes(7);
   });
 });

@@ -7,10 +7,7 @@ import { Button } from '@/components/atoms/Button';
 import { Checkbox } from '@/components/atoms/Checkbox';
 import { UpArrowIcon } from '@/components/atoms/icons/filled/UpArrowIcon';
 import { FilterFunnelIcon } from '@/components/atoms/icons/filled/FilterFunnelIcon';
-import {
-  ApprovedBrandsDocument,
-  ApprovedPetTypesDocument,
-} from '@/lib/graphql/generated/graphql';
+import { ApprovedBrandsDocument, ApprovedPetTypesDocument } from '@/lib/graphql/generated/graphql';
 import { createSearchFilterSectionPrefetchHandlers } from '@/lib/catalog/prefetchSearchFilterTaxonomy';
 import { cn } from '@/lib/utils';
 import { parseSearchFilters } from '@/lib/search/searchFilters';
@@ -54,9 +51,7 @@ function parsePetTypeIds(value: string | null): Set<string> {
 }
 
 function parseBrandIdList(value: string | null): Set<string> {
-  return new Set(
-    parseSearchFilters({ get: (key) => (key === 'brand' ? value : null) }).brandIds,
-  );
+  return new Set(parseSearchFilters({ get: (key) => (key === 'brand' ? value : null) }).brandIds);
 }
 
 function parseMinPrice(value: string | null): number {
@@ -80,7 +75,10 @@ type FilterState = {
   maxPrice: number;
 };
 
-function buildFilterSearchParams(baseParams: URLSearchParams, filters: FilterState): URLSearchParams {
+function buildFilterSearchParams(
+  baseParams: URLSearchParams,
+  filters: FilterState,
+): URLSearchParams {
   const params = new URLSearchParams(baseParams.toString());
 
   if (filters.petTypeIds.size > 0) {
@@ -323,10 +321,7 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
 
   return (
     <aside
-      className={cn(
-        'overflow-hidden rounded-sop-20 bg-white pb-6 shadow-xs',
-        className,
-      )}
+      className={cn('overflow-hidden rounded-sop-20 bg-white pb-6 shadow-xs', className)}
       data-testid="search-filter-sidebar"
     >
       <div className="flex h-16 items-center gap-2 rounded-t-sop-20 bg-sop-additionalblue-400 px-5 py-3">
@@ -355,7 +350,7 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
                   {section.label}
                 </span>
                 <UpArrowIcon
-                  size={{ mobile: 20, desktop: 20 }}
+                  size={{ mobile: 12, desktop: 12 }}
                   color="#454547"
                   className={cn('shrink-0 transition-transform', !isExpanded && 'rotate-180')}
                 />

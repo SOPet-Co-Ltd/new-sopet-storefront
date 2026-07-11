@@ -1,16 +1,15 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type SortUpDownIconProps = Omit<FilledIconProps, "children">
+export type SortUpDownIconProps = Omit<FilledIconProps, 'children'>;
 
-export function SortUpDownIcon({ color = "currentColor", ...props }: SortUpDownIconProps) {
+export function SortUpDownIcon({ color = 'currentColor', ...props }: SortUpDownIconProps) {
   return (
     <FilledIcon viewBox="0 0 24 24" color={color} {...props}>
       <path
         fillRule="evenodd"
         clipRule="evenodd"
         d="M17.0286 3C17.2837 3 17.5279 3.10353 17.7054 3.28697L22.734 8.48142C23.0965 8.85588 23.0873 9.45379 22.7135 9.81691C22.3397 10.18 21.7428 10.1708 21.3803 9.79636L17.9714 6.27508L17.9714 19.0556C17.9714 19.5772 17.5493 20 17.0286 20C16.5078 20 16.0857 19.5772 16.0857 19.0556L16.0857 6.27508L12.6769 9.79636C12.3144 10.1708 11.7175 10.18 11.3436 9.81691C10.9698 9.45379 10.9606 8.85588 11.3231 8.48142L16.3517 3.28697C16.5293 3.10353 16.7735 3 17.0286 3ZM6.97143 3C7.49215 3 7.91428 3.42284 7.91428 3.94444L7.91429 16.7249L11.3231 13.2036C11.6856 12.8292 12.2825 12.82 12.6564 13.1831C13.0302 13.5462 13.0394 14.1441 12.6769 14.5186L7.64831 19.713C7.47073 19.8965 7.22652 20 6.97143 20C6.71634 20 6.47213 19.8965 6.29455 19.713L1.26598 14.5186C0.903479 14.1441 0.912663 13.5462 1.28649 13.1831C1.66032 12.82 2.25723 12.8292 2.61974 13.2036L6.02857 16.7249L6.02857 3.94444C6.02857 3.42284 6.4507 3 6.97143 3Z"
-       
       />
     </FilledIcon>
-  )
+  );
 }

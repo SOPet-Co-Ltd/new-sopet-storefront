@@ -2,11 +2,7 @@
 
 import type { SavedPaymentMethod } from '@/lib/hooks/usePaymentMethods';
 import { cn } from '@/lib/utils';
-import {
-  CardBrandLogo,
-  formatCardBrandLabel,
-  formatSavedCardExpiry,
-} from './CardBrandLogo';
+import { CardBrandLogo, formatCardBrandLabel, formatSavedCardExpiry } from './CardBrandLogo';
 import { PaymentMethodRadio } from './PaymentMethodRadio';
 
 type SavedPaymentMethodOptionProps = {
@@ -48,7 +44,10 @@ export function SavedPaymentMethodOption({
           </span>
         </span>
       </span>
-      <CardBrandLogo brand={method.brand} className="flex h-8 w-8 shrink-0 items-center justify-center" />
+      <CardBrandLogo
+        brand={method.brand}
+        className="flex h-8 w-8 shrink-0 items-center justify-center"
+      />
     </button>
   );
 }

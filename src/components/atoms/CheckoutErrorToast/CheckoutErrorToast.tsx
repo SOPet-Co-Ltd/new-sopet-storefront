@@ -7,8 +7,7 @@ import { toast } from 'sonner';
 const ERROR_MESSAGES: Record<string, { title: string; description?: string }> = {
   invalid_order_price: {
     title: 'ไม่สามารถดำเนินการชำระเงินได้',
-    description:
-      'โปรโมชั่นไม่สามารถลดราคาสินค้าเป็น 0 ได้ กรุณาลบโค้ดส่วนลดบางรายการ',
+    description: 'โปรโมชั่นไม่สามารถลดราคาสินค้าเป็น 0 ได้ กรุณาลบโค้ดส่วนลดบางรายการ',
   },
   payment_session_unavailable: {
     title: 'ไม่พบข้อมูลการชำระเงิน',

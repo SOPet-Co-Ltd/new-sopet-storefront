@@ -1,8 +1,11 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type InstagramCustomIconProps = Omit<FilledIconProps, "children">
+export type InstagramCustomIconProps = Omit<FilledIconProps, 'children'>;
 
-export function InstagramCustomIcon({ color = "currentColor", ...props }: InstagramCustomIconProps) {
+export function InstagramCustomIcon({
+  color = 'currentColor',
+  ...props
+}: InstagramCustomIconProps) {
   return (
     <FilledIcon viewBox="0 0 24 24" color={color} {...props}>
       <g clipPath="url(#clip0_106_238)">
@@ -25,5 +28,5 @@ export function InstagramCustomIcon({ color = "currentColor", ...props }: Instag
         </clipPath>
       </defs>
     </FilledIcon>
-  )
+  );
 }

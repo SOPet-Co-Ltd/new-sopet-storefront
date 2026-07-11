@@ -1,16 +1,15 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type DislikeIconProps = Omit<FilledIconProps, "children">
+export type DislikeIconProps = Omit<FilledIconProps, 'children'>;
 
-export function DislikeIcon({ color = "currentColor", ...props }: DislikeIconProps) {
+export function DislikeIcon({ color = 'currentColor', ...props }: DislikeIconProps) {
   return (
     <FilledIcon viewBox="0 0 24 24" color={color} {...props}>
       <path
         fillRule="evenodd"
         clipRule="evenodd"
         d="M6.07997 2.5C5.80951 2.5 5.54634 2.58772 5.32997 2.75C5.11368 2.91222 4.95581 3.14019 4.88005 3.39972L2.55005 11.3997C2.49572 11.586 2.48542 11.7827 2.52014 11.9736C2.55485 12.1645 2.63354 12.3448 2.74997 12.5C2.86641 12.6552 3.01739 12.7812 3.19096 12.868C3.36452 12.9548 3.55592 13 3.74997 13H9.57997C9.81002 13 10.0273 13.1056 10.1695 13.2864C10.3117 13.4673 10.3631 13.7033 10.3088 13.9269L9.30881 18.0469L9.30811 18.0498C9.22215 18.3979 9.21598 18.761 9.29006 19.1119C9.36414 19.4627 9.51654 19.7923 9.7359 20.076C9.95525 20.3597 10.2359 20.5902 10.5568 20.7502C10.7425 20.8428 10.9389 20.9104 11.1409 20.9518L14.3583 14.5262C14.3585 14.5259 14.3587 14.5255 14.3589 14.5252C14.5866 14.0675 14.9373 13.6823 15.3718 13.4129C15.5177 13.3224 15.6712 13.2461 15.83 13.1848V2.5H6.07997Z"
-       
       />
     </FilledIcon>
-  )
+  );
 }

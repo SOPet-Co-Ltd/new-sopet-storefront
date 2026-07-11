@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  formatCvv,
-  getCvvLength,
-  getCvvPlaceholder,
-  isValidCvv,
-} from './paymentFormat';
+import { formatCvv, getCvvLength, getCvvPlaceholder, isValidCvv } from './paymentFormat';
 
 describe('paymentFormat CVV helpers', () => {
   it('uses 3 digits for Visa and Mastercard', () => {

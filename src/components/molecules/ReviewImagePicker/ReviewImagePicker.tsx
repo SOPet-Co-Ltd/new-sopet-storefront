@@ -11,10 +11,7 @@ type ReviewImagePickerProps = {
 
 export function ReviewImagePicker({ files, onChange, disabled = false }: ReviewImagePickerProps) {
   const [error, setError] = useState<string | null>(null);
-  const previewUrls = useMemo(
-    () => files.map((file) => URL.createObjectURL(file)),
-    [files],
-  );
+  const previewUrls = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files]);
 
   useEffect(() => {
     return () => {

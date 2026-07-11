@@ -90,7 +90,9 @@ describe('ProductDetailsSellerReviews', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'มีรูปภาพ' }));
 
-    expect(screen.getByTestId(`product-review-item-${sampleProductReviewWithImages.id}`)).toBeInTheDocument();
+    expect(
+      screen.getByTestId(`product-review-item-${sampleProductReviewWithImages.id}`),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('product-review-item-review-no-images')).not.toBeInTheDocument();
   });
 

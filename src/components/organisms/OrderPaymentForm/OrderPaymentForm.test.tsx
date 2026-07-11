@@ -3,10 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm/OrderPaymentForm';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
-import {
-  CHECKOUT_ORDER_ID,
-  samplePendingPayment,
-} from '@/test/mocks/fixtures/checkout';
+import { CHECKOUT_ORDER_ID, samplePendingPayment } from '@/test/mocks/fixtures/checkout';
 
 const basePayment: PaymentRecord = samplePendingPayment;
 
@@ -57,9 +54,7 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    expect(
-      screen.getByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')).toBeInTheDocument();
   });
 
   it('shows QR expired message when failed PromptPay payment had expiresAt', () => {

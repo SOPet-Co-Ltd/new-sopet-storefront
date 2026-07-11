@@ -1,11 +1,14 @@
-"use client";
+'use client';
 
-import { useQuery } from "@apollo/client/react";
-import ProductCard from "./ProductCard";
-import { RecommendedProductsDocument, type RecommendedProductsQuery } from "@/lib/graphql/generated/graphql";
+import { useQuery } from '@apollo/client/react';
+import ProductCard from './ProductCard';
+import {
+  RecommendedProductsDocument,
+  type RecommendedProductsQuery,
+} from '@/lib/graphql/generated/graphql';
 
 const RECOMMENDED_GRID_CLASS =
-  "grid grid-cols-2 gap-2 justify-items-center md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5 xl:gap-10";
+  'grid grid-cols-2 gap-2 justify-items-center md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5 xl:gap-10';
 
 export default function ThankYouRecommendedProductSection() {
   const { data, loading, error } = useQuery(RecommendedProductsDocument, {
@@ -21,7 +24,6 @@ export default function ThankYouRecommendedProductSection() {
   }
 
   if (error) {
-    console.error("Error fetching recommended products:", error);
     return null;
   }
 
@@ -33,11 +35,9 @@ export default function ThankYouRecommendedProductSection() {
 
   return (
     <div className="w-full">
-      <h2 className="sop-heading-lg-medium text-sop-neutral-gray-200 mb-6">
-        Recommended for You
-      </h2>
+      <h2 className="sop-heading-lg-medium text-sop-neutral-gray-200 mb-6">Recommended for You</h2>
       <ul className={RECOMMENDED_GRID_CLASS}>
-        {products.map((product: RecommendedProductsQuery["recommendedProducts"][number]) => (
+        {products.map((product: RecommendedProductsQuery['recommendedProducts'][number]) => (
           <li key={product.id}>
             <ProductCard product={product} />
           </li>

@@ -39,9 +39,7 @@ export function CardBrandLogo({ brand, className }: CardBrandLogoProps) {
       {normalized === 'mastercard' ? <MastercardLogo /> : null}
       {normalized === 'visa' ? <VisaLogo /> : null}
       {normalized !== 'mastercard' && normalized !== 'visa' ? (
-        <span className="sop-body-xs-medium text-sop-neutral-gray-300">
-          {brand || 'Card'}
-        </span>
+        <span className="sop-body-xs-medium text-sop-neutral-gray-300">{brand || 'Card'}</span>
       ) : null}
     </span>
   );

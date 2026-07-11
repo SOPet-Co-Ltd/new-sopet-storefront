@@ -1,16 +1,15 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type SopetSortIconProps = Omit<FilledIconProps, "children">
+export type SopetSortIconProps = Omit<FilledIconProps, 'children'>;
 
-export function SopetSortIcon({ color = "currentColor", ...props }: SopetSortIconProps) {
+export function SopetSortIcon({ color = 'currentColor', ...props }: SopetSortIconProps) {
   return (
     <FilledIcon viewBox="0 0 24 24" color={color} {...props}>
       <path
         fillRule="evenodd"
         clipRule="evenodd"
         d="M17.4857 2C17.764 2 18.0304 2.11572 18.2241 2.32073L23.7098 8.12629C24.1053 8.5448 24.0953 9.21306 23.6875 9.6189C23.2796 10.0247 22.6285 10.0144 22.233 9.59593L18.5143 5.66038L18.5143 19.9444C18.5143 20.5274 18.0538 21 17.4857 21C16.9177 21 16.4571 20.5274 16.4571 19.9444L16.4571 5.66038L12.7384 9.59593C12.343 10.0144 11.6918 10.0247 11.284 9.6189C10.8762 9.21306 10.8661 8.5448 11.2616 8.12629L16.7473 2.32073C16.941 2.11572 17.2074 2 17.4857 2ZM6.51429 2C7.08235 2 7.54286 2.47259 7.54286 3.05556L7.54286 17.3396L11.2616 13.4041C11.657 12.9856 12.3082 12.9753 12.716 13.3811C13.1239 13.7869 13.1339 14.4552 12.7384 14.8737L7.2527 20.6793C7.05897 20.8843 6.79257 21 6.51429 21C6.23601 21 5.9696 20.8843 5.77587 20.6793L0.29016 14.8737C-0.105295 14.4552 -0.0952771 13.7869 0.312536 13.3811C0.72035 12.9753 1.37153 12.9856 1.76698 13.4041L5.48571 17.3396L5.48571 3.05556C5.48571 2.47259 5.94622 2 6.51429 2Z"
-       
       />
     </FilledIcon>
-  )
+  );
 }

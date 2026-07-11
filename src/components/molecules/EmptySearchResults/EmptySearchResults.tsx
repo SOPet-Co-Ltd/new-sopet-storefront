@@ -44,10 +44,7 @@ export function EmptySearchResults({
             className="flex h-20 w-20 items-center justify-center rounded-full bg-sop-primary-100"
             aria-hidden="true"
           >
-            <SearchIcon
-              size={{ mobile: 40, desktop: 40 }}
-              className="text-sop-primary-400"
-            />
+            <SearchIcon size={{ mobile: 40, desktop: 40 }} className="text-sop-primary-400" />
           </div>
 
           <h2 className="mt-5 sop-headline-md-medium text-sop-neutral-gray-200">{message}</h2>

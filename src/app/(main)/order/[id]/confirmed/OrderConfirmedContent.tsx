@@ -31,7 +31,9 @@ export function OrderConfirmedContent({ orderId }: OrderConfirmedContentProps) {
   if (error || !data?.order) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-sop-primary-100 px-4 py-12 text-center">
-        <h1 className="mb-3 sop-headline-sm-medium text-sop-neutral-gray-200">ไม่พบข้อมูลคำสั่งซื้อ</h1>
+        <h1 className="mb-3 sop-headline-sm-medium text-sop-neutral-gray-200">
+          ไม่พบข้อมูลคำสั่งซื้อ
+        </h1>
         <p className="mb-6 sop-body-sm-regular text-sop-neutral-gray-400">
           อาจเกิดจากลิงก์หมดอายุ หรือเกิดข้อผิดพลาดในการโหลดข้อมูล
         </p>

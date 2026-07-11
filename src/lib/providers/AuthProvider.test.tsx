@@ -2,15 +2,8 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing/react';
-import {
-  MeDocument,
-  VerifyCustomerOtpDocument,
-} from '@/lib/graphql/generated/graphql';
-import {
-  ACCESS_TOKEN_KEY,
-  REFRESH_TOKEN_KEY,
-  setTokens,
-} from '@/lib/graphql/authLink';
+import { MeDocument, VerifyCustomerOtpDocument } from '@/lib/graphql/generated/graphql';
+import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, setTokens } from '@/lib/graphql/authLink';
 import { SESSION_ID_COOKIE } from '@/lib/session';
 import { AuthProvider, type AuthContextValue } from './AuthProvider';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -22,11 +15,7 @@ const TEST_CUSTOMER = {
   fullName: 'สมชาย ใจดี',
 };
 
-function AuthProbe({
-  onContext,
-}: {
-  onContext: (context: AuthContextValue) => void;
-}) {
+function AuthProbe({ onContext }: { onContext: (context: AuthContextValue) => void }) {
   const context = useAuth();
   onContext(context);
   return (
@@ -39,10 +28,7 @@ function AuthProbe({
   );
 }
 
-async function waitFor(
-  predicate: () => boolean,
-  timeoutMs = 2_000,
-): Promise<void> {
+async function waitFor(predicate: () => boolean, timeoutMs = 2_000): Promise<void> {
   const startedAt = Date.now();
 
   while (!predicate()) {
@@ -98,23 +84,26 @@ describe('AuthProvider', () => {
     let meRequested = false;
 
     let context: AuthContextValue | null = null;
-    const { root } = renderAuthProbe((value) => {
-      context = value;
-    }, [
-      {
-        request: { query: MeDocument },
-        result: () => {
-          meRequested = true;
-          return {
-            data: {
-              me: {
-                customer: TEST_CUSTOMER,
-              },
-            },
-          };
-        },
+    const { root } = renderAuthProbe(
+      (value) => {
+        context = value;
       },
-    ]);
+      [
+        {
+          request: { query: MeDocument },
+          result: () => {
+            meRequested = true;
+            return {
+              data: {
+                me: {
+                  customer: TEST_CUSTOMER,
+                },
+              },
+            };
+          },
+        },
+      ],
+    );
     roots.push(root);
 
     await act(async () => {
@@ -130,45 +119,48 @@ describe('AuthProvider', () => {
 
   it('sets isAuthenticated and persists tokens after verifyOtp success', async () => {
     let context: AuthContextValue | null = null;
-    const { container, root } = renderAuthProbe((value) => {
-      context = value;
-    }, [
-      {
-        request: {
-          query: VerifyCustomerOtpDocument,
-          variables: {
-            input: {
-              phone: '0812345678',
-              code: '123456',
-              sessionId: 'a1b2c3d4-e5f6-4789-a012-3456789abcde',
+    const { container, root } = renderAuthProbe(
+      (value) => {
+        context = value;
+      },
+      [
+        {
+          request: {
+            query: VerifyCustomerOtpDocument,
+            variables: {
+              input: {
+                phone: '0812345678',
+                code: '123456',
+                sessionId: 'a1b2c3d4-e5f6-4789-a012-3456789abcde',
+              },
             },
           },
-        },
-        result: {
-          data: {
-            verifyCustomerOtp: {
-              customer: TEST_CUSTOMER,
-              pendingDeletion: false,
-              reactivationToken: null,
-              tokens: {
-                accessToken: 'access-jwt',
-                refreshToken: 'refresh-jwt',
+          result: {
+            data: {
+              verifyCustomerOtp: {
+                customer: TEST_CUSTOMER,
+                pendingDeletion: false,
+                reactivationToken: null,
+                tokens: {
+                  accessToken: 'access-jwt',
+                  refreshToken: 'refresh-jwt',
+                },
               },
             },
           },
         },
-      },
-      {
-        request: { query: MeDocument },
-        result: {
-          data: {
-            me: {
-              customer: TEST_CUSTOMER,
+        {
+          request: { query: MeDocument },
+          result: {
+            data: {
+              me: {
+                customer: TEST_CUSTOMER,
+              },
             },
           },
         },
-      },
-    ]);
+      ],
+    );
     roots.push(root);
 
     await act(async () => {
@@ -198,20 +190,23 @@ describe('AuthProvider', () => {
     setTokens('access-jwt', 'refresh-jwt');
 
     let context: AuthContextValue | null = null;
-    const { container, root } = renderAuthProbe((value) => {
-      context = value;
-    }, [
-      {
-        request: { query: MeDocument },
-        result: {
-          data: {
-            me: {
-              customer: TEST_CUSTOMER,
+    const { container, root } = renderAuthProbe(
+      (value) => {
+        context = value;
+      },
+      [
+        {
+          request: { query: MeDocument },
+          result: {
+            data: {
+              me: {
+                customer: TEST_CUSTOMER,
+              },
             },
           },
         },
-      },
-    ]);
+      ],
+    );
     roots.push(root);
 
     await act(async () => {

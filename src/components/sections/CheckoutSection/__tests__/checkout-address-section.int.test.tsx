@@ -11,10 +11,7 @@ import {
   SUB_DISTRICT_REQUIRED_MESSAGE,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
-import {
-  sampleSavedAddress,
-  sampleSavedAddress2,
-} from '@/test/mocks/fixtures/checkout';
+import { sampleSavedAddress, sampleSavedAddress2 } from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
 
 vi.mock('@/lib/hooks/useAuth', () => ({

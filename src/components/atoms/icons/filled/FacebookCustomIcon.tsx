@@ -1,15 +1,12 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type FacebookCustomIconProps = Omit<FilledIconProps, "children">
+export type FacebookCustomIconProps = Omit<FilledIconProps, 'children'>;
 
-export function FacebookCustomIcon({ color = "currentColor", ...props }: FacebookCustomIconProps) {
+export function FacebookCustomIcon({ color = 'currentColor', ...props }: FacebookCustomIconProps) {
   return (
     <FilledIcon viewBox="0 0 24 24" color={color} {...props}>
       <g clipPath="url(#clip0_101_413)">
-        <path
-          d="M24 12C24 5.37259 18.6274 0 12 0C5.37259 0 0 5.37259 0 12C0 17.6277 3.87432 22.3498 9.10109 23.6466V15.667H6.62659V12H9.10109V10.4199C9.10109 6.33547 10.9495 4.44235 14.9594 4.44235C15.7196 4.44235 17.0314 4.59139 17.568 4.74048V8.06467C17.2848 8.03486 16.7929 8.01993 16.1817 8.01993C14.214 8.01993 13.4538 8.76527 13.4538 10.7031V12H17.3734L16.7001 15.667H13.4538V23.9121C19.3955 23.1944 24 18.1353 24 12Z"
-         
-        />
+        <path d="M24 12C24 5.37259 18.6274 0 12 0C5.37259 0 0 5.37259 0 12C0 17.6277 3.87432 22.3498 9.10109 23.6466V15.667H6.62659V12H9.10109V10.4199C9.10109 6.33547 10.9495 4.44235 14.9594 4.44235C15.7196 4.44235 17.0314 4.59139 17.568 4.74048V8.06467C17.2848 8.03486 16.7929 8.01993 16.1817 8.01993C14.214 8.01993 13.4538 8.76527 13.4538 10.7031V12H17.3734L16.7001 15.667H13.4538V23.9121C19.3955 23.1944 24 18.1353 24 12Z" />
         <path
           d="M16.7001 15.667L17.3734 12H13.4538V10.7031C13.4538 8.76527 14.214 8.01993 16.1817 8.01993C16.7929 8.01993 17.2848 8.03486 17.568 8.06467V4.74048C17.0314 4.59139 15.7196 4.44235 14.9594 4.44235C10.9495 4.44235 9.10109 6.33547 9.10109 10.4199V12H6.62659V15.667H9.10109V23.6466C10.0296 23.8769 11.0003 24 12 24C12.4922 24 12.9771 23.9696 13.4538 23.9121V15.667H16.7001Z"
           fill="white"
@@ -21,5 +18,5 @@ export function FacebookCustomIcon({ color = "currentColor", ...props }: Faceboo
         </clipPath>
       </defs>
     </FilledIcon>
-  )
+  );
 }

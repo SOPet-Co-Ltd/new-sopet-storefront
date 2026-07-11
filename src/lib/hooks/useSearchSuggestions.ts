@@ -16,8 +16,7 @@ import {
 export type SearchSuggestionProduct =
   SearchSuggestionsQuery['searchSuggestions']['products'][number];
 
-export type SearchSuggestionQuery =
-  SearchSuggestionsQuery['searchSuggestions']['queries'][number];
+export type SearchSuggestionQuery = SearchSuggestionsQuery['searchSuggestions']['queries'][number];
 
 export function useSearchSuggestions(query: string, enabled = true) {
   const trimmed = query.trim();

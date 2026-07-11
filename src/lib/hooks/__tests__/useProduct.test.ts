@@ -59,10 +59,9 @@ describe('useProduct', () => {
       }),
     );
 
-    const { result } = renderHook(
-      () => useProduct({ mode: 'id', id: CATALOG_PRODUCT_ID }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useProduct({ mode: 'id', id: CATALOG_PRODUCT_ID }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.product?.id).toBe(CATALOG_PRODUCT_ID);

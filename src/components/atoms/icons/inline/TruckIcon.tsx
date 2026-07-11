@@ -1,6 +1,6 @@
-import { InlineIcon, type InlineIconProps } from "../InlineIcon"
+import { InlineIcon, type InlineIconProps } from '../InlineIcon';
 
-export type TruckIconProps = Omit<InlineIconProps, "children">
+export type TruckIconProps = Omit<InlineIconProps, 'children'>;
 
 export function TruckIcon(props: TruckIconProps) {
   return (
@@ -13,5 +13,5 @@ export function TruckIcon(props: TruckIconProps) {
       <path d="M17.25 11.25H23.25V17.25C23.25 17.4489 23.171 17.6397 23.0303 17.7803C22.8897 17.921 22.6989 18 22.5 18H20.25" />
       <path d="M5.25 18H3C2.80109 18 2.61032 17.921 2.46967 17.7803C2.32902 17.6397 2.25 17.4489 2.25 17.25V6.75C2.25 6.55109 2.32902 6.36032 2.46967 6.21967C2.61032 6.07902 2.80109 6 3 6H17.25V15.8784" />
     </InlineIcon>
-  )
+  );
 }

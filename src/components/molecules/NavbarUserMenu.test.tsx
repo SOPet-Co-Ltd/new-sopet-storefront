@@ -52,10 +52,7 @@ describe('NavbarUserMenu', () => {
 
     render(<NavbarUserMenu variant="desktop" />);
 
-    expect(screen.getByRole('link', { name: 'เข้าสู่ระบบ' })).toHaveAttribute(
-      'href',
-      '/login',
-    );
+    expect(screen.getByRole('link', { name: 'เข้าสู่ระบบ' })).toHaveAttribute('href', '/login');
   });
 
   it('shows account menu trigger when authenticated on desktop', () => {
@@ -63,9 +60,7 @@ describe('NavbarUserMenu', () => {
 
     render(<NavbarUserMenu variant="desktop" />);
 
-    expect(
-      screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย/ })).toBeInTheDocument();
   });
 
   it('renders exactly 7 navbar segments with correct hrefs and order', async () => {

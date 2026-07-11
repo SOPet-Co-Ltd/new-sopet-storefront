@@ -42,9 +42,7 @@ function createCheckoutHook(overrides?: Partial<SubmitCheckoutParams['checkoutHo
   };
 }
 
-function createSubmitParams(
-  overrides?: Partial<SubmitCheckoutParams>,
-): SubmitCheckoutParams {
+function createSubmitParams(overrides?: Partial<SubmitCheckoutParams>): SubmitCheckoutParams {
   return {
     step: 'review',
     checkoutContext: {
@@ -261,9 +259,9 @@ describe('submitCheckout', () => {
   });
 
   it('throws SubmitCheckoutError for invalid step', async () => {
-    await expect(
-      submitCheckout(createSubmitParams({ step: 'shipping' })),
-    ).rejects.toBeInstanceOf(SubmitCheckoutError);
+    await expect(submitCheckout(createSubmitParams({ step: 'shipping' }))).rejects.toBeInstanceOf(
+      SubmitCheckoutError,
+    );
   });
 });
 

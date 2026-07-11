@@ -6,8 +6,7 @@ import {
   type StoreShippingOptionsQuery,
 } from '@/lib/graphql/generated/graphql';
 
-export type ShippingOption =
-  StoreShippingOptionsQuery['storeShippingOptions'][number];
+export type ShippingOption = StoreShippingOptionsQuery['storeShippingOptions'][number];
 
 export type UseShippingOptionsResult = {
   options: ShippingOption[];
@@ -21,9 +20,7 @@ function toHookError(error: unknown): Error | undefined {
   return error as Error;
 }
 
-export function useShippingOptions(
-  storeId: string | null | undefined,
-): UseShippingOptionsResult {
+export function useShippingOptions(storeId: string | null | undefined): UseShippingOptionsResult {
   const { data, loading, error, refetch } = useQuery(StoreShippingOptionsDocument, {
     variables: { storeId: storeId ?? '' },
     skip: !storeId,

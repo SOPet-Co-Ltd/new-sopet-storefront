@@ -1,11 +1,8 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type ShieldCheckIconProps = Omit<OutlineIconProps, "children">
+export type ShieldCheckIconProps = Omit<OutlineIconProps, 'children'>;
 
-export function ShieldCheckIcon({
-  color = "currentColor",
-  ...props
-}: ShieldCheckIconProps) {
+export function ShieldCheckIcon({ color = 'currentColor', ...props }: ShieldCheckIconProps) {
   return (
     <OutlineIcon viewBox="0 0 24 24" color={color} {...props}>
       <path
@@ -16,5 +13,5 @@ export function ShieldCheckIcon({
         stroke="none"
       />
     </OutlineIcon>
-  )
+  );
 }

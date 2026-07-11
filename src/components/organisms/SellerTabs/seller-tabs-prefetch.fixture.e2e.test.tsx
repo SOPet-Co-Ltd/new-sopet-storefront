@@ -94,10 +94,9 @@ describe('SellerTabs hover-prefetch journey', () => {
       }),
     );
 
-    render(
-      <SellerTabs activeTab="reviews" storeHandle={STORE_SLUG} storeId={STORE_ID} />,
-      { wrapper: createWrapper() },
-    );
+    render(<SellerTabs activeTab="reviews" storeHandle={STORE_SLUG} storeId={STORE_ID} />, {
+      wrapper: createWrapper(),
+    });
 
     const productsTab = screen.getByRole('tab', { name: 'สินค้า' });
     const classNameBefore = productsTab.className;

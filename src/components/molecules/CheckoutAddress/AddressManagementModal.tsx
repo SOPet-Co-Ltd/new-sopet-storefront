@@ -71,7 +71,13 @@ function AddressSelectBox({ address, selectedId, onSelect }: AddressSelectBoxPro
 
 const EMPTY_SHIPPING_FORM: Pick<
   GuestCheckoutFormState,
-  'address' | 'subDistrict' | 'district' | 'province' | 'postalCode' | 'recipientFullName' | 'recipientPhone'
+  | 'address'
+  | 'subDistrict'
+  | 'district'
+  | 'province'
+  | 'postalCode'
+  | 'recipientFullName'
+  | 'recipientPhone'
 > = {
   address: '',
   subDistrict: '',
@@ -183,10 +189,7 @@ export function AddressManagementModal({
 
     try {
       const created = await addressesApi.createAddress(
-        mapGuestFormToCreateAddressInput(
-          { contactPhone: '', ...formValues },
-          { isDefault: false },
-        ),
+        mapGuestFormToCreateAddressInput({ contactPhone: '', ...formValues }, { isDefault: false }),
       );
 
       if (!created?.id) {
@@ -269,11 +272,7 @@ export function AddressManagementModal({
   if (!isOpen) return null;
 
   const renderListView = () => (
-    <div
-      role="radiogroup"
-      aria-label="เลือกที่อยู่จัดส่ง"
-      className="flex flex-col gap-sop-12px"
-    >
+    <div role="radiogroup" aria-label="เลือกที่อยู่จัดส่ง" className="flex flex-col gap-sop-12px">
       {sortedAddresses.map((address) => (
         <div key={address.id} className="space-y-sop-8px">
           <AddressSelectBox
@@ -335,7 +334,9 @@ export function AddressManagementModal({
   );
 
   const renderFormView = (mode: 'add' | 'edit') => (
-    <div data-testid={mode === 'add' ? 'address-modal-add' : `address-modal-edit-${editingAddressId}`}>
+    <div
+      data-testid={mode === 'add' ? 'address-modal-add' : `address-modal-edit-${editingAddressId}`}
+    >
       <ShippingAddressFields
         values={formValues}
         onChange={handleFormChange}

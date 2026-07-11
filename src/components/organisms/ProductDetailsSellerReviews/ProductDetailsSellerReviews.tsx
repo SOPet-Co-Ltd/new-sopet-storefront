@@ -70,8 +70,8 @@ function ProductDetailsSellerReviewsContent({
   loading = false,
 }: ProductDetailsSellerReviewsProps) {
   const searchParams = useSearchParams();
-  const [ratingFilter, setRatingFilter] = useState<string | null>(
-    () => searchParams.get(RATING_QUERY_KEY),
+  const [ratingFilter, setRatingFilter] = useState<string | null>(() =>
+    searchParams.get(RATING_QUERY_KEY),
   );
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -151,7 +151,9 @@ function ProductDetailsSellerReviewsContent({
 
 export default function ProductDetailsSellerReviews(props: ProductDetailsSellerReviewsProps) {
   return (
-    <Suspense fallback={<div data-testid="product-reviews-loading" className="h-24 animate-pulse" />}>
+    <Suspense
+      fallback={<div data-testid="product-reviews-loading" className="h-24 animate-pulse" />}
+    >
       <ProductDetailsSellerReviewsContent {...props} />
     </Suspense>
   );

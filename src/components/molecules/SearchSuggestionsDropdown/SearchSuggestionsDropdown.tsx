@@ -50,11 +50,19 @@ export function SearchSuggestionsDropdown({
       data-testid="search-suggestions-dropdown"
     >
       {showRecent ? (
-        <SearchRecentSection items={recentQueries} onSelect={onRecentSelect} onClear={onClearRecent} />
+        <SearchRecentSection
+          items={recentQueries}
+          onSelect={onRecentSelect}
+          onClear={onClearRecent}
+        />
       ) : null}
 
       {showProducts && loading ? (
-        <p className="px-3 py-3 sop-body-sm-regular text-sop-neutral-gray-300" role="status" aria-live="polite">
+        <p
+          className="px-3 py-3 sop-body-sm-regular text-sop-neutral-gray-300"
+          role="status"
+          aria-live="polite"
+        >
           กำลังโหลดคำแนะนำ
         </p>
       ) : null}

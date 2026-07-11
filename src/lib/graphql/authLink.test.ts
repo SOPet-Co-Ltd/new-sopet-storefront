@@ -36,32 +36,29 @@ const mockClient = {
 } as unknown as ApolloClient;
 
 function runLink(link: ApolloLink, query = TEST_QUERY) {
-  return firstValueFrom(
-    execute(link, { query }, { client: mockClient }),
-  );
+  return firstValueFrom(execute(link, { query }, { client: mockClient }));
 }
 
 function createTerminalLink(
   handler: (operation: ApolloLink.Operation) => ApolloLink.Result,
 ): ApolloLink {
-  return new ApolloLink((operation) =>
-    new Observable<ApolloLink.Result>((observer) => {
-      try {
-        const result = handler(operation);
-        observer.next(result);
-        observer.complete();
-      } catch (error) {
-        observer.error(error);
-      }
-    }),
+  return new ApolloLink(
+    (operation) =>
+      new Observable<ApolloLink.Result>((observer) => {
+        try {
+          const result = handler(operation);
+          observer.next(result);
+          observer.complete();
+        } catch (error) {
+          observer.error(error);
+        }
+      }),
   );
 }
 
 function createBearerOnlyLink(): SetContextLink {
   return new SetContextLink((prevContext) => ({
-    headers: buildAuthHeaders(
-      (prevContext.headers as Record<string, string> | undefined) ?? {},
-    ),
+    headers: buildAuthHeaders((prevContext.headers as Record<string, string> | undefined) ?? {}),
   }));
 }
 

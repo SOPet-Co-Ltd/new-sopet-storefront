@@ -8,7 +8,10 @@ type SuggestedQueryChipsProps = {
 
 export function SuggestedQueryChipsSkeleton() {
   return (
-    <div className="flex flex-wrap justify-center gap-2" data-testid="search-recovery-chips-skeleton">
+    <div
+      className="flex flex-wrap justify-center gap-2"
+      data-testid="search-recovery-chips-skeleton"
+    >
       {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={index}

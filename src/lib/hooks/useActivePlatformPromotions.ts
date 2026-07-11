@@ -18,9 +18,7 @@ function toHookError(error: unknown): Error | undefined {
   return error as Error;
 }
 
-export function useActivePlatformPromotions(
-  enabled: boolean,
-): UseActivePlatformPromotionsResult {
+export function useActivePlatformPromotions(enabled: boolean): UseActivePlatformPromotionsResult {
   const { data, loading, error, refetch } = useQuery(ActivePlatformPromotionsDocument, {
     skip: !enabled,
   });

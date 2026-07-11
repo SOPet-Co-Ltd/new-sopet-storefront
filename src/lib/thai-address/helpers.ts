@@ -1,9 +1,4 @@
-import type {
-  DistrictOption,
-  ProvinceOption,
-  SubdistrictOption,
-  ThaiAddressRow,
-} from './types';
+import type { DistrictOption, ProvinceOption, SubdistrictOption, ThaiAddressRow } from './types';
 
 let cachedDataset: ThaiAddressRow[] | null = null;
 let datasetPromise: Promise<ThaiAddressRow[]> | null = null;
@@ -32,14 +27,11 @@ export function isThaiAddressDatasetReady(): boolean {
   return cachedDataset !== null;
 }
 
-const normalizeText = (text: string) =>
-  text.trim().toLowerCase().replace(/\s+/g, '');
+const normalizeText = (text: string) => text.trim().toLowerCase().replace(/\s+/g, '');
 
 function getDataset(): ThaiAddressRow[] {
   if (!cachedDataset) {
-    throw new Error(
-      'Thai address dataset not loaded. Call preloadThaiAddressDataset() first.',
-    );
+    throw new Error('Thai address dataset not loaded. Call preloadThaiAddressDataset() first.');
   }
 
   return cachedDataset;
@@ -112,8 +104,6 @@ export function getSubdistrictsWithPostal(
   }));
 }
 
-export const normalizeSearch = (text: string) =>
-  text.trim().toLowerCase().replace(/\s+/g, '');
+export const normalizeSearch = (text: string) => text.trim().toLowerCase().replace(/\s+/g, '');
 
-export const trimValue = (value: unknown) =>
-  typeof value === 'string' ? value.trim() : value;
+export const trimValue = (value: unknown) => (typeof value === 'string' ? value.trim() : value);

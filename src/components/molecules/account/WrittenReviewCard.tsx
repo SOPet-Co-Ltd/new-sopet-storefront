@@ -12,7 +12,10 @@ type WrittenReviewCardProps = {
   review: CustomerReview;
 };
 
-const REVIEW_STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'error' }> = {
+const REVIEW_STATUS_LABELS: Record<
+  string,
+  { label: string; variant: 'default' | 'success' | 'warning' | 'error' }
+> = {
   pending: { label: 'รอตรวจสอบ', variant: 'warning' },
   approved: { label: 'อนุมัติแล้ว', variant: 'success' },
   rejected: { label: 'ไม่ผ่านการตรวจสอบ', variant: 'error' },
@@ -61,12 +64,16 @@ export function WrittenReviewCard({ review }: WrittenReviewCardProps) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <Link
-              className={cn('line-clamp-2 sop-body-sm-medium text-sop-neutral-gray-200 underline-offset-2 hover:underline')}
+              className={cn(
+                'line-clamp-2 sop-body-sm-medium text-sop-neutral-gray-200 underline-offset-2 hover:underline',
+              )}
               href={productHref}
             >
               {review.productName}
             </Link>
-            <AccountStatusBadge variant={statusConfig.variant}>{statusConfig.label}</AccountStatusBadge>
+            <AccountStatusBadge variant={statusConfig.variant}>
+              {statusConfig.label}
+            </AccountStatusBadge>
           </div>
 
           <div className="mt-2">

@@ -4,10 +4,7 @@ import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccountReviewsPage } from '@/components/pages/AccountReviewsPage';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
-import {
-  sampleMyReview,
-  sampleReviewableItem,
-} from '@/test/mocks/fixtures/account';
+import { sampleMyReview, sampleReviewableItem } from '@/test/mocks/fixtures/account';
 import { server } from '@/test/mocks/server';
 
 const mockPush = vi.fn();
@@ -285,10 +282,7 @@ describe('AccountReviewsPage', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'รีวิวสินค้า' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'ให้ 5 ดาว' }));
-    await user.type(
-      screen.getByPlaceholderText('แบ่งปันประสบการณ์ของคุณ'),
-      'ดีมาก',
-    );
+    await user.type(screen.getByPlaceholderText('แบ่งปันประสบการณ์ของคุณ'), 'ดีมาก');
     await user.click(screen.getByRole('button', { name: 'ยืนยัน' }));
 
     await waitFor(() => {

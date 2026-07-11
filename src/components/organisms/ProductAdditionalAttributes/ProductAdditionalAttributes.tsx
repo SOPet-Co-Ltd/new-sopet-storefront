@@ -17,9 +17,7 @@ export default function ProductAdditionalAttributes({
         ข้อมูลเพิ่มเติม
       </summary>
       <div className="mt-4 flex flex-col gap-3">
-        {warning && (
-          <p className="sop-body-sm-regular text-sop-system-warning-500">{warning}</p>
-        )}
+        {warning && <p className="sop-body-sm-regular text-sop-system-warning-500">{warning}</p>}
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (

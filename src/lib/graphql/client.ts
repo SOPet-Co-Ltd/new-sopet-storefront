@@ -2,11 +2,7 @@ import { HttpLink } from '@apollo/client';
 import { split } from '@apollo/client';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { getMainDefinition } from '@apollo/client/utilities';
-import type {
-  DocumentNode,
-  OperationVariables,
-  TypedDocumentNode,
-} from '@apollo/client';
+import type { DocumentNode, OperationVariables, TypedDocumentNode } from '@apollo/client';
 import { ApolloClient, InMemoryCache } from '@apollo/client-integration-nextjs';
 import { from } from '@apollo/client/link';
 import { createClient } from 'graphql-ws';
@@ -46,9 +42,7 @@ function createApolloLink() {
   const splitLink = split(
     ({ query }) => {
       const definition = getMainDefinition(query);
-      return (
-        definition.kind === 'OperationDefinition' && definition.operation === 'subscription'
-      );
+      return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
     },
     wsLink,
     from([createAuthLink(), httpLink]),

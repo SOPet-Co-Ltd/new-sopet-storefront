@@ -97,9 +97,7 @@ export function CardPaymentForm({
           data-testid="card-cvv-input"
           value={value.cvv}
           maxLength={getCvvLength(value.cardNumber)}
-          onChange={(event) =>
-            updateField('cvv', formatCvv(event.target.value, value.cardNumber))
-          }
+          onChange={(event) => updateField('cvv', formatCvv(event.target.value, value.cardNumber))}
         />
       </div>
 
@@ -116,9 +114,7 @@ export function CardPaymentForm({
         </label>
       ) : null}
 
-      {error ? (
-        <p className="sop-body-xs-regular text-sop-system-error-400">{error}</p>
-      ) : null}
+      {error ? <p className="sop-body-xs-regular text-sop-system-error-400">{error}</p> : null}
     </div>
   );
 }

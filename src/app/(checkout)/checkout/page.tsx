@@ -13,10 +13,7 @@ import type {
   GuestCheckoutField,
   GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
-import {
-  consumeCheckoutEntryAllowed,
-  getPendingCheckout,
-} from '@/lib/checkout/pendingCheckout';
+import { consumeCheckoutEntryAllowed, getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { useCart } from '@/lib/providers/CartProvider';
@@ -33,9 +30,7 @@ const EMPTY_GUEST_FORM: GuestCheckoutFormState = {
   email: '',
 };
 
-const FORM_FIELD_TO_ERROR_KEY: Partial<
-  Record<keyof GuestCheckoutFormState, GuestCheckoutField>
-> = {
+const FORM_FIELD_TO_ERROR_KEY: Partial<Record<keyof GuestCheckoutFormState, GuestCheckoutField>> = {
   contactPhone: 'guestPhone',
   recipientPhone: 'recipientPhone',
   recipientFullName: 'recipientName',
@@ -71,9 +66,7 @@ export default function CheckoutPage() {
   } = useAddresses();
 
   const [guestForm, setGuestForm] = useState<GuestCheckoutFormState>(EMPTY_GUEST_FORM);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<GuestCheckoutField, string>>>(
-    {},
-  );
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<GuestCheckoutField, string>>>({});
   const [showFieldErrors, setShowFieldErrors] = useState(false);
   const [saveAddressChecked, setSaveAddressChecked] = useState(false);
 
@@ -176,10 +169,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-      <CheckoutMobileBottomBar
-        guestForm={guestForm}
-        addressSubmitContext={addressSubmitContext}
-      />
+      <CheckoutMobileBottomBar guestForm={guestForm} addressSubmitContext={addressSubmitContext} />
     </div>
   );
 }

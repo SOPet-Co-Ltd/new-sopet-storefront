@@ -68,9 +68,7 @@ export function OrderListItem({ order, showReviewedTag = false }: OrderListItemP
         ))}
       </ul>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-sop-neutral-grayalpha-100 pt-3">
-        <p className="sop-body-sm-regular text-sop-neutral-gray-400">
-          {itemCount} รายการ
-        </p>
+        <p className="sop-body-sm-regular text-sop-neutral-gray-400">{itemCount} รายการ</p>
         <p className="sop-body-sm-medium text-sop-secondary-600">{formatPrice(order.total)}</p>
       </div>
     </Link>

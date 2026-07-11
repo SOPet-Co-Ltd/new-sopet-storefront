@@ -27,9 +27,7 @@ export function AccountTabBar({
   children,
   className,
 }: AccountTabBarProps) {
-  const [uncontrolledValue, setUncontrolledValue] = useState(
-    defaultValue ?? tabs[0]?.id ?? '',
-  );
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue ?? tabs[0]?.id ?? '');
   const activeTab = value ?? uncontrolledValue;
 
   const handleSelect = (tabId: string) => {

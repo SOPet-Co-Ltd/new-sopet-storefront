@@ -86,10 +86,7 @@ function toLocalThaiPhone(phone: string): string {
   return normalizeThaiPhoneNumber(phone);
 }
 
-function validatePhoneField(
-  value: string,
-  requiredMessage: string,
-): string | undefined {
+function validatePhoneField(value: string, requiredMessage: string): string | undefined {
   const trimmed = value.trim();
 
   if (!trimmed) {
@@ -162,10 +159,7 @@ function validateShippingFields(
     errors.province = provinceError;
   }
 
-  const postalCodeError = validateRequiredText(
-    formState.postalCode,
-    POSTAL_CODE_REQUIRED_MESSAGE,
-  );
+  const postalCodeError = validateRequiredText(formState.postalCode, POSTAL_CODE_REQUIRED_MESSAGE);
   if (postalCodeError) {
     errors.postalCode = postalCodeError;
   }
@@ -189,10 +183,7 @@ export function validateGuestCheckoutForm(
 ): GuestCheckoutValidationResult {
   const errors = validateShippingFields(formState);
 
-  const guestPhoneError = validatePhoneField(
-    formState.contactPhone,
-    GUEST_PHONE_REQUIRED_MESSAGE,
-  );
+  const guestPhoneError = validatePhoneField(formState.contactPhone, GUEST_PHONE_REQUIRED_MESSAGE);
   if (guestPhoneError) {
     errors.guestPhone = guestPhoneError;
   }

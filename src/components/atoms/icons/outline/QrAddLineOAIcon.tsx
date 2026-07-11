@@ -1,11 +1,8 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type QrAddLineOAIconProps = Omit<OutlineIconProps, "children">
+export type QrAddLineOAIconProps = Omit<OutlineIconProps, 'children'>;
 
-export function QrAddLineOAIcon({
-  color = "currentColor",
-  ...props
-}: QrAddLineOAIconProps) {
+export function QrAddLineOAIcon({ color = 'currentColor', ...props }: QrAddLineOAIconProps) {
   return (
     <OutlineIcon viewBox="0 0 126 126" color={color} {...props}>
       <g fill={color} stroke="none">
@@ -1323,5 +1320,5 @@ export function QrAddLineOAIcon({
         />
       </g>
     </OutlineIcon>
-  )
+  );
 }

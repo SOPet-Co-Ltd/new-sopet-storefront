@@ -79,11 +79,11 @@ export default function UserRegisterPage() {
         </p>
         <AccountCard>
           <RegisterForm
-          key={customer?.id ?? 'guest'}
-          customerId={customer?.id ?? 'guest'}
-          initialFullName={customer?.fullName ?? ''}
-          initialEmail={customer?.email ?? ''}
-        />
+            key={customer?.id ?? 'guest'}
+            customerId={customer?.id ?? 'guest'}
+            initialFullName={customer?.fullName ?? ''}
+            initialEmail={customer?.email ?? ''}
+          />
         </AccountCard>
       </div>
     </AccountLayout>

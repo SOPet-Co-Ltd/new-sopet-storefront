@@ -77,9 +77,7 @@ export function useBannerCarousel({
   const transitionRafRef = useRef<number | null>(null);
   const transitionRaf2Ref = useRef<number | null>(null);
 
-  const currentIndex = hasLoop
-    ? ((displayIndex - 1 + totalBanners) % totalBanners) + 1
-    : 1;
+  const currentIndex = hasLoop ? ((displayIndex - 1 + totalBanners) % totalBanners) + 1 : 1;
 
   const clearAutoTimer = useCallback(() => {
     if (autoTimerRef.current !== null) {
@@ -112,10 +110,7 @@ export function useBannerCarousel({
     nextAutoAtRef.current = nextAutoAt;
 
     if (isDraggingRef.current) {
-      autoTimerRef.current = window.setTimeout(
-        () => scheduleAutoplayRef.current(),
-        dragPollMs,
-      );
+      autoTimerRef.current = window.setTimeout(() => scheduleAutoplayRef.current(), dragPollMs);
       return;
     }
 
@@ -124,10 +119,7 @@ export function useBannerCarousel({
     if (remainingMs <= 0) {
       setDisplayIndex((prevIndex) => Math.min(prevIndex + 1, totalBanners + 1));
       nextAutoAtRef.current = Date.now() + autoSlideMs;
-      autoTimerRef.current = window.setTimeout(
-        () => scheduleAutoplayRef.current(),
-        autoSlideMs,
-      );
+      autoTimerRef.current = window.setTimeout(() => scheduleAutoplayRef.current(), autoSlideMs);
       return;
     }
 
@@ -298,10 +290,7 @@ export function useBannerCarousel({
     didDragRef.current = false;
   }, []);
 
-  const bannersKey = useMemo(
-    () => banners.map((banner) => banner.id).join(','),
-    [banners],
-  );
+  const bannersKey = useMemo(() => banners.map((banner) => banner.id).join(','), [banners]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -330,13 +319,7 @@ export function useBannerCarousel({
       clearAutoTimer();
       clearTransitionRafs();
     };
-  }, [
-    autoSlideMs,
-    bannersKey,
-    clearAutoTimer,
-    clearTransitionRafs,
-    hasLoop,
-  ]);
+  }, [autoSlideMs, bannersKey, clearAutoTimer, clearTransitionRafs, hasLoop]);
 
   return {
     loopedBanners,

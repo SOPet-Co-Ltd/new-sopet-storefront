@@ -22,20 +22,14 @@ export function buildCategoryHref(slug: string): string {
   return `/categories/${encodeRouteParam(slug)}`;
 }
 
-export function resolveCategoryBySlug(
-  categories: Category[],
-  slug: string,
-): Category | undefined {
+export function resolveCategoryBySlug(categories: Category[], slug: string): Category | undefined {
   const decodedSlug = decodeRouteParam(slug);
 
   return categories.find((item) => decodeRouteParam(item.slug) === decodedSlug);
 }
 
 /** Products API filters by category name, while URLs use the taxonomy slug. */
-export function resolveCategoryFilterName(
-  categories: Category[],
-  slug: string,
-): string {
+export function resolveCategoryFilterName(categories: Category[], slug: string): string {
   const category = resolveCategoryBySlug(categories, slug);
   return category?.name ?? decodeRouteParam(slug);
 }

@@ -12,7 +12,11 @@ import { Input } from '@/components/atoms/Input';
 import { ThaiPhoneInput } from '@/components/molecules/ThaiPhoneInput';
 import { FooterPhoneIcon } from '@/components/atoms/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { formatThaiPhoneNumber, isValidThaiPhoneNumber, normalizeThaiPhoneNumber } from '@/lib/helpers/phone';
+import {
+  formatThaiPhoneNumber,
+  isValidThaiPhoneNumber,
+  normalizeThaiPhoneNumber,
+} from '@/lib/helpers/phone';
 
 const PHONE_OTP_STEPS = ['กรอกเบอร์โทร', 'ยืนยัน OTP'] as const;
 

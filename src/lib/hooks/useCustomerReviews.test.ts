@@ -7,10 +7,7 @@ import {
   useCustomerReviews,
 } from '@/lib/hooks/useCustomerReviews';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
-import {
-  sampleMyReview,
-  sampleReviewableItem,
-} from '@/test/mocks/fixtures/account';
+import { sampleMyReview, sampleReviewableItem } from '@/test/mocks/fixtures/account';
 import { server } from '@/test/mocks/server';
 
 const createWrapper = createApolloTestWrapper;

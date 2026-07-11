@@ -83,11 +83,9 @@ export async function loadOmise(): Promise<OmiseClient> {
 
       if (existing) {
         existing.addEventListener('load', handleReady, { once: true });
-        existing.addEventListener(
-          'error',
-          () => reject(new Error('ไม่สามารถโหลด Omise.js ได้')),
-          { once: true },
-        );
+        existing.addEventListener('error', () => reject(new Error('ไม่สามารถโหลด Omise.js ได้')), {
+          once: true,
+        });
         return;
       }
 
@@ -134,10 +132,7 @@ export async function tokenizeCard(input: TokenizeCardInput): Promise<string> {
       (statusCode, response) => {
         if (statusCode !== 200 || !response.id) {
           reject(
-            new Error(
-              response.message ??
-                'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร',
-            ),
+            new Error(response.message ?? 'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร'),
           );
           return;
         }

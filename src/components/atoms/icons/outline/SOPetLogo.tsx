@@ -1,15 +1,15 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-const BRAND_COLOR = "#9C6ADE"
+const BRAND_COLOR = '#9C6ADE';
 
-export type SOPetLogoProps = Omit<OutlineIconProps, "children" | "color">
+export type SOPetLogoProps = Omit<OutlineIconProps, 'children' | 'color'>;
 
 export function SOPetLogo({ className, ...props }: SOPetLogoProps) {
   return (
     <OutlineIcon
       viewBox="0 0 24 14"
       color={BRAND_COLOR}
-      className={["h-auto aspect-[24/14]", className].filter(Boolean).join(" ")}
+      className={['h-auto aspect-[24/14]', className].filter(Boolean).join(' ')}
       {...props}
     >
       <g fill={BRAND_COLOR} stroke="none">
@@ -54,5 +54,5 @@ export function SOPetLogo({ className, ...props }: SOPetLogoProps) {
         />
       </g>
     </OutlineIcon>
-  )
+  );
 }

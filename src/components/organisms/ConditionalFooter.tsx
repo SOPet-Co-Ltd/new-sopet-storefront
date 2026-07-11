@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { usePathname } from "next/navigation";
+import { usePathname } from 'next/navigation';
 
-import { Footer } from "@/components/organisms/Footer";
+import { Footer } from '@/components/organisms/Footer';
 
-const HIDDEN_FOOTER_PATHS = ["/cart"];
+const HIDDEN_FOOTER_PATHS = ['/cart'];
 
 export function ConditionalFooter() {
   const pathname = usePathname();

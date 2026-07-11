@@ -96,9 +96,11 @@ export function CheckoutStorePromotionModal({
 
   const selectedPromotion = useMemo(() => {
     if (selection.type !== 'promo') return null;
-    return allPromotions.find(
-      (promotion) => promotion.code.toUpperCase() === selection.code.toUpperCase(),
-    ) ?? null;
+    return (
+      allPromotions.find(
+        (promotion) => promotion.code.toUpperCase() === selection.code.toUpperCase(),
+      ) ?? null
+    );
   }, [allPromotions, selection]);
 
   const footerDiscountAmount = useMemo(() => {
@@ -263,9 +265,7 @@ export function CheckoutStorePromotionModal({
         <div
           className={cn(
             'border-t border-sop-neutral-grayalpha-200 px-sop-16px pb-sop-16px pt-sop-16px',
-            showApplyFooter
-              ? 'flex items-end justify-between gap-sop-16px'
-              : 'flex justify-center',
+            showApplyFooter ? 'flex items-end justify-between gap-sop-16px' : 'flex justify-center',
           )}
         >
           {showApplyFooter ? (

@@ -1,6 +1,6 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type FacebookColorIconProps = Omit<FilledIconProps, "children" | "color">
+export type FacebookColorIconProps = Omit<FilledIconProps, 'children' | 'color'>;
 
 export function FacebookColorIcon(props: FacebookColorIconProps) {
   return (
@@ -14,5 +14,5 @@ export function FacebookColorIcon(props: FacebookColorIconProps) {
         fill="white"
       />
     </FilledIcon>
-  )
+  );
 }

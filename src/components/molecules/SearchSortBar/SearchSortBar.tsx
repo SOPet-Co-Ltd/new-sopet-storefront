@@ -30,7 +30,11 @@ type SearchSortBarProps = {
   listingPrefetch?: Omit<ProductsListingPrefetchParams, 'sortBy' | 'sortOrder' | 'page'>;
 };
 
-function buildSortHref(pathname: string, searchParams: URLSearchParams, sort: SearchSortValue): string {
+function buildSortHref(
+  pathname: string,
+  searchParams: URLSearchParams,
+  sort: SearchSortValue,
+): string {
   const params = new URLSearchParams(searchParams.toString());
 
   if (sort === 'relevance') {

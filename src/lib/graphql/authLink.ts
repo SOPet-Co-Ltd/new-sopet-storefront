@@ -3,11 +3,7 @@ import { print } from 'graphql';
 import { from, type ApolloLink } from '@apollo/client/link';
 import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
-import {
-  CombinedGraphQLErrors,
-  ServerError,
-  ServerParseError,
-} from '@apollo/client/errors';
+import { CombinedGraphQLErrors, ServerError, ServerParseError } from '@apollo/client/errors';
 import { GRAPHQL_URL } from '@/lib/config';
 import { RefreshTokenDocument } from '@/lib/graphql/generated/graphql';
 
@@ -65,9 +61,7 @@ export function notifyAuthFailure(): void {
   }
 }
 
-export function buildAuthHeaders(
-  headers: Record<string, string> = {},
-): Record<string, string> {
+export function buildAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
   const token = getAccessToken();
   if (!token) {
     return headers;
@@ -130,9 +124,7 @@ async function runRefreshOnce(): Promise<void> {
 
 function createBearerContextLink(): SetContextLink {
   return new SetContextLink((prevContext) => ({
-    headers: buildAuthHeaders(
-      (prevContext.headers as Record<string, string> | undefined) ?? {},
-    ),
+    headers: buildAuthHeaders((prevContext.headers as Record<string, string> | undefined) ?? {}),
   }));
 }
 

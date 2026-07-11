@@ -21,8 +21,7 @@ export function useOrderPendingReviews(
   });
 
   const pendingReviewItems = useMemo(
-    () =>
-      (data?.customerReviewableItems ?? []).filter((item) => item.orderId === orderId),
+    () => (data?.customerReviewableItems ?? []).filter((item) => item.orderId === orderId),
     [data?.customerReviewableItems, orderId],
   );
 

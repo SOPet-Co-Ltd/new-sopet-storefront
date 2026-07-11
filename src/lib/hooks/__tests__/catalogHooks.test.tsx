@@ -45,10 +45,9 @@ describe('useStore', () => {
       }),
     );
 
-    const { result } = renderHook(
-      () => useStore({ slug: 'sopet-pet-shop' }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useStore({ slug: 'sopet-pet-shop' }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.store?.name).toBe('SOPet Pet Shop');

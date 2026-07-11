@@ -106,7 +106,8 @@ export function BannerSection() {
             const key = `${banner.id}-${index}`;
             const isFirstVisibleBanner = index === (hasLoop ? 1 : 0);
             const hasMobileImage = Boolean(banner.mobile_image_url);
-            const slideClassName = 'relative h-full w-full shrink-0 grow-0 basis-full overflow-hidden';
+            const slideClassName =
+              'relative h-full w-full shrink-0 grow-0 basis-full overflow-hidden';
             const imageClassName = 'h-full w-full object-cover object-center';
             const image = (
               <>
@@ -137,11 +138,7 @@ export function BannerSection() {
 
             if (!banner.href) {
               return (
-                <div
-                  key={key}
-                  className={slideClassName}
-                  onClickCapture={preventClickAfterDrag}
-                >
+                <div key={key} className={slideClassName} onClickCapture={preventClickAfterDrag}>
                   {image}
                 </div>
               );

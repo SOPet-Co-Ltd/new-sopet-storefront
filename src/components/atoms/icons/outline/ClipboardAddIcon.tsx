@@ -1,11 +1,8 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type ClipboardAddIconProps = Omit<OutlineIconProps, "children">
+export type ClipboardAddIconProps = Omit<OutlineIconProps, 'children'>;
 
-export function ClipboardAddIcon({
-  color = "currentColor",
-  ...props
-}: ClipboardAddIconProps) {
+export function ClipboardAddIcon({ color = 'currentColor', ...props }: ClipboardAddIconProps) {
   return (
     <OutlineIcon viewBox="0 0 24 24" color={color} {...props}>
       <g fill={color} stroke="none">
@@ -17,5 +14,5 @@ export function ClipboardAddIcon({
         />
       </g>
     </OutlineIcon>
-  )
+  );
 }

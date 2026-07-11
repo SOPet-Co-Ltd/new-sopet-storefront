@@ -104,7 +104,11 @@ export function NavbarSearch() {
   };
 
   return (
-    <form role="search" onSubmit={handleSubmit} className="relative flex min-w-0 flex-1 items-center">
+    <form
+      role="search"
+      onSubmit={handleSubmit}
+      className="relative flex min-w-0 flex-1 items-center"
+    >
       <label htmlFor={SEARCH_INPUT_ID} className="sr-only">
         {SEARCH_LABEL}
       </label>

@@ -21,8 +21,7 @@ export const EMPTY_CHECKOUT_CARD_FORM: CheckoutCardFormState = {
 };
 
 export type CardPaymentPayload =
-  | { type: 'token'; omiseToken: string }
-  | { type: 'saved'; savedPaymentMethodId: string };
+  { type: 'token'; omiseToken: string } | { type: 'saved'; savedPaymentMethodId: string };
 
 type CheckoutCardPaymentBridge = {
   getCardForm: () => CheckoutCardFormState;
@@ -36,9 +35,7 @@ type CheckoutCardPaymentBridge = {
 
 let bridge: CheckoutCardPaymentBridge | null = null;
 
-export function registerCheckoutCardPaymentBridge(
-  next: CheckoutCardPaymentBridge | null,
-): void {
+export function registerCheckoutCardPaymentBridge(next: CheckoutCardPaymentBridge | null): void {
   bridge = next;
 }
 
@@ -73,9 +70,7 @@ export function validateCheckoutCardForm(form: CheckoutCardFormState): string | 
 
   if (!isValidCvv(form.cvv, form.cardNumber)) {
     const cvvLength = getCvvLength(form.cardNumber);
-    return cvvLength === 4
-      ? 'กรุณากรอกรหัส CVV 4 หลัก'
-      : 'กรุณากรอกรหัส CVV 3 หลัก';
+    return cvvLength === 4 ? 'กรุณากรอกรหัส CVV 4 หลัก' : 'กรุณากรอกรหัส CVV 3 หลัก';
   }
 
   try {

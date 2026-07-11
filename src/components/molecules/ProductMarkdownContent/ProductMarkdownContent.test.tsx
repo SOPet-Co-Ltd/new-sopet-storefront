@@ -7,16 +7,12 @@ describe('ProductDescriptionContent', () => {
     render(<ProductDescriptionContent description="Durable rubber chew toy for medium dogs." />);
 
     expect(screen.getByTestId('product-markdown-content')).toBeInTheDocument();
-    expect(
-      screen.getByText('Durable rubber chew toy for medium dogs.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Durable rubber chew toy for medium dogs.')).toBeInTheDocument();
   });
 
   it('renders markdown headings and lists', () => {
     render(
-      <ProductDescriptionContent
-        description={'## Features\n\n- Durable\n- **Safe** for dogs'}
-      />,
+      <ProductDescriptionContent description={'## Features\n\n- Durable\n- **Safe** for dogs'} />,
     );
 
     expect(screen.getByRole('heading', { level: 2, name: 'Features' })).toBeInTheDocument();

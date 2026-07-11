@@ -6,13 +6,7 @@ import { sampleSavedAddress, sampleSavedAddress2 } from '@/test/mocks/fixtures/c
 
 describe('AddressCard', () => {
   it('renders label, default badge, formatted contact, and address line for default address', () => {
-    render(
-      <AddressCard
-        address={sampleSavedAddress}
-        onSetDefault={vi.fn()}
-        onDelete={vi.fn()}
-      />,
-    );
+    render(<AddressCard address={sampleSavedAddress} onSetDefault={vi.fn()} onDelete={vi.fn()} />);
 
     expect(screen.getByTestId('address-card-label')).toHaveTextContent('บ้าน');
     expect(screen.getByTestId('address-default-badge')).toHaveTextContent('ที่อยู่หลัก');
@@ -25,13 +19,7 @@ describe('AddressCard', () => {
   });
 
   it('renders set-default button for non-default address without badge', () => {
-    render(
-      <AddressCard
-        address={sampleSavedAddress2}
-        onSetDefault={vi.fn()}
-        onDelete={vi.fn()}
-      />,
-    );
+    render(<AddressCard address={sampleSavedAddress2} onSetDefault={vi.fn()} onDelete={vi.fn()} />);
 
     expect(screen.getByTestId('address-card-label')).toHaveTextContent('ออฟฟิศ');
     expect(screen.queryByTestId('address-default-badge')).not.toBeInTheDocument();
@@ -51,13 +39,7 @@ describe('AddressCard', () => {
   });
 
   it('links edit to the address edit route', () => {
-    render(
-      <AddressCard
-        address={sampleSavedAddress}
-        onSetDefault={vi.fn()}
-        onDelete={vi.fn()}
-      />,
-    );
+    render(<AddressCard address={sampleSavedAddress} onSetDefault={vi.fn()} onDelete={vi.fn()} />);
 
     expect(screen.getByTestId('address-card-edit-link')).toHaveAttribute(
       'href',
@@ -85,11 +67,7 @@ describe('AddressCard', () => {
     const onSetDefault = vi.fn();
 
     render(
-      <AddressCard
-        address={sampleSavedAddress2}
-        onSetDefault={onSetDefault}
-        onDelete={onDelete}
-      />,
+      <AddressCard address={sampleSavedAddress2} onSetDefault={onSetDefault} onDelete={onDelete} />,
     );
 
     await user.click(screen.getByTestId('address-card-delete-button'));

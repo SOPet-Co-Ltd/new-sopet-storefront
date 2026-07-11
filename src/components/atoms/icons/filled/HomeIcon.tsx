@@ -1,22 +1,20 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type HomeIconProps = Omit<FilledIconProps, "children">
+export type HomeIconProps = Omit<FilledIconProps, 'children'>;
 
-export function HomeIcon({ color = "currentColor", ...props }: HomeIconProps) {
+export function HomeIcon({ color = 'currentColor', ...props }: HomeIconProps) {
   return (
     <FilledIcon viewBox="0 0 24 24" color={color} {...props}>
       <path
         fillRule="evenodd"
         clipRule="evenodd"
         d="M8.76256 11.7625C9.09075 11.4343 9.53587 11.25 10 11.25H14C14.4641 11.25 14.9092 11.4343 15.2374 11.7625C15.5656 12.0907 15.75 12.5358 15.75 13V21C15.75 21.4142 15.4142 21.75 15 21.75C14.5858 21.75 14.25 21.4142 14.25 21V13C14.25 12.9337 14.2237 12.8701 14.1768 12.8232C14.1299 12.7763 14.0663 12.75 14 12.75H10C9.9337 12.75 9.87011 12.7763 9.82322 12.8232C9.77634 12.8701 9.75 12.9337 9.75 13V21C9.75 21.4142 9.41421 21.75 9 21.75C8.58579 21.75 8.25 21.4142 8.25 21V13C8.25 12.5358 8.43437 12.0907 8.76256 11.7625Z"
-       
       />
       <path
         fillRule="evenodd"
         clipRule="evenodd"
         d="M11.1949 3.04432L4.19314 9.0448C4.05426 9.16217 3.94265 9.30842 3.86612 9.47336C3.78958 9.6383 3.74996 9.81796 3.75 9.99979V19C3.75 19.3315 3.8817 19.6494 4.11612 19.8839C4.35054 20.1183 4.66848 20.25 5 20.25H19C19.3315 20.25 19.6495 20.1183 19.8839 19.8839C20.1183 19.6494 20.25 19.3315 20.25 19V9.99997C20.25 9.81813 20.2104 9.6383 20.1339 9.47336C20.0574 9.30842 19.9458 9.16216 19.8069 9.04479L19.8029 9.04146L12.8069 3.04579L12.8051 3.04432C12.5798 2.85457 12.2946 2.75049 12 2.75049C11.7054 2.75049 11.4202 2.85457 11.1949 3.04432Z"
-       
       />
     </FilledIcon>
-  )
+  );
 }

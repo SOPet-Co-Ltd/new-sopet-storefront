@@ -56,12 +56,7 @@ export function OrderPaymentForm({
           </p>
         </div>
         {onRetry ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-6 w-full"
-            onClick={onRetry}
-          >
+          <Button type="button" variant="outline" className="mt-6 w-full" onClick={onRetry}>
             ลองใหม่
           </Button>
         ) : null}

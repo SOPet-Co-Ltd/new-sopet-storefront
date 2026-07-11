@@ -3,17 +3,13 @@ import { formatCheckoutPrice } from '@/components/sections/CheckoutSection/check
 
 export type StorePromotion = ActiveStorePromotionsQuery['activeStorePromotions'][number];
 
-export type StorePromotionSelection =
-  | {
-      code: string;
-      name: string;
-      discountAmount: number;
-    }
-  | null;
+export type StorePromotionSelection = {
+  code: string;
+  name: string;
+  discountAmount: number;
+} | null;
 
-export type StorePromotionModalSelection =
-  | { type: 'promo'; code: string }
-  | { type: 'none' };
+export type StorePromotionModalSelection = { type: 'promo'; code: string } | { type: 'none' };
 
 export function formatPromotionDiscountTitle(promotion: StorePromotion): string {
   if (promotion.type === 'percentage') {
@@ -90,10 +86,7 @@ export function estimatePromotionDiscount(
   return Math.min(discountAmount, storeSubtotal);
 }
 
-export function isPromotionAvailable(
-  promotion: StorePromotion,
-  storeSubtotal: number,
-): boolean {
+export function isPromotionAvailable(promotion: StorePromotion, storeSubtotal: number): boolean {
   const minPurchase = promotion.minPurchaseAmount ?? 0;
   return storeSubtotal >= minPurchase;
 }

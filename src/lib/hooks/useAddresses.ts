@@ -22,10 +22,7 @@ export type UseAddressesResult = {
   error: Error | undefined;
   refetch: () => Promise<unknown>;
   createAddress: (input: CreateAddressInput) => Promise<SavedAddress | undefined>;
-  updateAddress: (
-    id: string,
-    input: UpdateAddressInput,
-  ) => Promise<SavedAddress | undefined>;
+  updateAddress: (id: string, input: UpdateAddressInput) => Promise<SavedAddress | undefined>;
   deleteAddress: (id: string) => Promise<boolean | undefined>;
   setDefaultAddress: (id: string) => Promise<SavedAddress | undefined>;
 };

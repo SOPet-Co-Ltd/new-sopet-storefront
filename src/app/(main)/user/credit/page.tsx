@@ -17,9 +17,10 @@ export default function UserCreditPage() {
   const handleDelete = async (id: string) => {
     const method = paymentMethods.find((item) => item.id === id);
     const isOnlyCard = paymentMethods.length === 1;
-    const confirmMessage = method?.isDefault && !isOnlyCard
-      ? 'ต้องการลบบัตรหลักนี้หรือไม่? ระบบจะตั้งบัตรอื่นเป็นบัตรหลักให้อัตโนมัติ'
-      : 'ต้องการลบบัตรนี้หรือไม่?';
+    const confirmMessage =
+      method?.isDefault && !isOnlyCard
+        ? 'ต้องการลบบัตรหลักนี้หรือไม่? ระบบจะตั้งบัตรอื่นเป็นบัตรหลักให้อัตโนมัติ'
+        : 'ต้องการลบบัตรนี้หรือไม่?';
 
     if (!window.confirm(confirmMessage)) return;
     setActionId(id);
@@ -64,9 +65,7 @@ export default function UserCreditPage() {
                       <p className="sop-body-sm-medium text-sop-neutral-gray-200">
                         {method.brand.toUpperCase()} •••• {method.lastFour}
                       </p>
-                      {method.isDefault ? (
-                        <AccountStatusBadge>บัตรหลัก</AccountStatusBadge>
-                      ) : null}
+                      {method.isDefault ? <AccountStatusBadge>บัตรหลัก</AccountStatusBadge> : null}
                     </div>
                     <p className="mt-1 sop-body-xs-regular text-sop-neutral-gray-400">
                       หมดอายุ {String(method.expiryMonth).padStart(2, '0')}/{method.expiryYear}

@@ -1,12 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import {
-  CheckIcon,
-  RightArrowIcon,
-  TicketSaleIcon,
-  TruckIcon,
-} from '@/components/atoms/icons';
+import { CheckIcon, RightArrowIcon, TicketSaleIcon, TruckIcon } from '@/components/atoms/icons';
 import { useShippingOptions } from '@/lib/hooks/useShippingOptions';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { formatCheckoutPrice } from './checkoutOrderItemUtils';

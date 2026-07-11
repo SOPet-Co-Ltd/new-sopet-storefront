@@ -40,10 +40,7 @@ export function ProductCarouselIndicator({
   }, [emblaApi, selectedIndex]);
 
   return (
-    <div
-      className="flex w-full items-center gap-2"
-      data-testid="product-gallery-thumbnails"
-    >
+    <div className="flex w-full items-center gap-2" data-testid="product-gallery-thumbnails">
       <button
         type="button"
         onClick={onPrev}
@@ -76,9 +73,7 @@ export function ProductCarouselIndicator({
                   height={80}
                   className={cn(
                     'size-20 border-4 object-cover transition-colors duration-300',
-                    selectedIndex === index
-                      ? 'border-sop-secondary-500'
-                      : 'border-transparent',
+                    selectedIndex === index ? 'border-sop-secondary-500' : 'border-transparent',
                   )}
                   draggable={false}
                 />
@@ -96,7 +91,7 @@ export function ProductCarouselIndicator({
           'flex size-8 shrink-0 items-center justify-center',
           selectedIndex === slides.length - 1 ? 'opacity-50 cursor-not-allowed' : '',
           selectedIndex === 0 ? 'cursor-not-allowed' : '',
-        )}  
+        )}
       >
         <RightArrowIcon size={{ mobile: 20, desktop: 20 }} strokeWidth={1} color="#949495" />
       </button>

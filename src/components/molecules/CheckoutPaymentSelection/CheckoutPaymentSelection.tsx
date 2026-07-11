@@ -102,8 +102,7 @@ export function CheckoutPaymentSelection() {
   const saveCardForNextTimeRef = useRef(saveCardForNextTime);
 
   const hasSavedCards = isAuthenticated && paymentMethods.length > 0;
-  const showSavedCards =
-    paymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
+  const showSavedCards = paymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
   const showNewCardForm = paymentMethod === 'card' && !showSavedCards;
 
   useLayoutEffect(() => {
@@ -191,11 +190,7 @@ export function CheckoutPaymentSelection() {
       </div>
 
       <div className="mt-sop-16px flex flex-col gap-sop-20px">
-        <div
-          role="radiogroup"
-          aria-label="วิธีการชำระเงิน"
-          className="flex flex-col gap-sop-12px"
-        >
+        <div role="radiogroup" aria-label="วิธีการชำระเงิน" className="flex flex-col gap-sop-12px">
           {PAYMENT_OPTIONS.map((option) => (
             <PaymentMethodOption
               key={option.value}

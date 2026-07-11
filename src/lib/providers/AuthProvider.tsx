@@ -21,12 +21,7 @@ import {
   type CustomerProfile,
   type MessagePayload,
 } from '@/lib/graphql/generated/graphql';
-import {
-  clearTokens,
-  getAccessToken,
-  setOnAuthFailure,
-  setTokens,
-} from '@/lib/graphql/authLink';
+import { clearTokens, getAccessToken, setOnAuthFailure, setTokens } from '@/lib/graphql/authLink';
 import { getSessionId } from '@/lib/session';
 
 export type AuthContextValue = {

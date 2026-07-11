@@ -1,6 +1,6 @@
-import { InlineIcon, type InlineIconProps } from "../InlineIcon"
+import { InlineIcon, type InlineIconProps } from '../InlineIcon';
 
-export type XIconProps = Omit<InlineIconProps, "children">
+export type XIconProps = Omit<InlineIconProps, 'children'>;
 
 export function XIcon({ strokeWidth = 2.4, ...props }: XIconProps) {
   return (
@@ -8,5 +8,5 @@ export function XIcon({ strokeWidth = 2.4, ...props }: XIconProps) {
       <path d="M18.75 5.25L5.25 18.75" />
       <path d="M18.75 18.75L5.25 5.25" />
     </InlineIcon>
-  )
+  );
 }

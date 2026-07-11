@@ -43,7 +43,9 @@ export function LoginForm({ notice = null }: LoginFormProps) {
       router.push(`/login/otp?phone=${encodeURIComponent(normalizedPhone)}`);
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
+        submitError instanceof Error
+          ? submitError.message
+          : 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
       );
     } finally {
       setLoading(false);

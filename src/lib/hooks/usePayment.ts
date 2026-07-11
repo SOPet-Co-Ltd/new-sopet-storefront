@@ -57,11 +57,7 @@ function isTerminalStatus(status: PaymentStatus): boolean {
   return status === 'paid' || status === 'failed' || status === 'refunded';
 }
 
-export function usePayment({
-  id,
-  orderId,
-  skip = false,
-}: UsePaymentParams = {}): UsePaymentResult {
+export function usePayment({ id, orderId, skip = false }: UsePaymentParams = {}): UsePaymentResult {
   const apolloClient = useApolloClient();
   const queryByOrderId = Boolean(orderId) && !id;
   const shouldQuery = !skip && Boolean(id || orderId);

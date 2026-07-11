@@ -22,8 +22,7 @@ export type UseProductByIdParams = {
 };
 
 export type UseProductParams =
-  | ({ mode: 'slug' } & UseProductBySlugParams)
-  | ({ mode: 'id' } & UseProductByIdParams);
+  ({ mode: 'slug' } & UseProductBySlugParams) | ({ mode: 'id' } & UseProductByIdParams);
 
 export type UseProductResult = {
   product: ProductDetail | null;

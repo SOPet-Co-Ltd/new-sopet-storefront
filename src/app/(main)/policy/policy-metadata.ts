@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata } from 'next';
 
-const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Sopet";
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Sopet';
 
 export function buildPolicyPageMetadata(options: {
   pathSegment: string;
@@ -8,9 +8,7 @@ export function buildPolicyPageMetadata(options: {
   description: string;
 }): Metadata {
   const { pathSegment, title, description } = options;
-  const base = (
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-  ).replace(/\/$/, "");
+  const base = (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
   const path = `/policy/${pathSegment}`;
   const canonical = `${base}${path}`;
 
@@ -24,7 +22,7 @@ export function buildPolicyPageMetadata(options: {
       description,
       url: canonical,
       siteName,
-      type: "website",
+      type: 'website',
     },
   };
 }

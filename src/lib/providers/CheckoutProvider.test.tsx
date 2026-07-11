@@ -3,17 +3,9 @@ import { resolve } from 'node:path';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  CheckoutProvider,
-  useCheckout,
-  type CheckoutContextValue,
-} from './CheckoutProvider';
+import { CheckoutProvider, useCheckout, type CheckoutContextValue } from './CheckoutProvider';
 
-function CheckoutProbe({
-  onContext,
-}: {
-  onContext: (context: CheckoutContextValue) => void;
-}) {
+function CheckoutProbe({ onContext }: { onContext: (context: CheckoutContextValue) => void }) {
   const context = useCheckout();
   onContext(context);
   return (
@@ -28,9 +20,10 @@ function CheckoutProbe({
   );
 }
 
-function renderCheckoutProbe(
-  onContext: (context: CheckoutContextValue) => void,
-): { container: HTMLDivElement; root: Root } {
+function renderCheckoutProbe(onContext: (context: CheckoutContextValue) => void): {
+  container: HTMLDivElement;
+  root: Root;
+} {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const root = createRoot(container);
@@ -88,9 +81,7 @@ describe('CheckoutProvider', () => {
       context!.setStep('payment');
     });
 
-    expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe(
-      'payment',
-    );
+    expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe('payment');
   });
 
   it('blocks advancing to payment when one store lacks shipping selection', () => {
@@ -106,9 +97,7 @@ describe('CheckoutProvider', () => {
       context!.setStep('payment');
     });
 
-    expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe(
-      'shipping',
-    );
+    expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe('shipping');
     expect(context!.canAdvanceToPayment()).toBe(false);
   });
 
@@ -197,9 +186,7 @@ describe('CheckoutProvider', () => {
     expect(context!.promotionCode).toBeNull();
     expect(context!.paymentMethod).toBeNull();
     expect(context!.requiredStoreIds).toEqual([]);
-    expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe(
-      'shipping',
-    );
+    expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe('shipping');
   });
 
   it('throws when useCheckout is used outside CheckoutProvider', () => {
@@ -218,10 +205,7 @@ describe('CheckoutProvider', () => {
 
 describe('CheckoutProvider imports', () => {
   it('does not import Zustand', () => {
-    const source = readFileSync(
-      resolve(import.meta.dirname, 'CheckoutProvider.tsx'),
-      'utf8',
-    );
+    const source = readFileSync(resolve(import.meta.dirname, 'CheckoutProvider.tsx'), 'utf8');
 
     expect(source).not.toMatch(/zustand/i);
   });

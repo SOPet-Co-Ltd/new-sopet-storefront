@@ -1,6 +1,6 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type JarOfPillsIconProps = Omit<FilledIconProps, "children" | "color">
+export type JarOfPillsIconProps = Omit<FilledIconProps, 'children' | 'color'>;
 
 export function JarOfPillsIcon(props: JarOfPillsIconProps) {
   return (
@@ -76,5 +76,5 @@ export function JarOfPillsIcon(props: JarOfPillsIconProps) {
         </linearGradient>
       </defs>
     </FilledIcon>
-  )
+  );
 }

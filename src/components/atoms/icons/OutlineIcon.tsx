@@ -1,19 +1,19 @@
-import type { ReactNode } from "react"
+import type { ReactNode } from 'react';
 
-import { IconBase } from "./IconBase"
-import type { IconColor, IconResponsiveSize, IconSvgProps } from "./types"
+import { IconBase } from './IconBase';
+import type { IconColor, IconResponsiveSize, IconSvgProps } from './types';
 
-const OUTLINE_STROKE_WIDTH = 1.5
+const OUTLINE_STROKE_WIDTH = 1.5;
 
 export type OutlineIconProps = IconSvgProps & {
-  size?: IconResponsiveSize
-  color?: IconColor
-  children: ReactNode
-}
+  size?: IconResponsiveSize;
+  color?: IconColor;
+  children: ReactNode;
+};
 
 export function OutlineIcon({
   size,
-  color = "currentColor",
+  color = 'currentColor',
   children,
   ...props
 }: OutlineIconProps) {
@@ -29,5 +29,5 @@ export function OutlineIcon({
     >
       {children}
     </IconBase>
-  )
+  );
 }

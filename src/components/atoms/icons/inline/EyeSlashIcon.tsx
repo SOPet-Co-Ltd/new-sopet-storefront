@@ -1,6 +1,6 @@
-import { InlineIcon, type InlineIconProps } from "../InlineIcon"
+import { InlineIcon, type InlineIconProps } from '../InlineIcon';
 
-export type EyeSlashIconProps = Omit<InlineIconProps, "children">
+export type EyeSlashIconProps = Omit<InlineIconProps, 'children'>;
 
 export function EyeSlashIcon(props: EyeSlashIconProps) {
   return (
@@ -11,5 +11,5 @@ export function EyeSlashIcon(props: EyeSlashIconProps) {
       <path d="M19.5572 15.8531C21.6009 14.0231 22.5 12 22.5 12C22.5 12 19.5 5.25001 12 5.25001C11.3505 5.24912 10.702 5.3018 10.0612 5.40751" />
       <path d="M6.9375 6.43127C3.11531 8.36627 1.5 12 1.5 12C1.5 12 4.5 18.75 12 18.75C13.7574 18.7638 15.4927 18.3589 17.0625 17.5688" />
     </InlineIcon>
-  )
+  );
 }

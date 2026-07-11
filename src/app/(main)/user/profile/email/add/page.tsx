@@ -60,11 +60,7 @@ export default function AddEmailPage() {
               {error}
             </p>
           ) : null}
-          <ProfileFormActions
-            submitLabel="บันทึกอีเมล"
-            loading={updating}
-            disabled={!canSubmit}
-          />
+          <ProfileFormActions submitLabel="บันทึกอีเมล" loading={updating} disabled={!canSubmit} />
         </form>
       </ProfileContactEditLayout>
     </AccountLayout>

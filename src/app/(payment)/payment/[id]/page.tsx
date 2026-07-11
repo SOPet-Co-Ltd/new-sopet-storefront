@@ -48,11 +48,7 @@ export default function PaymentPage() {
   }, [lookupMode, loading, error]);
 
   useEffect(() => {
-    if (
-      hasRedirected.current ||
-      payment?.status !== 'paid' ||
-      !payment.orderId
-    ) {
+    if (hasRedirected.current || payment?.status !== 'paid' || !payment.orderId) {
       return;
     }
 

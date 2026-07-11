@@ -100,7 +100,13 @@ export function useProducts({
     ],
   );
 
-  const { data, loading, error, fetchMore: apolloFetchMore, refetch } = useQuery(ProductsDocument, {
+  const {
+    data,
+    loading,
+    error,
+    fetchMore: apolloFetchMore,
+    refetch,
+  } = useQuery(ProductsDocument, {
     variables,
     skip,
     fetchPolicy: 'cache-and-network',

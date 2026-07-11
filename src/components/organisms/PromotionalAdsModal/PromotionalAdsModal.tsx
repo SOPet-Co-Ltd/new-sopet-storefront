@@ -31,11 +31,7 @@ export const parseDismissState = (value: string | null): AdsDismissState | null 
 
   try {
     const parsed = JSON.parse(value) as Partial<AdsDismissState> | null;
-    if (
-      !parsed ||
-      typeof parsed.dismissedAt !== 'number' ||
-      typeof parsed.expiresAt !== 'number'
-    ) {
+    if (!parsed || typeof parsed.dismissedAt !== 'number' || typeof parsed.expiresAt !== 'number') {
       return null;
     }
 

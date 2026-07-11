@@ -1,15 +1,15 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type MessengerCustomIconProps = Omit<FilledIconProps, "children">
+export type MessengerCustomIconProps = Omit<FilledIconProps, 'children'>;
 
-export function MessengerCustomIcon({ color = "currentColor", ...props }: MessengerCustomIconProps) {
+export function MessengerCustomIcon({
+  color = 'currentColor',
+  ...props
+}: MessengerCustomIconProps) {
   return (
     <FilledIcon viewBox="0 0 24 24" color={color} {...props}>
       <g clipPath="url(#clip0_103_6)">
-        <path
-          d="M24 11.6401C24 18.3285 18.7598 23.2803 12 23.2803C10.7861 23.2803 9.62112 23.12 8.52624 22.819C8.3136 22.76 8.08752 22.7767 7.88544 22.8656L5.50368 23.9172C4.88064 24.1923 4.17744 23.7492 4.1568 23.0686L4.09152 20.9335C4.08336 20.6705 3.96528 20.4247 3.76896 20.2495C1.43376 18.1615 0 15.1389 0 11.6401C0 4.95174 5.24016 0 12 0C18.7598 0 24 4.95174 24 11.6401Z"
-         
-        />
+        <path d="M24 11.6401C24 18.3285 18.7598 23.2803 12 23.2803C10.7861 23.2803 9.62112 23.12 8.52624 22.819C8.3136 22.76 8.08752 22.7767 7.88544 22.8656L5.50368 23.9172C4.88064 24.1923 4.17744 23.7492 4.1568 23.0686L4.09152 20.9335C4.08336 20.6705 3.96528 20.4247 3.76896 20.2495C1.43376 18.1615 0 15.1389 0 11.6401C0 4.95174 5.24016 0 12 0C18.7598 0 24 4.95174 24 11.6401Z" />
         <path
           d="M15.2581 14.991L19.436 8.534C19.856 7.88504 19.0779 7.12952 18.4414 7.56872L14.0802 10.5769C13.9333 10.6782 13.7394 10.681 13.5896 10.5841L9.71849 8.07944C9.39065 7.86728 8.95338 7.96136 8.7417 8.28872L4.56335 14.7457C4.14335 15.3946 4.92143 16.1502 5.5579 15.711L9.92009 12.7023C10.067 12.601 10.2609 12.5982 10.4106 12.6951L14.2808 15.1993C14.6087 15.4114 15.0459 15.3174 15.2581 14.99V14.991Z"
           fill="white"
@@ -21,5 +21,5 @@ export function MessengerCustomIcon({ color = "currentColor", ...props }: Messen
         </clipPath>
       </defs>
     </FilledIcon>
-  )
+  );
 }

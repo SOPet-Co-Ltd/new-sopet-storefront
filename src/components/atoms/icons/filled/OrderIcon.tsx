@@ -1,16 +1,15 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type OrderIconProps = Omit<FilledIconProps, "children">
+export type OrderIconProps = Omit<FilledIconProps, 'children'>;
 
-export function OrderIcon({ color = "currentColor", ...props }: OrderIconProps) {
+export function OrderIcon({ color = 'currentColor', ...props }: OrderIconProps) {
   return (
     <FilledIcon viewBox="0 0 24 24" color={color} {...props}>
       <path
         fillRule="evenodd"
         clipRule="evenodd"
         d="M12 1.25208C12.4821 1.25208 12.9557 1.37882 13.3734 1.61958L13.375 1.62051L20.375 5.6205C20.7926 5.86163 21.1395 6.20834 21.3809 6.62585C21.6222 7.04337 21.7495 7.51701 21.75 7.99926V16C21.7495 16.4823 21.6222 16.9567 21.3809 17.3742C21.1395 17.7917 20.7926 18.1384 20.375 18.3795L20.3721 18.3812L13.375 22.3795L13.3734 22.3805C12.9557 22.6212 12.4821 22.748 12 22.748C11.5179 22.748 11.0442 22.6212 10.6265 22.3804L10.625 22.3795L3.6279 18.3812L3.625 18.3795C3.20736 18.1384 2.86047 17.7917 2.61913 17.3742C2.3778 16.9567 2.2505 16.483 2.25 16.0008L2.25 8.00002C2.25049 7.51778 2.3778 7.04337 2.61913 6.62585C2.86047 6.20834 3.20736 5.86163 3.625 5.62051L3.62789 5.61884L10.6266 1.61961Z"
-       
       />
     </FilledIcon>
-  )
+  );
 }

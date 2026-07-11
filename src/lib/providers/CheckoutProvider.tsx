@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import type { StorePromotionSelection } from '@/lib/checkout/storePromotionUtils';
 
@@ -71,9 +64,7 @@ function hasShippingForAllStores(
     return false;
   }
 
-  return requiredStoreIds.every(
-    (storeId) => Boolean(shippingByStoreId[storeId]?.shippingOptionId),
-  );
+  return requiredStoreIds.every((storeId) => Boolean(shippingByStoreId[storeId]?.shippingOptionId));
 }
 
 export function CheckoutProvider({ children }: { children: ReactNode }) {
@@ -93,7 +84,10 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
 
   const setStep = useCallback((step: CheckoutStep) => {
     setState((prev) => {
-      if (step === 'payment' && !hasShippingForAllStores(prev.requiredStoreIds, prev.shippingByStoreId)) {
+      if (
+        step === 'payment' &&
+        !hasShippingForAllStores(prev.requiredStoreIds, prev.shippingByStoreId)
+      ) {
         return prev;
       }
 
@@ -105,18 +99,15 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const setShipping = useCallback(
-    (storeId: string, selection: ShippingSelection) => {
-      setState((prev) => ({
-        ...prev,
-        shippingByStoreId: {
-          ...prev.shippingByStoreId,
-          [storeId]: selection,
-        },
-      }));
-    },
-    [],
-  );
+  const setShipping = useCallback((storeId: string, selection: ShippingSelection) => {
+    setState((prev) => ({
+      ...prev,
+      shippingByStoreId: {
+        ...prev.shippingByStoreId,
+        [storeId]: selection,
+      },
+    }));
+  }, []);
 
   const setAddress = useCallback((addressId: string | null) => {
     setState((prev) => ({ ...prev, selectedAddressId: addressId }));
@@ -139,18 +130,15 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, promotionDiscount: amount }));
   }, []);
 
-  const setStorePromotion = useCallback(
-    (storeId: string, promotion: StorePromotionSelection) => {
-      setState((prev) => ({
-        ...prev,
-        storePromotionsByStoreId: {
-          ...prev.storePromotionsByStoreId,
-          [storeId]: promotion,
-        },
-      }));
-    },
-    [],
-  );
+  const setStorePromotion = useCallback((storeId: string, promotion: StorePromotionSelection) => {
+    setState((prev) => ({
+      ...prev,
+      storePromotionsByStoreId: {
+        ...prev.storePromotionsByStoreId,
+        [storeId]: promotion,
+      },
+    }));
+  }, []);
 
   const setPaymentMethod = useCallback((method: PaymentMethod | null) => {
     setState((prev) => ({ ...prev, paymentMethod: method }));
@@ -193,11 +181,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return (
-    <CheckoutContext.Provider value={value}>
-      {children}
-    </CheckoutContext.Provider>
-  );
+  return <CheckoutContext.Provider value={value}>{children}</CheckoutContext.Provider>;
 }
 
 export function useCheckout(): CheckoutContextValue {

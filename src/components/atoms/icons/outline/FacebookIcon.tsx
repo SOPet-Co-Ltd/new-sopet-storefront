@@ -1,6 +1,6 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type FacebookIconProps = Omit<OutlineIconProps, "children">
+export type FacebookIconProps = Omit<OutlineIconProps, 'children'>;
 
 export function FacebookIcon(props: FacebookIconProps) {
   return (
@@ -16,5 +16,5 @@ export function FacebookIcon(props: FacebookIconProps) {
         />
       </g>
     </OutlineIcon>
-  )
+  );
 }

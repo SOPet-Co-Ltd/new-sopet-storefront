@@ -1,14 +1,10 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type DiscountIconProps = Omit<FilledIconProps, "children"> & {
-  active?: boolean
-}
+export type DiscountIconProps = Omit<FilledIconProps, 'children'> & {
+  active?: boolean;
+};
 
-export function DiscountIcon({
-  color = "#8B91F1",
-  active = false,
-  ...props
-}: DiscountIconProps) {
+export function DiscountIcon({ color = '#8B91F1', active = false, ...props }: DiscountIconProps) {
   return (
     <FilledIcon viewBox="0 0 32 32" color={color} {...props}>
       {active ? (
@@ -29,5 +25,5 @@ export function DiscountIcon({
         </>
       )}
     </FilledIcon>
-  )
+  );
 }

@@ -4,15 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { ProductCarousel } from '@/components/organisms/ProductCarousel/ProductCarousel';
 
 vi.mock('next/image', () => ({
-  default: ({
-    src,
-    alt,
-    ...props
-  }: {
-    src: string;
-    alt: string;
-    [key: string]: unknown;
-  }) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
+    <img src={src} alt={alt} {...props} />
+  ),
 }));
 
 const slides = [

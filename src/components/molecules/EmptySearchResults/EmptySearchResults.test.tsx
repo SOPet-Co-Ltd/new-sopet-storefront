@@ -4,7 +4,9 @@ import { EmptySearchResults } from '@/components/molecules/EmptySearchResults';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 
 vi.mock('next/image', () => ({
-  default: ({ alt, ...props }: { alt: string; [key: string]: unknown }) => <img alt={alt} {...props} />,
+  default: ({ alt, ...props }: { alt: string; [key: string]: unknown }) => (
+    <img alt={alt} {...props} />
+  ),
 }));
 
 describe('EmptySearchResults', () => {
@@ -18,7 +20,10 @@ describe('EmptySearchResults', () => {
     });
 
     const chip = screen.getByRole('link', { name: 'อาหารแมว' });
-    expect(chip).toHaveAttribute('href', '/search?q=%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B9%81%E0%B8%A1%E0%B8%A7');
+    expect(chip).toHaveAttribute(
+      'href',
+      '/search?q=%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B9%81%E0%B8%A1%E0%B8%A7',
+    );
   });
 
   it('shows skeleton chips while recovery suggestions are fetching', () => {

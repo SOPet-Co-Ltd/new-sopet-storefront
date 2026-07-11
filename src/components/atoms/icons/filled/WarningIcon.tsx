@@ -1,6 +1,6 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type WarningIconProps = Omit<FilledIconProps, "children" | "color">
+export type WarningIconProps = Omit<FilledIconProps, 'children' | 'color'>;
 
 export function WarningIcon(props: WarningIconProps) {
   return (
@@ -25,5 +25,5 @@ export function WarningIcon(props: WarningIconProps) {
         </linearGradient>
       </defs>
     </FilledIcon>
-  )
+  );
 }

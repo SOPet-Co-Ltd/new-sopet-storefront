@@ -1,18 +1,18 @@
-import type { ReactNode } from "react"
+import type { ReactNode } from 'react';
 
-import { IconBase } from "./IconBase"
-import type { IconColor, IconResponsiveSize, IconSvgProps } from "./types"
+import { IconBase } from './IconBase';
+import type { IconColor, IconResponsiveSize, IconSvgProps } from './types';
 
 export type InlineIconProps = IconSvgProps & {
-  size?: IconResponsiveSize
-  color?: IconColor
-  strokeWidth?: number | string
-  children: ReactNode
-}
+  size?: IconResponsiveSize;
+  color?: IconColor;
+  strokeWidth?: number | string;
+  children: ReactNode;
+};
 
 export function InlineIcon({
   size,
-  color = "currentColor",
+  color = 'currentColor',
   strokeWidth = 1.5,
   children,
   ...props
@@ -29,5 +29,5 @@ export function InlineIcon({
     >
       {children}
     </IconBase>
-  )
+  );
 }

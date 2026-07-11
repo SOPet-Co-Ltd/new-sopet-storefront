@@ -2,7 +2,10 @@
 
 import { Input } from '@/components/atoms/Input';
 import { ThaiPhoneInput } from '@/components/molecules/ThaiPhoneInput';
-import type { GuestCheckoutField, GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
+import type {
+  GuestCheckoutField,
+  GuestCheckoutFormState,
+} from '@/lib/checkout/guestCheckoutValidation';
 import { ThaiAddressCascadingFields } from './ThaiAddressCascadingFields';
 
 export type ShippingAddressFieldKey =

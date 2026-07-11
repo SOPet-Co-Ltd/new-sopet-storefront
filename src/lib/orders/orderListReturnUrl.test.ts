@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  getOrdersListReturnUrl,
-  saveOrdersListReturnUrl,
-} from './orderListReturnUrl';
+import { getOrdersListReturnUrl, saveOrdersListReturnUrl } from './orderListReturnUrl';
 
 describe('orderListReturnUrl', () => {
   afterEach(() => {

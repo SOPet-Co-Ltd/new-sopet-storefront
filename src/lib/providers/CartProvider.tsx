@@ -131,20 +131,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => items.filter((item) => !deselectedIds.has(item.id)),
     [items, deselectedIds],
   );
-  const selectedItemsByStore = useMemo(
-    () => groupCartItemsByStore(selectedItems),
-    [selectedItems],
-  );
-  const selectedItemCount = useMemo(
-    () => computeCartItemCount(selectedItems),
-    [selectedItems],
-  );
-  const selectedSubtotal = useMemo(
-    () => computeCartSubtotal(selectedItems),
-    [selectedItems],
-  );
-  const allItemsSelected =
-    items.length > 0 && items.every((item) => !deselectedIds.has(item.id));
+  const selectedItemsByStore = useMemo(() => groupCartItemsByStore(selectedItems), [selectedItems]);
+  const selectedItemCount = useMemo(() => computeCartItemCount(selectedItems), [selectedItems]);
+  const selectedSubtotal = useMemo(() => computeCartSubtotal(selectedItems), [selectedItems]);
+  const allItemsSelected = items.length > 0 && items.every((item) => !deselectedIds.has(item.id));
 
   const isItemSelected = useCallback(
     (itemId: string) => !deselectedIds.has(itemId),
@@ -193,9 +183,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const setAllSelected = useCallback(
     (selected: boolean) => {
-      setDeselectedIds(() =>
-        selected ? new Set() : new Set(items.map((item) => item.id)),
-      );
+      setDeselectedIds(() => (selected ? new Set() : new Set(items.map((item) => item.id))));
     },
     [items],
   );
@@ -211,7 +199,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const runCartMutation = useCallback(async (operation: () => Promise<unknown>, errorMessage: string) => {
+  const runCartMutation = useCallback(
+    async (operation: () => Promise<unknown>, errorMessage: string) => {
       try {
         const result = (await operation()) as {
           errors?: Array<{ message: string }>;
@@ -220,12 +209,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
           throw new Error(result.errors[0]?.message ?? errorMessage);
         }
       } catch (mutationError) {
-        const message =
-          mutationError instanceof Error ? mutationError.message : errorMessage;
+        const message = mutationError instanceof Error ? mutationError.message : errorMessage;
         toast.error(message);
         throw mutationError;
       }
-    }, []);
+    },
+    [],
+  );
 
   const addItem = useCallback(
     async (variantId: string, quantity = 1) => {

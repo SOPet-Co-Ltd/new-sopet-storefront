@@ -21,9 +21,7 @@ export function AddressCard({
   onDelete,
 }: AddressCardProps) {
   const formattedPhone = formatThaiPhoneNumberForDisplay(address.phone);
-  const contactText = formattedPhone
-    ? `${address.fullName} (${formattedPhone})`
-    : address.fullName;
+  const contactText = formattedPhone ? `${address.fullName} (${formattedPhone})` : address.fullName;
   const label = address.label || 'ที่อยู่';
   const addressLine = formatSavedAddressLine(address);
 
@@ -56,9 +54,7 @@ export function AddressCard({
       <p className="mt-sop-4px wrap-break-word sop-body-sm-regular text-sop-neutral-gray-300">
         {contactText}
       </p>
-      {formattedPhone ? (
-        <span className="sr-only">{formattedPhone}</span>
-      ) : null}
+      {formattedPhone ? <span className="sr-only">{formattedPhone}</span> : null}
 
       <p className="mt-sop-4px wrap-break-word sop-body-sm-regular text-sop-neutral-gray-400">
         {addressLine}

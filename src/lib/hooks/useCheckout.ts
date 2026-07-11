@@ -19,13 +19,9 @@ export type CreatedOrder = CreateOrderMutation['createOrder'];
 export type CreatedPayment = CreatePaymentMutation['createPayment'];
 
 export type UseCheckoutResult = {
-  validatePromotion: (
-    input: ValidatePromotionInput,
-  ) => Promise<PromotionValidation | undefined>;
+  validatePromotion: (input: ValidatePromotionInput) => Promise<PromotionValidation | undefined>;
   createOrder: (input: CreateOrderInput) => Promise<CreatedOrder | undefined>;
-  createPayment: (
-    input: CreatePaymentInput,
-  ) => Promise<CreatedPayment | undefined>;
+  createPayment: (input: CreatePaymentInput) => Promise<CreatedPayment | undefined>;
   validatingPromotion: boolean;
   creatingOrder: boolean;
   creatingPayment: boolean;
@@ -39,15 +35,10 @@ function toHookError(error: unknown): Error | undefined {
 }
 
 export function useCheckout(): UseCheckoutResult {
-  const [
-    runValidatePromotion,
-    {
-      loading: validatingPromotion,
-      error: validatePromotionError,
-    },
-  ] = useLazyQuery(ValidatePromotionDocument, {
-    fetchPolicy: 'network-only',
-  });
+  const [runValidatePromotion, { loading: validatingPromotion, error: validatePromotionError }] =
+    useLazyQuery(ValidatePromotionDocument, {
+      fetchPolicy: 'network-only',
+    });
 
   const [createOrderMutation, { loading: creatingOrder, error: createOrderError }] =
     useMutation(CreateOrderDocument);
@@ -79,8 +70,7 @@ export function useCheckout(): UseCheckoutResult {
     [createPaymentMutation],
   );
 
-  const error =
-    validatePromotionError ?? createOrderError ?? createPaymentError ?? undefined;
+  const error = validatePromotionError ?? createOrderError ?? createPaymentError ?? undefined;
 
   return {
     validatePromotion,

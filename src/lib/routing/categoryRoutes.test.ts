@@ -14,9 +14,9 @@ const SAMPLE_CATEGORIES = [
 
 describe('decodeRouteParam', () => {
   it('decodes percent-encoded Thai text', () => {
-    expect(decodeRouteParam('%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%99')).toBe(
-      'ของเล่น',
-    );
+    expect(
+      decodeRouteParam('%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%99'),
+    ).toBe('ของเล่น');
   });
 
   it('returns ASCII slugs unchanged', () => {

@@ -1,6 +1,6 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type LineIconProps = Omit<OutlineIconProps, "children">
+export type LineIconProps = Omit<OutlineIconProps, 'children'>;
 
 export function LineIcon(props: LineIconProps) {
   return (
@@ -24,5 +24,5 @@ export function LineIcon(props: LineIconProps) {
         />
       </g>
     </OutlineIcon>
-  )
+  );
 }

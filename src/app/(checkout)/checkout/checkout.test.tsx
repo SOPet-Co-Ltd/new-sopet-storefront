@@ -87,11 +87,7 @@ function CheckoutPageReset() {
   return null;
 }
 
-function CheckoutStateProbe({
-  onContext,
-}: {
-  onContext: (context: CheckoutContextValue) => void;
-}) {
+function CheckoutStateProbe({ onContext }: { onContext: (context: CheckoutContextValue) => void }) {
   const context = useCheckout();
   onContext(context);
   return (
@@ -258,9 +254,9 @@ describe('CheckoutPage reset on unmount', () => {
     });
 
     expect(container.querySelector('[data-step]')?.getAttribute('data-step')).toBe('shipping');
-    expect(container.querySelector('[data-shipping-count]')?.getAttribute('data-shipping-count')).toBe(
-      '0',
-    );
+    expect(
+      container.querySelector('[data-shipping-count]')?.getAttribute('data-shipping-count'),
+    ).toBe('0');
     expect(context!.paymentMethod).toBeNull();
   });
 });

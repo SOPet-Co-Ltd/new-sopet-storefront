@@ -40,9 +40,7 @@ export function buildOptionGroups(
     }
   }
 
-  return Object.fromEntries(
-    Object.entries(groups).map(([key, values]) => [key, [...values]]),
-  );
+  return Object.fromEntries(Object.entries(groups).map(([key, values]) => [key, [...values]]));
 }
 
 export function findVariantByOptions(

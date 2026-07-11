@@ -1,12 +1,12 @@
-import { IconBase } from "../IconBase"
-import type { IconColor, IconResponsiveSize, IconSvgProps } from "../types"
+import { IconBase } from '../IconBase';
+import type { IconColor, IconResponsiveSize, IconSvgProps } from '../types';
 
 export type ProfileIconProps = IconSvgProps & {
-  size?: IconResponsiveSize
-  color?: IconColor
-}
+  size?: IconResponsiveSize;
+  color?: IconColor;
+};
 
-export function ProfileIcon({ color = "currentColor", ...props }: ProfileIconProps) {
+export function ProfileIcon({ color = 'currentColor', ...props }: ProfileIconProps) {
   return (
     <IconBase viewBox="0 0 24 24" fill="none" {...props}>
       <path
@@ -22,5 +22,5 @@ export function ProfileIcon({ color = "currentColor", ...props }: ProfileIconPro
         fill={color}
       />
     </IconBase>
-  )
+  );
 }

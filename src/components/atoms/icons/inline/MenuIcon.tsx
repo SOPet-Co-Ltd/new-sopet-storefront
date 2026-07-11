@@ -1,6 +1,6 @@
-import { InlineIcon, type InlineIconProps } from "../InlineIcon"
+import { InlineIcon, type InlineIconProps } from '../InlineIcon';
 
-export type MenuIconProps = Omit<InlineIconProps, "children">
+export type MenuIconProps = Omit<InlineIconProps, 'children'>;
 
 export function MenuIcon(props: MenuIconProps) {
   return (
@@ -9,5 +9,5 @@ export function MenuIcon(props: MenuIconProps) {
       <path d="M20 12L4 12" />
       <path d="M20 17L4 17" />
     </InlineIcon>
-  )
+  );
 }

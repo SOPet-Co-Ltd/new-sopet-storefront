@@ -37,10 +37,7 @@ function useOverlapDetection(buttonRef: React.RefObject<HTMLDivElement | null>) 
 
     let rafId = 0;
     const intersects = (a: DOMRect, b: DOMRect) =>
-      a.top < b.bottom &&
-      a.bottom > b.top &&
-      a.left < b.right &&
-      a.right > b.left;
+      a.top < b.bottom && a.bottom > b.top && a.left < b.right && a.right > b.left;
 
     const check = () => {
       const br = button.getBoundingClientRect();
@@ -128,9 +125,7 @@ export function ChatWithAdminFloatingButton() {
       ref={buttonRef}
       className={cn(
         'fixed z-20 bottom-4 right-2 md:bottom-10 md:right-10 transition-all duration-300 ease-out',
-        overlapping
-          ? 'opacity-0 scale-75 pointer-events-none'
-          : 'opacity-100 scale-100',
+        overlapping ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100',
       )}
     >
       <div
@@ -144,11 +139,7 @@ export function ChatWithAdminFloatingButton() {
           'backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04),inset_1px_1px_24px_rgba(255,255,255,0.4)]',
         )}
         style={{
-          width: isQrOpen
-            ? '320px'
-            : collapsedWidth
-              ? `${collapsedWidth}px`
-              : undefined,
+          width: isQrOpen ? '320px' : collapsedWidth ? `${collapsedWidth}px` : undefined,
           transition: widthTransition,
         }}
       >
@@ -179,11 +170,7 @@ export function ChatWithAdminFloatingButton() {
           >
             <div className="relative">
               <LineSquareCustomIcon size={{ mobile: 32, desktop: 32 }} />
-              {statusDot(
-                isQrOpen
-                  ? 'hidden'
-                  : 'lg:hidden flex absolute -top-[3px] -right-[3px]',
-              )}
+              {statusDot(isQrOpen ? 'hidden' : 'lg:hidden flex absolute -top-[3px] -right-[3px]')}
             </div>
             <div
               className={cn(
@@ -221,10 +208,7 @@ export function ChatWithAdminFloatingButton() {
                 role="img"
                 aria-label="QR Code สำหรับเพิ่มเพื่อน LINE Official Account"
               >
-                <QrAddLineOAIcon
-                  size={{ mobile: 125, desktop: 160 }}
-                  color="#05D35E"
-                />
+                <QrAddLineOAIcon size={{ mobile: 125, desktop: 160 }} color="#05D35E" />
               </div>
               <div className="flex bg-sop-neutral-grayalpha-100 rounded-sop-12px justify-between items-center px-sop-12px py-sop-8px">
                 <div className="flex-col -space-y-1 items-start">

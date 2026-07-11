@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-import { PolicyMarkdownLayout } from "../PolicyMarkdownLayout";
-import { buildPolicyPageMetadata } from "../policy-metadata";
+import type { Metadata } from 'next';
+import { PolicyMarkdownLayout } from '../PolicyMarkdownLayout';
+import { buildPolicyPageMetadata } from '../policy-metadata';
 
 export const metadata: Metadata = buildPolicyPageMetadata({
-  pathSegment: "refund-policy",
-  title: "นโยบายการคืนเงิน",
+  pathSegment: 'refund-policy',
+  title: 'นโยบายการคืนเงิน',
   description:
-    "เงื่อนไขการคืนเงินและคืนสินค้าสำหรับการสั่งซื้อผ่านแพลตฟอร์ม Sopet รวมถึงกรณีสินค้าชำรุด หมดอายุ และการคืนโดยไม่มีเหตุผล",
+    'เงื่อนไขการคืนเงินและคืนสินค้าสำหรับการสั่งซื้อผ่านแพลตฟอร์ม Sopet รวมถึงกรณีสินค้าชำรุด หมดอายุ และการคืนโดยไม่มีเหตุผล',
 });
 
 const REFUND_POLICY = `
@@ -33,10 +33,8 @@ const REFUND_POLICY = `
 - ลูกค้าต้องส่งหลักฐาน เช่น รูปถ่ายสินค้า ในกรณีสินค้าชำรุดหรือหมดอายุ
 - หากสินค้ามีการแกะหรือชำรุด จะไม่สามารถคืนได้ทุกกรณี
 - แพลตฟอร์มขอสงวนสิทธิ์ในการพิจารณาและตัดสินใจขั้นสุดท้ายในทุกกรณี
-`
+`;
 
 export default function RefundPolicyPage() {
-  return (
-    <PolicyMarkdownLayout title="นโยบายการคืนเงิน" source={REFUND_POLICY} />
-  )
+  return <PolicyMarkdownLayout title="นโยบายการคืนเงิน" source={REFUND_POLICY} />;
 }

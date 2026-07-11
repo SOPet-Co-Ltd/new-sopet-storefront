@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import type { OrderQuery } from '@/lib/graphql/generated/graphql';
 import { ProductThumbnail } from '@/components/molecules/ProductThumbnail/ProductThumbnail';
 import { buildProductHref } from '@/components/organisms/ProductCard';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
@@ -27,9 +26,6 @@ export type OrderSummaryDisplayOrder = {
     shippingFee: number;
   }>;
 };
-
-/** @deprecated Prefer OrderSummaryDisplayOrder — alias for authenticated OrderQuery callers */
-export type OrderConfirmationOrder = NonNullable<OrderQuery['order']>;
 
 type OrderSummaryDisplayItem = OrderSummaryDisplayOrder['items'][number];
 

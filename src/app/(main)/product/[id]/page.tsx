@@ -1,7 +1,4 @@
-import {
-  ProductByIdDocument,
-  type ProductByIdQuery,
-} from '@/lib/graphql/generated/graphql';
+import { ProductByIdDocument, type ProductByIdQuery } from '@/lib/graphql/generated/graphql';
 import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
 import { buildProductByIdVariables } from '@/lib/graphql/query-variables';
 import ProductDetailsPage from '@/components/sections/ProductDetailsPage';

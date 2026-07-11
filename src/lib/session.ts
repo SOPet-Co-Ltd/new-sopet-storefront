@@ -19,9 +19,7 @@ function readCookie(name: string): string | null {
   }
 
   const prefix = `${name}=`;
-  const match = document.cookie
-    .split('; ')
-    .find((entry) => entry.startsWith(prefix));
+  const match = document.cookie.split('; ').find((entry) => entry.startsWith(prefix));
 
   if (!match) {
     return null;

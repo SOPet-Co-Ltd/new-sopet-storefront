@@ -3,17 +3,13 @@ import { formatCheckoutPrice } from '@/components/sections/CheckoutSection/check
 
 export type PlatformPromotion = ActivePlatformPromotionsQuery['activePlatformPromotions'][number];
 
-export type PlatformPromotionSelection =
-  | {
-      code: string;
-      name: string;
-      discountAmount: number;
-    }
-  | null;
+export type PlatformPromotionSelection = {
+  code: string;
+  name: string;
+  discountAmount: number;
+} | null;
 
-export type PlatformPromotionModalSelection =
-  | { type: 'promo'; code: string }
-  | { type: 'none' };
+export type PlatformPromotionModalSelection = { type: 'promo'; code: string } | { type: 'none' };
 
 export function getInitialPlatformPromotionSelection(
   appliedPromotion: PlatformPromotionSelection,

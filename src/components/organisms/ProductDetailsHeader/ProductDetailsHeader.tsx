@@ -106,7 +106,10 @@ export default function ProductDetailsHeader({
       </div>
 
       {hasMultiple && (
-        <div className="mt-3 hidden md:flex gap-2 overflow-x-auto" data-testid="product-gallery-thumbnails">
+        <div
+          className="mt-3 hidden md:flex gap-2 overflow-x-auto"
+          data-testid="product-gallery-thumbnails"
+        >
           {slides.map((slide, index) => (
             <button
               key={slide.id}
@@ -115,9 +118,7 @@ export default function ProductDetailsHeader({
               aria-label={`เลือกรูปที่ ${index + 1}`}
               aria-current={index === selectedIndex}
               className={`shrink-0 overflow-hidden rounded-sop-8px border-2 ${
-                index === selectedIndex
-                  ? 'border-sop-primary-500'
-                  : 'border-transparent'
+                index === selectedIndex ? 'border-sop-primary-500' : 'border-transparent'
               }`}
             >
               <Image

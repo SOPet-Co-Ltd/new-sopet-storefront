@@ -20,9 +20,9 @@ describe('useRecentSearches', () => {
 
     expect(result.current.recentSearches[0]).toBe('query-5');
     expect(result.current.recentSearches).toHaveLength(12);
-    expect(JSON.parse(window.sessionStorage.getItem(RECENT_SEARCHES_STORAGE_KEY) ?? '[]')).toHaveLength(
-      12,
-    );
+    expect(
+      JSON.parse(window.sessionStorage.getItem(RECENT_SEARCHES_STORAGE_KEY) ?? '[]'),
+    ).toHaveLength(12);
   });
 
   it('clears recent searches from sessionStorage', () => {

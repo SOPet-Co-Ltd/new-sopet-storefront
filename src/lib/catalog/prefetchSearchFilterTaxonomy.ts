@@ -1,7 +1,4 @@
-import {
-  ApprovedBrandsDocument,
-  ApprovedPetTypesDocument,
-} from '@/lib/graphql/generated/graphql';
+import { ApprovedBrandsDocument, ApprovedPetTypesDocument } from '@/lib/graphql/generated/graphql';
 import { getApolloClient } from '@/lib/graphql/client';
 
 export type SearchFilterTaxonomyTarget = 'petTypes' | 'brands';
@@ -14,8 +11,7 @@ function prefetchTaxonomyQuery(target: SearchFilterTaxonomyTarget): void {
     return;
   }
 
-  const query =
-    target === 'petTypes' ? ApprovedPetTypesDocument : ApprovedBrandsDocument;
+  const query = target === 'petTypes' ? ApprovedPetTypesDocument : ApprovedBrandsDocument;
 
   const promise = getApolloClient()
     .query({
@@ -40,9 +36,7 @@ export function prefetchSearchFilterBrands(): void {
   prefetchTaxonomyQuery('brands');
 }
 
-export function createSearchFilterSectionPrefetchHandlers(
-  sectionId: 'pet-type' | 'brand',
-): {
+export function createSearchFilterSectionPrefetchHandlers(sectionId: 'pet-type' | 'brand'): {
   onMouseEnter: () => void;
   onFocus: () => void;
 } {

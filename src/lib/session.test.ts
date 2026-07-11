@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  SESSION_ID_COOKIE,
-  UUID_V4_REGEX,
-  ensureSessionId,
-  getSessionId,
-} from './session';
+import { SESSION_ID_COOKIE, UUID_V4_REGEX, ensureSessionId, getSessionId } from './session';
 
 const EXISTING_SESSION_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
 
@@ -102,9 +97,7 @@ describe('ensureSessionId SSR safety', () => {
   it('throws when called without document in SSR context', () => {
     vi.stubGlobal('document', undefined);
 
-    expect(() => ensureSessionId()).toThrow(
-      'ensureSessionId requires browser context',
-    );
+    expect(() => ensureSessionId()).toThrow('ensureSessionId requires browser context');
   });
 });
 

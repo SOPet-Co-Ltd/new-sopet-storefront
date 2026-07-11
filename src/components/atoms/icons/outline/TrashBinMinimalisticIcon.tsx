@@ -1,6 +1,6 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type TrashBinMinimalisticIconProps = Omit<OutlineIconProps, "children">
+export type TrashBinMinimalisticIconProps = Omit<OutlineIconProps, 'children'>;
 
 export function TrashBinMinimalisticIcon(props: TrashBinMinimalisticIconProps) {
   return (
@@ -11,5 +11,5 @@ export function TrashBinMinimalisticIcon(props: TrashBinMinimalisticIconProps) {
       <path d="M9.4254 10.2537C9.83756 10.2125 10.2051 10.5132 10.2463 10.9254L10.7463 15.9254C10.7875 16.3375 10.4868 16.7051 10.0747 16.7463C9.6625 16.7875 9.29496 16.4868 9.25375 16.0746L8.75375 11.0746C8.71253 10.6625 9.01324 10.2949 9.4254 10.2537Z" />
       <path d="M15.2463 11.0746C15.2875 10.6625 14.9868 10.2949 14.5747 10.2537C14.1625 10.2125 13.795 10.5132 13.7537 10.9254L13.2537 15.9254C13.2125 16.3375 13.5132 16.7051 13.9254 16.7463C14.3376 16.7875 14.7051 16.4868 14.7463 16.0746L15.2463 11.0746Z" />
     </OutlineIcon>
-  )
+  );
 }

@@ -2,7 +2,10 @@
 
 import { Button } from '@/components/atoms/Button';
 import { useCheckoutTotals } from '@/lib/hooks/useCheckoutTotals';
-import { useCheckoutSubmit, type AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
+import {
+  useCheckoutSubmit,
+  type AddressSubmitContext,
+} from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 
 function formatPrice(amount: number): string {

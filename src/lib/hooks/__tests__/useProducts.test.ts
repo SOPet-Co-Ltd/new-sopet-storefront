@@ -101,10 +101,9 @@ describe('useProducts', () => {
       }),
     );
 
-    const { result } = renderHook(
-      () => useProducts({ storeId: CATALOG_STORE_ID, page: 1 }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useProducts({ storeId: CATALOG_STORE_ID, page: 1 }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.products).toHaveLength(1);

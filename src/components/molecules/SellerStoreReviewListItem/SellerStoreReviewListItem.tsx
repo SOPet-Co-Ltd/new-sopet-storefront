@@ -28,7 +28,10 @@ export function SellerStoreReviewListItem({ review }: SellerStoreReviewListItemP
           </Link>
           <div className="mt-2 flex items-center justify-between gap-2">
             <p className="sop-body-sm-medium text-sop-neutral-gray-300">{review.customerName}</p>
-            <time className="sop-body-xs-regular text-sop-neutral-gray-400" dateTime={review.createdAt}>
+            <time
+              className="sop-body-xs-regular text-sop-neutral-gray-400"
+              dateTime={review.createdAt}
+            >
               {formatThaiDate(review.createdAt)}
             </time>
           </div>

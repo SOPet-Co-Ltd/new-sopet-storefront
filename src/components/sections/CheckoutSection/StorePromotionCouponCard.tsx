@@ -1,13 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  Bag5Icon,
-  CheckIcon,
-  CloseIcon,
-  TicketSaleIcon,
-  TimeIcon,
-} from '@/components/atoms/icons';
+import { Bag5Icon, CheckIcon, CloseIcon, TicketSaleIcon, TimeIcon } from '@/components/atoms/icons';
 import { cn } from '@/lib/utils';
 import type { StorePromotion } from '@/lib/checkout/storePromotionUtils';
 import {
@@ -38,11 +32,7 @@ function PromotionRadio({ checked }: PromotionRadioProps) {
   );
 }
 
-function CouponStatusBadge({
-  type,
-}: {
-  type: 'check' | 'close';
-}) {
+function CouponStatusBadge({ type }: { type: 'check' | 'close' }) {
   return (
     <span
       className={cn(
@@ -233,7 +223,10 @@ export function SelectableStorePromotionCard({
       selected={selected}
       onClick={onSelect}
       left={
-        <CouponTicketStub badge={selected ? 'check' : undefined} variant={selected ? 'selected' : 'default'}>
+        <CouponTicketStub
+          badge={selected ? 'check' : undefined}
+          variant={selected ? 'selected' : 'default'}
+        >
           <TicketSaleIcon size={{ mobile: 48, desktop: 48 }} color="#9C6ADE" />
         </CouponTicketStub>
       }

@@ -92,9 +92,7 @@ export function CheckoutShippingMethodModal({
   onClose,
   onConfirm,
 }: CheckoutShippingMethodModalProps) {
-  const [pendingOptionId, setPendingOptionId] = useState(
-    selectedOptionId ?? options[0]?.id ?? '',
-  );
+  const [pendingOptionId, setPendingOptionId] = useState(selectedOptionId ?? options[0]?.id ?? '');
 
   useEffect(() => {
     if (!isOpen) return;

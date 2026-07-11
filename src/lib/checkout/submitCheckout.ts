@@ -14,11 +14,7 @@ import type { CheckoutStep } from '@/lib/providers/CheckoutProvider';
 export class SubmitCheckoutError extends Error {
   constructor(
     message: string,
-    public readonly code:
-      | 'invalid_step'
-      | 'promotion_invalid'
-      | 'order_failed'
-      | 'payment_failed',
+    public readonly code: 'invalid_step' | 'promotion_invalid' | 'order_failed' | 'payment_failed',
   ) {
     super(message);
     this.name = 'SubmitCheckoutError';
@@ -92,11 +88,7 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     }
   }
 
-  const orderInput = toCreateOrderInput(
-    params.guestForm,
-    params.cart,
-    params.checkoutContext,
-  );
+  const orderInput = toCreateOrderInput(params.guestForm, params.cart, params.checkoutContext);
 
   const order = await params.checkoutHook.createOrder(orderInput);
   if (!order?.id) {

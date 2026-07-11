@@ -5,15 +5,9 @@ import { HomeRecommendedProductSection } from '@/components/sections/HomeRecomme
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 
 vi.mock('next/image', () => ({
-  default: ({
-    src,
-    alt,
-    ...props
-  }: {
-    src: string;
-    alt: string;
-    [key: string]: unknown;
-  }) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
+    <img src={src} alt={alt} {...props} />
+  ),
 }));
 
 const SAMPLE_CATEGORIES = [
@@ -47,16 +41,18 @@ describe('Home SSR reconciliation', () => {
     });
 
     expect(screen.getByText('อาหารสุนัข')).toBeInTheDocument();
-    expect(screen.queryByText('หมวดหมู่สินค้า')?.closest('section')?.querySelector('[aria-hidden="true"]')).toBeNull();
+    expect(
+      screen
+        .queryByText('หมวดหมู่สินค้า')
+        ?.closest('section')
+        ?.querySelector('[aria-hidden="true"]'),
+    ).toBeNull();
   });
 
   it('renders recommended products from initialRecommendedProducts without skeleton', () => {
-    render(
-      <HomeRecommendedProductSection initialRecommendedProducts={[SAMPLE_PRODUCT]} />,
-      {
-        wrapper: createApolloTestWrapper(),
-      },
-    );
+    render(<HomeRecommendedProductSection initialRecommendedProducts={[SAMPLE_PRODUCT]} />, {
+      wrapper: createApolloTestWrapper(),
+    });
 
     expect(screen.getByText('Premium Dog Food 5kg')).toBeInTheDocument();
     expect(

@@ -1,11 +1,8 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type SpinnerIconProps = Omit<OutlineIconProps, "children">
+export type SpinnerIconProps = Omit<OutlineIconProps, 'children'>;
 
-export function SpinnerIcon({
-  color = "currentColor",
-  ...props
-}: SpinnerIconProps) {
+export function SpinnerIcon({ color = 'currentColor', ...props }: SpinnerIconProps) {
   return (
     <OutlineIcon viewBox="0 0 24 24" color={color} {...props}>
       <path
@@ -14,5 +11,5 @@ export function SpinnerIcon({
         stroke="none"
       />
     </OutlineIcon>
-  )
+  );
 }

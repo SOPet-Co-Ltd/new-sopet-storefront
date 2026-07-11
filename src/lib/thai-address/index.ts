@@ -1,9 +1,4 @@
-export type {
-  DistrictOption,
-  ProvinceOption,
-  SubdistrictOption,
-  ThaiAddressRow,
-} from './types';
+export type { DistrictOption, ProvinceOption, SubdistrictOption, ThaiAddressRow } from './types';
 
 export {
   getDistricts,

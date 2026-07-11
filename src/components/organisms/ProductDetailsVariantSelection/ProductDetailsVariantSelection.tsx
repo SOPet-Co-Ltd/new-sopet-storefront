@@ -18,10 +18,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 import { useCart } from '@/lib/providers/CartProvider';
-import {
-  findVariantByOptions,
-  type VariantOptions,
-} from './variantUtils';
+import { findVariantByOptions, type VariantOptions } from './variantUtils';
 
 type ShareButtonConfig = {
   label: string;
@@ -63,7 +60,8 @@ function ProductShareModal({
   onClose: () => void;
   product: ProductDetail;
 }) {
-  const productLink = typeof window !== 'undefined' ? window.location.href : `/product/${product.id}`;
+  const productLink =
+    typeof window !== 'undefined' ? window.location.href : `/product/${product.id}`;
 
   const handleCopyLink = async () => {
     const text = String(productLink ?? '');
@@ -192,7 +190,9 @@ function ProductShareModal({
               <button type="button" onClick={button.handler} className={button.buttonClassName}>
                 {button.icon()}
               </button>
-              <span className="sop-body-sm-light text-sop-base-black text-center">{button.label}</span>
+              <span className="sop-body-sm-light text-sop-base-black text-center">
+                {button.label}
+              </span>
             </div>
           ))}
         </div>
@@ -368,7 +368,11 @@ export default function ProductDetailsVariantSelection({
                   : `เพิ่ม ${product.name} ลงตะกร้า`
             }
           >
-            {!hasAnyPrice ? 'NOT AVAILABLE IN YOUR REGION' : isOutOfStock ? 'สินค้าหมด' : 'เพิ่มใส่ตะกร้า'}
+            {!hasAnyPrice
+              ? 'NOT AVAILABLE IN YOUR REGION'
+              : isOutOfStock
+                ? 'สินค้าหมด'
+                : 'เพิ่มใส่ตะกร้า'}
           </Button>
 
           <Button

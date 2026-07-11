@@ -5,9 +5,7 @@ export function formatCheckoutPrice(amount: number): string {
   })}`;
 }
 
-export function formatCheckoutVariantLabel(
-  optionsJson: string | null | undefined,
-): string | null {
+export function formatCheckoutVariantLabel(optionsJson: string | null | undefined): string | null {
   if (!optionsJson) return null;
 
   try {

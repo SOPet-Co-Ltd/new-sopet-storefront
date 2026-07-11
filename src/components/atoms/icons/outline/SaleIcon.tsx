@@ -1,11 +1,8 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type SaleIconProps = Omit<OutlineIconProps, "children">
+export type SaleIconProps = Omit<OutlineIconProps, 'children'>;
 
-export function SaleIcon({
-  color = "currentColor",
-  ...props
-}: SaleIconProps) {
+export function SaleIcon({ color = 'currentColor', ...props }: SaleIconProps) {
   return (
     <OutlineIcon viewBox="0 0 24 24" color={color} {...props}>
       <path
@@ -16,5 +13,5 @@ export function SaleIcon({
         stroke="none"
       />
     </OutlineIcon>
-  )
+  );
 }

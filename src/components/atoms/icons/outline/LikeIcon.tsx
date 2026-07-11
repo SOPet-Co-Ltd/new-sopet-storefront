@@ -1,11 +1,8 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type LikeIconProps = Omit<OutlineIconProps, "children">
+export type LikeIconProps = Omit<OutlineIconProps, 'children'>;
 
-export function LikeIcon({
-  color = "currentColor",
-  ...props
-}: LikeIconProps) {
+export function LikeIcon({ color = 'currentColor', ...props }: LikeIconProps) {
   return (
     <OutlineIcon viewBox="0 0 24 24" color={color} {...props}>
       <g fill={color} stroke="none">
@@ -17,5 +14,5 @@ export function LikeIcon({
         />
       </g>
     </OutlineIcon>
-  )
+  );
 }

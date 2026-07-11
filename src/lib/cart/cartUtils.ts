@@ -19,10 +19,7 @@ export function getCartItemUnitPrice(item: CartItem): number {
 }
 
 export function computeCartSubtotal(items: CartItem[]): number {
-  return items.reduce(
-    (total, item) => total + item.quantity * getCartItemUnitPrice(item),
-    0,
-  );
+  return items.reduce((total, item) => total + item.quantity * getCartItemUnitPrice(item), 0);
 }
 
 export function computeCartItemCount(items: CartItem[]): number {

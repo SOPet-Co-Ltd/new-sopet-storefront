@@ -8,10 +8,7 @@ const sponsorItemClassName = 'block w-[150px] shrink-0';
 
 function SponsorsSkeleton() {
   return (
-    <div
-      className="flex w-full flex-wrap items-center justify-center gap-4"
-      aria-hidden="true"
-    >
+    <div className="flex w-full flex-wrap items-center justify-center gap-4" aria-hidden="true">
       {Array.from({ length: 6 }).map((_, index) => (
         <div
           key={index}

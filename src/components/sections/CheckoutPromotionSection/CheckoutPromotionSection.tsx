@@ -16,10 +16,7 @@ import {
   type PlatformPromotionSectionStage,
   type PlatformPromotionSelection,
 } from '@/lib/checkout/platformPromotionUtils';
-import {
-  categorizeStorePromotions,
-  type StorePromotion,
-} from '@/lib/checkout/storePromotionUtils';
+import { categorizeStorePromotions, type StorePromotion } from '@/lib/checkout/storePromotionUtils';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
 import { useCart } from '@/lib/providers/CartProvider';
@@ -56,7 +53,10 @@ function PlatformPromotionBottomCard({
         data-testid="applied-platform-promotion"
         data-stage="active"
       >
-        <span className="flex shrink-0 items-center rounded-sop-12px bg-sop-primary-200 p-sop-12px" aria-hidden>
+        <span
+          className="flex shrink-0 items-center rounded-sop-12px bg-sop-primary-200 p-sop-12px"
+          aria-hidden
+        >
           <TicketSaleIcon color="#9C6ADE" size={{ mobile: 28, desktop: 28 }} />
         </span>
         <div className="min-w-0 flex-1 text-sop-primary-500">
@@ -81,7 +81,9 @@ function PlatformPromotionBottomCard({
       type="button"
       onClick={onOpenModal}
       data-testid={
-        stage === 'suggest' ? 'platform-promotion-suggest-button' : 'platform-promotion-picker-button'
+        stage === 'suggest'
+          ? 'platform-promotion-suggest-button'
+          : 'platform-promotion-picker-button'
       }
       data-stage={stage}
       className={cn(
@@ -89,7 +91,10 @@ function PlatformPromotionBottomCard({
         isMobile ? 'p-sop-12px' : 'px-sop-16px py-sop-12px',
       )}
     >
-      <span className="flex shrink-0 items-center rounded-sop-12px bg-sop-primary-200 p-sop-12px" aria-hidden>
+      <span
+        className="flex shrink-0 items-center rounded-sop-12px bg-sop-primary-200 p-sop-12px"
+        aria-hidden
+      >
         <PlusIcon color="#9C6ADE" size={{ mobile: 28, desktop: 28 }} />
       </span>
       {stage === 'suggest' ? (
@@ -218,12 +223,7 @@ export function CheckoutPromotionSection() {
 
         <div className="flex flex-col gap-sop-16px">
           <div className="flex flex-col gap-sop-8px">
-            <div
-              className={cn(
-                'flex gap-sop-16px',
-                isMobile ? 'items-center' : 'items-stretch',
-              )}
-            >
+            <div className={cn('flex gap-sop-16px', isMobile ? 'items-center' : 'items-stretch')}>
               <div className="min-w-0 flex-1">
                 <Input
                   hasTitle={false}

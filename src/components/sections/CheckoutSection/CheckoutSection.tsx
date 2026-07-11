@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { GuestCheckoutField, GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
+import type {
+  GuestCheckoutField,
+  GuestCheckoutFormState,
+} from '@/lib/checkout/guestCheckoutValidation';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { CheckoutAddressSection } from './CheckoutAddressSection';

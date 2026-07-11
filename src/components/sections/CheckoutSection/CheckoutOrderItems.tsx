@@ -21,10 +21,7 @@ function CheckoutStoreCard({ group }: CheckoutStoreCardProps) {
   const storeTotal = group.subtotal + selectedShippingFee - storeDiscount;
 
   return (
-    <section
-      className="flex flex-col"
-      data-testid={`checkout-store-${group.storeId}`}
-    >
+    <section className="flex flex-col" data-testid={`checkout-store-${group.storeId}`}>
       <div className="flex items-center gap-sop-8px rounded-t-sop-20px border-b border-dashed border-sop-primary-300 bg-sop-base-white px-sop-16px py-sop-12px lg:px-sop-24px">
         <div className="flex items-center rounded-sop-20px bg-sop-primary-500 p-sop-8px">
           <ShopIcon size={{ mobile: 16 }} color="white" />

@@ -1,6 +1,6 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type LineSquareCustomIconProps = Omit<FilledIconProps, "children" | "color">
+export type LineSquareCustomIconProps = Omit<FilledIconProps, 'children' | 'color'>;
 
 export function LineSquareCustomIcon(props: LineSquareCustomIconProps) {
   return (
@@ -31,5 +31,5 @@ export function LineSquareCustomIcon(props: LineSquareCustomIconProps) {
         </clipPath>
       </defs>
     </FilledIcon>
-  )
+  );
 }

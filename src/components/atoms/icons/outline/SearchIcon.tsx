@@ -1,12 +1,12 @@
-import { IconBase } from "../IconBase"
-import type { IconColor, IconResponsiveSize, IconSvgProps } from "../types"
+import { IconBase } from '../IconBase';
+import type { IconColor, IconResponsiveSize, IconSvgProps } from '../types';
 
 export type SearchIconProps = IconSvgProps & {
-  size?: IconResponsiveSize
-  color?: IconColor
-}
+  size?: IconResponsiveSize;
+  color?: IconColor;
+};
 
-export function SearchIcon({ color = "currentColor", ...props }: SearchIconProps) {
+export function SearchIcon({ color = 'currentColor', ...props }: SearchIconProps) {
   return (
     <IconBase viewBox="0 0 24 24" fill="none" {...props}>
       <path
@@ -22,5 +22,5 @@ export function SearchIcon({ color = "currentColor", ...props }: SearchIconProps
         fill={color}
       />
     </IconBase>
-  )
+  );
 }

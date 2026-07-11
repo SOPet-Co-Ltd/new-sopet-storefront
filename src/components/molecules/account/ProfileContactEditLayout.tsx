@@ -43,7 +43,9 @@ function ProfileStepIndicator({ current, steps }: ProfileContactEditStep) {
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full sop-body-xs-medium',
                 isActive && 'bg-sop-primary-500 text-sop-neutral-grayfixed-600',
                 isComplete && 'bg-sop-primary-200 text-sop-primary-600',
-                !isActive && !isComplete && 'bg-sop-neutral-grayalpha-200 text-sop-neutral-gray-400',
+                !isActive &&
+                  !isComplete &&
+                  'bg-sop-neutral-grayalpha-200 text-sop-neutral-gray-400',
               )}
               aria-current={isActive ? 'step' : undefined}
             >
@@ -90,7 +92,9 @@ export function ProfileContactEditLayout({
         {currentValue ? (
           <div className="mb-5 rounded-sop-8px bg-sop-primary-50 px-4 py-3">
             <p className="sop-body-xs-regular text-sop-neutral-gray-400">{currentValue.label}</p>
-            <p className="mt-0.5 sop-body-sm-medium text-sop-neutral-gray-200">{currentValue.value}</p>
+            <p className="mt-0.5 sop-body-sm-medium text-sop-neutral-gray-200">
+              {currentValue.value}
+            </p>
           </div>
         ) : null}
 

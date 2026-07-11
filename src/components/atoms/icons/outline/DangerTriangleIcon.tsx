@@ -1,6 +1,6 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type DangerTriangleIconProps = Omit<OutlineIconProps, "children">
+export type DangerTriangleIconProps = Omit<OutlineIconProps, 'children'>;
 
 export function DangerTriangleIcon(props: DangerTriangleIconProps) {
   return (
@@ -11,5 +11,5 @@ export function DangerTriangleIcon(props: DangerTriangleIconProps) {
         d="M5.31159 10.7615C8.22995 5.58716 9.68913 3 11.9999 3C14.3106 3 15.7698 5.58716 18.6882 10.7615L19.0518 11.4063C21.477 15.7061 22.6895 17.856 21.5936 19.428C20.4977 21 17.7863 21 12.3635 21H11.6362C6.21344 21 3.50205 21 2.40614 19.428C1.31022 17.856 2.52279 15.7061 4.94793 11.4063L5.31159 10.7615ZM11.9999 7.25C12.4141 7.25 12.7499 7.58579 12.7499 8V13C12.7499 13.4142 12.4141 13.75 11.9999 13.75C11.5857 13.75 11.2499 13.4142 11.2499 13V8C11.2499 7.58579 11.5857 7.25 11.9999 7.25ZM11.9999 17C12.5522 17 12.9999 16.5523 12.9999 16C12.9999 15.4477 12.5522 15 11.9999 15C11.4476 15 10.9999 15.4477 10.9999 16C10.9999 16.5523 11.4476 17 11.9999 17Z"
       />
     </OutlineIcon>
-  )
+  );
 }

@@ -47,8 +47,12 @@ export function useCheckoutSubmit(
 ) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const { selectedItems: items, selectedSubtotal: subtotal, refetch, pruneDeselectedIds } =
-    useCart();
+  const {
+    selectedItems: items,
+    selectedSubtotal: subtotal,
+    refetch,
+    pruneDeselectedIds,
+  } = useCart();
   const checkoutMutations = useCheckoutMutations();
   const {
     step,
@@ -123,8 +127,7 @@ export function useCheckoutSubmit(
   const executeSubmit = useCallback(
     async (overrideAddressId?: string | null) => {
       try {
-        const cardPayment =
-          paymentMethod === 'card' ? await prepareCardPayment() : undefined;
+        const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
         const result = await submitCheckout(
           {
@@ -137,8 +140,7 @@ export function useCheckoutSubmit(
             guestForm: isGuestCheckout ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
-            omiseToken:
-              cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined,
+            omiseToken: cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined,
             savedPaymentMethodId:
               cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined,
           },

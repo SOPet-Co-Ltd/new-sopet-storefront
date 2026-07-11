@@ -45,9 +45,7 @@ export function ProductShowPrice({ product, selectedOptions }: ProductShowPriceP
             )}
           </>
         ) : (
-          <span className="label-md text-secondary pt-2 pb-4">
-            Not available in your region
-          </span>
+          <span className="label-md text-secondary pt-2 pb-4">Not available in your region</span>
         )}
       </div>
       {hasDiscount && discountPercent > 0 && (

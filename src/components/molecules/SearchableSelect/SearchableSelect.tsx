@@ -87,9 +87,7 @@ export function SearchableSelect({
   }, [closePanel]);
 
   const displayValue =
-    searchable && open
-      ? search
-      : getSearchDisplayFromValue(value, options, getDisplayLabel);
+    searchable && open ? search : getSearchDisplayFromValue(value, options, getDisplayLabel);
 
   const filteredOptions = useMemo(() => {
     if (!searchable) return options;

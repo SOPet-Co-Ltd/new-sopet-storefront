@@ -1,24 +1,24 @@
-"use client"
+'use client';
 
-import { useEffect, useCallback, useRef } from "react"
-import { cn } from "@/lib/utils"
-import { XIcon } from "./icons/inline/XIcon"
+import { useEffect, useCallback, useRef } from 'react';
+import { cn } from '@/lib/utils';
+import { XIcon } from './icons/inline/XIcon';
 
 const FOCUSABLE_SELECTOR =
-  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 type ModalProps = {
-  header?: React.ReactNode
-  children?: React.ReactNode
-  footer?: React.ReactNode
-  onClose?: () => void
-  overlayClassName?: string
-  className?: string
-  width?: number
-  transparentBackground?: boolean
-  insideCloseButton?: boolean
-  contentClassName?: string
-} & Omit<React.HTMLAttributes<HTMLDivElement>, "children">
+  header?: React.ReactNode;
+  children?: React.ReactNode;
+  footer?: React.ReactNode;
+  onClose?: () => void;
+  overlayClassName?: string;
+  className?: string;
+  width?: number;
+  transparentBackground?: boolean;
+  insideCloseButton?: boolean;
+  contentClassName?: string;
+} & Omit<React.HTMLAttributes<HTMLDivElement>, 'children'>;
 
 export const Modal = ({
   header,
@@ -33,82 +33,74 @@ export const Modal = ({
   contentClassName,
   ...dialogProps
 }: ModalProps) => {
-  const modalRef = useRef<HTMLDivElement>(null)
-  const previousActiveElement = useRef<Element | null>(null)
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<Element | null>(null);
 
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose?.()
+      if (e.key === 'Escape') onClose?.();
     },
-    [onClose]
-  )
+    [onClose],
+  );
 
   const handleTabKey = useCallback((e: KeyboardEvent) => {
-    if (e.key !== "Tab") return
+    if (e.key !== 'Tab') return;
 
-    const focusableElements =
-      modalRef.current?.querySelectorAll(FOCUSABLE_SELECTOR)
-    if (!focusableElements || focusableElements.length === 0) return
+    const focusableElements = modalRef.current?.querySelectorAll(FOCUSABLE_SELECTOR);
+    if (!focusableElements || focusableElements.length === 0) return;
 
-    const firstElement = focusableElements[0] as HTMLElement
-    const lastElement = focusableElements[
-      focusableElements.length - 1
-    ] as HTMLElement
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
     if (e.shiftKey) {
       if (document.activeElement === firstElement) {
-        e.preventDefault()
-        lastElement.focus()
+        e.preventDefault();
+        lastElement.focus();
       }
     } else if (document.activeElement === lastElement) {
-      e.preventDefault()
-      firstElement.focus()
+      e.preventDefault();
+      firstElement.focus();
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    previousActiveElement.current = document.activeElement
+    previousActiveElement.current = document.activeElement;
 
     if (onClose) {
-      document.addEventListener("keydown", handleEscape)
+      document.addEventListener('keydown', handleEscape);
     }
-    document.addEventListener("keydown", handleTabKey)
-    document.body.style.overflow = "hidden"
+    document.addEventListener('keydown', handleTabKey);
+    document.body.style.overflow = 'hidden';
 
-    const focusable = modalRef.current?.querySelectorAll(FOCUSABLE_SELECTOR)
+    const focusable = modalRef.current?.querySelectorAll(FOCUSABLE_SELECTOR);
     if (focusable && focusable.length > 0) {
-      ;(focusable[0] as HTMLElement).focus()
+      (focusable[0] as HTMLElement).focus();
     } else {
-      modalRef.current?.focus()
+      modalRef.current?.focus();
     }
 
     return () => {
-      document.removeEventListener("keydown", handleEscape)
-      document.removeEventListener("keydown", handleTabKey)
-      document.body.style.overflow = ""
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleTabKey);
+      document.body.style.overflow = '';
 
       if (previousActiveElement.current instanceof HTMLElement) {
-        previousActiveElement.current.focus()
+        previousActiveElement.current.focus();
       }
-    }
-  }, [onClose, handleEscape, handleTabKey])
+    };
+  }, [onClose, handleEscape, handleTabKey]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-14">
       <div
         className={cn(
-          "absolute inset-0 backdrop-blur-sm",
-          transparentBackground
-            ? "bg-transparent"
-            : "bg-sop-neutral-whitealpha-400",
-          overlayClassName
+          'absolute inset-0 backdrop-blur-sm',
+          transparentBackground ? 'bg-transparent' : 'bg-sop-neutral-whitealpha-400',
+          overlayClassName,
         )}
       />
 
-      <div
-        className={cn("relative w-full max-w-150", className)}
-        style={{ maxWidth: width }}
-      >
+      <div className={cn('relative w-full max-w-150', className)} style={{ maxWidth: width }}>
         {onClose && !insideCloseButton && (
           <button
             type="button"
@@ -125,8 +117,8 @@ export const Modal = ({
           aria-modal="true"
           tabIndex={-1}
           className={cn(
-            "flex max-h-135.25 flex-col overflow-hidden rounded-sop-20px bg-sop-base-white shadow-lg relative",
-            transparentBackground && "bg-transparent shadow-none"
+            'flex max-h-135.25 flex-col overflow-hidden rounded-sop-20px bg-sop-base-white shadow-lg relative',
+            transparentBackground && 'bg-transparent shadow-none',
           )}
           {...dialogProps}
         >
@@ -142,14 +134,7 @@ export const Modal = ({
 
           {header != null && <div className="shrink-0 p-4">{header}</div>}
 
-          <div
-            className={cn(
-              "flex-1 overflow-y-auto px-4",
-              contentClassName
-            )}
-          >
-            {children}
-          </div>
+          <div className={cn('flex-1 overflow-y-auto px-4', contentClassName)}>{children}</div>
 
           {footer != null && (
             <div className="shrink-0 bg-sop-base-white p-4">
@@ -159,5 +144,5 @@ export const Modal = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

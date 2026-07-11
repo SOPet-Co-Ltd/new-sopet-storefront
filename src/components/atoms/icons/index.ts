@@ -1,4 +1,4 @@
-export { FilledIcon, type FilledIconProps } from "./FilledIcon"
+export { FilledIcon, type FilledIconProps } from './FilledIcon';
 export {
   AlertIcon,
   type AlertIconProps,
@@ -250,9 +250,9 @@ export {
   type WishListHeartIconProps,
   YouTubeIcon,
   type YouTubeIconProps,
-} from "./filled"
-export { IconBase } from "./IconBase"
-export { InlineIcon, type InlineIconProps } from "./InlineIcon"
+} from './filled';
+export { IconBase } from './IconBase';
+export { InlineIcon, type InlineIconProps } from './InlineIcon';
 export {
   Bag5Icon,
   type Bag5IconProps,
@@ -288,7 +288,7 @@ export {
   type TruckIconProps,
   XIcon,
   type XIconProps,
-} from "./inline"
+} from './inline';
 export {
   CheckIcon,
   type CheckIconProps,
@@ -346,12 +346,7 @@ export {
   type UserIconProps,
   WalletIcon,
   type WalletIconProps,
-} from "./outline"
-export { OutlineIcon, type OutlineIconProps } from "./OutlineIcon"
-export { DEFAULT_ICON_SIZE, getIconSizeStyle, toCssSize } from "./iconStyles"
-export type {
-  IconColor,
-  IconResponsiveSize,
-  IconSizeValue,
-  IconSvgProps,
-} from "./types"
+} from './outline';
+export { OutlineIcon, type OutlineIconProps } from './OutlineIcon';
+export { DEFAULT_ICON_SIZE, getIconSizeStyle, toCssSize } from './iconStyles';
+export type { IconColor, IconResponsiveSize, IconSizeValue, IconSvgProps } from './types';

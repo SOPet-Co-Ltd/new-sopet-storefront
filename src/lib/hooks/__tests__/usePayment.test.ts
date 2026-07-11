@@ -36,10 +36,9 @@ describe('usePayment', () => {
       }),
     );
 
-    const { result } = renderHook(
-      () => usePayment({ id: CHECKOUT_PAYMENT_ID }),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => usePayment({ id: CHECKOUT_PAYMENT_ID }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.payment?.status).toBe('pending');

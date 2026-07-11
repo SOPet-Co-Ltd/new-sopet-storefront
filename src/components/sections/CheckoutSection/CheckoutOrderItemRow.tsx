@@ -3,10 +3,7 @@
 import Image from 'next/image';
 import type { CartItem } from '@/lib/cart/cartUtils';
 import { getCartItemUnitPrice } from '@/lib/cart/cartUtils';
-import {
-  formatCheckoutPrice,
-  formatCheckoutVariantLabel,
-} from './checkoutOrderItemUtils';
+import { formatCheckoutPrice, formatCheckoutVariantLabel } from './checkoutOrderItemUtils';
 
 type CheckoutOrderItemRowProps = {
   item: CartItem;

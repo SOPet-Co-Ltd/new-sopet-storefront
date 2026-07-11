@@ -4,7 +4,10 @@ import { Button } from '@/components/atoms/Button';
 import { PiggyBankIcon } from '@/components/atoms/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckoutTotals } from '@/lib/hooks/useCheckoutTotals';
-import { useCheckoutSubmit, type AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
+import {
+  useCheckoutSubmit,
+  type AddressSubmitContext,
+} from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 
 function formatPrice(amount: number): string {
@@ -98,7 +101,10 @@ export function CheckoutSummarySection({
       <div className="hidden border-t border-sop-neutral-grayalpha-200 pt-sop-16px text-sop-neutral-grayalpha-200 md:block">
         <div className="flex justify-between">
           <label className="sop-body-lg-medium text-sop-neutral-gray-300">ยอดชำระเงิน</label>
-          <label className="sop-headline-md-medium text-sop-secondary-600" data-testid="checkout-final-price">
+          <label
+            className="sop-headline-md-medium text-sop-secondary-600"
+            data-testid="checkout-final-price"
+          >
             {formatPrice(totals.finalPrice)}
           </label>
         </div>

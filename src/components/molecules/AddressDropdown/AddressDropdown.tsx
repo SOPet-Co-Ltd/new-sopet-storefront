@@ -1,6 +1,9 @@
 'use client';
 
-import { SearchableSelect, type SearchableSelectProps } from '@/components/molecules/SearchableSelect';
+import {
+  SearchableSelect,
+  type SearchableSelectProps,
+} from '@/components/molecules/SearchableSelect';
 import type { SearchableOption } from '@/components/molecules/SearchableSelect/types';
 
 export type AddressOption = SearchableOption;

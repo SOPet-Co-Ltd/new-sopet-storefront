@@ -105,9 +105,7 @@ describe('PDP SSR reconciliation', () => {
   it('renders product details from initialProduct without skeleton', () => {
     server.use(
       graphql.query('Cart', () => HttpResponse.json({ data: { cart: null } })),
-      graphql.query('ProductReviews', () =>
-        HttpResponse.json({ data: { productReviews: [] } }),
-      ),
+      graphql.query('ProductReviews', () => HttpResponse.json({ data: { productReviews: [] } })),
       graphql.query('StoreReviewSummary', () =>
         HttpResponse.json({ data: { storeReviewSummary: null } }),
       ),

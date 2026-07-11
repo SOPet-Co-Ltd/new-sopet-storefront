@@ -32,11 +32,7 @@ export function ProductShareWishlistActions({
         className="cursor-pointer disabled:opacity-40"
         aria-label={`แชร์ ${productName}`}
       >
-        <ShareIcon
-          size={{ mobile: 24, desktop: 32 }}
-          color="#9c6ade"
-          aria-hidden="true"
-        />
+        <ShareIcon size={{ mobile: 24, desktop: 32 }} color="#9c6ade" aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -45,9 +41,7 @@ export function ProductShareWishlistActions({
         aria-pressed={isWishlisted}
         className="cursor-pointer disabled:opacity-40"
         aria-label={
-          isWishlisted
-            ? `นำ ${productName} ออกจากรายการโปรด`
-            : `เพิ่ม ${productName} ในรายการโปรด`
+          isWishlisted ? `นำ ${productName} ออกจากรายการโปรด` : `เพิ่ม ${productName} ในรายการโปรด`
         }
       >
         <WishListHeartIcon size={{ mobile: 24, desktop: 36 }} filled={isWishlisted} />

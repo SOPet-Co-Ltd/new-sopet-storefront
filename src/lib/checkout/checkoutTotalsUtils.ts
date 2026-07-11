@@ -43,8 +43,8 @@ export function calculateCheckoutTotals({
     return total + (shippingByStoreId[storeId]?.shippingFee ?? 0);
   }, 0);
 
-  const isShippingComplete = storeIds.every(
-    (storeId) => Boolean(shippingByStoreId[storeId]?.shippingOptionId),
+  const isShippingComplete = storeIds.every((storeId) =>
+    Boolean(shippingByStoreId[storeId]?.shippingOptionId),
   );
 
   const totalDiscount = storeDiscountTotal + platformPromotionDiscount;

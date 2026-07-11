@@ -72,9 +72,7 @@ function ReviewModalContent({ items, onClose, onSubmit }: ReviewModalContentProp
     value: number | string | File[],
   ) => {
     setReviewData((previous) =>
-      previous.map((entry) =>
-        entry.itemId === itemId ? { ...entry, [field]: value } : entry,
-      ),
+      previous.map((entry) => (entry.itemId === itemId ? { ...entry, [field]: value } : entry)),
     );
     if (error && field === 'rating') {
       setError(null);
@@ -102,9 +100,7 @@ function ReviewModalContent({ items, onClose, onSubmit }: ReviewModalContentProp
       );
       onClose();
     } catch (submitError) {
-      setError(
-        submitError instanceof Error ? submitError.message : 'ล้มเหลวในการส่งรีวิว',
-      );
+      setError(submitError instanceof Error ? submitError.message : 'ล้มเหลวในการส่งรีวิว');
     } finally {
       setIsSubmitting(false);
     }
@@ -146,7 +142,10 @@ function ReviewModalContent({ items, onClose, onSubmit }: ReviewModalContentProp
             if (!entry) return null;
 
             return (
-              <div key={item.id} className="flex flex-col gap-4 border-b border-sop-neutral-grayalpha-300 pb-4">
+              <div
+                key={item.id}
+                className="flex flex-col gap-4 border-b border-sop-neutral-grayalpha-300 pb-4"
+              >
                 <p className="sop-body-md-medium text-sop-neutral-gray-300">{item.title}</p>
                 <div className="flex items-center gap-2">
                   <span className="sop-body-sm-medium text-sop-primary-500">ให้คะแนน</span>
@@ -184,22 +183,10 @@ function ReviewModalContent({ items, onClose, onSubmit }: ReviewModalContentProp
   );
 }
 
-export default function ReviewModal({
-  isOpen,
-  onClose,
-  items,
-  onSubmit,
-}: ReviewModalProps) {
+export default function ReviewModal({ isOpen, onClose, items, onSubmit }: ReviewModalProps) {
   if (!isOpen) return null;
 
   const itemsKey = items.map((item) => item.id).join(',');
 
-  return (
-    <ReviewModalContent
-      key={itemsKey}
-      items={items}
-      onClose={onClose}
-      onSubmit={onSubmit}
-    />
-  );
+  return <ReviewModalContent key={itemsKey} items={items} onClose={onClose} onSubmit={onSubmit} />;
 }

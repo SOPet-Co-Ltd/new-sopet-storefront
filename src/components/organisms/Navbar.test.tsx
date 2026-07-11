@@ -68,10 +68,7 @@ describe('Navbar', () => {
   it('links cart to /cart and omits /coupons links', () => {
     render(<Navbar />);
 
-    expect(screen.getByRole('link', { name: 'ตะกร้าสินค้า' })).toHaveAttribute(
-      'href',
-      '/cart',
-    );
+    expect(screen.getByRole('link', { name: 'ตะกร้าสินค้า' })).toHaveAttribute('href', '/cart');
 
     expect(screen.queryByRole('link', { name: /coupons/i })).not.toBeInTheDocument();
     expect(document.body.innerHTML).not.toContain('/coupons');

@@ -1,10 +1,7 @@
 'use client';
 
 import { useQuery } from '@apollo/client/react';
-import {
-  StoreBySlugDocument,
-  type StoreBySlugQuery,
-} from '@/lib/graphql/generated/graphql';
+import { StoreBySlugDocument, type StoreBySlugQuery } from '@/lib/graphql/generated/graphql';
 
 export type StoreDetail = NonNullable<StoreBySlugQuery['storeBySlug']>;
 

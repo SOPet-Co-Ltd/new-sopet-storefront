@@ -1,9 +1,5 @@
 export type CheckoutAddressDisplayMode =
-  | 'guest'
-  | 'auth-inline'
-  | 'auth-summary'
-  | 'auth-loading'
-  | 'auth-error';
+  'guest' | 'auth-inline' | 'auth-summary' | 'auth-loading' | 'auth-error';
 
 export function resolveDisplayMode(input: {
   isAuthenticated: boolean;

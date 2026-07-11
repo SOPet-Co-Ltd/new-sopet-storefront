@@ -41,9 +41,7 @@ describe('omise payment utilities', () => {
     delete process.env.NEXT_PUBLIC_OMISE_PUBLIC_KEY;
 
     expect(() => getOmisePublicKey()).toThrow(OmiseConfigurationError);
-    expect(() => getOmisePublicKey()).toThrow(
-      'ระบบชำระเงินยังไม่พร้อม กรุณาติดต่อผู้ดูแลระบบ',
-    );
+    expect(() => getOmisePublicKey()).toThrow('ระบบชำระเงินยังไม่พร้อม กรุณาติดต่อผู้ดูแลระบบ');
   });
 
   it('loads Omise.js and tokenizes card data into a token id', async () => {

@@ -115,9 +115,7 @@ function ProductCardPrice({
   const hasPrice = product.basePrice > 0;
 
   if (!hasPrice) {
-    return (
-      <span className="label-md text-secondary pt-2 pb-4">ไม่มีสินค้าในพื้นที่ของคุณ</span>
-    );
+    return <span className="label-md text-secondary pt-2 pb-4">ไม่มีสินค้าในพื้นที่ของคุณ</span>;
   }
 
   return (
@@ -164,7 +162,12 @@ function ProductCardReviewStars({ product }: { product: ProductCardProduct }) {
   );
 }
 
-export default function ProductCard({ product, compact = false, className, priority = false }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  compact = false,
+  className,
+  priority = false,
+}: ProductCardProps) {
   const href = buildProductHref(product.id);
   const discountPercent = getDiscountPercent(product.basePrice, product.compareAtPrice);
   const cardRef = useRef<HTMLAnchorElement>(null);

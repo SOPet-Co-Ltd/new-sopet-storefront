@@ -11,7 +11,13 @@ type SavedAddressSummaryCardProps = {
 };
 
 function formatAddressLine(address: SavedAddress): string {
-  return [address.addressLine1, address.tumbon, address.amphoe, address.province, address.postalCode]
+  return [
+    address.addressLine1,
+    address.tumbon,
+    address.amphoe,
+    address.province,
+    address.postalCode,
+  ]
     .filter(Boolean)
     .join(' ');
 }

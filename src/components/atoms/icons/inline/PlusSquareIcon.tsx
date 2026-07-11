@@ -1,6 +1,6 @@
-import { InlineIcon, type InlineIconProps } from "../InlineIcon"
+import { InlineIcon, type InlineIconProps } from '../InlineIcon';
 
-export type PlusSquareIconProps = Omit<InlineIconProps, "children">
+export type PlusSquareIconProps = Omit<InlineIconProps, 'children'>;
 
 export function PlusSquareIcon({ strokeWidth = 2, ...props }: PlusSquareIconProps) {
   return (
@@ -9,5 +9,5 @@ export function PlusSquareIcon({ strokeWidth = 2, ...props }: PlusSquareIconProp
       <path d="M12.0043 15.0043L12.0043 9.00427" />
       <path d="M15 12H9" />
     </InlineIcon>
-  )
+  );
 }

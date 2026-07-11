@@ -1,6 +1,6 @@
-import { Header } from "@/components/organisms/Header";
-import { ConditionalFooter } from "@/components/organisms/ConditionalFooter";
-import { PromotionalAdsModal } from "@/components/organisms/PromotionalAdsModal";
+import { Header } from '@/components/organisms/Header';
+import { ConditionalFooter } from '@/components/organisms/ConditionalFooter';
+import { PromotionalAdsModal } from '@/components/organisms/PromotionalAdsModal';
 
 export default function Layout({
   children,

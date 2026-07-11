@@ -13,15 +13,9 @@ import { samplePlatformAds } from '@/test/mocks/fixtures/catalog';
 import { server } from '@/test/mocks/server';
 
 vi.mock('next/image', () => ({
-  default: ({
-    src,
-    alt,
-    ...props
-  }: {
-    src: string;
-    alt: string;
-    [key: string]: unknown;
-  }) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
+    <img src={src} alt={alt} {...props} />
+  ),
 }));
 
 const createWrapper = createApolloTestWrapper;
@@ -33,9 +27,10 @@ describe('PromotionalAdsModal helpers', () => {
   });
 
   it('parseDismissState returns parsed state for valid payload', () => {
-    expect(
-      parseDismissState(JSON.stringify({ dismissedAt: 1, expiresAt: 2 })),
-    ).toEqual({ dismissedAt: 1, expiresAt: 2 });
+    expect(parseDismissState(JSON.stringify({ dismissedAt: 1, expiresAt: 2 }))).toEqual({
+      dismissedAt: 1,
+      expiresAt: 2,
+    });
   });
 
   it('getCooldownMs uses env override when valid', () => {

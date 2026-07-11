@@ -20,15 +20,7 @@ export function getPaginationButtons(page: number, totalPages: number): Array<nu
   }
 
   if (page >= totalPages - 3) {
-    return [
-      1,
-      '...',
-      totalPages - 4,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ];
+    return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
   }
 
   return [1, '...', page - 1, page, page + 1, '...', totalPages];
@@ -70,7 +62,8 @@ export function ProductReviewPagination({
               }}
               className={cn(
                 'flex h-sop-28px w-sop-28px cursor-pointer items-center justify-center rounded-md border border-sop-neutral-gray-300 sop-body-sm-light text-sop-neutral-gray-300',
-                label === page && 'cursor-default border-sop-neutral-gray-300 bg-sop-neutral-gray-300 text-sop-base-white',
+                label === page &&
+                  'cursor-default border-sop-neutral-gray-300 bg-sop-neutral-gray-300 text-sop-base-white',
               )}
             >
               {label}

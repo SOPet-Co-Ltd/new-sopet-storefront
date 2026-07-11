@@ -1,14 +1,9 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type StarFillIconProps = Omit<FilledIconProps, "children">
+export type StarFillIconProps = Omit<FilledIconProps, 'children'>;
 
-export function StarFillIcon({
-  color,
-  strokeColor,
-  strokeWidth = 1,
-  ...props
-}: StarFillIconProps) {
-  const resolvedColor = color ?? "currentColor"
+export function StarFillIcon({ color, strokeColor, strokeWidth = 1, ...props }: StarFillIconProps) {
+  const resolvedColor = color ?? 'currentColor';
 
   return (
     <FilledIcon
@@ -24,5 +19,5 @@ export function StarFillIcon({
         strokeLinejoin="round"
       />
     </FilledIcon>
-  )
+  );
 }

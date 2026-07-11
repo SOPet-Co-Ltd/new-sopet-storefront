@@ -56,7 +56,9 @@ export function OtpCodeInput({
 
     if (digits.length > 1) {
       const nextValue = (
-        sanitizedValue.slice(0, index) + digits + sanitizedValue.slice(index + digits.length)
+        sanitizedValue.slice(0, index) +
+        digits +
+        sanitizedValue.slice(index + digits.length)
       ).slice(0, OTP_LENGTH);
       applyValue(nextValue);
       focusInput(Math.min(index + digits.length, OTP_LENGTH) - 1);
@@ -65,7 +67,9 @@ export function OtpCodeInput({
 
     const digit = digits.slice(-1);
     const nextValue = (
-      sanitizedValue.slice(0, index) + digit + sanitizedValue.slice(index + 1)
+      sanitizedValue.slice(0, index) +
+      digit +
+      sanitizedValue.slice(index + 1)
     ).slice(0, OTP_LENGTH);
     applyValue(nextValue);
 

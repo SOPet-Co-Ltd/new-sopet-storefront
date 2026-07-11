@@ -29,7 +29,11 @@ export function CartVariantModal({ item, onClose, onConfirm }: CartVariantModalP
   const productId = product?.id ?? '';
   const productName = product?.name ?? 'สินค้า';
 
-  const { product: fullProduct, loading, error } = useProduct({
+  const {
+    product: fullProduct,
+    loading,
+    error,
+  } = useProduct({
     mode: 'id',
     id: productId,
     skip: !productId,
@@ -166,7 +170,10 @@ export function CartVariantModal({ item, onClose, onConfirm }: CartVariantModalP
 
             {selectedVariant ? (
               isOutOfStock ? (
-                <p className="sop-body-sm-regular text-sop-secondary-500" data-testid="variant-out-of-stock">
+                <p
+                  className="sop-body-sm-regular text-sop-secondary-500"
+                  data-testid="variant-out-of-stock"
+                >
                   ตัวเลือกนี้สินค้าหมด
                 </p>
               ) : (

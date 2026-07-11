@@ -1,11 +1,8 @@
-import { OutlineIcon, type OutlineIconProps } from "../OutlineIcon"
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
 
-export type FooterMailIconProps = Omit<OutlineIconProps, "children">
+export type FooterMailIconProps = Omit<OutlineIconProps, 'children'>;
 
-export function FooterMailIcon({
-  color = "currentColor",
-  ...props
-}: FooterMailIconProps) {
+export function FooterMailIcon({ color = 'currentColor', ...props }: FooterMailIconProps) {
   return (
     <OutlineIcon viewBox="0 0 24 24" color={color} {...props}>
       <path
@@ -16,5 +13,5 @@ export function FooterMailIcon({
         stroke="none"
       />
     </OutlineIcon>
-  )
+  );
 }

@@ -13,7 +13,10 @@ export const sampleSearchProductSuggestions = [
   },
 ];
 
-export const sampleSearchQuerySuggestions = [{ query: 'royal canin' }, { query: 'royal canin kitten' }];
+export const sampleSearchQuerySuggestions = [
+  { query: 'royal canin' },
+  { query: 'royal canin kitten' },
+];
 
 export const sampleSearchSuggestionsPayload = {
   products: sampleSearchProductSuggestions,

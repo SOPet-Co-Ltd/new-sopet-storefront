@@ -1,6 +1,6 @@
-import { InlineIcon, type InlineIconProps } from "../InlineIcon"
+import { InlineIcon, type InlineIconProps } from '../InlineIcon';
 
-export type TicketSaleOutlineIconProps = Omit<InlineIconProps, "children">
+export type TicketSaleOutlineIconProps = Omit<InlineIconProps, 'children'>;
 
 export function TicketSaleOutlineIcon(props: TicketSaleOutlineIconProps) {
   return (
@@ -18,5 +18,5 @@ export function TicketSaleOutlineIcon(props: TicketSaleOutlineIconProps) {
         stroke="none"
       />
     </InlineIcon>
-  )
+  );
 }

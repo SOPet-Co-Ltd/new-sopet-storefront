@@ -75,12 +75,7 @@ function TabContent({
   return <div className="mt-6">{children}</div>;
 }
 
-export function SellerTabs({
-  activeTab,
-  storeHandle,
-  storeId,
-  initialProducts,
-}: SellerTabsProps) {
+export function SellerTabs({ activeTab, storeHandle, storeId, initialProducts }: SellerTabsProps) {
   const tabs: TabItem[] = [
     { label: 'products', href: `/sellers/${storeHandle}` },
     { label: 'reviews', href: `/sellers/${storeHandle}/reviews` },
@@ -163,9 +158,7 @@ export function SellerStorefront({
   if (error) {
     return (
       <div className="py-8 text-center" data-testid="seller-storefront-error">
-        <p className="sop-body-md-regular text-sop-neutral-gray-300">
-          โหลดข้อมูลร้านค้าไม่สำเร็จ
-        </p>
+        <p className="sop-body-md-regular text-sop-neutral-gray-300">โหลดข้อมูลร้านค้าไม่สำเร็จ</p>
       </div>
     );
   }

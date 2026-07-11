@@ -1,6 +1,6 @@
-import { FilledIcon, type FilledIconProps } from "../FilledIcon"
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
 
-export type GoogleIconProps = Omit<FilledIconProps, "children" | "color">
+export type GoogleIconProps = Omit<FilledIconProps, 'children' | 'color'>;
 
 export function GoogleIcon(props: GoogleIconProps) {
   return (
@@ -22,5 +22,5 @@ export function GoogleIcon(props: GoogleIconProps) {
         fill="#EA4335"
       />
     </FilledIcon>
-  )
+  );
 }

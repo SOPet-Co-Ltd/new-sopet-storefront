@@ -2,10 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { submitCheckout, type SubmitCheckoutParams } from '@/lib/checkout/submitCheckout';
 import { CATALOG_STORE_ID } from '@/test/mocks/fixtures/catalog';
 import { sampleCart } from '@/test/mocks/fixtures/cart';
-import {
-  sampleOrder,
-  samplePendingPayment,
-} from '@/test/mocks/fixtures/checkout';
+import { sampleOrder, samplePendingPayment } from '@/test/mocks/fixtures/checkout';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 
 vi.mock('@/lib/payment/omise', () => ({
@@ -32,9 +29,7 @@ const guestForm: GuestCheckoutFormState = {
   postalCode: '10110',
 };
 
-function createSubmitParams(
-  paymentMethod: 'promptpay' | 'card' | 'cod',
-): SubmitCheckoutParams {
+function createSubmitParams(paymentMethod: 'promptpay' | 'card' | 'cod'): SubmitCheckoutParams {
   return {
     step: 'review',
     checkoutContext: {

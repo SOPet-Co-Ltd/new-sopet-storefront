@@ -1,23 +1,23 @@
-import type { Metadata } from "next";
-import { Mitr } from "next/font/google";
-import { AppProviders } from "@/lib/providers";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Mitr } from 'next/font/google';
+import { AppProviders } from '@/lib/providers';
+import './globals.css';
 
 const mitr = Mitr({
-  variable: "--font-mitr",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  display: "swap",
+  variable: '--font-mitr',
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  display: 'swap',
   preload: true,
-})
+});
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Sopet",
-    default: "Sopet",
+    template: '%s | Sopet',
+    default: 'Sopet',
   },
   description:
-    "Sopet คือแพลตฟอร์มค้นหายาและสินค้าสำหรับสัตว์เลี้ยงจากโรงพยาบาลและร้านขายยาทั่วไทย เปรียบเทียบราคา รับโค้ดส่วนลด และจัดส่งรวดเร็ว",
+    'Sopet คือแพลตฟอร์มค้นหายาและสินค้าสำหรับสัตว์เลี้ยงจากโรงพยาบาลและร้านขายยาทั่วไทย เปรียบเทียบราคา รับโค้ดส่วนลด และจัดส่งรวดเร็ว',
 };
 
 export default function RootLayout({
@@ -26,11 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="th"
-      className={`${mitr.variable} ${mitr.className} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-sop-primary-100">
+    <html lang="th" className={`${mitr.variable} ${mitr.className} h-full antialiased`}>
+      <body className="flex min-h-dvh flex-col bg-sop-primary-100">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

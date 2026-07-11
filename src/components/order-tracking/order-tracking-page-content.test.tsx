@@ -88,6 +88,7 @@ describe('OrderTrackingPageContent', () => {
 
     expect(screen.getByTestId('order-tracking-success')).toBeInTheDocument();
     expect(screen.getByTestId('order-tracking-status-header')).toBeInTheDocument();
+    expect(screen.getByTestId('order-tracking-progress')).toBeInTheDocument();
     expect(screen.getByText(ORDER_STATUS_LABELS.paid)).toBeInTheDocument();
     expect(screen.getByText('ติดตามพัสดุ')).toBeInTheDocument();
     expect(screen.getByText('Dog Food')).toBeInTheDocument();

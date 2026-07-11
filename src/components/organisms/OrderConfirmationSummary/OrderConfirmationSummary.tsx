@@ -41,6 +41,7 @@ type OrderConfirmationSummaryProps = {
   order: OrderSummaryDisplayOrder;
   /** When true, omit duplicate header (order number/date shown in status header) */
   hideHeader?: boolean;
+  className?: string;
 };
 
 function OrderConfirmationItemRow({ item }: { item: OrderSummaryDisplayItem }) {
@@ -88,10 +89,14 @@ function OrderConfirmationItemRow({ item }: { item: OrderSummaryDisplayItem }) {
 export function OrderConfirmationSummary({
   order,
   hideHeader = false,
+  className,
 }: OrderConfirmationSummaryProps) {
   return (
     <div
-      className="w-full rounded-sop-24px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-6 shadow-sm md:p-8"
+      className={cn(
+        'w-full rounded-sop-24px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-6 shadow-sm md:p-8',
+        className,
+      )}
       data-testid="order-confirmation-summary"
     >
       {hideHeader ? null : (

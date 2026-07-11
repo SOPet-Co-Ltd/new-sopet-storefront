@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { OrderConfirmationSummary } from './OrderConfirmationSummary';
 import type { OrderQuery } from '@/lib/graphql/generated/graphql';
+import { sampleOrderTracking } from '@/test/mocks/fixtures/order-tracking';
 
 type Order = NonNullable<OrderQuery['order']>;
 
@@ -75,5 +76,24 @@ describe('OrderConfirmationSummary', () => {
 
     expect(screen.queryByRole('link', { name: /Pet Shampoo 500ml/ })).not.toBeInTheDocument();
     expect(screen.getByTestId('product-thumbnail-fallback')).toBeInTheDocument();
+  });
+
+  it('renders authenticated order with header by default', () => {
+    render(<OrderConfirmationSummary order={createOrder()} />);
+
+    expect(screen.getByRole('heading', { name: 'รายละเอียดคำสั่งซื้อ' })).toBeInTheDocument();
+    expect(screen.getByText(/ORD-001/)).toBeInTheDocument();
+    expect(screen.getByTestId('order-confirmation-total')).toHaveTextContent('฿300');
+  });
+
+  it('renders tracking fixture with hideHeader and omits duplicate header', () => {
+    render(<OrderConfirmationSummary order={sampleOrderTracking} hideHeader />);
+
+    expect(screen.queryByRole('heading', { name: 'รายละเอียดคำสั่งซื้อ' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/เลขที่คำสั่งซื้อ/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/วันที่สั่งซื้อ/)).not.toBeInTheDocument();
+    expect(screen.getByText('Premium Dog Food 5kg')).toBeInTheDocument();
+    expect(screen.getByText('จัดส่งมาตรฐาน')).toBeInTheDocument();
+    expect(screen.getByTestId('order-confirmation-total')).toHaveTextContent('฿540');
   });
 });

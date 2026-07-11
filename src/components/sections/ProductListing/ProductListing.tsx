@@ -12,10 +12,7 @@ import { useProducts } from '@/lib/hooks/useProducts';
 import { useSearchContext } from '@/lib/hooks/useSearchContext';
 import { useSessionId } from '@/lib/hooks/useSessionId';
 import { parseSearchSort } from '@/lib/search/searchSort';
-import {
-  parseSearchFilters,
-  toProductsFilterVariables,
-} from '@/lib/search/searchFilters';
+import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { cn } from '@/lib/utils';
 import { ProductListingSkeleton } from './ProductListingSkeleton';
 import { PRODUCT_CARD_GRID_CLASS } from './productListingGrid';
@@ -70,8 +67,7 @@ export function ProductListing({
   const listingParamsChanged = listingParamsKey !== initialListingParamsKeyRef.current;
   const { sortBy, sortOrder } =
     variant === 'search' ? parseSearchSort(sortParam) : { sortBy: undefined, sortOrder: undefined };
-  const limit =
-    limitProp ?? (variant === 'search' ? SEARCH_PRODUCT_LIMIT : DEFAULT_PRODUCT_LIMIT);
+  const limit = limitProp ?? (variant === 'search' ? SEARCH_PRODUCT_LIMIT : DEFAULT_PRODUCT_LIMIT);
   const searchContext = useSearchContext();
   const sessionId = useSessionId(variant === 'search');
 
@@ -128,9 +124,7 @@ export function ProductListing({
   });
 
   const useInitialProducts =
-    currentPage === initialPage &&
-    initialProducts !== undefined &&
-    !listingParamsChanged;
+    currentPage === initialPage && initialProducts !== undefined && !listingParamsChanged;
   const products =
     useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;
@@ -168,9 +162,7 @@ export function ProductListing({
   if (error) {
     return (
       <div className="py-8 text-center" data-testid="product-listing-error">
-        <p className="sop-body-md-regular text-sop-neutral-gray-300 mb-4">
-          โหลดสินค้าไม่สำเร็จ
-        </p>
+        <p className="sop-body-md-regular text-sop-neutral-gray-300 mb-4">โหลดสินค้าไม่สำเร็จ</p>
         <button
           type="button"
           onClick={() => void refetch()}
@@ -208,9 +200,7 @@ export function ProductListing({
   if (variant === 'search') {
     return (
       <div data-testid="product-listing">
-        {heading && (
-          <h1 className="sop-headline-md-medium text-sop-neutral-gray-300">{heading}</h1>
-        )}
+        {heading && <h1 className="sop-headline-md-medium text-sop-neutral-gray-300">{heading}</h1>}
 
         <div className={cn(heading && 'mt-10')}>
           <SearchSortBar
@@ -222,13 +212,11 @@ export function ProductListing({
         </div>
 
         <div className="mt-6 pt-7">
-          <p className="sop-body-lg-medium text-sop-neutral-gray-200">
-            สินค้าทั้งหมด ({total})
-          </p>
+          <p className="sop-body-lg-medium text-sop-neutral-gray-200">สินค้าทั้งหมด ({total})</p>
 
           <ul className={cn('mt-6', PRODUCT_CARD_GRID_CLASS)}>
             {products.map((product, index) => (
-              <li key={product.id}>
+              <li key={product.id} className="min-w-0 flex justify-center">
                 <ProductCard product={product} priority={index < 4} />
               </li>
             ))}
@@ -257,7 +245,7 @@ export function ProductListing({
 
       <ul className={PRODUCT_CARD_GRID_CLASS}>
         {products.map((product, index) => (
-          <li key={product.id}>
+          <li key={product.id} className="min-w-0 flex justify-center">
             <ProductCard product={product} priority={index < 4} />
           </li>
         ))}

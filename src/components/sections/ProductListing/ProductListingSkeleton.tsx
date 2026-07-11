@@ -15,7 +15,7 @@ export function ProductListingSkeleton({ variant = 'default' }: ProductListingSk
         {Array.from({ length: 20 }).map((_, index) => (
           <li
             key={index}
-            className="h-[280px] w-[168px] rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse md:h-[320px] md:w-sop-224px"
+            className="h-[280px] w-full max-w-[168px] justify-self-center rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse md:h-[320px] md:max-w-sop-224px"
           />
         ))}
       </ul>

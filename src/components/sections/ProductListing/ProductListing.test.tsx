@@ -4,6 +4,7 @@ import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ProductCard, { buildProductHref } from '@/components/organisms/ProductCard';
 import { CategoryIndexPage, ProductListing } from '@/components/sections/ProductListing';
+import { PRODUCT_CARD_GRID_CLASS } from '@/components/sections/ProductListing/productListingGrid';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from '@/test/mocks/server';
 
@@ -85,6 +86,9 @@ describe('ProductListing', () => {
 
     expect(await screen.findByText('Premium Dog Food 5kg')).toBeInTheDocument();
     expect(screen.getByText('สินค้าทั้งหมด 1')).toBeInTheDocument();
+
+    const grid = screen.getByRole('list');
+    expect(grid).toHaveClass(...PRODUCT_CARD_GRID_CLASS.split(' '));
   });
 
   it('navigates to next page when pagination is clicked', async () => {
@@ -94,7 +98,17 @@ describe('ProductListing', () => {
         return HttpResponse.json({
           data: {
             products: {
-              items: page === 1 ? [SAMPLE_PRODUCT] : [{ ...SAMPLE_PRODUCT, id: 'prod-002', name: 'Cat Litter 10L', slug: 'cat-litter-10l' }],
+              items:
+                page === 1
+                  ? [SAMPLE_PRODUCT]
+                  : [
+                      {
+                        ...SAMPLE_PRODUCT,
+                        id: 'prod-002',
+                        name: 'Cat Litter 10L',
+                        slug: 'cat-litter-10l',
+                      },
+                    ],
               pagination: { page, limit: 24, total: 30, totalPages: 2 },
             },
           },

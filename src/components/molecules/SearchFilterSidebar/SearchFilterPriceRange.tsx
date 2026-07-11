@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useId } from 'react';
+import { MinusThinIcon } from '@/components/atoms/icons/filled/MinusThinIcon';
 import { TagIcon } from '@/components/atoms/icons/filled/TagIcon';
 import { cn } from '@/lib/utils';
 
@@ -112,8 +113,11 @@ export function SearchFilterPriceRange({
           </div>
         </div>
 
-        <span aria-hidden className="absolute left-1/2 top-[calc(50%+4px)] -translate-x-1/2 text-sop-neutral-gray-400">
-          -
+        <span
+          aria-hidden
+          className="absolute left-1/2 top-[calc(50%+4px)] flex -translate-x-1/2 items-center"
+        >
+          <MinusThinIcon size={{ mobile: 16, desktop: 16 }} color="#949495" />
         </span>
 
         <div className="min-w-0 flex-1">

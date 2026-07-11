@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { AccountBackLink } from '@/components/molecules/account/AccountBackLink';
-import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { Button } from '@/components/atoms/Button';
+import { OrderShipmentTrackingList } from '@/components/order-tracking/order-shipment-tracking-list';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
 import {
   ORDER_STATUS_LABELS,
@@ -20,7 +20,11 @@ import { getOrdersListReturnUrl } from '@/lib/orders/orderListReturnUrl';
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
-  const [ordersReturnUrl, setOrdersReturnUrl] = useState('/user/orders');
+  const ordersReturnUrl = useSyncExternalStore(
+    () => () => {},
+    getOrdersListReturnUrl,
+    () => '/user/orders',
+  );
   const { order, loading, error, confirmOrderDelivered, confirmingDelivery } = useOrderDetail(
     params.id,
   );
@@ -30,10 +34,6 @@ export default function OrderDetailPage() {
     isDelivered,
   );
   const [actionError, setActionError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setOrdersReturnUrl(getOrdersListReturnUrl());
-  }, []);
 
   const handleConfirmDelivery = async () => {
     if (!order) return;
@@ -70,28 +70,6 @@ export default function OrderDetailPage() {
   }
 
   const statusLabel = ORDER_STATUS_LABELS[order.status] ?? order.status;
-  const shipments = order.items.reduce<
-    Map<
-      string,
-      {
-        fulfillmentProvider?: string | null;
-        trackingNumber?: string | null;
-        trackingUrl?: string | null;
-      }
-    >
-  >((map, item) => {
-    if (!item.trackingNumber && !item.fulfillmentProvider && !item.trackingUrl) {
-      return map;
-    }
-    if (!map.has(item.storeId)) {
-      map.set(item.storeId, {
-        fulfillmentProvider: item.fulfillmentProvider,
-        trackingNumber: item.trackingNumber,
-        trackingUrl: item.trackingUrl,
-      });
-    }
-    return map;
-  }, new Map());
 
   return (
     <AccountLayout title="รายละเอียดคำสั่งซื้อ">
@@ -140,43 +118,7 @@ export default function OrderDetailPage() {
           </p>
         ) : null}
 
-        {shipments.size > 0 ? (
-          <AccountCard>
-            <p className="mb-2 sop-body-sm-medium text-sop-neutral-gray-200">ติดตามพัสดุ</p>
-            <ul className="space-y-3">
-              {[...shipments.entries()].map(([storeId, shipment]) => (
-                <li key={storeId} className="space-y-1">
-                  {shipment.fulfillmentProvider ? (
-                    <p className="sop-body-sm-regular text-sop-neutral-gray-300">
-                      ขนส่ง:{' '}
-                      <span className="sop-body-sm-medium text-sop-neutral-gray-200">
-                        {shipment.fulfillmentProvider}
-                      </span>
-                    </p>
-                  ) : null}
-                  {shipment.trackingNumber ? (
-                    <p className="sop-body-sm-regular text-sop-neutral-gray-300">
-                      เลขพัสดุ:{' '}
-                      <span className="sop-body-sm-medium text-sop-neutral-gray-200">
-                        {shipment.trackingNumber}
-                      </span>
-                    </p>
-                  ) : null}
-                  {shipment.trackingUrl ? (
-                    <a
-                      href={shipment.trackingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex sop-body-sm-medium text-sop-secondary-500 underline"
-                    >
-                      เปิดลิงก์ติดตามพัสดุ
-                    </a>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </AccountCard>
-        ) : null}
+        <OrderShipmentTrackingList items={order.items} />
 
         <OrderConfirmationSummary order={order} />
       </div>

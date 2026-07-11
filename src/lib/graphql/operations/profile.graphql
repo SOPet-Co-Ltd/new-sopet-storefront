@@ -4,5 +4,7 @@ mutation UpdateProfile($input: UpdateProfileInput!) {
     phone
     email
     fullName
+    profilePhotoUrl
+    dateOfBirth
   }
 }

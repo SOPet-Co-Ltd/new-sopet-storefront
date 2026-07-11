@@ -7,11 +7,14 @@ import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import {
   ArrowRightIcon,
+  CalendarIcon,
   FooterMailIcon,
   FooterPhoneIcon,
 } from '@/components/atoms/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useProfile } from '@/lib/hooks/useProfile';
+import { ProfileSummarySection } from '@/components/molecules/account/ProfileSummarySection';
+import { formatCustomerDateOfBirth } from '@/lib/helpers/dateOfBirth';
 import { formatThaiPhoneNumber } from '@/lib/helpers/phone';
 import { cn } from '@/lib/utils';
 
@@ -83,16 +86,25 @@ function ProfileDetailsForm({ customerId, initialFullName }: ProfileDetailsFormP
   const [fullName, setFullName] = useState(initialFullName);
   const [success, setSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const hasNameChanged = fullName.trim() !== initialFullName.trim();
+  const [nameError, setNameError] = useState<string | null>(null);
+  const trimmedFullName = fullName.trim();
+  const hasNameChanged = trimmedFullName !== initialFullName.trim();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError(null);
     setSuccess(false);
 
+    if (!trimmedFullName) {
+      setNameError('กรุณากรอกชื่อ-นามสกุล');
+      return;
+    }
+
+    setNameError(null);
+
     try {
       await updateProfile({
-        fullName: fullName.trim() || undefined,
+        fullName: trimmedFullName,
       });
       setSuccess(true);
     } catch (err) {
@@ -108,7 +120,16 @@ function ProfileDetailsForm({ customerId, initialFullName }: ProfileDetailsFormP
         title="ชื่อ-นามสกุล"
         placeholder="กรอกชื่อ-นามสกุลของคุณ"
         value={fullName}
-        onChange={(e) => setFullName(e.target.value)}
+        isRequired
+        state={nameError ? 'error' : 'default'}
+        description={nameError ?? undefined}
+        aria-invalid={nameError ? true : undefined}
+        aria-describedby={nameError ? 'profile-full-name-error' : undefined}
+        onChange={(e) => {
+          setFullName(e.target.value);
+          if (nameError) setNameError(null);
+          if (success) setSuccess(false);
+        }}
       />
 
       {success ? (
@@ -131,41 +152,31 @@ function ProfileDetailsForm({ customerId, initialFullName }: ProfileDetailsFormP
 
 export default function UserProfilePage() {
   const { customer } = useAuth();
+  const { updateProfile } = useProfile();
 
   const displayName = customer?.fullName?.trim() || 'สมาชิก SOPet';
   const profileInitials = getProfileInitials(customer?.fullName);
   const hasPhone = Boolean(customer?.phone);
   const hasEmail = Boolean(customer?.email);
+  const formattedDateOfBirth = formatCustomerDateOfBirth(customer?.dateOfBirth);
+  const hasDateOfBirth = Boolean(formattedDateOfBirth);
+
+  const handleProfilePhotoChange = async (url: string | null) => {
+    await updateProfile({ profilePhotoUrl: url });
+  };
 
   return (
     <AccountLayout title="ข้อมูลส่วนตัว">
       <div className="mx-auto max-w-2xl space-y-8">
-        <section
-          aria-labelledby="profile-summary-heading"
-          className="overflow-hidden rounded-sop-12px border border-sop-neutral-grayalpha-200 bg-sop-base-white"
-        >
-          <div className="bg-sop-primary-50 px-6 py-5">
-            <div className="flex items-center gap-4">
-              <span
-                aria-hidden
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-sop-primary-200 sop-headline-sm-medium text-sop-primary-600"
-              >
-                {profileInitials}
-              </span>
-
-              <div className="min-w-0 flex-1">
-                <h2
-                  id="profile-summary-heading"
-                  className="truncate sop-body-lg-medium text-sop-neutral-gray-200"
-                >
-                  {displayName}
-                </h2>
-                <p className="mt-0.5 sop-body-sm-regular text-sop-neutral-gray-400">
-                  จัดการข้อมูลบัญชีและช่องทางติดต่อของคุณ
-                </p>
-              </div>
-            </div>
-          </div>
+        <section aria-labelledby="profile-summary-heading">
+          <ProfileSummarySection
+            displayName={displayName}
+            initials={profileInitials}
+            profilePhotoUrl={customer?.profilePhotoUrl}
+            phone={customer?.phone}
+            email={customer?.email}
+            onPhotoChange={handleProfilePhotoChange}
+          />
         </section>
 
         <section aria-labelledby="profile-contact-heading">
@@ -180,7 +191,11 @@ export default function UserProfilePage() {
             <ProfileContactRow
               icon={<FooterPhoneIcon />}
               label="เบอร์โทรศัพท์"
-              value={hasPhone && customer?.phone ? formatThaiPhoneNumber(customer.phone) : 'ยังไม่ได้เพิ่ม'}
+              value={
+                hasPhone && customer?.phone
+                  ? formatThaiPhoneNumber(customer.phone)
+                  : 'ยังไม่ได้เพิ่ม'
+              }
               empty={!hasPhone}
               href={hasPhone ? '/user/profile/phone/change' : '/user/profile/phone/add'}
               actionLabel={hasPhone ? 'เปลี่ยน' : 'เพิ่ม'}
@@ -192,6 +207,14 @@ export default function UserProfilePage() {
               empty={!hasEmail}
               href={hasEmail ? '/user/profile/email/change' : '/user/profile/email/add'}
               actionLabel={hasEmail ? 'เปลี่ยน' : 'เพิ่ม'}
+            />
+            <ProfileContactRow
+              icon={<CalendarIcon size={{ mobile: 20, desktop: 20 }} />}
+              label="วันเกิด"
+              value={formattedDateOfBirth ?? 'ยังไม่ได้เพิ่ม'}
+              empty={!hasDateOfBirth}
+              href="/user/profile/dob"
+              actionLabel={hasDateOfBirth ? 'เปลี่ยน' : 'เพิ่ม'}
             />
           </div>
         </section>

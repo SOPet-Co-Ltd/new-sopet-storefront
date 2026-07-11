@@ -393,10 +393,12 @@ export enum CustomerOrderListFilter {
 
 export type CustomerProfile = {
   __typename?: 'CustomerProfile';
+  dateOfBirth?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   fullName?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   phone: Scalars['String']['output'];
+  profilePhotoUrl?: Maybe<Scalars['String']['output']>;
 };
 
 export type CustomerReviewType = {
@@ -2477,8 +2479,10 @@ export type UpdateProductVariantInput = {
 };
 
 export type UpdateProfileInput = {
+  dateOfBirth?: InputMaybe<Scalars['String']['input']>;
   email?: InputMaybe<Scalars['String']['input']>;
   fullName?: InputMaybe<Scalars['String']['input']>;
+  profilePhotoUrl?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdatePromotionInput = {
@@ -2574,6 +2578,7 @@ export type UpdateStoreSettingsInput = {
 
 export type UpdateUserProfileInput = {
   fullName?: InputMaybe<Scalars['String']['input']>;
+  profilePhotoUrl?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateVendorAsAdminInput = {
@@ -2594,6 +2599,7 @@ export type UserProfile = {
   email: Scalars['String']['output'];
   fullName: Scalars['String']['output'];
   id: Scalars['String']['output'];
+  profilePhotoUrl?: Maybe<Scalars['String']['output']>;
   role: Scalars['String']['output'];
   storeId?: Maybe<Scalars['String']['output']>;
 };
@@ -2651,6 +2657,13 @@ export type VerifyCustomerOtpInput = {
   code: Scalars['String']['input'];
   phone: Scalars['String']['input'];
   sessionId?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateProfileInput = {
+  dateOfBirth?: string | null | undefined;
+  email?: string | null | undefined;
+  fullName?: string | null | undefined;
+  profilePhotoUrl?: string | null | undefined;
 };
 
 export type RequestAccountDeletionMutationVariables = Exact<{ [key: string]: never }>;
@@ -3227,7 +3240,14 @@ export type MeQueryVariables = Exact<{ [key: string]: never }>;
 
 export type MeQuery = {
   me: {
-    customer: { id: string; phone: string; email: string | null; fullName: string | null } | null;
+    customer: {
+      id: string;
+      phone: string;
+      email: string | null;
+      fullName: string | null;
+      profilePhotoUrl: string | null;
+      dateOfBirth: string | null;
+    } | null;
   };
 };
 
@@ -3793,7 +3813,14 @@ export type UpdateProfileMutationVariables = Exact<{
 }>;
 
 export type UpdateProfileMutation = {
-  updateProfile: { id: string; phone: string; email: string | null; fullName: string | null };
+  updateProfile: {
+    id: string;
+    phone: string;
+    email: string | null;
+    fullName: string | null;
+    profilePhotoUrl: string | null;
+    dateOfBirth: string | null;
+  };
 };
 
 export type StorePromotionFieldsFragment = {
@@ -6584,6 +6611,8 @@ export const MeDocument = {
                       { kind: 'Field', name: { kind: 'Name', value: 'phone' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'email' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'fullName' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'profilePhotoUrl' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'dateOfBirth' } },
                     ],
                   },
                 },
@@ -8138,6 +8167,8 @@ export const UpdateProfileDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'phone' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'email' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'fullName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'profilePhotoUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'dateOfBirth' } },
               ],
             },
           },

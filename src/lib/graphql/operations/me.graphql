@@ -5,6 +5,8 @@ query Me {
       phone
       email
       fullName
+      profilePhotoUrl
+      dateOfBirth
     }
   }
 }

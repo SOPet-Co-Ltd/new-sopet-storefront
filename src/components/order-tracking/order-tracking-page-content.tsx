@@ -19,7 +19,7 @@ export function OrderTrackingPageContent({
 }: OrderTrackingPageContentProps) {
   return (
     <div
-      className="mx-auto min-h-dvh max-w-3xl space-y-6 px-4 py-8 md:py-12"
+      className="mx-auto min-h-dvh max-w-5xl space-y-6 px-4 py-8 md:py-12"
       data-order-number={orderNumber}
     >
       {queryState.status === 'loading' ? <OrderTrackingLoadingState /> : null}

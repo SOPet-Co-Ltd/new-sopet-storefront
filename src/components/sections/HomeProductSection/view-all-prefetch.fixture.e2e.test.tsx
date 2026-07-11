@@ -34,7 +34,7 @@ const SAMPLE_PRODUCT = {
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
-  usePathname: () => '/categories',
+  usePathname: () => '/search',
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -46,7 +46,7 @@ vi.mock('next/image', () => ({
 
 const createWrapper = createApolloTestWrapper;
 
-describe('View-all to categories prefetch journey', () => {
+describe('View-all to search prefetch journey', () => {
   it('prefetches the all-products listing when view-all is hovered', async () => {
     let productsCallCount = 0;
 

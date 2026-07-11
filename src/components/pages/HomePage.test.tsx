@@ -7,15 +7,9 @@ import type { AuthContextValue } from '@/lib/providers/AuthProvider';
 import { server } from '@/test/mocks/server';
 
 vi.mock('next/image', () => ({
-  default: ({
-    src,
-    alt,
-    ...props
-  }: {
-    src: string;
-    alt: string;
-    [key: string]: unknown;
-  }) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
+    <img src={src} alt={alt} {...props} />
+  ),
 }));
 
 vi.mock('@/lib/hooks/useAuth', () => ({
@@ -68,7 +62,7 @@ const SAMPLE_BANNER = {
   id: 'banner-1',
   title: 'โปรโมชั่น',
   imageUrl: 'https://example.com/banner.jpg',
-  linkUrl: '/categories',
+  linkUrl: '/products',
   sortOrder: 1,
   isActive: true,
   startsAt: null,
@@ -107,7 +101,9 @@ const SAMPLE_RECENT_PRODUCT_2 = {
 
 function createAuthValue(isAuthenticated: boolean): AuthContextValue {
   return {
-    customer: isAuthenticated ? { id: 'cust-1', phone: '0812345678', email: null, fullName: 'ทดสอบ' } : null,
+    customer: isAuthenticated
+      ? { id: 'cust-1', phone: '0812345678', email: null, fullName: 'ทดสอบ' }
+      : null,
     isAuthenticated,
     isLoading: false,
     pendingDeletion: false,
@@ -120,7 +116,7 @@ function createAuthValue(isAuthenticated: boolean): AuthContextValue {
 
 function registerHomeHandlers(options?: {
   includeRecentPurchases?: boolean;
-  latestPurchaseProducts?: typeof SAMPLE_PRODUCT[];
+  latestPurchaseProducts?: (typeof SAMPLE_PRODUCT)[];
 }) {
   server.use(
     graphql.query('PlatformBanners', () =>
@@ -228,7 +224,9 @@ describe('HomePage', () => {
 
     const recentOrdersSection = await screen.findByTestId('home-recent-orders');
     expect(recentOrdersSection).toBeInTheDocument();
-    expect(within(recentOrdersSection).getByRole('heading', { name: 'ซื้อล่าสุด' })).toBeInTheDocument();
+    expect(
+      within(recentOrdersSection).getByRole('heading', { name: 'ซื้อล่าสุด' }),
+    ).toBeInTheDocument();
     expect(within(recentOrdersSection).getByRole('link', { name: 'ดูทั้งหมด' })).toHaveAttribute(
       'href',
       '/user/orders',
@@ -250,10 +248,9 @@ describe('HomePage', () => {
     expect(
       within(recentOrdersSection).getByRole('link', { name: 'ดู Pet Shampoo 500ml' }),
     ).toHaveAttribute('href', '/product/prod-recent-1');
-    expect(within(recentOrdersSection).getByRole('img', { name: 'Pet Shampoo 500ml' })).toHaveAttribute(
-      'src',
-      'https://example.com/shampoo.jpg',
-    );
+    expect(
+      within(recentOrdersSection).getByRole('img', { name: 'Pet Shampoo 500ml' }),
+    ).toHaveAttribute('src', 'https://example.com/shampoo.jpg');
   });
 
   it('renders recommended view-all button', async () => {
@@ -262,7 +259,10 @@ describe('HomePage', () => {
     renderHomePage();
 
     await screen.findByRole('heading', { name: 'สินค้าแนะนำ' });
-    expect(screen.getByRole('link', { name: /ดูสินค้าทั้งหมด/ })).toHaveAttribute('href', '/categories');
+    expect(screen.getByRole('link', { name: /ดูสินค้าทั้งหมด/ })).toHaveAttribute(
+      'href',
+      '/products',
+    );
   });
 
   it('orders main content sections per design', async () => {
@@ -274,9 +274,7 @@ describe('HomePage', () => {
     const headings = await screen.findAllByRole('heading');
     const mainContentHeadings = headings
       .map((heading) => heading.textContent)
-      .filter((text) =>
-        ['สินค้าแนะนำ', 'หมวดหมู่สินค้า', 'ซื้อล่าสุด'].includes(text ?? ''),
-      );
+      .filter((text) => ['สินค้าแนะนำ', 'หมวดหมู่สินค้า', 'ซื้อล่าสุด'].includes(text ?? ''));
 
     expect(mainContentHeadings).toEqual(['ซื้อล่าสุด', 'หมวดหมู่สินค้า', 'สินค้าแนะนำ']);
   });

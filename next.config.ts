@@ -1,20 +1,29 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const graphqlBackendOrigin =
-  process.env.GRAPHQL_SSR_URL?.replace(/\/graphql\/?$/, "") ??
-  "http://localhost:3002";
+  process.env.GRAPHQL_SSR_URL?.replace(/\/graphql\/?$/, '') ?? 'http://localhost:3002';
 
 const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: "/user/wishlist",
-        destination: "/user/favorites",
+        source: '/products',
+        destination: '/search',
         permanent: true,
       },
       {
-        source: "/user/reviews/written",
-        destination: "/user/reviews?tab=written",
+        source: '/categories',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/user/wishlist',
+        destination: '/user/favorites',
+        permanent: true,
+      },
+      {
+        source: '/user/reviews/written',
+        destination: '/user/reviews?tab=written',
         permanent: true,
       },
     ];
@@ -22,7 +31,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/graphql",
+        source: '/graphql',
         destination: `${graphqlBackendOrigin}/graphql`,
       },
     ];
@@ -31,20 +40,20 @@ const nextConfig: NextConfig = {
     qualities: [75, 85],
     remotePatterns: [
       {
-        protocol: "http",
-        hostname: "minio.sopet-backend.orb.local",
-        port: "9000",
-        pathname: "/sopet-ecommerce-files/**",
+        protocol: 'http',
+        hostname: 'minio.sopet-backend.orb.local',
+        port: '9000',
+        pathname: '/sopet-ecommerce-files/**',
       },
       {
-        protocol: "https",
-        hostname: "images.unsplash.com",
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
       },
     ],
     dangerouslyAllowSVG: true,
-    contentDispositionType: "attachment",
+    contentDispositionType: 'attachment',
     // Allow private IPs for local MinIO
-    unoptimized: process.env.NODE_ENV === "development",
+    unoptimized: process.env.NODE_ENV === 'development',
   },
 };
 

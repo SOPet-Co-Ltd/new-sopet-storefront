@@ -56,11 +56,12 @@ function ProductDetailsSkeleton() {
   );
 }
 
-export default function ProductDetailsPage({
-  productId,
-  initialProduct,
-}: ProductDetailsPageProps) {
-  const { product: fetchedProduct, loading, error } = useProduct({
+export default function ProductDetailsPage({ productId, initialProduct }: ProductDetailsPageProps) {
+  const {
+    product: fetchedProduct,
+    loading,
+    error,
+  } = useProduct({
     mode: 'id',
     id: productId,
   });
@@ -85,8 +86,8 @@ export default function ProductDetailsPage({
 
   const isNotFound = Boolean(
     error &&
-      CombinedGraphQLErrors.is(error) &&
-      error.errors.some((graphError) => graphError.extensions?.code === 'PRODUCT_NOT_FOUND'),
+    CombinedGraphQLErrors.is(error) &&
+    error.errors.some((graphError) => graphError.extensions?.code === 'PRODUCT_NOT_FOUND'),
   );
 
   if (showLoading) {
@@ -147,7 +148,7 @@ export default function ProductDetailsPage({
           excludeProductId={product.id}
           sameStoreOnly
           layout="grid"
-          viewAllHref={product.store ? `/sellers/${product.store.slug}` : '/categories'}
+          viewAllHref={product.store ? `/sellers/${product.store.slug}` : '/products'}
         />
 
         <HomeProductSection
@@ -159,7 +160,7 @@ export default function ProductDetailsPage({
             storeId: product.storeId,
           }}
           layout="grid"
-          viewAllHref={product.category ? `/categories/${product.category}` : '/categories'}
+          viewAllHref={product.category ? `/categories/${product.category}` : '/products'}
         />
       </div>
     </div>

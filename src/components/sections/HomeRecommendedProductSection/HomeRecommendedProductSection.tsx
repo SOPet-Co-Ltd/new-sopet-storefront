@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/atoms/Button';
 import { RightArrowLineIcon } from '@/components/atoms/icons/filled/RightArrowLineIcon';
-import { RecommendedProductsDocument, type RecommendedProductsQuery } from '@/lib/graphql/generated/graphql';
+import {
+  RecommendedProductsDocument,
+  type RecommendedProductsQuery,
+} from '@/lib/graphql/generated/graphql';
 import ProductCard from '@/components/organisms/ProductCard';
 import { PRODUCT_CARD_GRID_CLASS } from '@/components/sections/ProductListing/productListingGrid';
 
@@ -33,7 +36,7 @@ type HomeRecommendedProductSectionProps = {
 export function HomeRecommendedProductSection({
   heading = 'สินค้าแนะนำ',
   limit = 25,
-  viewAllHref = '/categories',
+  viewAllHref = '/products',
   initialRecommendedProducts,
 }: HomeRecommendedProductSectionProps) {
   const { data, loading, error } = useQuery(RecommendedProductsDocument, {

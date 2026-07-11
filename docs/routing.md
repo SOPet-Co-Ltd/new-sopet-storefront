@@ -9,8 +9,10 @@ flowchart TD
   ROOT["/"]
   ROOT --> HOME["/ (home)"]
   ROOT --> CART["/cart"]
-  ROOT --> CAT["/categories"]
+  ROOT --> CAT["/categories/[category]"]
   ROOT --> SEARCH["/search"]
+  ROOT --> PROD_LIST["/products → /search"]
+  ROOT --> CAT_INDEX["/categories → /"]
   ROOT --> PROD["/product/[id]"]
   ROOT --> SELLER["/sellers/[handle]"]
   ROOT --> USER["/user/*"]
@@ -99,6 +101,8 @@ In `next.config.ts`:
 
 | Source                  | Destination                 |
 | ----------------------- | --------------------------- |
+| `/products`             | `/search`                   |
+| `/categories`           | `/`                         |
 | `/user/wishlist`        | `/user/favorites`           |
 | `/user/reviews/written` | `/user/reviews?tab=written` |
 

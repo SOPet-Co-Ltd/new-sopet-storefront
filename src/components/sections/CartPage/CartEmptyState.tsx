@@ -15,10 +15,7 @@ export function CartEmptyState() {
           className="flex h-24 w-24 items-center justify-center rounded-full bg-sop-secondary-100"
           aria-hidden="true"
         >
-          <CartIcon
-            size={{ mobile: 48, desktop: 48 }}
-            className="text-sop-secondary-400"
-          />
+          <CartIcon size={{ mobile: 48, desktop: 48 }} className="text-sop-secondary-400" />
         </div>
 
         <h1 className="mt-6 sop-headline-md-medium text-sop-neutral-gray-200">
@@ -28,7 +25,7 @@ export function CartEmptyState() {
           ค้นหาสินค้าสำหรับเพื่อนขนที่คุณรัก แล้วเพิ่มลงตะกร้าเพื่อชำระเงินได้ในครั้งเดียว
         </p>
 
-        <Link href="/categories" className="mt-8 w-full max-w-xs">
+        <Link href="/products" className="mt-8 w-full max-w-xs">
           <Button type="button" size="xl" fill>
             เริ่มเลือกซื้อสินค้า
           </Button>

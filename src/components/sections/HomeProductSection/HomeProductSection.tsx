@@ -70,10 +70,7 @@ function usePersonalizedSearchContext(referenceProductId?: string) {
 
     return buildSearchContextInput({
       recentQueries: sessionSearchContext?.recentQueries ?? [],
-      recentProductIds: [
-        referenceProductId,
-        ...(sessionSearchContext?.recentProductIds ?? []),
-      ],
+      recentProductIds: [referenceProductId, ...(sessionSearchContext?.recentProductIds ?? [])],
     });
   }, [referenceProductId, sessionSearchContext]);
 }
@@ -113,7 +110,7 @@ function getVisibleProducts(
 
 export function HomeProductSection({
   heading = 'สินค้ามาใหม่',
-  viewAllHref = '/categories',
+  viewAllHref = '/products',
   storeId,
   excludeProductId,
   excludeStoreId,
@@ -126,8 +123,7 @@ export function HomeProductSection({
   const personalizedFilters = referenceProduct
     ? buildPersonalizedListingFilters(referenceProduct)
     : null;
-  const fetchLimit =
-    resolvedExcludeProductId || excludeStoreId ? productLimit + 6 : productLimit;
+  const fetchLimit = resolvedExcludeProductId || excludeStoreId ? productLimit + 6 : productLimit;
   const sessionId = useSessionId(Boolean(referenceProduct));
   const searchContext = usePersonalizedSearchContext(referenceProduct?.id);
   const personalizedListingParams = referenceProduct

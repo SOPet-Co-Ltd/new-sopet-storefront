@@ -1,15 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/atoms/Button';
 import { ChainIcon } from '@/components/atoms/icons/filled/ChainIcon';
-import { FacebookCustomIcon } from '@/components/atoms/icons/filled/FacebookCustomIcon';
 import { InstagramCustomIcon } from '@/components/atoms/icons/filled/InstagramCustomIcon';
-import { LineCustomIcon } from '@/components/atoms/icons/filled/LineCustomIcon';
 import { MeatballsMenuIcon } from '@/components/atoms/icons/filled/MeatballsMenuIcon';
-import { MessengerCustomIcon } from '@/components/atoms/icons/filled/MessengerCustomIcon';
 import { ProductDetailQuantitySelection } from '@/components/molecules/ProductDetailQuantitySelection/ProductDetailQuantitySelection';
 import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import { ProductVariants } from '@/components/molecules/ProductVariants/ProductVariants';
@@ -18,13 +15,14 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 import { useCart } from '@/lib/providers/CartProvider';
+import { cn } from '@/lib/utils';
 import { findVariantByOptions, type VariantOptions } from './variantUtils';
 
 type ShareButtonConfig = {
   label: string;
   icon: () => React.ReactNode;
   handler?: () => void;
-  buttonClassName?: string;
+  iconClassName?: string;
 };
 
 function stripHtml(html: string): string {
@@ -51,6 +49,22 @@ function getProductShareContent(product: ProductDetail, productLink: string): st
   return `${product.name || ''}\n${getShortDescription(product)}\n${productLink}`;
 }
 
+const SHARE_ICON_BUTTON_CLASS =
+  'flex h-sop-40px w-sop-40px cursor-pointer items-center justify-center rounded-full transition-colors';
+
+function ShareBrandIcon({ src, alt }: { src: string; alt: string }) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      width={40}
+      height={40}
+      className="h-sop-40px w-sop-40px shrink-0"
+      draggable={false}
+    />
+  );
+}
+
 function ProductShareModal({
   isOpen,
   onClose,
@@ -63,7 +77,32 @@ function ProductShareModal({
   const productLink =
     typeof window !== 'undefined' ? window.location.href : `/product/${product.id}`;
 
-  const handleCopyLink = async () => {
+  const [canNativeShare, setCanNativeShare] = useState(false);
+
+  useLayoutEffect(() => {
+    setCanNativeShare(typeof navigator.share === 'function');
+  }, []);
+
+  const handleEscape = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    },
+    [onClose],
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [handleEscape, isOpen]);
+
+  const copyProductLink = async (): Promise<boolean> => {
     const text = String(productLink ?? '');
 
     try {
@@ -81,13 +120,57 @@ function ProductShareModal({
         document.body.removeChild(textarea);
       }
 
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const copied = await copyProductLink();
+
+    if (copied) {
       toast.success('คัดลอกลิงก์สำเร็จ', {
         description: 'ลิงก์สินค้าถูกคัดลอกไปยังคลิปบอร์ดแล้ว',
       });
       onClose();
-    } catch {
-      toast.error('เกิดข้อผิดพลาด', { description: 'ไม่สามารถคัดลอกลิงก์ได้' });
+      return;
     }
+
+    toast.error('เกิดข้อผิดพลาด', { description: 'ไม่สามารถคัดลอกลิงก์ได้' });
+  };
+
+  const handleInstagramShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name || '',
+          text: getProductShareContent(product, productLink),
+          url: productLink,
+        });
+        onClose();
+        return;
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+      }
+    }
+
+    const copied = await copyProductLink();
+    if (!copied) {
+      toast.error('เกิดข้อผิดพลาด', { description: 'ไม่สามารถคัดลอกลิงก์ได้' });
+      return;
+    }
+
+    toast.success('คัดลอกลิงก์สำเร็จ', {
+      description: 'เปิด Instagram แล้ววางลิงก์เพื่อแชร์',
+    });
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+    }
+
+    onClose();
   };
 
   const handleNativeShare = async () => {
@@ -122,79 +205,99 @@ function ProductShareModal({
       label: 'คัดลอกลิงก์',
       icon: () => <ChainIcon size={{ mobile: 16, desktop: 16 }} color="#4C4C4C" />,
       handler: () => void handleCopyLink(),
-      buttonClassName:
-        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full bg-[#D6D6D6] flex items-center justify-center hover:bg-[#C0C0C0] transition-colors cursor-pointer',
+      iconClassName: `${SHARE_ICON_BUTTON_CLASS} bg-[#D6D6D6] hover:bg-[#C0C0C0]`,
     },
     {
       label: 'Line',
-      icon: () => <LineCustomIcon size={{ mobile: 40, desktop: 40 }} />,
+      icon: () => <ShareBrandIcon src="/images/share/lineIcon.svg" alt="Line" />,
       handler: () =>
         openShareWindow(
           `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(productLink)}`,
         ),
-      buttonClassName:
-        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full bg-[#06C755] flex items-center justify-center hover:bg-[#05B04A] transition-colors cursor-pointer',
+      iconClassName: SHARE_ICON_BUTTON_CLASS,
     },
     {
       label: 'Facebook',
-      icon: () => <FacebookCustomIcon size={{ mobile: 40, desktop: 40 }} />,
+      icon: () => <ShareBrandIcon src="/images/share/facebookIcon.svg" alt="Facebook" />,
       handler: () =>
         openShareWindow(
           `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productLink)}`,
         ),
-      buttonClassName: 'cursor-pointer',
+      iconClassName: SHARE_ICON_BUTTON_CLASS,
     },
     {
       label: 'Messenger',
-      icon: () => <MessengerCustomIcon size={{ mobile: 40, desktop: 40 }} />,
+      icon: () => <ShareBrandIcon src="/images/share/messangerIcon.svg" alt="Messenger" />,
       handler: () =>
         openShareWindow(
           `https://www.facebook.com/dialog/send?link=${encodeURIComponent(productLink)}&app_id=${process.env.NEXT_PUBLIC_FACEBOOK_APP_ID ?? ''}&redirect_uri=${encodeURIComponent(productLink)}`,
         ),
-      buttonClassName:
-        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full bg-[#0084FF] flex items-center justify-center hover:bg-[#0073E6] transition-colors cursor-pointer',
+      iconClassName: SHARE_ICON_BUTTON_CLASS,
     },
     {
       label: 'Instagram',
       icon: () => <InstagramCustomIcon size={{ mobile: 24, desktop: 24 }} color="#FFFFFF" />,
-      handler: () => void handleCopyLink(),
-      buttonClassName:
-        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full bg-gradient-to-br from-[#FCAF45] via-[#FD1D1D] to-[#833AB4] flex items-center justify-center hover:opacity-90 transition-opacity cursor-pointer',
+      handler: () => void handleInstagramShare(),
+      iconClassName: `${SHARE_ICON_BUTTON_CLASS} bg-gradient-to-br from-[#FCAF45] via-[#FD1D1D] to-[#833AB4] hover:opacity-90`,
     },
     {
       label: 'แอปอื่นๆ',
       icon: () => <MeatballsMenuIcon size={{ mobile: 20, desktop: 20 }} color="#4C4C4C" />,
       handler: () => void handleNativeShare(),
-      buttonClassName:
-        'md:w-sop-40px md:h-sop-40px w-sop-40px h-sop-40px rounded-full border border-[#D6D6D6] bg-transparent flex items-center justify-center hover:bg-sop-neutral-grey-100 transition-colors cursor-pointer',
+      iconClassName: `${SHARE_ICON_BUTTON_CLASS} border border-[#D6D6D6] bg-transparent hover:bg-[#F5F5F5]`,
     },
   ];
+
+  const visibleShareButtons = canNativeShare
+    ? shareButtons
+    : shareButtons.filter((button) => button.label !== 'แอปอื่นๆ');
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
         aria-label="ปิดหน้าต่างแชร์"
       />
-      <div className="relative bg-sop-base-white rounded-sop-16px p-6 max-w-md w-full mx-4 z-10">
-        <div className="flex items-center justify-center mb-6 border-b border-[#D6D6D6] p-2">
-          <h2 className="sop-body-lg-medium text-[#232323]">แชร์สินค้าให้เพื่อนของคุณ</h2>
-        </div>
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-[12px] justify-items-center">
-          {shareButtons.map((button) => (
-            <div key={button.label} className="flex flex-col items-center gap-2">
-              <button type="button" onClick={button.handler} className={button.buttonClassName}>
-                {button.icon()}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-share-modal-title"
+        className="relative z-10 mx-4 w-full max-w-md rounded-sop-16px bg-sop-base-white px-6 py-4"
+      >
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-center border-b border-[#D6D6D6] py-2">
+            <h2
+              id="product-share-modal-title"
+              className="sop-body-lg-medium text-center text-[#232323]"
+            >
+              แชร์สินค้าให้เพื่อนของคุณ
+            </h2>
+          </div>
+          <div className="grid w-full grid-cols-5 gap-x-3 gap-y-4 justify-items-center">
+            {visibleShareButtons.map((button, index) => (
+              <button
+                key={button.label}
+                type="button"
+                onClick={button.handler}
+                className={cn(
+                  'flex w-full cursor-pointer flex-col items-center gap-0.5',
+                  canNativeShare && index === visibleShareButtons.length - 1 && 'col-start-3',
+                )}
+                aria-label={`แชร์ผ่าน ${button.label}`}
+              >
+                <span className={button.iconClassName} aria-hidden="true">
+                  {button.icon()}
+                </span>
+                <span className="sop-body-sm-light text-center text-sop-base-black">
+                  {button.label}
+                </span>
               </button>
-              <span className="sop-body-sm-light text-sop-base-black text-center">
-                {button.label}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -399,7 +502,6 @@ export default function ProductDetailsVariantSelection({
             productName={product.name}
             onShare={handleShareOpen}
             onWishlist={() => void handleWishlist()}
-            disabled={isOutOfStock || !hasAnyPrice}
             isWishlisted={isWishlisted}
             wishlistLoading={wishlistPending || favoritesLoading}
             className="shrink-0"

@@ -24,7 +24,7 @@ jobs:
       - name: Checkout backend schema
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/sopet-backend
+          repository: ${{ github.repository_owner }}/new-sopet-backend
           path: sopet-backend
           sparse-checkout: |
             src/schema.gql

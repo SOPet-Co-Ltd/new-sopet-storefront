@@ -51,7 +51,22 @@ import { resolve } from 'node:path';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildRootMetadata } from '@/app/layout';
-import { buildAbsoluteUrl, buildPageMetadata, getSiteConfig } from './metadata';
+import { CATALOG_PRODUCT_ID, sampleProductDetail } from '@/test/mocks/fixtures/catalog';
+import { buildProductJsonLd, getDefaultOfferPrice } from './json-ld';
+import {
+  getCategoryIndexation,
+  getSearchIndexation,
+  isProductIndexable,
+  isSellerIndexable,
+  PRODUCT_STATUS_PUBLISHED,
+  STORE_STATUS_APPROVED,
+} from './indexability';
+import {
+  buildAbsoluteUrl,
+  buildPageMetadata,
+  buildProductMetadata,
+  getSiteConfig,
+} from './metadata';
 
 vi.mock('next/font/google', () => ({
   Mitr: () => ({
@@ -69,6 +84,30 @@ const ORIGINAL_ENV = { ...process.env };
 afterEach(() => {
   process.env = { ...ORIGINAL_ENV };
   vi.unstubAllEnvs();
+});
+
+describe('integration test 1 of 3 — product metadata and JSON-LD parity', () => {
+  it('emits canonical, title, OG, robots, and JSON-LD offers matching fixture', () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
+
+    const productPath = `/product/${CATALOG_PRODUCT_ID}`;
+    const expectedCanonical = `https://www.sopet.org/product/${CATALOG_PRODUCT_ID}`;
+    const expectedPrice = getDefaultOfferPrice(sampleProductDetail);
+
+    const metadata = buildProductMetadata(sampleProductDetail, productPath);
+    const jsonLd = buildProductJsonLd(sampleProductDetail, expectedCanonical);
+    const offers = jsonLd.offers as { price: number; priceCurrency: string };
+
+    expect(metadata.alternates?.canonical).toBe(expectedCanonical);
+    expect(metadata.title).toContain(sampleProductDetail.name);
+    expect(metadata.openGraph?.url).toBe(expectedCanonical);
+    expect(metadata.robots).toEqual({ index: true, follow: true });
+
+    expect(jsonLd['@type']).toBe('Product');
+    expect(offers.price).toBe(expectedPrice);
+    expect(offers.price).toBe(getDefaultOfferPrice(sampleProductDetail));
+    expect(offers.priceCurrency).toBe('THB');
+  });
 });
 
 describe('integration test 2 of 3 — site config and root metadata env branches', () => {
@@ -180,3 +219,52 @@ describe('integration test 2 of 3 — site config and root metadata env branches
 // - getSearchIndexation() → indexable false, robots { index: false, follow: true }
 // - isSellerIndexable({ status: 'pending' }) → false; approved → true
 // - isProductIndexable unpublished/null → false
+
+describe('integration test 3 of 3 — indexability matrix', () => {
+  const categorySlug = 'dog-food';
+
+  it('allows indexing for clean category URL on page 1', () => {
+    const result = getCategoryIndexation(categorySlug, {});
+
+    expect(result.indexable).toBe(true);
+    expect(result.robots).toEqual({ index: true, follow: true });
+    expect(result.canonicalPath).toBe('/categories/dog-food');
+  });
+
+  it('sets noindex,follow for paginated category URLs with unfiltered canonical', () => {
+    const result = getCategoryIndexation(categorySlug, { page: '2' });
+
+    expect(result.indexable).toBe(false);
+    expect(result.robots).toEqual({ index: false, follow: true });
+    expect(result.canonicalPath).toBe('/categories/dog-food');
+  });
+
+  it.each(['petType', 'brand', 'tag', 'minPrice', 'maxPrice'] as const)(
+    'sets noindex,follow when %s filter is present',
+    (filterKey) => {
+      const result = getCategoryIndexation(categorySlug, { [filterKey]: 'value' });
+
+      expect(result.indexable).toBe(false);
+      expect(result.robots).toEqual({ index: false, follow: true });
+      expect(result.canonicalPath).toBe('/categories/dog-food');
+    },
+  );
+
+  it('always returns noindex,follow for search', () => {
+    expect(getSearchIndexation()).toEqual({
+      indexable: false,
+      robots: { index: false, follow: true },
+    });
+  });
+
+  it('indexes only approved sellers', () => {
+    expect(isSellerIndexable({ status: STORE_STATUS_APPROVED })).toBe(true);
+    expect(isSellerIndexable({ status: 'pending' })).toBe(false);
+  });
+
+  it('indexes only published products', () => {
+    expect(isProductIndexable({ status: PRODUCT_STATUS_PUBLISHED })).toBe(true);
+    expect(isProductIndexable({ status: 'draft' })).toBe(false);
+    expect(isProductIndexable(null)).toBe(false);
+  });
+});

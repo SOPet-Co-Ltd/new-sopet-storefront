@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import {
   ApprovedCategoriesDocument,
   ProductsDocument,
@@ -8,6 +9,10 @@ import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
 import { decodeRouteParam, resolveCategoryFilterName } from '@/lib/routing/categoryRoutes';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { CategoryPLP } from '@/components/sections/ProductListing';
+import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
+import { fetchApprovedCategories } from '@/lib/seo/fetch';
+import { getCategoryIndexation } from '@/lib/seo/indexability';
+import { buildCategoryMetadata, buildPageMetadata } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
 
@@ -22,6 +27,26 @@ type Props = {
     maxPrice?: string;
   }>;
 };
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const { category: rawCategory } = await params;
+  const resolvedSearchParams = await searchParams;
+  const categorySlug = decodeRouteParam(rawCategory);
+  const indexation = getCategoryIndexation(categorySlug, resolvedSearchParams);
+  const categories = await fetchApprovedCategories();
+
+  if (!categories) {
+    return buildPageMetadata({
+      title: 'หมวดหมู่สินค้า',
+      description: DEFAULT_SITE_DESCRIPTION,
+      path: indexation.canonicalPath,
+      robots: { index: false, follow: true },
+    });
+  }
+
+  const categoryName = resolveCategoryFilterName(categories, categorySlug);
+  return buildCategoryMetadata(categoryName, categorySlug, indexation.indexable);
+}
 
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { category: rawCategory } = await params;
@@ -41,17 +66,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   });
 
   let categoryFilter = categorySlug;
+  const categories = await fetchApprovedCategories();
 
-  try {
-    const categoriesResult = await getClient().query({
-      query: ApprovedCategoriesDocument,
-    });
-    categoryFilter = resolveCategoryFilterName(
-      categoriesResult.data?.approvedCategories ?? [],
-      categorySlug,
-    );
-  } catch {
-    // Degrade to slug-based filtering when taxonomy lookup fails.
+  if (categories) {
+    categoryFilter = resolveCategoryFilterName(categories, categorySlug);
   }
 
   const variables = buildProductsListingVariables({

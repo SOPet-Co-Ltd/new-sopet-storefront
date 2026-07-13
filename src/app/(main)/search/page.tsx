@@ -17,15 +17,15 @@ import { parseSearchSort } from '@/lib/search/searchSort';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { SearchResultsPage } from '@/components/pages/SearchResultsPage';
 import { SESSION_ID_COOKIE, parseSessionIdCookie } from '@/lib/session';
+import { buildSearchMetadata } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
 
 const SEARCH_PRODUCT_LIMIT = 40;
 
-export const metadata: Metadata = {
-  title: 'ค้นหาสินค้า',
-  description: 'ค้นหายาและสินค้าสำหรับสัตว์เลี้ยงจากร้านค้าและโรงพยาบาลที่ร่วมรายการบน Sopet',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildSearchMetadata();
+}
 
 type Props = {
   searchParams: Promise<{

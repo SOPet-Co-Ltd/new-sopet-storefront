@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import {
   ProductsDocument,
   StoreBySlugDocument,
@@ -10,6 +11,10 @@ import {
   buildSellerStorefrontVariables,
 } from '@/lib/graphql/query-variables';
 import { SellerStorefront } from '@/components/organisms/SellerTabs';
+import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
+import { fetchStoreBySlug } from '@/lib/seo/fetch';
+import { isSellerIndexable } from '@/lib/seo/indexability';
+import { buildPageMetadata, buildSellerMetadata } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
 
@@ -17,34 +22,46 @@ type Props = {
   params: Promise<{ handle: string }>;
 };
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { handle } = await params;
+  const store = await fetchStoreBySlug(handle);
+
+  if (!store) {
+    return buildPageMetadata({
+      title: 'ร้านค้าไม่พบ',
+      description: DEFAULT_SITE_DESCRIPTION,
+      path: `/sellers/${handle}`,
+      robots: { index: false, follow: true },
+    });
+  }
+
+  return buildSellerMetadata(store, isSellerIndexable(store));
+}
+
 export default async function SellerPage({ params }: Props) {
   const { handle } = await params;
   const storeVariables = buildSellerStorefrontVariables({ handle });
+  const store = await fetchStoreBySlug(handle);
 
-  let initialStore: StoreBySlugQuery['storeBySlug'] | undefined;
+  const initialStore: StoreBySlugQuery['storeBySlug'] | undefined = store ?? undefined;
   let initialProducts: ProductsQuery['products']['items'] | undefined;
   let productVariables: ReturnType<typeof buildProductsListingVariables> | null = null;
 
-  try {
-    const storeResult = await getClient().query({
-      query: StoreBySlugDocument,
-      variables: storeVariables,
+  if (store?.id) {
+    productVariables = buildProductsListingVariables({
+      storeId: store.id,
+      page: 1,
     });
-    initialStore = storeResult.data?.storeBySlug;
 
-    if (initialStore?.id) {
-      productVariables = buildProductsListingVariables({
-        storeId: initialStore.id,
-        page: 1,
-      });
+    try {
       const productsResult = await getClient().query({
         query: ProductsDocument,
         variables: productVariables,
       });
       initialProducts = productsResult.data?.products.items;
+    } catch {
+      // Degrade to client-side fetch when SSR transport fails.
     }
-  } catch {
-    // Degrade to client-side fetch when SSR transport fails.
   }
 
   const storefront = (

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Mitr } from 'next/font/google';
 import { AppProviders } from '@/lib/providers';
+import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
+import { getSiteConfig } from '@/lib/seo/metadata';
 import './globals.css';
 
 const mitr = Mitr({
@@ -11,14 +13,27 @@ const mitr = Mitr({
   preload: true,
 });
 
-export const metadata: Metadata = {
-  title: {
-    template: '%s | Sopet',
-    default: 'Sopet',
-  },
-  description:
-    'Sopet คือแพลตฟอร์มค้นหายาและสินค้าสำหรับสัตว์เลี้ยงจากโรงพยาบาลและร้านขายยาทั่วไทย เปรียบเทียบราคา รับโค้ดส่วนลด และจัดส่งรวดเร็ว',
-};
+export function buildRootMetadata(): Metadata {
+  const { baseUrl, siteName } = getSiteConfig();
+  const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
+
+  return {
+    metadataBase: new URL(baseUrl),
+    title: {
+      template: `%s | ${siteName}`,
+      default: siteName,
+    },
+    description: DEFAULT_SITE_DESCRIPTION,
+    openGraph: {
+      siteName,
+      type: 'website',
+      locale: 'th_TH',
+    },
+    ...(googleVerification ? { verification: { google: googleVerification } } : {}),
+  };
+}
+
+export const metadata: Metadata = buildRootMetadata();
 
 export default function RootLayout({
   children,

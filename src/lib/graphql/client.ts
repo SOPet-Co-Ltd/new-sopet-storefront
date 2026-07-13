@@ -9,6 +9,7 @@ import { createClient } from 'graphql-ws';
 import { getGraphqlWsUrl, GRAPHQL_URL } from '@/lib/config';
 import { createAuthLink, getAccessToken } from '@/lib/graphql/authLink';
 import { typePolicies } from '@/lib/graphql/cachePolicies';
+import { fragmentRegistry } from '@/lib/graphql/fragmentRegistry';
 
 let browserApolloClient: ApolloClient | null = null;
 
@@ -54,7 +55,7 @@ function createApolloLink() {
 export function makeApolloClient(): ApolloClient {
   return new ApolloClient({
     link: createApolloLink(),
-    cache: new InMemoryCache({ typePolicies }),
+    cache: new InMemoryCache({ typePolicies, fragments: fragmentRegistry }),
   });
 }
 

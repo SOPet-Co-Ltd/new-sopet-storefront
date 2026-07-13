@@ -1,17 +1,26 @@
+import type { Metadata } from 'next';
+
+import HomePage from '@/components/pages/HomePage';
+import { JsonLdScript } from '@/components/seo/JsonLdScript';
+import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
 import {
   ApprovedCategoriesDocument,
   RecommendedProductsDocument,
   type ApprovedCategoriesQuery,
   type RecommendedProductsQuery,
 } from '@/lib/graphql/generated/graphql';
-import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
 import {
   buildApprovedCategoriesVariables,
   buildRecommendedProductsVariables,
 } from '@/lib/graphql/query-variables';
-import HomePage from '@/components/pages/HomePage';
+import { buildOrganizationJsonLd } from '@/lib/seo/json-ld';
+import { buildHomeMetadata, getSiteConfig } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildHomeMetadata();
+}
 
 const RECOMMENDED_LIMIT = 25;
 
@@ -42,14 +51,19 @@ export default async function Home() {
     // Degrade to client-side fetch when SSR transport fails.
   }
 
+  const organizationJsonLd = buildOrganizationJsonLd(getSiteConfig());
+
   return (
-    <PreloadQuery query={ApprovedCategoriesDocument} variables={categoriesVariables}>
-      <PreloadQuery query={RecommendedProductsDocument} variables={recommendedVariables}>
-        <HomePage
-          initialCategories={initialCategories}
-          initialRecommendedProducts={initialRecommendedProducts}
-        />
+    <>
+      <JsonLdScript data={organizationJsonLd} />
+      <PreloadQuery query={ApprovedCategoriesDocument} variables={categoriesVariables}>
+        <PreloadQuery query={RecommendedProductsDocument} variables={recommendedVariables}>
+          <HomePage
+            initialCategories={initialCategories}
+            initialRecommendedProducts={initialRecommendedProducts}
+          />
+        </PreloadQuery>
       </PreloadQuery>
-    </PreloadQuery>
+    </>
   );
 }

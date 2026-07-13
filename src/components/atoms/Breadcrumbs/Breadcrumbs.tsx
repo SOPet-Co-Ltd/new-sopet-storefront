@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 export type BreadcrumbItem = {
@@ -15,27 +14,37 @@ type BreadcrumbsProps = {
 };
 
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
-  const pathname = usePathname();
-
   return (
-    <nav className={cn('flex', className)} aria-label="Breadcrumb">
+    <nav className={cn('flex', className)} aria-label="breadcrumb">
       <ol className="inline-flex items-center gap-2">
         {items.map(({ path, label }, index) => {
-          const isActive = pathname === path;
+          const isCurrent = index === items.length - 1;
 
           return (
             <li key={`${path}-${index}`} className="inline-flex items-center">
-              {index > 0 && <p className="text-sop-neutral-gray-400 px-2">&gt;</p>}
-              <Link
-                href={path}
-                className={cn(
-                  'inline-flex items-center sop-breadcrumb text-sop-neutral-gray-400',
-                  index > 0 && 'ml-2',
-                  isActive && 'text-sop-neutral-gray-200',
-                )}
-              >
-                {label}
-              </Link>
+              {index > 0 ? (
+                <span className="px-2 text-sop-neutral-gray-400" aria-hidden="true">
+                  &gt;
+                </span>
+              ) : null}
+              {isCurrent ? (
+                <span
+                  className="inline-flex items-center sop-breadcrumb text-sop-neutral-gray-200"
+                  aria-current="page"
+                >
+                  {label}
+                </span>
+              ) : (
+                <Link
+                  href={path}
+                  className={cn(
+                    'inline-flex items-center sop-breadcrumb text-sop-neutral-gray-400',
+                    index > 0 && 'ml-2',
+                  )}
+                >
+                  {label}
+                </Link>
+              )}
             </li>
           );
         })}

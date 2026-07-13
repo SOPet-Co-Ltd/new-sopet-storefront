@@ -6,8 +6,9 @@ import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { ProductByIdDocument } from '@/lib/graphql/generated/graphql';
 import { PreloadQuery } from '@/lib/graphql/apollo-rsc';
 import { buildProductByIdVariables } from '@/lib/graphql/query-variables';
+import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
-import { fetchProductById } from '@/lib/seo/fetch';
+import { fetchApprovedCategories, fetchProductById } from '@/lib/seo/fetch';
 import { isProductIndexable } from '@/lib/seo/indexability';
 import { buildBreadcrumbJsonLd, buildProductJsonLd } from '@/lib/seo/json-ld';
 import { buildAbsoluteUrl, buildPageMetadata, buildProductMetadata } from '@/lib/seo/metadata';
@@ -46,10 +47,26 @@ export default async function ProductPage({ params }: Props) {
   const productPath = `/product/${id}`;
   const pageUrl = buildAbsoluteUrl(productPath);
   const productJsonLd = buildProductJsonLd(product, pageUrl);
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+
+  const categories = await fetchApprovedCategories();
+  const resolvedCategory =
+    categories && product.category
+      ? resolveCategoryBySlug(categories, product.category)
+      : undefined;
+
+  const breadcrumbItems = [
     { name: 'หน้าแรก', url: buildAbsoluteUrl('/') },
+    ...(resolvedCategory
+      ? [
+          {
+            name: resolvedCategory.name,
+            url: buildAbsoluteUrl(buildCategoryHref(resolvedCategory.slug)),
+          },
+        ]
+      : []),
     { name: product.name, url: pageUrl },
-  ]);
+  ];
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(breadcrumbItems);
   const variables = buildProductByIdVariables({ id });
 
   return (

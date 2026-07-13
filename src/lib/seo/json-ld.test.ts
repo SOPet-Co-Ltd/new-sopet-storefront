@@ -7,6 +7,7 @@ import {
   buildBreadcrumbJsonLd,
   buildOrganizationJsonLd,
   buildProductJsonLd,
+  buildWebSiteJsonLd,
   getDefaultOfferPrice,
   mapAvailability,
 } from './json-ld';
@@ -100,6 +101,21 @@ describe('buildOrganizationJsonLd', () => {
     expect(jsonLd['@type']).toBe('Organization');
     expect(jsonLd.name).toBe('SOPET');
     expect(jsonLd.url).toBe('https://www.sopet.org');
+  });
+});
+
+describe('buildWebSiteJsonLd', () => {
+  it('builds WebSite schema with SearchAction targeting site search', () => {
+    const config = { baseUrl: 'https://www.sopet.org', siteName: 'SOPET' };
+    const jsonLd = buildWebSiteJsonLd(config);
+    const potentialAction = jsonLd.potentialAction as Record<string, unknown>;
+    const target = potentialAction.target as Record<string, unknown>;
+
+    expect(jsonLd['@type']).toBe('WebSite');
+    expect(jsonLd.name).toBe('SOPET');
+    expect(jsonLd.url).toBe('https://www.sopet.org');
+    expect(potentialAction['@type']).toBe('SearchAction');
+    expect(target.urlTemplate).toBe('https://www.sopet.org/search?q={search_term_string}');
   });
 });
 

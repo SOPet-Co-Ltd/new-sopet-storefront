@@ -101,6 +101,11 @@ describe('integration test 1 of 3 — product metadata and JSON-LD parity', () =
     expect(metadata.alternates?.canonical).toBe(expectedCanonical);
     expect(metadata.title).toContain(sampleProductDetail.name);
     expect(metadata.openGraph?.url).toBe(expectedCanonical);
+    expect(metadata.openGraph?.images).toEqual([{ url: sampleProductDetail.thumbnailUrl }]);
+    expect(metadata.twitter).toMatchObject({
+      card: 'summary_large_image',
+      images: [sampleProductDetail.thumbnailUrl],
+    });
     expect(metadata.robots).toEqual({ index: true, follow: true });
 
     expect(jsonLd['@type']).toBe('Product');

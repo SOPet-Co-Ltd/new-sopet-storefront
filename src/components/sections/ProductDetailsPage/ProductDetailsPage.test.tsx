@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import ProductDetailsPage from '@/components/sections/ProductDetailsPage';
 import { CartProvider } from '@/lib/providers/CartProvider';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
+import { sampleCategories } from '@/test/mocks/fixtures/catalog';
 import { server } from '@/test/mocks/server';
 
 const STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
@@ -182,6 +183,9 @@ function mockProductQueries({
 
       return HttpResponse.json({ data: { product } });
     }),
+    graphql.query('ApprovedCategories', () =>
+      HttpResponse.json({ data: { approvedCategories: sampleCategories } }),
+    ),
     graphql.query('ProductReviews', ({ variables }) => {
       expect(variables).toEqual({ productId: PRODUCT_ID });
       return HttpResponse.json({ data: { productReviews: [SAMPLE_PRODUCT_REVIEW] } });
@@ -319,5 +323,35 @@ describe('ProductDetailsPage', () => {
     await waitFor(() => {
       expect(notFound).toHaveBeenCalled();
     });
+  });
+
+  it('renders a single visible h1, article landmark, and breadcrumb trail with category crumb', async () => {
+    mockProductQueries();
+
+    const { container } = render(<ProductDetailsPage productId={PRODUCT_ID} />, {
+      wrapper: createWrapper(),
+    });
+
+    expect(await screen.findByTestId('product-details-page')).toBeInTheDocument();
+
+    const headings = screen.getAllByRole('heading', { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveTextContent(SAMPLE_PRODUCT_DETAIL.name);
+    expect(headings[0]).toHaveAttribute('id', 'product-title');
+
+    const article = container.querySelector('article[aria-labelledby="product-title"]');
+    expect(article).toBeInTheDocument();
+
+    const breadcrumbNav = screen.getByRole('navigation', { name: 'breadcrumb' });
+    expect(breadcrumbNav).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'หน้าแรก' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Dog Food' })).toHaveAttribute(
+      'href',
+      '/categories/dog-food',
+    );
+    expect(within(breadcrumbNav).getByText(SAMPLE_PRODUCT_DETAIL.name)).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 });

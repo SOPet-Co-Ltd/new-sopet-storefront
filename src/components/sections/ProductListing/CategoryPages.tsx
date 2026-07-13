@@ -1,10 +1,15 @@
 'use client';
 
 import { Suspense } from 'react';
+import { Breadcrumbs } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
 import { EmptySearchResults } from '@/components/molecules/EmptySearchResults';
 import { useCategories } from '@/lib/hooks/useCategories';
 import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
-import { resolveCategoryBySlug, resolveCategoryFilterName } from '@/lib/routing/categoryRoutes';
+import {
+  buildCategoryHref,
+  resolveCategoryBySlug,
+  resolveCategoryFilterName,
+} from '@/lib/routing/categoryRoutes';
 import { SearchResultsLayout } from '@/components/sections/SearchResultsLayout';
 import { ProductListing } from './ProductListing';
 import { ProductListingSkeleton } from './ProductListingSkeleton';
@@ -15,6 +20,22 @@ type CategoryPLPProps = {
   initialProducts?: ProductsQuery['products']['items'];
   initialPage?: number;
 };
+
+function CategoryBreadcrumbs({ categorySlug }: { categorySlug: string }) {
+  const { categories, loading } = useCategories();
+  const category = resolveCategoryBySlug(categories, categorySlug);
+  const currentLabel = loading ? categorySlug : (category?.name ?? categorySlug);
+
+  return (
+    <Breadcrumbs
+      className="mb-2"
+      items={[
+        { label: 'หน้าแรก', path: '/' },
+        { label: currentLabel, path: buildCategoryHref(categorySlug) },
+      ]}
+    />
+  );
+}
 
 function CategoryHeader({ categorySlug }: { categorySlug: string }) {
   const { categories, loading } = useCategories();
@@ -45,6 +66,7 @@ export function CategoryPLP({
 
   return (
     <>
+      <CategoryBreadcrumbs categorySlug={categorySlug} />
       <CategoryHeader categorySlug={categorySlug} />
       <SearchResultsLayout>
         {categoryUnresolvable ? (

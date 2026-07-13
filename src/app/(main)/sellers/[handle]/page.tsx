@@ -11,10 +11,13 @@ import {
   buildSellerStorefrontVariables,
 } from '@/lib/graphql/query-variables';
 import { SellerStorefront } from '@/components/organisms/SellerTabs';
+import { Breadcrumbs } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
+import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
 import { fetchStoreBySlug } from '@/lib/seo/fetch';
 import { isSellerIndexable } from '@/lib/seo/indexability';
-import { buildPageMetadata, buildSellerMetadata } from '@/lib/seo/metadata';
+import { buildBreadcrumbJsonLd } from '@/lib/seo/json-ld';
+import { buildAbsoluteUrl, buildPageMetadata, buildSellerMetadata } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
 
@@ -66,6 +69,16 @@ export default async function SellerPage({ params }: Props) {
 
   const storefront = (
     <main className="w-full min-h-[calc(100dvh-109px)] px-4 py-4 lg:px-20">
+      {store ? (
+        <div className="mb-2">
+          <Breadcrumbs
+            items={[
+              { label: 'หน้าแรก', path: '/' },
+              { label: store.name, path: `/sellers/${handle}` },
+            ]}
+          />
+        </div>
+      ) : null}
       <SellerStorefront
         handle={handle}
         activeTab="products"
@@ -75,19 +88,34 @@ export default async function SellerPage({ params }: Props) {
     </main>
   );
 
+  const sellerPath = `/sellers/${handle}`;
+  const breadcrumbJsonLd =
+    store && isSellerIndexable(store)
+      ? buildBreadcrumbJsonLd([
+          { name: 'หน้าแรก', url: buildAbsoluteUrl('/') },
+          { name: store.name, url: buildAbsoluteUrl(sellerPath) },
+        ])
+      : null;
+
   if (!productVariables) {
     return (
-      <PreloadQuery query={StoreBySlugDocument} variables={storeVariables}>
-        {storefront}
-      </PreloadQuery>
+      <>
+        {breadcrumbJsonLd ? <JsonLdScript data={breadcrumbJsonLd} /> : null}
+        <PreloadQuery query={StoreBySlugDocument} variables={storeVariables}>
+          {storefront}
+        </PreloadQuery>
+      </>
     );
   }
 
   return (
-    <PreloadQuery query={StoreBySlugDocument} variables={storeVariables}>
-      <PreloadQuery query={ProductsDocument} variables={productVariables}>
-        {storefront}
+    <>
+      {breadcrumbJsonLd ? <JsonLdScript data={breadcrumbJsonLd} /> : null}
+      <PreloadQuery query={StoreBySlugDocument} variables={storeVariables}>
+        <PreloadQuery query={ProductsDocument} variables={productVariables}>
+          {storefront}
+        </PreloadQuery>
       </PreloadQuery>
-    </PreloadQuery>
+    </>
   );
 }

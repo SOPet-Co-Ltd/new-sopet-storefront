@@ -42,9 +42,12 @@ export function ProductDetails({
     <div className="flex flex-col gap-4 px-4 lg:gap-8 lg:px-0">
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <p className="sop-body-lg-medium text-sop-neutral-gray-300 lg:sop-headline-md-medium">
+          <h1
+            id="product-title"
+            className="sop-body-lg-medium text-sop-neutral-gray-300 lg:sop-headline-md-medium"
+          >
             {product.name}
-          </p>
+          </h1>
 
           <ProductReviewStars
             averageRating={product.averageRating}

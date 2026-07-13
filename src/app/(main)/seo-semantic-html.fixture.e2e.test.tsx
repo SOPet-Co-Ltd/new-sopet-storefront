@@ -1,76 +1,290 @@
 // Storefront SEO / AEO / GEO fixture-e2e Test - Design Doc: storefront-seo-aeo-geo-frontend-design.md
 // UI Spec: storefront-seo-aeo-geo-ui-spec.md
 // Generated: 2026-07-13 | Budget Used: 0/3 integration, 3/3 fixture-e2e, 0/2 service-e2e
-//
-// -----------------------------------------------------------------------------
-// fixture-e2e test 1 of 3 — RESERVED multi-step catalog discovery journey
-// -----------------------------------------------------------------------------
-//
-// AC1: "When product data is available on PDP, the system shall render exactly one visible h1 containing product.name (AC-021)"
-// AC2: "When breadcrumbs render on category/product/seller pages, the system shall use <nav aria-label=\"breadcrumb\"><ol>…</ol></nav> (AC-022)"
-// AC3: "When breadcrumb JSON-LD is emitted, the system shall use absolute canonical URLs matching visible breadcrumb items (AC-014)"
-// UI journey: S-01 Home → S-02 Category (via home category card) → S-03 Product PDP; state carries selected category context; completion = PDP loaded with aligned heading + breadcrumb trail
-// ROI: 89 (BV:9 × Freq:9 + Legal:0 + Defect:8) — reserved slot (user-facing multi-step journey)
-// Behavior: Render HomeCategories → user activates category card → CategoryPLP loads → user activates product card → ProductDetailsPage with initialProduct → verify single h1, breadcrumb nav at all breakpoints, category crumb navigates back to /categories/{slug}
-// @category: fixture-e2e
-// @lane: fixture-e2e
-// @dependency: HomeCategories, CategoryPLP, ProductDetailsPage, ProductDetails, Breadcrumbs, JsonLdScript (server page companion), MSW ApprovedCategories + ProductById fixtures, full-ui (mocked backend)
-// @complexity: high
-// Primary failure mode: journey completes but PDP lacks mobile breadcrumbs, duplicate/missing h1, or category crumb is missing when taxonomy resolves
-// Proof obligation: traverse interaction boundaries Home → Category PLP → PDP using RTL+MSW; at PDP assert exactly one visible h1 text equals product.name; navigation landmark aria-label is lowercase "breadcrumb" with ordered list; breadcrumb includes หน้าแรก link and category name when approvedCategories maps product.category name to slug; activating category crumb calls router push to /categories/{slug}; no hidden lg:block wrapper hiding crumbs on mobile viewport; JSON-LD item names/URLs must match visible crumbs when server JsonLdScript rendered alongside (optional headless script content check)
-// Verification points / expected results / pass criteria:
-// - After home category click, category h1 shows resolved category name
-// - After product card click, screen.getAllByRole('heading', { level: 1 }) length === 1
-// - h1 accessible name equals sampleProductDetail.name
-// - getByRole('navigation', { name: 'breadcrumb' }) present on PDP
-// - Breadcrumb list is ol > li structure; current product item has aria-current="page" and is not a link
-// - Category ancestor link visible when product.category resolves via MSW approvedCategories
-// - userEvent.click(category crumb) triggers navigation to /categories/dog-food (or fixture slug)
-//
-// -----------------------------------------------------------------------------
-// fixture-e2e test 2 of 3
-// -----------------------------------------------------------------------------
-//
-// AC1: "When user lands on home, document has exactly one h1 matching primary site identity (UI Spec S-01 / AC-021 home variant)"
-// ROI: 65 (BV:6 × Freq:10 + Legal:0 + Defect:5)
-// Behavior: Render HomePage with MSW home fixtures → count h1 elements → text describes SOPET marketplace (Thai headline)
-// @category: fixture-e2e
-// @lane: fixture-e2e
-// @dependency: HomePage, MSW catalog fixtures, full-ui (mocked backend)
-// @complexity: low
-// Primary failure mode: home renders with zero h1 or multiple h1 elements after SEO semantic HTML change
-// Proof obligation: render HomePage default loaded state; assert single h1 in accessibility tree with non-empty Thai marketplace copy; no duplicate site-title headings at level 1
-// Verification points / expected results / pass criteria:
-// - screen.getAllByRole('heading', { level: 1 }).length === 1
-// - h1 text matches expected static headline constant (TBD-01 placeholder acceptable if documented)
-// - h1 is visible (not error/loading skeleton state)
-//
-// -----------------------------------------------------------------------------
-// fixture-e2e test 3 of 3
-// -----------------------------------------------------------------------------
-//
-// AC1: "When breadcrumbs render on category/product/seller pages, the system shall use <nav aria-label=\"breadcrumb\"><ol>…</ol></nav> (AC-022)"
-// AC2: "Category PLP h1 = category name; breadcrumbs หน้าแรก → {category} above heading (UI Spec S-02 Golden State 2)"
-// ROI: 63 (BV:7 × Freq:8 + Legal:0 + Defect:7)
-// Behavior: Render CategoryPLP with resolved category + initialProducts → breadcrumbs above CategoryHeader h1 with correct items and a11y contract
-// @category: fixture-e2e
-// @lane: fixture-e2e
-// @dependency: CategoryPLP, CategoryPages, Breadcrumbs, MSW ApprovedCategories fixture
-// @complexity: medium
-// Primary failure mode: category page ships metadata/noindex rules but visible breadcrumb row missing or h1 duplicated
-// Proof obligation: render CategoryPLP for slug dog-food with sample category fixture; assert navigation landmark before h1; trail shows หน้าแรก link then current category name as non-link with aria-current; category h1 text equals category.name; breadcrumbs visible at mobile width (default RTL viewport)
-// Verification points / expected results / pass criteria:
-// - getByRole('navigation', { name: 'breadcrumb' }) in document
-// - getByRole('heading', { level: 1, name: category.name }) present
-// - Breadcrumb ancestor link has href or router push target /
-// - Current crumb text equals category.name and is not focusable link
-// - Document order: breadcrumb nav precedes category h1 in DOM
 
-import { describe, expect, it } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { graphql, HttpResponse } from 'msw';
+import type { ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import HomePage from '@/components/pages/HomePage';
+import ProductDetailsPage from '@/components/sections/ProductDetailsPage/ProductDetailsPage';
+import { HomeCategories } from '@/components/sections/HomeCategories';
+import { CategoryPLP } from '@/components/sections/ProductListing';
+import { CartProvider } from '@/lib/providers/CartProvider';
+import { HOME_H1_COPY } from '@/lib/seo/constants';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
+import {
+  CATALOG_PRODUCT_ID,
+  sampleCategories,
+  samplePetTypes,
+  sampleProductCard,
+  sampleProductDetail,
+} from '@/test/mocks/fixtures/catalog';
+import { server } from '@/test/mocks/server';
 
-// Reserved fixture-e2e slots — implementation deferred to task 19.
-describe.skip('fixture-e2e — SEO semantic HTML journeys (task 19)', () => {
-  it('placeholder — reserved for catalog discovery journey', () => {
-    expect(true).toBe(true);
+// @category: fixture-e2e
+// @lane: fixture-e2e
+
+const push = vi.fn();
+let pathname = '/';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push }),
+  usePathname: () => pathname,
+  useSearchParams: () => new URLSearchParams(),
+  notFound: vi.fn(),
+}));
+
+vi.mock('@/lib/hooks/useAuth', () => ({
+  useAuth: vi.fn(() => ({
+    customer: null,
+    isAuthenticated: false,
+    isLoading: false,
+    pendingDeletion: false,
+    sendOtp: vi.fn(),
+    verifyOtp: vi.fn(),
+    reactivateAccount: vi.fn(),
+    logout: vi.fn(),
+  })),
+}));
+
+vi.mock('next/image', () => ({
+  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
+    <img src={src} alt={alt} {...props} />
+  ),
+}));
+
+vi.mock('@/lib/hooks/useSessionId', () => ({
+  useSessionId: () => 'session-test',
+}));
+
+vi.mock('@/lib/hooks/useSearchContext', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/hooks/useSearchContext')>(
+    '@/lib/hooks/useSearchContext',
+  );
+
+  return {
+    ...actual,
+    useSearchContext: () => undefined,
+  };
+});
+
+function createJourneyWrapper() {
+  const ApolloTestWrapper = createApolloTestWrapper();
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return (
+      <ApolloTestWrapper>
+        <CartProvider>{children}</CartProvider>
+      </ApolloTestWrapper>
+    );
+  };
+}
+
+function registerHomeFixtureHandlers() {
+  server.use(
+    graphql.query('PlatformBanners', () =>
+      HttpResponse.json({
+        data: {
+          platformBanners: [
+            {
+              id: 'banner-1',
+              title: 'Welcome',
+              imageUrl: 'https://example.com/banner.jpg',
+              linkUrl: '/products',
+              sortOrder: 1,
+              isActive: true,
+              startsAt: null,
+              endsAt: null,
+            },
+          ],
+        },
+      }),
+    ),
+    graphql.query('ApprovedCategories', () =>
+      HttpResponse.json({ data: { approvedCategories: sampleCategories } }),
+    ),
+    graphql.query('Products', () =>
+      HttpResponse.json({
+        data: {
+          products: {
+            items: [sampleProductCard],
+            pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+          },
+        },
+      }),
+    ),
+    graphql.query('RecommendedProducts', () =>
+      HttpResponse.json({ data: { recommendedProducts: [sampleProductCard] } }),
+    ),
+    graphql.query('PlatformSponsors', () => HttpResponse.json({ data: { platformSponsors: [] } })),
+    graphql.query('LatestPurchaseProducts', () =>
+      HttpResponse.json({ data: { latestPurchaseProducts: [] } }),
+    ),
+  );
+}
+
+function registerCategoryFixtureHandlers() {
+  server.use(
+    graphql.query('ApprovedCategories', () =>
+      HttpResponse.json({ data: { approvedCategories: sampleCategories } }),
+    ),
+    graphql.query('ApprovedPetTypes', () =>
+      HttpResponse.json({ data: { approvedPetTypes: samplePetTypes } }),
+    ),
+    graphql.query('Products', ({ variables }) => {
+      expect(variables).toMatchObject({ category: 'Dog Food', page: 1 });
+      return HttpResponse.json({
+        data: {
+          products: {
+            items: [sampleProductCard],
+            pagination: { page: 1, limit: 24, total: 1, totalPages: 1 },
+          },
+        },
+      });
+    }),
+  );
+}
+
+function registerPdpFixtureHandlers() {
+  server.use(
+    graphql.query('ApprovedCategories', () =>
+      HttpResponse.json({ data: { approvedCategories: sampleCategories } }),
+    ),
+    graphql.query('ProductById', () =>
+      HttpResponse.json({ data: { product: sampleProductDetail } }),
+    ),
+    graphql.query('ProductReviews', () => HttpResponse.json({ data: { productReviews: [] } })),
+    graphql.query('StoreReviewSummary', () =>
+      HttpResponse.json({ data: { storeReviewSummary: null } }),
+    ),
+    graphql.query('Cart', () => HttpResponse.json({ data: { cart: null } })),
+    graphql.query('Products', () =>
+      HttpResponse.json({
+        data: {
+          products: {
+            items: [sampleProductCard],
+            pagination: { page: 1, limit: 11, total: 1, totalPages: 1 },
+          },
+        },
+      }),
+    ),
+  );
+}
+
+beforeEach(() => {
+  pathname = '/';
+  push.mockClear();
+});
+
+describe('fixture-e2e — SEO semantic HTML journeys', () => {
+  it('traverses Home → Category → PDP with aligned heading and breadcrumb trail', async () => {
+    const user = userEvent.setup();
+    registerHomeFixtureHandlers();
+
+    const { unmount: unmountHome } = render(
+      <HomeCategories initialCategories={sampleCategories} />,
+      { wrapper: createJourneyWrapper() },
+    );
+
+    const categoryLink = screen.getByRole('link', { name: 'ดูหมวดหมู่ Dog Food' });
+    await user.click(categoryLink);
+    unmountHome();
+
+    registerCategoryFixtureHandlers();
+    pathname = '/categories/dog-food';
+
+    const { unmount: unmountCategory } = render(
+      <CategoryPLP
+        categorySlug="dog-food"
+        categoryFilter="Dog Food"
+        initialProducts={[sampleProductCard]}
+      />,
+      { wrapper: createJourneyWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Dog Food' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'breadcrumb' })).toBeInTheDocument();
+
+    const productLink = screen.getByRole('link', { name: `ดู ${sampleProductCard.name}` });
+    await user.click(productLink);
+    unmountCategory();
+
+    registerPdpFixtureHandlers();
+    pathname = `/product/${CATALOG_PRODUCT_ID}`;
+
+    render(
+      <ProductDetailsPage productId={CATALOG_PRODUCT_ID} initialProduct={sampleProductDetail} />,
+      { wrapper: createJourneyWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('product-details-page')).toBeInTheDocument();
+    });
+
+    const headings = screen.getAllByRole('heading', { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveAccessibleName(sampleProductDetail.name);
+
+    const breadcrumbNav = screen.getByRole('navigation', { name: 'breadcrumb' });
+    expect(breadcrumbNav).toBeInTheDocument();
+    expect(breadcrumbNav.querySelector('ol')).toBeInTheDocument();
+
+    const categoryCrumb = screen.getByRole('link', { name: 'Dog Food' });
+    expect(categoryCrumb).toHaveAttribute('href', '/categories/dog-food');
+
+    const currentCrumb = within(breadcrumbNav).getByText(sampleProductDetail.name);
+    expect(currentCrumb).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('link', { name: sampleProductDetail.name })).not.toBeInTheDocument();
+
+    await user.click(categoryCrumb);
+    expect(categoryCrumb).toHaveAttribute('href', '/categories/dog-food');
+  });
+
+  it('renders exactly one visible home h1 with Thai marketplace headline', async () => {
+    registerHomeFixtureHandlers();
+
+    render(<HomePage initialCategories={sampleCategories} />, {
+      wrapper: createJourneyWrapper(),
+    });
+
+    await screen.findByRole('heading', { name: 'หมวดหมู่สินค้า' });
+
+    const h1Elements = screen.getAllByRole('heading', { level: 1 });
+    expect(h1Elements).toHaveLength(1);
+    expect(h1Elements[0]).toHaveTextContent(HOME_H1_COPY);
+    expect(h1Elements[0]).toBeVisible();
+  });
+
+  it('renders category breadcrumbs above the category h1 with correct trail', async () => {
+    registerCategoryFixtureHandlers();
+
+    const { container } = render(
+      <CategoryPLP
+        categorySlug="dog-food"
+        categoryFilter="Dog Food"
+        initialProducts={[sampleProductCard]}
+      />,
+      { wrapper: createJourneyWrapper() },
+    );
+
+    const breadcrumbNav = await screen.findByRole('navigation', { name: 'breadcrumb' });
+    const categoryHeading = await screen.findByRole('heading', {
+      level: 1,
+      name: 'Dog Food',
+    });
+
+    expect(screen.getByRole('link', { name: 'หน้าแรก' })).toHaveAttribute('href', '/');
+
+    const currentCrumb = within(breadcrumbNav).getByText('Dog Food', { selector: 'span' });
+    expect(currentCrumb).toHaveAttribute('aria-current', 'page');
+    expect(within(breadcrumbNav).queryByRole('link', { name: 'Dog Food' })).not.toBeInTheDocument();
+
+    const breadcrumbIndex = Array.from(container.querySelectorAll('nav, h1')).indexOf(
+      breadcrumbNav,
+    );
+    const headingIndex = Array.from(container.querySelectorAll('nav, h1')).indexOf(categoryHeading);
+    expect(breadcrumbIndex).toBeGreaterThanOrEqual(0);
+    expect(headingIndex).toBeGreaterThan(breadcrumbIndex);
   });
 });

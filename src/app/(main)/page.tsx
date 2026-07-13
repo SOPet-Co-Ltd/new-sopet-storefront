@@ -13,7 +13,7 @@ import {
   buildApprovedCategoriesVariables,
   buildRecommendedProductsVariables,
 } from '@/lib/graphql/query-variables';
-import { buildOrganizationJsonLd } from '@/lib/seo/json-ld';
+import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/seo/json-ld';
 import { buildHomeMetadata, getSiteConfig } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
@@ -51,11 +51,13 @@ export default async function Home() {
     // Degrade to client-side fetch when SSR transport fails.
   }
 
-  const organizationJsonLd = buildOrganizationJsonLd(getSiteConfig());
+  const siteConfig = getSiteConfig();
+  const organizationJsonLd = buildOrganizationJsonLd(siteConfig);
+  const webSiteJsonLd = buildWebSiteJsonLd(siteConfig);
 
   return (
     <>
-      <JsonLdScript data={organizationJsonLd} />
+      <JsonLdScript data={[organizationJsonLd, webSiteJsonLd]} />
       <PreloadQuery query={ApprovedCategoriesDocument} variables={categoriesVariables}>
         <PreloadQuery query={RecommendedProductsDocument} variables={recommendedVariables}>
           <HomePage

@@ -3,7 +3,7 @@
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Breadcrumbs } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
+import { Breadcrumbs, type BreadcrumbItem } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
 import { ProductDetails } from '@/components/organisms/ProductDetails/ProductDetails';
 import ProductDetailsSeller from '@/components/organisms/ProductDetailsSeller';
 import ProductDetailsSellerReviews from '@/components/organisms/ProductDetailsSellerReviews';
@@ -12,8 +12,10 @@ import { ProductDetailDescription } from '@/components/sections/ProductDetailDes
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
 import type { ProductByIdQuery } from '@/lib/graphql/generated/graphql';
+import { useCategories } from '@/lib/hooks/useCategories';
 import { useProduct } from '@/lib/hooks/useProduct';
 import { useReviews } from '@/lib/hooks/useReviews';
+import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
 
 type ProductDetailsPageProps = {
   productId: string;
@@ -83,6 +85,27 @@ export default function ProductDetailsPage({ productId, initialProduct }: Produc
   );
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const { categories } = useCategories();
+
+  const breadcrumbItems = useMemo((): BreadcrumbItem[] => {
+    if (!product) {
+      return [];
+    }
+
+    const items: BreadcrumbItem[] = [{ label: 'หน้าแรก', path: '/' }];
+    const resolvedCategory =
+      product.category != null ? resolveCategoryBySlug(categories, product.category) : undefined;
+
+    if (resolvedCategory) {
+      items.push({
+        label: resolvedCategory.name,
+        path: buildCategoryHref(resolvedCategory.slug),
+      });
+    }
+
+    items.push({ label: product.name, path: `/product/${product.id}` });
+    return items;
+  }, [categories, product]);
 
   const isNotFound = Boolean(
     error &&
@@ -108,25 +131,24 @@ export default function ProductDetailsPage({ productId, initialProduct }: Produc
     );
   }
 
-  const breadcrumbs = [
-    { label: 'หน้าแรก', path: '/' },
-    { label: product.name, path: `/product/${product.id}` },
-  ];
+  const breadcrumbs = breadcrumbItems;
 
   return (
     <div data-testid="product-details-page" className="flex flex-col gap-2 md:gap-5">
-      <div className="hidden py-2 lg:block">
+      <div className="py-2">
         <Breadcrumbs items={breadcrumbs} />
       </div>
 
-      <div className="-mx-4 grid grid-cols-1 gap-4 rounded-none bg-sop-base-white px-0 pb-4 md:mx-0 md:px-0 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-[10px] lg:py-5">
-        <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
-        <ProductDetails
-          product={product}
-          shareModalOpen={shareModalOpen}
-          onShareModalOpenChange={setShareModalOpen}
-        />
-      </div>
+      <article aria-labelledby="product-title">
+        <div className="-mx-4 grid grid-cols-1 gap-4 rounded-none bg-sop-base-white px-0 pb-4 md:mx-0 md:px-0 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-[10px] lg:py-5">
+          <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
+          <ProductDetails
+            product={product}
+            shareModalOpen={shareModalOpen}
+            onShareModalOpenChange={setShareModalOpen}
+          />
+        </div>
+      </article>
 
       <ProductDetailsSeller store={product.store} />
 

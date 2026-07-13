@@ -6,13 +6,19 @@ import {
 } from '@/lib/graphql/generated/graphql';
 import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
 import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
-import { decodeRouteParam, resolveCategoryFilterName } from '@/lib/routing/categoryRoutes';
+import {
+  decodeRouteParam,
+  resolveCategoryBySlug,
+  resolveCategoryFilterName,
+} from '@/lib/routing/categoryRoutes';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { CategoryPLP } from '@/components/sections/ProductListing';
+import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
 import { fetchApprovedCategories } from '@/lib/seo/fetch';
 import { getCategoryIndexation } from '@/lib/seo/indexability';
-import { buildCategoryMetadata, buildPageMetadata } from '@/lib/seo/metadata';
+import { buildBreadcrumbJsonLd } from '@/lib/seo/json-ld';
+import { buildAbsoluteUrl, buildCategoryMetadata, buildPageMetadata } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
 
@@ -44,8 +50,14 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     });
   }
 
-  const categoryName = resolveCategoryFilterName(categories, categorySlug);
-  return buildCategoryMetadata(categoryName, categorySlug, indexation.indexable);
+  const category = resolveCategoryBySlug(categories, categorySlug);
+  const categoryName = category?.name ?? resolveCategoryFilterName(categories, categorySlug);
+  return buildCategoryMetadata(
+    categoryName,
+    categorySlug,
+    indexation.indexable,
+    category?.imageUrl,
+  );
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {
@@ -90,18 +102,31 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     // Degrade to client-side fetch when SSR transport fails.
   }
 
+  const indexation = getCategoryIndexation(categorySlug, resolvedSearchParams);
+  const categoryName = resolveCategoryFilterName(categories ?? [], categorySlug);
+  const breadcrumbJsonLd =
+    indexation.indexable && categories
+      ? buildBreadcrumbJsonLd([
+          { name: 'หน้าแรก', url: buildAbsoluteUrl('/') },
+          { name: categoryName, url: buildAbsoluteUrl(indexation.canonicalPath) },
+        ])
+      : null;
+
   return (
-    <PreloadQuery query={ApprovedCategoriesDocument} variables={{}}>
-      <PreloadQuery query={ProductsDocument} variables={variables}>
-        <main className="w-full px-4 py-4 lg:px-20">
-          <CategoryPLP
-            categorySlug={categorySlug}
-            categoryFilter={categoryFilter}
-            initialProducts={initialProducts}
-            initialPage={currentPage}
-          />
-        </main>
+    <>
+      {breadcrumbJsonLd ? <JsonLdScript data={breadcrumbJsonLd} /> : null}
+      <PreloadQuery query={ApprovedCategoriesDocument} variables={{}}>
+        <PreloadQuery query={ProductsDocument} variables={variables}>
+          <main className="w-full px-4 py-4 lg:px-20">
+            <CategoryPLP
+              categorySlug={categorySlug}
+              categoryFilter={categoryFilter}
+              initialProducts={initialProducts}
+              initialPage={currentPage}
+            />
+          </main>
+        </PreloadQuery>
       </PreloadQuery>
-    </PreloadQuery>
+    </>
   );
 }

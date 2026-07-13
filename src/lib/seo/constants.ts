@@ -8,9 +8,6 @@ export const DEFAULT_DESCRIPTION_MAX_LENGTH = 160;
 export const DEFAULT_SITE_DESCRIPTION =
   'Sopet คือแพลตฟอร์มค้นหายาและสินค้าสำหรับสัตว์เลี้ยงจากโรงพยาบาลและร้านขายยาทั่วไทย เปรียบเทียบราคา รับโค้ดส่วนลด และจัดส่งรวดเร็ว';
 
-/** TBD-01: Marketing may refine home hero headline copy in a follow-up. */
-export const HOME_H1_COPY = 'ค้นหายาและสินค้าสัตว์เลี้ยงจากร้านค้าทั่วไทย';
-
 /** Default OG image path — TBD-03 placeholder until final creative (task 20). */
 export const DEFAULT_OG_IMAGE_PATH = '/og/default-og.jpg';
 

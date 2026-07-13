@@ -1,16 +1,3 @@
-fragment ProductCardFields on ProductType {
-  id
-  name
-  slug
-  storeId
-  basePrice
-  compareAtPrice
-  thumbnailUrl
-  averageRating
-  reviewCount
-  soldCount
-}
-
 query Products(
   $category: String
   $page: Int

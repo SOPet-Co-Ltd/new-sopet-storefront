@@ -9,7 +9,6 @@ import { ChatWithAdminFloatingButton } from '@/components/molecules/ChatWithAdmi
 import { HomeSponsorsSection } from '@/components/sections/HomeSponsorsSection';
 import type { Category } from '@/lib/hooks/useCategories';
 import type { RecommendedProductsQuery } from '@/lib/graphql/generated/graphql';
-import { HOME_H1_COPY } from '@/lib/seo/constants';
 
 export type HomePageProps = {
   initialCategories?: Category[];
@@ -49,11 +48,6 @@ export default function HomePage({
   return (
     <main className="flex flex-col row-start-2 items-center sm:items-start text-primary w-full">
       <header className="w-full">
-        <div className="px-4 pt-4 lg:px-20 lg:pt-6">
-          <h1 className="sop-headline-sm-medium text-sop-neutral-gray-200 md:sop-headline-md-medium">
-            {HOME_H1_COPY}
-          </h1>
-        </div>
         <BannerSection />
       </header>
 

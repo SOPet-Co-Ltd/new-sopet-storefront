@@ -7,12 +7,10 @@ import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import HomePage from '@/components/pages/HomePage';
 import ProductDetailsPage from '@/components/sections/ProductDetailsPage/ProductDetailsPage';
 import { HomeCategories } from '@/components/sections/HomeCategories';
 import { CategoryPLP } from '@/components/sections/ProductListing';
 import { CartProvider } from '@/lib/providers/CartProvider';
-import { HOME_H1_COPY } from '@/lib/seo/constants';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import {
   CATALOG_PRODUCT_ID,
@@ -239,21 +237,6 @@ describe('fixture-e2e — SEO semantic HTML journeys', () => {
 
     await user.click(categoryCrumb);
     expect(categoryCrumb).toHaveAttribute('href', '/categories/dog-food');
-  });
-
-  it('renders exactly one visible home h1 with Thai marketplace headline', async () => {
-    registerHomeFixtureHandlers();
-
-    render(<HomePage initialCategories={sampleCategories} />, {
-      wrapper: createJourneyWrapper(),
-    });
-
-    await screen.findByRole('heading', { name: 'หมวดหมู่สินค้า' });
-
-    const h1Elements = screen.getAllByRole('heading', { level: 1 });
-    expect(h1Elements).toHaveLength(1);
-    expect(h1Elements[0]).toHaveTextContent(HOME_H1_COPY);
-    expect(h1Elements[0]).toBeVisible();
   });
 
   it('renders category breadcrumbs above the category h1 with correct trail', async () => {

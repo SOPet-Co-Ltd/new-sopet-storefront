@@ -7,7 +7,7 @@ import {
   ProfileContactEditLayout,
   ProfileFormActions,
 } from '@/components/molecules/account/ProfileContactEditLayout';
-import { Input } from '@/components/atoms/Input';
+import { DatePicker } from '@/components/molecules/DatePicker';
 import { Button } from '@/components/atoms/Button';
 import { CalendarIcon } from '@/components/atoms/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -17,6 +17,9 @@ import {
   toDateInputValue,
   validateCustomerDateOfBirth,
 } from '@/lib/helpers/dateOfBirth';
+
+const MAX_BIRTHDAY = new Date().toISOString().slice(0, 10);
+const MIN_BIRTHDAY = '1900-01-01';
 
 export default function CustomerDateOfBirthPage() {
   const router = useRouter();
@@ -72,21 +75,36 @@ export default function CustomerDateOfBirthPage() {
             : undefined
         }
       >
-        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-          <Input
-            title="วันเกิด"
-            type="date"
-            value={dateOfBirth}
-            max={new Date().toISOString().slice(0, 10)}
-            min="1900-01-01"
-            onChange={(e) => {
-              setDateOfBirth(e.target.value);
-              if (error) setError(null);
-            }}
-            variant="bordered"
-            state={error ? 'error' : 'default'}
-            description={error ?? undefined}
-          />
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 sm:space-y-6">
+          <section className="space-y-2.5 sm:space-y-3" aria-labelledby="birthday-picker-heading">
+            <div className="space-y-1">
+              <h2
+                id="birthday-picker-heading"
+                className="sop-body-sm-medium text-sop-neutral-gray-200"
+              >
+                {hasDateOfBirth ? 'เลือกวันเกิดใหม่' : 'เลือกวันเกิดของคุณ'}
+              </h2>
+              <p className="sop-body-xs-regular text-sop-neutral-gray-400">
+                ข้อมูลนี้จะใช้เพื่อมอบประสบการณ์และโปรโมชันที่เหมาะกับคุณเท่านั้น
+              </p>
+            </div>
+
+            <DatePicker
+              title="วันเกิด"
+              value={dateOfBirth}
+              min={MIN_BIRTHDAY}
+              max={MAX_BIRTHDAY}
+              placeholder="แตะเพื่อเลือกวัน เดือน และปี"
+              isRequired
+              state={error ? 'error' : 'default'}
+              description={error ?? 'เลือกวันเกิดของคุณจากปฏิทินด้านล่าง'}
+              onChange={(nextValue) => {
+                setDateOfBirth(nextValue);
+                if (error) setError(null);
+              }}
+              data-testid="birthday-date-picker"
+            />
+          </section>
 
           <ProfileFormActions
             submitLabel={hasDateOfBirth ? 'บันทึกวันเกิด' : 'เพิ่มวันเกิด'}
@@ -95,16 +113,25 @@ export default function CustomerDateOfBirthPage() {
           />
 
           {hasDateOfBirth ? (
-            <div className="flex justify-center pt-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={updating}
-                onClick={() => void handleClear()}
-              >
-                ลบวันเกิด
-              </Button>
+            <div className="rounded-sop-8px border border-sop-neutral-grayalpha-200 bg-sop-neutral-gray-500 px-3 py-2.5 sm:px-4 sm:py-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="sop-body-xs-regular text-sop-neutral-gray-400">ต้องการลบวันเกิด?</p>
+                  <p className="sop-body-xs-regular text-sop-neutral-gray-300">
+                    คุณสามารถลบข้อมูลวันเกิดได้ตลอดเวลา
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={updating}
+                  onClick={() => void handleClear()}
+                  className="w-full sm:w-auto"
+                >
+                  ลบวันเกิด
+                </Button>
+              </div>
             </div>
           ) : null}
         </form>

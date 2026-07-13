@@ -32,6 +32,7 @@ export default async function Home() {
 
   let initialCategories: ApprovedCategoriesQuery['approvedCategories'] | undefined;
   let initialRecommendedProducts: RecommendedProductsQuery['recommendedProducts'] | undefined;
+  let canPreloadQueries = false;
 
   try {
     const [categoriesResult, recommendedResult] = await Promise.all([
@@ -47,6 +48,7 @@ export default async function Home() {
 
     initialCategories = categoriesResult.data?.approvedCategories;
     initialRecommendedProducts = recommendedResult.data?.recommendedProducts;
+    canPreloadQueries = true;
   } catch {
     // Degrade to client-side fetch when SSR transport fails.
   }
@@ -55,17 +57,33 @@ export default async function Home() {
   const organizationJsonLd = buildOrganizationJsonLd(siteConfig);
   const webSiteJsonLd = buildWebSiteJsonLd(siteConfig);
 
+  const homePage = (
+    <HomePage
+      initialCategories={initialCategories}
+      initialRecommendedProducts={initialRecommendedProducts}
+    />
+  );
+
   return (
     <>
       <JsonLdScript data={[organizationJsonLd, webSiteJsonLd]} />
-      <PreloadQuery query={ApprovedCategoriesDocument} variables={categoriesVariables}>
-        <PreloadQuery query={RecommendedProductsDocument} variables={recommendedVariables}>
-          <HomePage
-            initialCategories={initialCategories}
-            initialRecommendedProducts={initialRecommendedProducts}
-          />
+      {canPreloadQueries ? (
+        <PreloadQuery
+          query={ApprovedCategoriesDocument}
+          variables={categoriesVariables}
+          errorPolicy="all"
+        >
+          <PreloadQuery
+            query={RecommendedProductsDocument}
+            variables={recommendedVariables}
+            errorPolicy="all"
+          >
+            {homePage}
+          </PreloadQuery>
         </PreloadQuery>
-      </PreloadQuery>
+      ) : (
+        homePage
+      )}
     </>
   );
 }

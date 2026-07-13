@@ -76,4 +76,70 @@ for (const enumName of enumNames) {
   }
 }
 
+content = dedupeInlineFragmentDefinitions(content);
+
 writeFileSync(filePath, content);
+
+/**
+ * graphql-codegen inlines shared fragments into every operation Document.
+ * When Apollo registers multiple documents with the same fragment name,
+ * graphql-tag warns and UAT navigation can fail while hydrating queries.
+ * Keep the canonical *FragmentDoc export and strip duplicate inline copies.
+ */
+function dedupeInlineFragmentDefinitions(source) {
+  const fragmentDocNames = new Set(
+    [...source.matchAll(/^export const (\w+)FragmentDoc = /gm)].map((match) => match[1]),
+  );
+
+  if (fragmentDocNames.size === 0) {
+    return source;
+  }
+
+  return source
+    .split('\n')
+    .map((line) => {
+      const match = line.match(
+        /^export const (\w+Document) = (\{.*\}) as unknown as (DocumentNode<[^>]+>;)$/,
+      );
+
+      if (!match) {
+        return line;
+      }
+
+      const [, exportName, jsonLiteral, typeSuffix] = match;
+
+      let document;
+      try {
+        document = JSON.parse(jsonLiteral);
+      } catch {
+        return line;
+      }
+
+      const hasOperation = document.definitions?.some(
+        (definition) => definition.kind === 'OperationDefinition',
+      );
+
+      if (!hasOperation) {
+        return line;
+      }
+
+      const filteredDefinitions = document.definitions.filter((definition) => {
+        if (definition.kind !== 'FragmentDefinition') {
+          return true;
+        }
+
+        const fragmentName = definition.name?.value;
+        return !fragmentDocNames.has(fragmentName);
+      });
+
+      if (filteredDefinitions.length === document.definitions.length) {
+        return line;
+      }
+
+      return `export const ${exportName} = ${JSON.stringify({
+        ...document,
+        definitions: filteredDefinitions,
+      })} as unknown as ${typeSuffix}`;
+    })
+    .join('\n');
+}

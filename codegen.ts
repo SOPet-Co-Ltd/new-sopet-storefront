@@ -30,6 +30,7 @@ const config: CodegenConfig = {
           DateTime: 'string',
         },
         preResolveTypes: false,
+        dedupeFragments: true,
       },
     },
   },

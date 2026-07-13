@@ -85,6 +85,34 @@ describe('buildProductJsonLd', () => {
       price: getDefaultOfferPrice(sampleProductDetail),
     });
   });
+
+  it('omits offers when price is zero', () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
+
+    const pageUrl = 'https://www.sopet.org/product/prod-001';
+    const freeProduct = { ...sampleProductDetail, basePrice: 0 };
+    const jsonLd = buildProductJsonLd(freeProduct, pageUrl);
+
+    expect(jsonLd['@type']).toBe('Product');
+    expect(jsonLd.offers).toBeUndefined();
+  });
+
+  it('resolves relative product image URLs to absolute URLs', () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
+
+    const pageUrl = 'https://www.sopet.org/product/prod-001';
+    const productWithRelativeImage = {
+      ...sampleProductDetail,
+      thumbnailUrl: '/images/dog-food.jpg',
+      images: [{ imageUrl: '/images/dog-food-alt.jpg' }],
+    };
+    const jsonLd = buildProductJsonLd(productWithRelativeImage, pageUrl);
+
+    expect(jsonLd.image).toEqual([
+      'https://www.sopet.org/images/dog-food.jpg',
+      'https://www.sopet.org/images/dog-food-alt.jpg',
+    ]);
+  });
 });
 
 describe('buildOrganizationJsonLd', () => {
@@ -214,5 +242,24 @@ describe('JsonLdScript', () => {
     const { container } = render(createElement(JsonLdScript, { data: [] }));
 
     expect(container.querySelector('script')).toBeNull();
+  });
+
+  it('neutralizes </script> payloads in product name within rendered script innerHTML', () => {
+    const maliciousName = 'Evil Product</script><script>alert("xss")</script>';
+    const payload = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: maliciousName,
+    };
+
+    const { container } = render(createElement(JsonLdScript, { data: payload }));
+    const script = container.querySelector('script[type="application/ld+json"]');
+
+    expect(script).not.toBeNull();
+    expect(script?.innerHTML).not.toContain('</script>');
+    expect(script?.innerHTML).toContain('\\u003c/script>');
+
+    const parsed = JSON.parse(script?.innerHTML ?? '{}');
+    expect(parsed.name).toBe(maliciousName);
   });
 });

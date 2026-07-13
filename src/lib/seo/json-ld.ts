@@ -1,6 +1,6 @@
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 
-import { stripMarkdownForMeta, truncateDescription } from './metadata';
+import { resolveAbsoluteImageUrl, stripMarkdownForMeta, truncateDescription } from './metadata';
 
 export type SiteConfig = {
   baseUrl: string;
@@ -37,13 +37,15 @@ export function mapAvailability(stockQuantity: number): string {
 function collectProductImages(product: ProductDetail): string[] {
   const images = new Set<string>();
 
-  if (product.thumbnailUrl) {
-    images.add(product.thumbnailUrl);
+  const thumbnailUrl = resolveAbsoluteImageUrl(product.thumbnailUrl);
+  if (thumbnailUrl) {
+    images.add(thumbnailUrl);
   }
 
   for (const image of product.images ?? []) {
-    if (image.imageUrl) {
-      images.add(image.imageUrl);
+    const imageUrl = resolveAbsoluteImageUrl(image.imageUrl);
+    if (imageUrl) {
+      images.add(imageUrl);
     }
   }
 
@@ -67,14 +69,17 @@ export function buildProductJsonLd(
     name: product.name,
     description,
     url: pageUrl,
-    offers: {
+  };
+
+  if (price > 0) {
+    jsonLd.offers = {
       '@type': 'Offer',
       price,
       priceCurrency: 'THB',
       availability: mapAvailability(getDefaultStockQuantity(product)),
       url: pageUrl,
-    },
-  };
+    };
+  }
 
   if (images.length > 0) {
     jsonLd.image = images.length === 1 ? images[0] : images;

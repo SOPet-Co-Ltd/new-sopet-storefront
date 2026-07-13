@@ -30,6 +30,7 @@ export const sampleProductDetail = {
   category: 'dog-food',
   tags: ['dog', 'food'],
   warning: null,
+  expiryDate: null,
   store: {
     __typename: 'StoreType' as const,
     id: CATALOG_STORE_ID,

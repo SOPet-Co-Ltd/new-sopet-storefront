@@ -30,4 +30,4 @@ Complex, relatively standalone UI sections built from molecules and atoms. Organ
 
 ## Current files
 
-*Empty — add organism components here.*
+_Empty — add organism components here._

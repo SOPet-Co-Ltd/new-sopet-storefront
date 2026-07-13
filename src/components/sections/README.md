@@ -30,4 +30,4 @@ Full-width or page-level content blocks used to assemble storefront pages. Secti
 
 ## Current files
 
-*Empty — add page section components here.*
+_Empty — add page section components here._

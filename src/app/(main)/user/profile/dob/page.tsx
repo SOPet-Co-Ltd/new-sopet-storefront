@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import {
@@ -32,7 +32,7 @@ export default function CustomerDateOfBirthPage() {
   const hasChanged = dateOfBirth !== initialDateOfBirth;
   const formattedCurrent = formatCustomerDateOfBirth(customer?.dateOfBirth);
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const validationError = validateCustomerDateOfBirth(dateOfBirth);
     if (validationError) {

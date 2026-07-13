@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { Button } from '@/components/atoms/Button';
@@ -90,7 +90,7 @@ function ProfileDetailsForm({ customerId, initialFullName }: ProfileDetailsFormP
   const trimmedFullName = fullName.trim();
   const hasNameChanged = trimmedFullName !== initialFullName.trim();
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitError(null);
     setSuccess(false);

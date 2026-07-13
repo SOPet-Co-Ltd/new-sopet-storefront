@@ -1,6 +1,5 @@
+import { DATE_INPUT_PATTERN, parseDateInputValue } from '@/lib/datetime/calendarUtils';
 import { formatThaiDate } from '@/lib/datetime/formatThaiDatetime';
-
-const DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export function toDateInputValue(value?: string | null): string {
   if (!value?.trim()) return '';
@@ -24,23 +23,19 @@ export function validateCustomerDateOfBirth(value: string): string | null {
     return 'รูปแบบวันเกิดไม่ถูกต้อง';
   }
 
-  const [year, month, day] = trimmed.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
+  const parts = parseDateInputValue(trimmed);
+  if (!parts) {
     return 'วันเกิดไม่ถูกต้อง';
   }
 
   const today = new Date();
   const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-  if (date.getTime() > todayUtc) {
+  const dateUtc = Date.UTC(parts.year, parts.month - 1, parts.day);
+  if (dateUtc > todayUtc) {
     return 'วันเกิดต้องไม่เป็นวันในอนาคต';
   }
 
-  if (year < 1900) {
+  if (parts.year < 1900) {
     return 'วันเกิดไม่ถูกต้อง';
   }
 

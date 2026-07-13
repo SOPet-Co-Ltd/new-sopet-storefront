@@ -1,4 +1,4 @@
-const DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+export const DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export type ParsedDateParts = {
   year: number;

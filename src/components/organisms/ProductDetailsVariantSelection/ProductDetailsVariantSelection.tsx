@@ -80,6 +80,9 @@ function ProductShareModal({
   const [canNativeShare, setCanNativeShare] = useState(false);
 
   useLayoutEffect(() => {
+    // Client-only feature detection: navigator is unavailable during SSR, so this
+    // must stay false on the server render and sync once mounted in the browser.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCanNativeShare(typeof navigator.share === 'function');
   }, []);
 

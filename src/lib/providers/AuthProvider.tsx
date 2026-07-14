@@ -49,6 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingDeletion, setPendingDeletion] = useState(false);
 
   useLayoutEffect(() => {
+    // Client-only hydration: sessionStorage is unavailable during SSR, so hasToken
+    // must start false on the server render and sync once mounted in the browser.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasToken(hasStoredAccessToken());
     setIsAuthReady(true);
   }, []);

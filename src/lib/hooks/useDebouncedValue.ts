@@ -7,7 +7,8 @@ export function useDebouncedValue<T>(value: T, delayMs: number, enabled = true):
 
   useEffect(() => {
     if (!enabled) {
-      setDebouncedValue(value);
+      // Disabled reads bypass debouncedValue entirely (see return below), so there
+      // is nothing to sync here until a debounce cycle starts again.
       return;
     }
 

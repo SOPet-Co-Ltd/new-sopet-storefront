@@ -100,10 +100,23 @@ export function CheckoutPaymentSelection() {
   const cardEntryModeRef = useRef(cardEntryMode);
   const selectedSavedCardIdRef = useRef(selectedSavedCardId);
   const saveCardForNextTimeRef = useRef(saveCardForNextTime);
+  const [prevHasSavedCards, setPrevHasSavedCards] = useState<boolean | null>(null);
 
   const hasSavedCards = isAuthenticated && paymentMethods.length > 0;
   const showSavedCards = paymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
   const showNewCardForm = paymentMethod === 'card' && !showSavedCards;
+
+  // Adjust saved-card selection state when availability changes, following the
+  // "adjusting state when a prop changes" pattern (no effect needed for this).
+  if (hasSavedCards !== prevHasSavedCards) {
+    setPrevHasSavedCards(hasSavedCards);
+    if (!hasSavedCards) {
+      setCardEntryMode('new');
+      setSelectedSavedCardId(null);
+    } else {
+      setSelectedSavedCardId((current) => current ?? resolveDefaultSavedCardId(paymentMethods));
+    }
+  }
 
   useLayoutEffect(() => {
     cardFormRef.current = cardForm;
@@ -117,17 +130,6 @@ export function CheckoutPaymentSelection() {
       setPaymentMethod('promptpay');
     }
   }, [paymentMethod, setPaymentMethod]);
-
-  useEffect(() => {
-    if (!hasSavedCards) {
-      setCardEntryMode('new');
-      setSelectedSavedCardId(null);
-      return;
-    }
-
-    const defaultCardId = resolveDefaultSavedCardId(paymentMethods);
-    setSelectedSavedCardId((current) => current ?? defaultCardId);
-  }, [hasSavedCards, paymentMethods]);
 
   const clearCardForm = useCallback(() => {
     setCardForm(EMPTY_CHECKOUT_CARD_FORM);

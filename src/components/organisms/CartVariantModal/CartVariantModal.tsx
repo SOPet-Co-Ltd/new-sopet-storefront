@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Modal } from '@/components/atoms/Modal';
 import { ProductDetailQuantitySelection } from '@/components/molecules/ProductDetailQuantitySelection/ProductDetailQuantitySelection';
@@ -45,11 +45,6 @@ export function CartVariantModal({ item, onClose, onConfirm }: CartVariantModalP
   const [quantity, setQuantity] = useState(() => Math.max(item.quantity, 1));
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    setSelectedOptions(parseVariantOptions(item.productVariant?.optionsJson ?? null));
-    setQuantity(Math.max(item.quantity, 1));
-  }, [item.productVariant?.optionsJson, item.quantity]);
-
   const variants = fullProduct?.variants ?? null;
 
   const findVariantStock = (candidateOptions: VariantOptions) =>
@@ -61,11 +56,9 @@ export function CartVariantModal({ item, onClose, onConfirm }: CartVariantModalP
   );
 
   const variantStock = selectedVariant?.stockQuantity ?? 0;
-
-  // Keep the requested quantity within the selected variant's available stock.
-  useEffect(() => {
-    setQuantity((prev) => Math.min(Math.max(prev, 1), Math.max(variantStock, 1)));
-  }, [variantStock]);
+  // Derive the effective quantity from the raw state and current stock so it stays
+  // within bounds without needing an effect to clamp it after stock changes.
+  const clampedQuantity = Math.min(Math.max(quantity, 1), Math.max(variantStock, 1));
 
   const handleOptionChange = (optionKey: string, value: string) => {
     setQuantity(1);
@@ -74,7 +67,7 @@ export function CartVariantModal({ item, onClose, onConfirm }: CartVariantModalP
 
   const isSameVariant = selectedVariant?.id === item.variantId;
   const isOutOfStock = variantStock <= 0;
-  const isUnchanged = isSameVariant && quantity === item.quantity;
+  const isUnchanged = isSameVariant && clampedQuantity === item.quantity;
   const canConfirm = Boolean(selectedVariant) && !isUnchanged && !isOutOfStock;
 
   const handleConfirm = async () => {
@@ -82,7 +75,7 @@ export function CartVariantModal({ item, onClose, onConfirm }: CartVariantModalP
 
     try {
       setSubmitting(true);
-      await onConfirm(selectedVariant.id, quantity);
+      await onConfirm(selectedVariant.id, clampedQuantity);
       onClose();
     } catch {
       // Errors surface via the cart provider's toast; keep the modal open.
@@ -179,7 +172,7 @@ export function CartVariantModal({ item, onClose, onConfirm }: CartVariantModalP
               ) : (
                 <ProductDetailQuantitySelection
                   variantStock={variantStock}
-                  productQuantity={quantity}
+                  productQuantity={clampedQuantity}
                   setProductQuantity={setQuantity}
                 />
               )

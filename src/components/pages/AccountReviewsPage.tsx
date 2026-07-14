@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation } from '@apollo/client/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -109,7 +109,7 @@ export function AccountReviewsPage() {
     tab: activeTab,
   });
   const [selectedReviewItems, setSelectedReviewItems] = useState<CustomerReviewableItem[]>([]);
-  const handledOrderIdRef = useRef<string | null>(null);
+  const [handledOrderId, setHandledOrderId] = useState<string | null>(null);
   const [createReviewMutation] = useMutation(CreateReviewDocument);
 
   const modalItems = useMemo(
@@ -117,23 +117,15 @@ export function AccountReviewsPage() {
     [selectedReviewItems],
   );
 
-  useEffect(() => {
-    if (!orderIdParam || loading || activeTab !== 'pending') {
-      return;
-    }
-
-    if (handledOrderIdRef.current === orderIdParam) {
-      return;
-    }
-
+  // Handle the "review this order" deep link once its reviewable items become
+  // available, adjusting state during render instead of syncing via an effect.
+  if (orderIdParam && !loading && activeTab === 'pending' && handledOrderId !== orderIdParam) {
     const orderItems = reviewableItems.filter((item) => item.orderId === orderIdParam);
-    if (orderItems.length === 0) {
-      return;
+    if (orderItems.length > 0) {
+      setHandledOrderId(orderIdParam);
+      setSelectedReviewItems(orderItems);
     }
-
-    handledOrderIdRef.current = orderIdParam;
-    setSelectedReviewItems(orderItems);
-  }, [activeTab, loading, orderIdParam, reviewableItems]);
+  }
 
   const handleTabChange = useCallback(
     (tabId: string) => {

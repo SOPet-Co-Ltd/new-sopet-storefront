@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { TruckIcon } from '@/components/atoms/icons';
 import { Modal } from '@/components/atoms/Modal';
@@ -93,11 +93,16 @@ export function CheckoutShippingMethodModal({
   onConfirm,
 }: CheckoutShippingMethodModalProps) {
   const [pendingOptionId, setPendingOptionId] = useState(selectedOptionId ?? options[0]?.id ?? '');
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    setPendingOptionId(selectedOptionId ?? options[0]?.id ?? '');
-  }, [isOpen, options, selectedOptionId]);
+  // Reset the pending selection whenever the modal opens, adjusting state during
+  // render instead of syncing via an effect (avoids an extra render pass).
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setPendingOptionId(selectedOptionId ?? options[0]?.id ?? '');
+    }
+  }
 
   if (!isOpen) return null;
 

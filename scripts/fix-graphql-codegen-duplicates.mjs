@@ -147,9 +147,9 @@ function dedupeInlineFragmentDefinitions(source) {
 }
 
 function writeFragmentRegistry(generatedGraphqlPath, source) {
-  const fragmentDocs = [
-    ...source.matchAll(/^export const (\w+FragmentDoc) = /gm),
-  ].map((match) => match[1]);
+  const fragmentDocs = [...source.matchAll(/^export const (\w+FragmentDoc) = /gm)].map(
+    (match) => match[1],
+  );
 
   if (fragmentDocs.length === 0) {
     return;

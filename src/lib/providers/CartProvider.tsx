@@ -88,6 +88,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Track hydration so the initial client render matches the server output.
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
+    // Intentional hydration flag: must flip after the first client render so the
+    // client's initial render matches the server output (see comment above).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHydrated(true);
   }, []);
 

@@ -171,6 +171,9 @@ export function CartItemRow({
 
       {variantModalOpen ? (
         <CartVariantModal
+          // Remount when the underlying variant/quantity changes so the modal's
+          // local selection state always starts fresh from the latest cart item.
+          key={`${item.id}:${item.productVariant?.optionsJson ?? ''}:${item.quantity}`}
           item={item}
           onClose={() => setVariantModalOpen(false)}
           onConfirm={(variantId, quantity) => onChangeVariant(item.id, variantId, quantity)}

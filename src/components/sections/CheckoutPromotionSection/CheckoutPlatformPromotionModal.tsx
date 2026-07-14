@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import { Modal } from '@/components/atoms/Modal';
@@ -73,6 +73,7 @@ export function CheckoutPlatformPromotionModal({
   const [manualError, setManualError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
   const allPromotions = useMemo(() => {
     const byCode = new Map<string, PlatformPromotion>();
@@ -111,18 +112,20 @@ export function CheckoutPlatformPromotionModal({
 
   const showApplyFooter = available.length > 0 || Boolean(appliedPromotion);
 
-  useEffect(() => {
-    if (!isOpen) {
+  // Reset modal state when it opens/closes, adjusting state during render
+  // instead of syncing via an effect (avoids an extra render pass).
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setSelection(getInitialPlatformPromotionSelection(appliedPromotion));
+      setManualCode('');
+      setValidatedPromotions([]);
+    } else {
       setManualError(null);
       setConfirmError(null);
       setIsConfirming(false);
-      return;
     }
-
-    setSelection(getInitialPlatformPromotionSelection(appliedPromotion));
-    setManualCode('');
-    setValidatedPromotions([]);
-  }, [appliedPromotion, isOpen]);
+  }
 
   const handleApplyManualCode = async () => {
     const normalizedCode = manualCode.trim();

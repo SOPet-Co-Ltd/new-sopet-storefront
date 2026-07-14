@@ -164,7 +164,7 @@ Push to a deploy branch triggers `.github/workflows/deploy.yml`, which POSTs to 
 
 ## Contributing
 
-1. Husky pre-commit runs Prettier via lint-staged
+1. Husky pre-commit runs Prettier via lint-staged; pre-push runs `yarn test`
 2. CI on PR (`main`, `uat`): lint → test → build → forbidden-import guard
 3. Backend schema changes require `yarn graphql:codegen`
 4. Follow atomic design import rules (downward only)

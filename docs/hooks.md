@@ -1,6 +1,6 @@
 # Hooks
 
-Data hooks live in `src/lib/hooks/` (30 files). A separate, non-GraphQL hook (`useIsMobile.ts`) lives at the top-level `src/hooks/`.
+Data hooks live in `src/lib/hooks/` (30 modules). A separate, non-GraphQL hook (`useIsMobile.ts`) lives at the top-level `src/hooks/`.
 
 ## Pattern
 
@@ -8,11 +8,8 @@ Data hooks live in `src/lib/hooks/` (30 files). A separate, non-GraphQL hook (`u
 'use client';
 
 import { useQuery } from '@apollo/client/react';
-import {
-  ProductsDocument,
-  type ProductsQuery,
-  type ProductsQueryVariables,
-} from '@/lib/graphql/generated/graphql';
+import { ProductsDocument, type ProductsQuery } from '@/lib/graphql/generated/graphql';
+import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
 
 export interface UseProductsParams {
   category?: string;
@@ -21,18 +18,10 @@ export interface UseProductsParams {
   limit?: number;
 }
 
-export interface UseProductsResult {
-  products: ProductsQuery['products']['items'];
-  loading: boolean;
-  error: Error | undefined;
-  fetchMore: () => void;
-}
-
-export function useProducts(params: UseProductsParams): UseProductsResult {
+export function useProducts(params: UseProductsParams) {
   const variables = buildProductsListingVariables(params);
   const { data, loading, error, fetchMore } = useQuery(ProductsDocument, {
     variables,
-    skip: !params.category && !params.search,
   });
   // map and return typed result
 }
@@ -40,25 +29,27 @@ export function useProducts(params: UseProductsParams): UseProductsResult {
 
 ## Conventions
 
-| Rule      | Detail                                    |
-| --------- | ----------------------------------------- |
-| Location  | `src/lib/hooks/use*.ts`                   |
-| Directive | `'use client'` at top                     |
-| Imports   | `*Document` from `generated/graphql`      |
-| Types     | Derive from query/mutation types          |
-| Errors    | `toHookError()` helper for Apollo errors  |
-| Tests     | Co-located in `__tests__/` or `*.test.ts` |
+| Rule      | Detail                                                       |
+| --------- | ------------------------------------------------------------ |
+| Location  | `src/lib/hooks/use*.ts`                                      |
+| Directive | `'use client'` at top                                        |
+| Imports   | `*Document` from `generated/graphql`                         |
+| Types     | Derive from query/mutation types                             |
+| Errors    | Many hooks map Apollo errors with a local `toHookError()`    |
+| Tests     | Co-located `*.test.ts` / `*.test.tsx`, or under `__tests__/` |
 
 ## Hook categories
 
-| Category | Examples                                                                                                                                               |
+| Category | Hooks                                                                                                                                                  |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Catalog  | `useProducts`, `useProduct`, `useCategories`, `useStore`                                                                                               |
-| Account  | `useOrders`, `useAddresses`, `useFavorites`, `useProfile`, `useNotifications`, `useOrderTracking`                                                      |
+| Account  | `useOrders`, `useAddresses`, `useFavorites`, `useProfile`, `useNotifications`                                                                          |
+| Tracking | `useOrderTracking` (public capability URL + shared shipment list)                                                                                      |
 | Auth     | `useAuth` (context wrapper)                                                                                                                            |
 | Checkout | `useCheckout`, `useCheckoutTotals`, `usePayment`, `usePaymentMethods`, `useShippingOptions`, `useActivePlatformPromotions`, `useActiveStorePromotions` |
 | Search   | `useSearchContext`, `useRecentSearches`, `useNavbarSearchCombobox`, `useSearchSuggestions`, `useSearchRecoverySuggestions`                             |
 | Reviews  | `useReviews`, `useCustomerReviews`, `useOrderPendingReviews`, `useOrdersReviewStatus`                                                                  |
+| Utility  | `useDebouncedValue`, `useSessionId`, `usePaymentCountdown`                                                                                             |
 
 ## Auth hook exception
 
@@ -79,21 +70,27 @@ export function useAuth() {
 
 Public order-tracking query (`OrderTrackingDocument`, `fetchPolicy: 'network-only'`). Returns a discriminated `queryState` (`loading` / `success` / `not-found` / `error`) so the page can render distinct not-found vs. network-error copy. Used by `/track/[orderNumber]` and, via `OrderShipmentTrackingList`, the authenticated order detail page.
 
+### Notifications
+
+`useNotifications`, `useMarkNotificationRead`, and `useMarkAllNotificationsRead` live in `useNotifications.ts`. Unread badge UI (`UnreadBadge`) queries `UnreadCountDocument` (`unreadNotificationsCount`) directly.
+
 ## Testing hooks
 
+Prefer MSW + `createApolloTestWrapper()`:
+
 ```typescript
-// src/lib/hooks/__tests__/useProducts.test.ts
 import { renderHook, waitFor } from '@testing-library/react';
-import { MockedProvider } from '@apollo/client/testing';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
+import { useProducts } from '@/lib/hooks/useProducts';
 
-const wrapper = ({ children }) => (
-  <MockedProvider mocks={mocks}>{children}</MockedProvider>
-);
+const { result } = renderHook(() => useProducts({ category: 'dog' }), {
+  wrapper: createApolloTestWrapper(),
+});
 
-const { result } = renderHook(() => useProducts({ category: 'dog' }), { wrapper });
+await waitFor(() => expect(result.current.loading).toBe(false));
 ```
 
-Or use MSW handlers from `src/test/mocks/handlers.ts`.
+Override GraphQL responses with `server.use(...)` against handlers in `src/test/mocks/handlers.ts`. `MockedProvider` still appears in a few provider unit tests (for example `AuthProvider.test.tsx`).
 
 ## Related docs
 

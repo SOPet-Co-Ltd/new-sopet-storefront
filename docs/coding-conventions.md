@@ -51,23 +51,25 @@ yarn test:watch
 
 - Mock hooks at boundaries: `vi.mock('@/lib/hooks/useAuth')`
 - MSW for GraphQL: override `server.use()` per test; shared fixtures in `src/test/mocks/fixtures/`
-- Apollo wrapper: `createApolloTestWrapper()` from `src/test/createApolloTestWrapper.tsx`
-- Unit/component: `*.test.tsx` co-located with source
-- Integration: `*.int.test.tsx` for multi-module flows (SSR props, hook wiring)
-- Fixture E2E (RTL+MSW journeys): `*.fixture.e2e.test.tsx` — multi-step user flows from design-doc ACs; colocated with the feature under test or under `src/app/(main)/…` for route-level journeys
-- Skeleton workflow: `*.fixture.e2e.skeleton.tsx` / `*.int.skeleton.tsx` document AC proof obligations; implement the paired `*.fixture.e2e.test.tsx` or `*.int.test.tsx` target named in the skeleton header, then remove the skeleton
+- Apollo wrapper: `createApolloTestWrapper()` from `src/test/createApolloTestWrapper.tsx` (preferred for MSW-backed hook/UI tests)
+- Unit/component: `*.test.tsx` / `*.test.ts` co-located with source
+- Integration: `*.int.test.tsx` / `*.int.test.ts` for multi-module flows
+- Fixture E2E (RTL+MSW journeys): `*.fixture.e2e.test.tsx` — multi-step user flows from design acceptance criteria
 
 ## CI
 
-`.github/workflows/ci.yml`:
+`.github/workflows/ci.yml` (PRs to `main` / `uat`):
 
-1. Sparse-checkout backend `schema.gql`
-2. `yarn lint` → `yarn test` → `yarn build`
-3. `scripts/check-forbidden-imports.sh`
+1. Sparse-checkout backend `schema.gql` into `sopet-backend/`
+2. Node.js **20**, `yarn install --frozen-lockfile`
+3. `yarn lint` → `yarn test` → `yarn build` (with `GRAPHQL_SCHEMA_PATH=sopet-backend/src/schema.gql`)
+4. `scripts/check-forbidden-imports.sh`
+
+Deploy: `.github/workflows/deploy.yml` posts to `VERCEL_DEPLOY_HOOK_URL` on `deploy/production` and `deploy/uat`.
 
 ## Package manager
 
-Yarn only (`preinstall: npx only-allow yarn`).
+Yarn only (`preinstall: npx only-allow yarn`, `packageManager: yarn@1.22.22`). Node.js 20+ (CI uses 20; `@types/node` is `^20`).
 
 ## Related docs
 

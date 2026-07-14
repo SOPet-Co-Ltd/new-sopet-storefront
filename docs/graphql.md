@@ -14,6 +14,8 @@ export const GRAPHQL_URL =
 Browser → `/graphql` (rewritten by `next.config.ts`).
 SSR → direct backend URL.
 
+WebSocket subscriptions use `getGraphqlWsUrl()` (defaults to `ws://localhost:3002/graphql`). Optional overrides: `NEXT_PUBLIC_GRAPHQL_WS_URL`, `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN`, `GRAPHQL_WS_SSR_URL`.
+
 ## Clients
 
 | Client  | File                            | Use                                                |
@@ -21,18 +23,7 @@ SSR → direct backend URL.
 | Browser | `src/lib/graphql/client.ts`     | `makeApolloClient()` — auth link, WS subscriptions |
 | RSC     | `src/lib/graphql/apollo-rsc.ts` | `getClient()`, `PreloadQuery` — no auth link       |
 
-### Browser client setup
-
-```typescript
-// client.ts
-import { ApolloClient, InMemoryCache, HttpLink, split } from '@apollo/client';
-import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
-import { authLink } from './authLink';
-
-// HTTP for queries/mutations, WS for subscriptions
-```
-
-Subscriptions use `getGraphqlWsUrl()` for WebSocket endpoint (payment status).
+Browser client wires `authLink`, HTTP, and a split link for GraphQL subscriptions (payment status updates). Cache uses `cachePolicies.ts` type policies plus `fragmentRegistry.ts`.
 
 ## Operations
 
@@ -40,34 +31,30 @@ Subscriptions use `getGraphqlWsUrl()` for WebSocket endpoint (payment status).
 
 `account`, `addresses`, `auth`, `cart`, `categories`, `checkout`, `favorites`, `health`, `latestPurchaseProducts`, `me`, `notifications`, `orderTracking`, `orders`, `payment`, `paymentMethods`, `platform`, `product`, `products`, `profile`, `promotions`, `recommendedProducts`, `reviews`, `search`, `shipping`, `stores`, `taxonomy`, `upload`.
 
-### Example operation
-
-```graphql
-# src/lib/graphql/operations/cart.graphql
-query Cart($sessionId: String) {
-  cart(sessionId: $sessionId) {
-    id
-    items { ... }
-  }
-}
-```
+Shared fragment example: `operations/fragments/ProductCardFields.graphql`.
 
 ## Codegen
 
-`codegen.ts`:
+`codegen.ts` resolves the schema path as:
 
-```typescript
-schema: process.env.GRAPHQL_SCHEMA_PATH ?? '../sopet-backend/src/schema.gql',
-documents: ['src/lib/graphql/operations/**/*.graphql'],
-generates: { 'src/lib/graphql/generated/graphql.ts': { ... } },
-```
+1. `GRAPHQL_SCHEMA_PATH` if set
+2. Else the first existing candidate: `../sopet-backend/src/schema.gql` or `sopet-backend/src/schema.gql`
+3. Else defaults to `../sopet-backend/src/schema.gql`
+
+Documents: `src/lib/graphql/operations/**/*.graphql`  
+Output: `src/lib/graphql/generated/graphql.ts` (plugins: `typescript`, `typescript-operations`, `typed-document-node`)
 
 ```bash
 yarn graphql:codegen     # Manual
 yarn build               # Runs codegen via prebuild hook
+yarn graphql:watch       # Watch mode (codegen only)
 ```
 
-Post-process: `scripts/fix-graphql-codegen-duplicates.mjs`
+`yarn graphql:codegen` runs:
+
+1. `scripts/ensure-graphql-schema.mjs` (local file, or GitHub fetch via `GRAPHQL_SCHEMA_GITHUB_*` when missing)
+2. `graphql-codegen --config codegen.ts`
+3. `scripts/fix-graphql-codegen-duplicates.mjs` on the generated file
 
 ### Usage in code
 
@@ -96,11 +83,11 @@ Used by `useProducts`, SSR pages, and search.
 
 `src/lib/graphql/authLink.ts`:
 
-- Attaches `Authorization: Bearer` from sessionStorage
-- Handles token refresh on 401
+- Attaches `Authorization: Bearer` from `sessionStorage` (`sopet_access_token`)
+- On 401 / `UNAUTHENTICATED`, refreshes with `RefreshTokenDocument`, retries once, then `notifyAuthFailure()`
 
 ## Related docs
 
 - [Hooks](hooks.md)
 - [Feature development](feature-development.md)
-- [Backend API](../../new-sopet/sopet-backend/docs/api.md)
+- [Backend API](../../sopet-backend/docs/api.md)

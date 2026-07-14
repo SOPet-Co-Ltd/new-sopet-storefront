@@ -76,20 +76,20 @@ Public, unauthenticated order tracking page (capability URL — no login, no nav
 
 ### `(main)` — other routes
 
-| Route                                                                                                                                 | Purpose                                              |
-| ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `/order/[id]/confirmed`                                                                                                               | Post-checkout confirmation (`OrderConfirmedContent`) |
-| `/thank-you/[id]`                                                                                                                     | Post-payment thank-you page (`ThankYouPageContent`)  |
-| `/recommend`                                                                                                                          | Recommended-products landing page                    |
-| `/policy/privacy-policy`                                                                                                              | Privacy policy (Markdown via `PolicyMarkdownLayout`) |
-| `/policy/terms-of-service`                                                                                                            | Terms of service                                     |
-| `/policy/refund-policy`                                                                                                               | Refund policy                                        |
-| `/sellers/[handle]/reviews`                                                                                                           | Seller review list page                              |
-| `/user/register`                                                                                                                      | Complete profile after first OTP login               |
-| `/user/notifications`                                                                                                                 | Notification list (`useNotifications`)               |
-| `/user/credit`, `/user/credit/add`                                                                                                    | Stored payment methods (`usePaymentMethods`)         |
-| `/user/delete`                                                                                                                        | Account deletion flow                                |
-| `/user/profile/dob`, `/user/profile/email/add`, `/user/profile/email/change`, `/user/profile/phone/add`, `/user/profile/phone/change` | Profile field editors, one route per field           |
+| Route                                                                                                                                 | Purpose                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `/order/[id]/confirmed`                                                                                                               | Post-checkout confirmation (`OrderConfirmedContent` co-located under the route) |
+| `/thank-you/[id]`                                                                                                                     | Post-payment thank-you page (`ThankYouPageContent` co-located under the route)  |
+| `/recommend`                                                                                                                          | Recommended-products landing page                                               |
+| `/policy/privacy-policy`                                                                                                              | Privacy policy (Markdown via `PolicyMarkdownLayout`)                            |
+| `/policy/terms-of-service`                                                                                                            | Terms of service                                                                |
+| `/policy/refund-policy`                                                                                                               | Refund policy                                                                   |
+| `/sellers/[handle]/reviews`                                                                                                           | Seller review list page                                                         |
+| `/user/register`                                                                                                                      | Complete profile after first OTP login                                          |
+| `/user/notifications`                                                                                                                 | Notification list (`useNotifications`)                                          |
+| `/user/credit`, `/user/credit/add`                                                                                                    | Stored payment methods (`usePaymentMethods`)                                    |
+| `/user/delete`                                                                                                                        | Account deletion flow                                                           |
+| `/user/profile/dob`, `/user/profile/email/add`, `/user/profile/email/change`, `/user/profile/phone/add`, `/user/profile/phone/change` | Profile field editors, one route per field                                      |
 
 ### Root-level SEO routes
 

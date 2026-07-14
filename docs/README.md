@@ -1,6 +1,6 @@
 # Storefront Documentation
 
-Customer-facing Next.js application for SOPET.
+Customer-facing Next.js application for SOPET (port **3000**). Thin GraphQL client — no direct database access.
 
 ## Index
 
@@ -31,4 +31,6 @@ yarn install
 yarn dev    # http://localhost:3000
 ```
 
-Requires backend at `http://localhost:3002`.
+Requires Node.js 20+, Yarn 1.22+, and backend at `http://localhost:3002`.
+
+Root [README](../README.md) has the full env table, scripts, and deployment notes.

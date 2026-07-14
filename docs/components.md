@@ -26,13 +26,13 @@ flowchart BT
 
 | Tier           | When to add                  | Example                                                                 |
 | -------------- | ---------------------------- | ----------------------------------------------------------------------- |
-| **atoms/**     | Single reusable primitive    | `Button`, `Input`, `Modal`, `StarRating`                                |
+| **atoms/**     | Single reusable primitive    | `Button`, `Input`, `Modal`, `Checkbox`, `OtpCodeInput`, `icons/`        |
 | **molecules/** | 2–3 atoms composed           | `LoginForm`, `OrderListItem`, `AddressCard`, `CheckoutPaymentSelection` |
 | **organisms/** | Self-contained feature block | `Navbar`, `ProductGallery`, `CartItemRow`                               |
 | **sections/**  | Page-level content block     | `CartPage`, `CheckoutSection`, `ProductListing`                         |
 | **templates/** | Layout shell, guards         | `AccountLayout`, `AccountAuthGuard`                                     |
 | **pages/**     | Route-facing composition     | `HomePage`, `SearchResultsPage`, `AccountReviewsPage`                   |
-| **util/**      | Non-visual helpers           | Wrappers, providers UI doesn't fit elsewhere                            |
+| **util/**      | Non-visual React helpers     | Intended for `ClientOnly`-style wrappers (`src/components/util/`)       |
 
 ## File organization
 
@@ -82,7 +82,18 @@ Server Components (no directive) can be used in `app/` pages for SSR.
 
 ### Order tracking components
 
-`src/components/order-tracking/` sits outside the atomic tiers (grouped by feature, kebab-case filenames): `order-tracking-page-content.tsx`, `order-tracking-status-header.tsx`, `order-tracking-progress-stepper.tsx`, `order-shipment-tracking-list.tsx`, `order-tracking-not-found-state.tsx`, `order-tracking-error-state.tsx`. Shared between the public `/track/[orderNumber]` page and the authenticated order detail page. See [Routing](routing.md).
+`src/components/order-tracking/` sits outside the atomic tiers (grouped by feature, kebab-case filenames), including:
+
+- `order-tracking-page-content.tsx`
+- `order-tracking-status-header.tsx`
+- `order-tracking-progress-stepper.tsx`
+- `order-shipment-tracking-list.tsx`
+- `order-tracking-not-found-state.tsx`
+- `order-tracking-error-state.tsx`
+- `order-tracking-loading-state.tsx`
+- `order-tracking-success-card.tsx`
+
+Shared between the public `/track/[orderNumber]` page and the authenticated order detail page. See [Routing](routing.md).
 
 ### SEO component
 
@@ -98,6 +109,8 @@ vi.mock('@/lib/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 import { render, screen } from '@testing-library/react';
 import { LoginForm } from './LoginForm';
 ```
+
+For components that need Apollo/MSW, wrap with `createApolloTestWrapper()` from `src/test/createApolloTestWrapper.tsx`.
 
 ## Related docs
 

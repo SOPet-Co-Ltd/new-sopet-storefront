@@ -12,7 +12,7 @@ flowchart TD
   D --> E[Page components]
 ```
 
-Defined in `src/lib/providers.tsx`.
+Defined in `src/lib/providers.tsx` as `AppProviders` (also mounts route loading preview + Sonner `Toaster`).
 
 ## AuthProvider
 

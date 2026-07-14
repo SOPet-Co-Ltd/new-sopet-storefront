@@ -2,11 +2,11 @@
 
 Customer-facing Next.js web application for the SOPET multi-vendor pet e-commerce platform.
 
-**Port:** `3000` · **Stack:** Next.js 16, React 19, GraphQL
+**Port:** `3000` · **Stack:** Next.js 16, React 19, GraphQL · **Package manager:** Yarn only
 
 ## Overview
 
-Shoppers browse products, search, manage carts, checkout (including guest checkout), pay via Omise, and manage their account (orders, addresses, favorites, reviews).
+Shoppers browse products, search, manage carts, checkout (including guest checkout), pay via Omise, and manage their account (orders, addresses, favorites, reviews, notifications).
 
 ## Tech stack
 
@@ -22,15 +22,15 @@ Shoppers browse products, search, manage carts, checkout (including guest checko
 ## Architecture
 
 ```text
-app/(main)/page.tsx  →  components/pages/  →  lib/hooks/  →  Apollo  →  /graphql  →  Backend
+app/(main)/page.tsx  →  components/pages|sections/  →  lib/hooks/  →  Apollo  →  /graphql  →  Backend :3002
 ```
 
 Atomic design components. Apollo cache + React Context for state. See [docs/architecture.md](docs/architecture.md).
 
 ## Prerequisites
 
-- Node.js 20+
-- Yarn 1.22+
+- Node.js 20+ (CI uses Node 20)
+- Yarn 1.22+ (`packageManager: yarn@1.22.22`; `preinstall` enforces Yarn)
 - Running [backend](../sopet-backend/) at `http://localhost:3002`
 - Backend schema at `../sopet-backend/src/schema.gql` (for GraphQL codegen)
 
@@ -52,8 +52,10 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_BASE_URL`                 | `http://localhost:3000`           | Canonical URLs, Open Graph, sitemap, robots                         |
 | `NEXT_PUBLIC_SITE_NAME`                | `Sopet`                           | Title template, Open Graph `siteName`                               |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | —                                 | Optional Google Search Console tag                                  |
-| `GRAPHQL_SCHEMA_PATH`                  | `../sopet-backend/src/schema.gql` | Codegen schema source                                               |
+| `GRAPHQL_SCHEMA_PATH`                  | `../sopet-backend/src/schema.gql` | Codegen schema source (also accepts `sopet-backend/src/schema.gql`) |
 | `GRAPHQL_SCHEMA_GITHUB_OWNER/REPO/REF` | —                                 | Optional; fetch schema from GitHub when no local schema (CI/Vercel) |
+
+Optional WebSocket overrides (see `src/lib/config.ts`): `NEXT_PUBLIC_GRAPHQL_WS_URL`, `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN`, `GRAPHQL_WS_SSR_URL`.
 
 ## Running locally
 
@@ -66,7 +68,7 @@ Customer auth uses phone OTP at `/login`. Requires backend at `http://localhost:
 ## Build
 
 ```bash
-yarn build    # Runs graphql:codegen first
+yarn build    # Runs graphql:codegen first (prebuild)
 yarn start    # Port 3000
 ```
 
@@ -79,11 +81,11 @@ yarn test:watch
 
 Uses Vitest + jsdom + MSW. Setup: `src/test/setup.ts`.
 
-| Pattern                  | Purpose                               |
-| ------------------------ | ------------------------------------- |
-| `*.test.tsx`             | Unit/component (co-located)           |
-| `*.int.test.tsx`         | Integration (multi-module flows)      |
-| `*.fixture.e2e.test.tsx` | RTL+MSW user journeys from design ACs |
+| Pattern                    | Purpose                               |
+| -------------------------- | ------------------------------------- |
+| `*.test.tsx` / `*.test.ts` | Unit/component (co-located)           |
+| `*.int.test.tsx`           | Integration (multi-module flows)      |
+| `*.fixture.e2e.test.tsx`   | RTL+MSW user journeys from design ACs |
 
 ## Linting & formatting
 
@@ -101,14 +103,23 @@ src/
 │   ├── (main)/             # Catalog, search, account (header/footer)
 │   ├── (auth)/             # Login, OTP, signout
 │   ├── (checkout)/         # Checkout flow
-│   └── (payment)/          # Payment status
-├── components/             # Atomic design UI
-└── lib/
-    ├── graphql/            # Client, operations, codegen output
-    ├── hooks/              # Data hooks
-    ├── providers/          # Auth, cart, checkout context
-    ├── checkout/           # Checkout business logic
-    └── payment/            # Omise integration
+│   ├── (payment)/          # Payment status
+│   ├── robots.ts           # robots.txt
+│   ├── sitemap.ts          # sitemap.xml
+│   └── llms.txt/           # Plain-text LLM crawler route
+├── components/             # Atomic design + order-tracking/ + seo/
+├── hooks/                  # Cross-cutting UI hooks (e.g. useIsMobile)
+├── lib/
+│   ├── graphql/            # Client, operations, codegen output
+│   ├── hooks/              # Apollo data hooks
+│   ├── providers/          # Auth, cart, checkout context
+│   ├── checkout/           # Checkout business logic
+│   ├── payment/            # Omise integration
+│   ├── catalog/, search/   # Domain utilities
+│   ├── seo/                # Metadata, sitemap, JSON-LD helpers
+│   ├── session.ts          # Guest session cookie
+│   └── providers.tsx       # AppProviders composition
+└── test/                   # MSW handlers, fixtures, Apollo test wrapper
 ```
 
 ## Documentation
@@ -134,13 +145,15 @@ src/
 | ---------------------- | ------------------------------------ |
 | `yarn dev`             | Development server (:3000)           |
 | `yarn graphql:codegen` | Regenerate types from backend schema |
-| `yarn graphql:watch`   | Watch schema changes                 |
+| `yarn graphql:watch`   | Watch schema/document changes        |
 | `yarn test`            | Run Vitest                           |
 | `yarn lint`            | ESLint                               |
+| `yarn format`          | Prettier write                       |
+| `yarn build`           | Codegen + Next.js production build   |
 
 ## Deployment
 
-Deployed to **Vercel** via GitHub Actions deploy hooks.
+Deployed to **Vercel** via GitHub Actions deploy hooks (`vercel.json` disables Vercel git auto-deploy).
 
 | Branch              | Environment |
 | ------------------- | ----------- |

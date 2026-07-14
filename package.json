@@ -12,7 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
-    "graphql:codegen": "node ./scripts/ensure-graphql-schema.mjs && graphql-codegen --config codegen.ts && node ./scripts/fix-graphql-codegen-duplicates.mjs src/lib/graphql/generated/graphql.ts",
+    "graphql:codegen": "node ./scripts/ensure-graphql-schema.mjs && graphql-codegen --config codegen.ts && node ./scripts/write-graphql-barrel.mjs && node ./scripts/fix-graphql-codegen-duplicates.mjs src/lib/graphql/generated/operations.ts",
     "graphql:watch": "graphql-codegen --config codegen.ts --watch",
     "test": "vitest run",
     "test:watch": "vitest",

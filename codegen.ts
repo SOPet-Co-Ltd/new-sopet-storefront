@@ -19,18 +19,33 @@ function resolveSchemaPath(): string {
 
 const schema = resolveSchemaPath();
 
+/**
+ * Split schema types from operation documents.
+ *
+ * @graphql-codegen/typescript-operations v6 re-emits Input types when combined
+ * with the `typescript` plugin in the same output file (duplicate identifiers).
+ * See: https://github.com/dotansimha/graphql-code-generator/issues/10782
+ */
 const config: CodegenConfig = {
   schema,
   documents: ['src/lib/graphql/operations/**/*.graphql'],
   generates: {
-    'src/lib/graphql/generated/graphql.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
+    'src/lib/graphql/generated/schema.ts': {
+      plugins: ['typescript'],
       config: {
         scalars: {
           DateTime: 'string',
         },
-        preResolveTypes: false,
-        dedupeFragments: true,
+      },
+    },
+    'src/lib/graphql/generated/operations.ts': {
+      plugins: ['typescript-operations', 'typed-document-node'],
+      config: {
+        scalars: {
+          DateTime: 'string',
+        },
+        // Path is relative to the Codegen config file location (project root).
+        importSchemaTypesFrom: 'src/lib/graphql/generated/schema',
       },
     },
   },

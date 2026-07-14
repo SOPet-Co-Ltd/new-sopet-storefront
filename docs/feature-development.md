@@ -101,7 +101,9 @@ graphql.query('UnreadNotificationCount', () => {
 
 ## Coordinating with backend
 
-See [cross-repo workflow](../../new-sopet-workspace/docs/developer/cross-repo-workflow.md).
+1. Land API/schema changes in `../sopet-backend` and regenerate `src/schema.gql`.
+2. Run `yarn graphql:codegen` in this repo.
+3. Implement UI/hooks; commit each repo separately.
 
 Backend changes must merge and `schema.gql` update before storefront CI passes (CI sparse-checkouts schema from GitHub).
 

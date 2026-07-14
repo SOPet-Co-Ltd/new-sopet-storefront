@@ -18,17 +18,20 @@ Defined in `src/lib/providers.tsx`.
 
 **File:** `src/lib/providers/AuthProvider.tsx`
 
-| State             | Source                                          |
-| ----------------- | ----------------------------------------------- |
-| `customer`        | Apollo `MeDocument` query                       |
-| `isAuthenticated` | Token in sessionStorage + successful `me` query |
-| `isLoading`       | Initial auth hydration                          |
+| State             | Source                                                 |
+| ----------------- | ------------------------------------------------------ |
+| `customer`        | Apollo `MeDocument` query                              |
+| `isAuthenticated` | Token presence in sessionStorage (checked on mount)    |
+| `isLoading`       | Initial auth hydration, or `me` query in flight        |
+| `pendingDeletion` | Set when OTP verify returns a pending-deletion account |
 
-| Methods                  | GraphQL                                     |
-| ------------------------ | ------------------------------------------- |
-| `sendOtp(phone)`         | `SendCustomerOtpDocument`                   |
-| `verifyOtp(phone, code)` | `VerifyCustomerOtpDocument`                 |
-| `logout()`               | Clears tokens + `apolloClient.clearStore()` |
+| Methods                            | GraphQL                                     |
+| ---------------------------------- | ------------------------------------------- |
+| `sendOtp(phone)`                   | `SendCustomerOtpDocument`                   |
+| `verifyOtp(phone, code)`           | `VerifyCustomerOtpDocument`                 |
+| `changeCustomerPhone(phone, code)` | `ChangeCustomerPhoneDocument`               |
+| `reactivateAccount(token)`         | `ReactivateAccountDocument`                 |
+| `logout()`                         | Clears tokens + `apolloClient.clearStore()` |
 
 **Hook:** `src/lib/hooks/useAuth.ts` (thin context wrapper)
 

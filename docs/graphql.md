@@ -36,9 +36,9 @@ Subscriptions use `getGraphqlWsUrl()` for WebSocket endpoint (payment status).
 
 ## Operations
 
-27 `.graphql` files in `src/lib/graphql/operations/`:
+27 `.graphql` files in `src/lib/graphql/operations/` (plus shared fragments in `operations/fragments/`):
 
-`auth`, `me`, `cart`, `checkout`, `orders`, `products`, `product`, `search`, `reviews`, `account`, `addresses`, `favorites`, `payment`, `paymentMethods`, `promotions`, `shipping`, `stores`, `categories`, `taxonomy`, `platform`, `notifications`, `disputes`, `profile`, `upload`, etc.
+`account`, `addresses`, `auth`, `cart`, `categories`, `checkout`, `favorites`, `health`, `latestPurchaseProducts`, `me`, `notifications`, `orderTracking`, `orders`, `payment`, `paymentMethods`, `platform`, `product`, `products`, `profile`, `promotions`, `recommendedProducts`, `reviews`, `search`, `shipping`, `stores`, `taxonomy`, `upload`.
 
 ### Example operation
 

@@ -43,13 +43,17 @@ cp .env.example .env.local
 
 ## Environment setup
 
-| Variable                       | Default                           | Purpose                               |
-| ------------------------------ | --------------------------------- | ------------------------------------- |
-| `NEXT_PUBLIC_GRAPHQL_URL`      | `/graphql`                        | Browser GraphQL (proxied)             |
-| `GRAPHQL_SSR_URL`              | `http://localhost:3002/graphql`   | Server-side GraphQL                   |
-| `NEXT_PUBLIC_OMISE_PUBLIC_KEY` | —                                 | Must match backend `OMISE_PUBLIC_KEY` |
-| `NEXT_PUBLIC_FACEBOOK_APP_ID`  | —                                 | Optional; Messenger share on products |
-| `GRAPHQL_SCHEMA_PATH`          | `../sopet-backend/src/schema.gql` | Codegen schema source                 |
+| Variable                               | Default                           | Purpose                                                             |
+| -------------------------------------- | --------------------------------- | ------------------------------------------------------------------- |
+| `NEXT_PUBLIC_GRAPHQL_URL`              | `/graphql`                        | Browser GraphQL (proxied)                                           |
+| `GRAPHQL_SSR_URL`                      | `http://localhost:3002/graphql`   | Server-side GraphQL                                                 |
+| `NEXT_PUBLIC_OMISE_PUBLIC_KEY`         | —                                 | Must match backend `OMISE_PUBLIC_KEY`                               |
+| `NEXT_PUBLIC_FACEBOOK_APP_ID`          | —                                 | Optional; Messenger share on products                               |
+| `NEXT_PUBLIC_BASE_URL`                 | `http://localhost:3000`           | Canonical URLs, Open Graph, sitemap, robots                         |
+| `NEXT_PUBLIC_SITE_NAME`                | `Sopet`                           | Title template, Open Graph `siteName`                               |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | —                                 | Optional Google Search Console tag                                  |
+| `GRAPHQL_SCHEMA_PATH`                  | `../sopet-backend/src/schema.gql` | Codegen schema source                                               |
+| `GRAPHQL_SCHEMA_GITHUB_OWNER/REPO/REF` | —                                 | Optional; fetch schema from GitHub when no local schema (CI/Vercel) |
 
 ## Running locally
 
@@ -57,7 +61,7 @@ cp .env.example .env.local
 yarn dev    # http://localhost:3000
 ```
 
-Customer auth uses phone OTP at `/login`. Full stack: [workspace getting started](../new-sopet-workspace/docs/developer/getting-started.md).
+Customer auth uses phone OTP at `/login`. Requires backend at `http://localhost:3002` (sibling repo `../sopet-backend`).
 
 ## Build
 
@@ -122,8 +126,7 @@ src/
 | [Development guide](docs/development-guide.md)     | Where to put new code                      |
 | [Feature development](docs/feature-development.md) | End-to-end feature guide                   |
 | [Coding conventions](docs/coding-conventions.md)   | Naming, testing                            |
-
-**Cross-repo:** [Workspace developer docs](../new-sopet-workspace/docs/developer/README.md)
+| [SEO](docs/seo.md)                                 | Metadata, sitemap, robots, JSON-LD         |
 
 ## Common commands
 
@@ -155,4 +158,4 @@ Push to a deploy branch triggers `.github/workflows/deploy.yml`, which POSTs to 
 5. Co-locate tests with components/hooks
 6. See [feature development guide](docs/feature-development.md)
 
-Cross-repo features: [workspace cross-repo workflow](../new-sopet-workspace/docs/developer/cross-repo-workflow.md).
+Schema changes land in `../sopet-backend` first (`src/schema.gql`), then run `yarn graphql:codegen` here (and in `../sopet-admin` if affected). Commit each repo separately.

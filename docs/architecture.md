@@ -80,7 +80,7 @@ Provider or hook calls Apollo directly.
 
 Local state in `CheckoutProvider`; mutations via `useCheckout` hook.
 
-See [state management](state-management.md) and [workspace data flow](../../new-sopet-workspace/docs/developer/data-flow.md).
+See [state management](state-management.md) and [GraphQL](graphql.md).
 
 ## No direct database access
 

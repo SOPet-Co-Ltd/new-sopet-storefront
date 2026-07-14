@@ -44,6 +44,19 @@ Atomic design tiers. See [components.md](components.md).
 
 Existing README: `src/components/README.md`
 
+Two folders sit outside the atomic tiers, grouped by feature instead of by design level:
+
+| Folder            | Purpose                                                                                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `order-tracking/` | Public order-tracking page UI (kebab-case filenames, e.g. `order-shipment-tracking-list.tsx`), shared between `/track/[orderNumber]` and the authenticated order detail page |
+| `seo/`            | `JsonLdScript.tsx` — renders JSON-LD `<script>` tags. See [SEO](seo.md).                                                                                                     |
+
+---
+
+## `src/hooks/` — Cross-cutting UI hooks
+
+Top-level (outside `lib/`): generic UI hooks not tied to GraphQL, e.g. `useIsMobile.ts` (viewport breakpoint detection).
+
 ---
 
 ## `src/lib/hooks/` — Data hooks
@@ -115,6 +128,34 @@ Province/district/subdistrict data and helpers for address forms.
 
 ---
 
+## `src/lib/seo/` — SEO and metadata
+
+Metadata builders, indexability rules, sitemap/JSON-LD helpers used by `robots.ts`, `sitemap.ts`, `llms.txt/route.ts`, and page-level `generateMetadata`. See [SEO](seo.md).
+
+---
+
+## Other `src/lib/` domain utility folders
+
+Small, focused modules — pure functions plus co-located tests, no GraphQL:
+
+| Folder            | Purpose                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| `account/`        | `prefetchAccountPage.ts` — idle-time prefetch for account nav data                                           |
+| `address/`        | `formatSavedAddressLine.ts` — address display formatting                                                     |
+| `cart/`           | `cartUtils.ts` — cart item grouping, item count, subtotal calculations                                       |
+| `catalog/`        | `prefetchProduct.ts`, `prefetchProductsListing.ts`, `prefetchSearchFilterTaxonomy.ts` — SSR prefetch helpers |
+| `constants/`      | `orderStatus.ts`, `fulfillmentStatus.ts`, `orderListFilters.ts`                                              |
+| `datetime/`       | `formatThaiDatetime.ts`, `calendarUtils.ts`                                                                  |
+| `helpers/`        | `email.ts`, `phone.ts`, `dateOfBirth.ts` — form field validation/formatting                                  |
+| `order-tracking/` | `order-tracking-progress.ts`, `group-items-by-store-shipment.ts`                                             |
+| `orders/`         | `invalidateCustomerOrders.ts`, `orderListReturnUrl.ts`                                                       |
+| `routing/`        | `categoryRoutes.ts` — category URL helpers                                                                   |
+| `upload/`         | `uploadProfileImage.ts`, `uploadReviewImage.ts` — file upload to backend                                     |
+
+**Add here:** a small pure-function module scoped to one domain concern that multiple hooks/components share.
+
+---
+
 ## `src/test/` — Test infrastructure
 
 | File                | Purpose                                |
@@ -141,3 +182,4 @@ No `tailwind.config.ts` — tokens in `src/app/globals.css` `@theme` block.
 
 - [Development guide](development-guide.md)
 - [Routing](routing.md)
+- [SEO](seo.md)

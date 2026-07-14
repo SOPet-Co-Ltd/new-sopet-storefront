@@ -24,15 +24,15 @@ flowchart BT
 
 ## Tier guide
 
-| Tier           | When to add                  | Example                                                                  |
-| -------------- | ---------------------------- | ------------------------------------------------------------------------ |
-| **atoms/**     | Single reusable primitive    | `Button`, `Input`, `Modal`, `StarRating`                                 |
-| **molecules/** | 2–3 atoms composed           | `LoginForm`, `OrderListItem`, `DisputeReturnProgress`, `DisputeListCard` |
-| **organisms/** | Self-contained feature block | `Navbar`, `ProductGallery`, `CartItemRow`                                |
-| **sections/**  | Page-level content block     | `CartPage`, `CheckoutSection`, `ProductListing`                          |
-| **templates/** | Layout shell, guards         | `AccountLayout`, `AccountAuthGuard`                                      |
-| **pages/**     | Route-facing composition     | `HomePage`, `SearchResultsPage`, `AccountReviewsPage`                    |
-| **util/**      | Non-visual helpers           | Wrappers, providers UI doesn't fit elsewhere                             |
+| Tier           | When to add                  | Example                                                                 |
+| -------------- | ---------------------------- | ----------------------------------------------------------------------- |
+| **atoms/**     | Single reusable primitive    | `Button`, `Input`, `Modal`, `StarRating`                                |
+| **molecules/** | 2–3 atoms composed           | `LoginForm`, `OrderListItem`, `AddressCard`, `CheckoutPaymentSelection` |
+| **organisms/** | Self-contained feature block | `Navbar`, `ProductGallery`, `CartItemRow`                               |
+| **sections/**  | Page-level content block     | `CartPage`, `CheckoutSection`, `ProductListing`                         |
+| **templates/** | Layout shell, guards         | `AccountLayout`, `AccountAuthGuard`                                     |
+| **pages/**     | Route-facing composition     | `HomePage`, `SearchResultsPage`, `AccountReviewsPage`                   |
+| **util/**      | Non-visual helpers           | Wrappers, providers UI doesn't fit elsewhere                            |
 
 ## File organization
 
@@ -80,16 +80,13 @@ import { useState } from 'react';
 
 Server Components (no directive) can be used in `app/` pages for SSR.
 
-### Return / dispute molecules
+### Order tracking components
 
-| Component                 | Path                                 | Role                                                   |
-| ------------------------- | ------------------------------------ | ------------------------------------------------------ |
-| `DisputeReturnProgress`   | `molecules/DisputeReturnProgress/`   | 3-step customer journey + next-step copy               |
-| `DisputeListCard`         | `molecules/DisputeListCard/`         | Returns list card                                      |
-| `OrderStoreDisputeStatus` | `molecules/OrderStoreDisputeStatus/` | Per-store status on order detail                       |
-| `ReturnItemPicker`        | `molecules/ReturnItemPicker/`        | Line-item selection (requires `delivered` fulfillment) |
+`src/components/order-tracking/` sits outside the atomic tiers (grouped by feature, kebab-case filenames): `order-tracking-page-content.tsx`, `order-tracking-status-header.tsx`, `order-tracking-progress-stepper.tsx`, `order-shipment-tracking-list.tsx`, `order-tracking-not-found-state.tsx`, `order-tracking-error-state.tsx`. Shared between the public `/track/[orderNumber]` page and the authenticated order detail page. See [Routing](routing.md).
 
-Journey copy: `src/lib/constants/disputeCustomerJourney.ts`. Eligibility: `src/lib/disputes/disputeForOrder.ts`.
+### SEO component
+
+`src/components/seo/JsonLdScript.tsx` renders `<script type="application/ld+json">` structured data built by `src/lib/seo/json-ld.ts`. See [SEO](seo.md).
 
 ## Testing
 
@@ -106,3 +103,4 @@ import { LoginForm } from './LoginForm';
 
 - [Folder structure](folder-structure.md)
 - [Architecture](architecture.md)
+- [SEO](seo.md)

@@ -1,6 +1,6 @@
 # Hooks
 
-Data hooks live in `src/lib/hooks/` (37 files).
+Data hooks live in `src/lib/hooks/` (30 files). A separate, non-GraphQL hook (`useIsMobile.ts`) lives at the top-level `src/hooks/`.
 
 ## Pattern
 
@@ -51,14 +51,14 @@ export function useProducts(params: UseProductsParams): UseProductsResult {
 
 ## Hook categories
 
-| Category | Examples                                                                 |
-| -------- | ------------------------------------------------------------------------ |
-| Catalog  | `useProducts`, `useProduct`, `useSearchSuggestions`                      |
-| Account  | `useOrders`, `useAddresses`, `useFavorites`, `useProfile`, `useDisputes` |
-| Auth     | `useAuth` (context wrapper)                                              |
-| Checkout | `useCheckout`, `useCheckoutTotals`, `usePayment`                         |
-| Search   | `useSearchContext`, `useRecentSearches`, `useNavbarSearchCombobox`       |
-| Reviews  | `useReviews`, `useCustomerReviews`                                       |
+| Category | Examples                                                                                                                                               |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Catalog  | `useProducts`, `useProduct`, `useCategories`, `useStore`                                                                                               |
+| Account  | `useOrders`, `useAddresses`, `useFavorites`, `useProfile`, `useNotifications`, `useOrderTracking`                                                      |
+| Auth     | `useAuth` (context wrapper)                                                                                                                            |
+| Checkout | `useCheckout`, `useCheckoutTotals`, `usePayment`, `usePaymentMethods`, `useShippingOptions`, `useActivePlatformPromotions`, `useActiveStorePromotions` |
+| Search   | `useSearchContext`, `useRecentSearches`, `useNavbarSearchCombobox`, `useSearchSuggestions`, `useSearchRecoverySuggestions`                             |
+| Reviews  | `useReviews`, `useCustomerReviews`, `useOrderPendingReviews`, `useOrdersReviewStatus`                                                                  |
 
 ## Auth hook exception
 
@@ -75,14 +75,9 @@ export function useAuth() {
 }
 ```
 
-### `useDisputes`
+### `useOrderTracking`
 
-Customer return requests via `MyDisputesDocument` / `CreateDisputesDocument`.
-
-- `createDisputes` refetches `MyDisputes`, `Orders`, and `Order` (for the submitted `orderId`) so list badges stay current.
-- Pair with `useOrdersDisputeStatus` on the order list for per-order return badges.
-
-See [workspace returns-and-disputes](../../new-sopet-workspace/docs/developer/returns-and-disputes.md).
+Public order-tracking query (`OrderTrackingDocument`, `fetchPolicy: 'network-only'`). Returns a discriminated `queryState` (`loading` / `success` / `not-found` / `error`) so the page can render distinct not-found vs. network-error copy. Used by `/track/[orderNumber]` and, via `OrderShipmentTrackingList`, the authenticated order detail page.
 
 ## Testing hooks
 

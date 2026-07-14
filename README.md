@@ -29,7 +29,7 @@ Atomic design components. Apollo cache + React Context for state. See [docs/arch
 
 ## Prerequisites
 
-- Node.js 20+ (CI uses Node 20)
+- Node.js 22+ (CI uses Node 22)
 - Yarn 1.22+ (`packageManager: yarn@1.22.22`; `preinstall` enforces Yarn)
 - Running [backend](../sopet-backend/) at `http://localhost:3002`
 - Backend schema at `../sopet-backend/src/schema.gql` (for GraphQL codegen)

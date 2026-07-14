@@ -61,7 +61,7 @@ yarn test:watch
 `.github/workflows/ci.yml` (PRs to `main` / `uat`):
 
 1. Sparse-checkout backend `schema.gql` into `sopet-backend/`
-2. Node.js **20**, `yarn install --frozen-lockfile`
+2. Node.js **22**, `yarn install --frozen-lockfile`
 3. `yarn lint` → `yarn test` → `yarn build` (with `GRAPHQL_SCHEMA_PATH=sopet-backend/src/schema.gql`)
 4. `scripts/check-forbidden-imports.sh`
 
@@ -69,7 +69,7 @@ Deploy: `.github/workflows/deploy.yml` posts to `VERCEL_DEPLOY_HOOK_URL` on `dep
 
 ## Package manager
 
-Yarn only (`preinstall: npx only-allow yarn`, `packageManager: yarn@1.22.22`). Node.js 20+ (CI uses 20; `@types/node` is `^20`).
+Yarn only (`preinstall: npx only-allow yarn`, `packageManager: yarn@1.22.22`). Node.js 22+ (CI uses 22; `@types/node` may still be `^20`).
 
 ## Related docs
 

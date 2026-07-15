@@ -2,11 +2,19 @@
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm';
+import type { PaymentRetrySubmitInput } from '@/components/organisms/OrderPaymentForm/PaymentRetryPanel';
 import { clearPendingCheckout } from '@/lib/checkout/pendingCheckout';
-import { invalidateCustomerOrders } from '@/lib/orders/invalidateCustomerOrders';
+import { useCheckout } from '@/lib/hooks/useCheckout';
 import { usePayment } from '@/lib/hooks/usePayment';
+import { invalidateCustomerOrders } from '@/lib/orders/invalidateCustomerOrders';
+import {
+  buildPaymentRetryInput,
+  clearPriorPayment3dsAutoRedirect,
+  PaymentRetryError,
+  resolveNewPaymentId,
+} from '@/lib/payment/submitPaymentRetry';
 
 type LookupMode = 'paymentId' | 'orderId';
 
@@ -23,11 +31,23 @@ function isPaymentNotFoundError(error: Error | undefined): boolean {
   return false;
 }
 
+function retryErrorMessage(error: unknown): string {
+  if (error instanceof PaymentRetryError) {
+    return error.message;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return 'ไม่สามารถสร้างการชำระเงินได้';
+}
+
 export default function PaymentPage() {
   const params = useParams<{ id: string }>();
   const routeId = params.id;
   const router = useRouter();
+  const { createPayment, creatingPayment } = useCheckout();
   const [lookupMode, setLookupMode] = useState<LookupMode>('paymentId');
+  const [retrySubmitError, setRetrySubmitError] = useState<string | null>(null);
   const hasTriedFallback = useRef(false);
   const hasRedirected = useRef(false);
 
@@ -66,6 +86,37 @@ export default function PaymentPage() {
     clearPendingCheckout();
   }, [payment?.status]);
 
+  const handleRetryPayment = useCallback(
+    async (input: PaymentRetrySubmitInput) => {
+      if (!payment?.orderId || !payment.id) {
+        return;
+      }
+
+      setRetrySubmitError(null);
+
+      try {
+        const created = await createPayment(
+          buildPaymentRetryInput(
+            {
+              orderId: payment.orderId,
+              amount: payment.amount,
+              currency: payment.currency,
+              currentPaymentId: payment.id,
+            },
+            input,
+          ),
+        );
+
+        const newPaymentId = resolveNewPaymentId(payment.id, created?.id);
+        clearPriorPayment3dsAutoRedirect(payment.id);
+        router.push(`/payment/${newPaymentId}`);
+      } catch (retryError) {
+        setRetrySubmitError(retryErrorMessage(retryError));
+      }
+    },
+    [createPayment, payment, router],
+  );
+
   return (
     <main className="flex min-h-dvh items-center justify-center bg-sop-primary-100 px-4 py-8">
       <OrderPaymentForm
@@ -78,6 +129,9 @@ export default function PaymentPage() {
         onExpired={() => {
           void refetch();
         }}
+        onRetryPayment={handleRetryPayment}
+        retrySubmitError={retrySubmitError}
+        retrySubmitting={creatingPayment}
       />
     </main>
   );

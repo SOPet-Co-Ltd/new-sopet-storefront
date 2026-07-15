@@ -1,5 +1,7 @@
 export const CHECKOUT_STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
 export const CHECKOUT_PAYMENT_ID = 'payment-checkout-1';
+/** New payment id returned after same-order recovery supersede (backend-task-03). */
+export const CHECKOUT_RETRY_PAYMENT_ID = 'payment-checkout-retry-2';
 export const CHECKOUT_ORDER_ID = 'order-checkout-1';
 
 export const sampleSavedAddress2 = {
@@ -146,4 +148,14 @@ export const samplePendingPayment = {
 export const samplePaidPayment = {
   ...samplePendingPayment,
   status: 'paid',
+};
+
+/** Pending card payment after createPayment recovery (new id ≠ superseded pending). */
+export const sampleRetryPendingPayment = {
+  ...samplePendingPayment,
+  id: CHECKOUT_RETRY_PAYMENT_ID,
+  qrCodeUrl: null,
+  authorizeUri: 'https://pay.omise.co/offsites/ofsp_retry/pay',
+  paymentMethod: 'credit_card',
+  expiresAt: null,
 };

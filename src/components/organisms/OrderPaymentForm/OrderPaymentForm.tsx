@@ -5,6 +5,12 @@ import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { formatCountdown, usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
 import { useCallback } from 'react';
+import { Payment3dsAutoRedirect, threeDSAutoRedirectStorageKey } from './Payment3dsAutoRedirect';
+import { Payment3dsRedirectingState } from './Payment3dsRedirectingState';
+import { PaymentFailedState } from './PaymentFailedState';
+import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
+import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
+import type { PaymentRetryPanelProps } from './PaymentRetryPanel';
 
 export type OrderPaymentFormProps = {
   payment: PaymentRecord | null;
@@ -12,6 +18,12 @@ export type OrderPaymentFormProps = {
   error: Error | undefined;
   onRetry?: () => void;
   onExpired?: () => void;
+  /** Test seam / optional override for 3DS auto-redirect navigation */
+  navigateToAuthorizeUri?: (uri: string) => void;
+  /** Same-order recovery submit (wired to createPayment in frontend-task-04) */
+  onRetryPayment?: PaymentRetryPanelProps['onSubmit'];
+  retrySubmitError?: PaymentRetryPanelProps['submitError'];
+  retrySubmitting?: PaymentRetryPanelProps['isSubmitting'];
 };
 
 function formatAmount(amount: number, currency: string): string {
@@ -21,12 +33,24 @@ function formatAmount(amount: number, currency: string): string {
   return `${amount.toFixed(2)} ${currency}`;
 }
 
+function hasCompleted3dsAutoRedirect(paymentId: string, authorizeUri: string): boolean {
+  try {
+    return sessionStorage.getItem(threeDSAutoRedirectStorageKey(paymentId)) === authorizeUri;
+  } catch {
+    return false;
+  }
+}
+
 export function OrderPaymentForm({
   payment,
   loading,
   error,
   onRetry,
   onExpired,
+  navigateToAuthorizeUri,
+  onRetryPayment,
+  retrySubmitError,
+  retrySubmitting,
 }: OrderPaymentFormProps) {
   const hasQrCode = Boolean(payment?.qrCodeUrl);
   const handleExpire = useCallback(() => {
@@ -96,17 +120,12 @@ export function OrderPaymentForm({
         <h1 id="payment-failed-title" className="text-xl font-bold text-gray-900">
           ชำระเงิน
         </h1>
-        <div
-          className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4"
-          role="alert"
-          aria-live="polite"
-        >
-          <p className="font-medium text-red-600">
-            {isQrExpired
-              ? 'QR Code หมดอายุแล้ว กรุณาทำรายการใหม่จากหน้าชำระเงิน'
-              : 'การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'}
-          </p>
-        </div>
+        <PaymentFailedState
+          isQrExpired={isQrExpired}
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+        />
       </section>
     );
   }
@@ -116,6 +135,7 @@ export function OrderPaymentForm({
       <section
         className="flex w-full max-w-[500px] flex-col items-center gap-4 rounded-3xl bg-white p-8 shadow-xl"
         aria-live="polite"
+        data-testid="payment-paid-handoff"
       >
         <SpinnerIcon size={{ mobile: 32, desktop: 32 }} />
         <p className="text-sm text-gray-600">ชำระเงินสำเร็จ กำลังเปลี่ยนหน้า...</p>
@@ -123,7 +143,8 @@ export function OrderPaymentForm({
     );
   }
 
-  const hasRedirectUri = Boolean(payment.authorizeUri);
+  const authorizeUri = payment.authorizeUri?.trim() ? payment.authorizeUri : null;
+  const hasRedirectUri = Boolean(authorizeUri);
 
   if (hasQrCode && isExpired && payment.status === 'pending') {
     return (
@@ -141,6 +162,50 @@ export function OrderPaymentForm({
         >
           <p className="font-medium text-amber-800">QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...</p>
         </div>
+      </section>
+    );
+  }
+
+  // Card 3DS path: pending + authorizeUri (PromptPay QR takes precedence when both present)
+  if (!hasQrCode && hasRedirectUri && authorizeUri && payment.status === 'pending') {
+    const afterReturn = hasCompleted3dsAutoRedirect(payment.id, authorizeUri);
+    const amountLabel = formatAmount(payment.amount, payment.currency);
+
+    return (
+      <section
+        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
+        aria-labelledby="payment-waiting-title"
+      >
+        <h1 id="payment-waiting-title" className="text-xl font-bold text-gray-900">
+          ชำระเงิน
+        </h1>
+
+        <Payment3dsAutoRedirect
+          paymentId={payment.id}
+          status={payment.status}
+          authorizeUri={authorizeUri}
+          navigate={navigateToAuthorizeUri}
+        />
+
+        {afterReturn ? (
+          <PaymentWaitingAfterReturnState
+            authorizeUri={authorizeUri}
+            amountLabel={amountLabel}
+            onRetrySubmit={onRetryPayment}
+            submitError={retrySubmitError}
+            isSubmitting={retrySubmitting}
+          />
+        ) : (
+          <>
+            <div className="mt-4 flex items-center justify-between py-3">
+              <p className="font-medium text-gray-800">ยอดชำระรวม</p>
+              <p className="font-medium text-gray-800">{amountLabel}</p>
+            </div>
+            <div className="relative flex min-h-[250px] flex-col items-center justify-center overflow-hidden rounded-lg border border-gray-300">
+              <Payment3dsRedirectingState />
+            </div>
+          </>
+        )}
       </section>
     );
   }
@@ -186,35 +251,8 @@ export function OrderPaymentForm({
               แสกนเพื่อชำระเงินผ่านแอปธนาคารใดก็ได้
             </p>
           </div>
-        ) : hasRedirectUri ? (
-          <div className="flex flex-col items-center gap-4 p-6 text-center">
-            <p className="text-sm text-gray-600">
-              กรุณากดปุ่มด้านล่างเพื่อไปยังหน้าชำระเงินของผู้ให้บริการ
-            </p>
-            <Button
-              type="button"
-              variant="primary"
-              className="w-full max-w-xs"
-              onClick={() => {
-                window.location.href = payment.authorizeUri ?? '';
-              }}
-            >
-              ไปชำระเงิน
-            </Button>
-            <a
-              href={payment.authorizeUri ?? ''}
-              className="text-sm text-sop-secondary-500 underline underline-offset-4"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              เปิดลิงก์ชำระเงิน
-            </a>
-          </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 p-6">
-            <SpinnerIcon size={{ mobile: 28, desktop: 28 }} />
-            <p className="text-sm text-gray-500">กำลังรอการชำระเงิน...</p>
-          </div>
+          <PaymentWaitingFrictionlessState />
         )}
       </div>
 

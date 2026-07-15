@@ -1397,6 +1397,8 @@ export type OrderItemType = {
   trackingUrl?: Maybe<Scalars['String']['output']>;
   unitPrice: Scalars['Float']['output'];
   variantId: Scalars['String']['output'];
+  /** JSON string of snapshot variant options from order create (e.g. {"ขนาด":"1kg"}) */
+  variantOptions?: Maybe<Scalars['String']['output']>;
 };
 
 export type OrderShippingAddressType = {
@@ -1431,6 +1433,8 @@ export type OrderTrackingItemType = {
   trackingNumber?: Maybe<Scalars['String']['output']>;
   trackingUrl?: Maybe<Scalars['String']['output']>;
   unitPrice: Scalars['Float']['output'];
+  /** JSON string of snapshot variant options from order create (e.g. {"ขนาด":"1kg"}) */
+  variantOptions?: Maybe<Scalars['String']['output']>;
 };
 
 export type OrderTrackingStoreShippingType = {
@@ -1642,6 +1646,24 @@ export type ProductType = {
   warning?: Maybe<Scalars['String']['output']>;
 };
 
+export type ProductVariantSyncImpactRemovedType = {
+  __typename?: 'ProductVariantSyncImpactRemovedType';
+  id: Scalars['String']['output'];
+  optionKey: Scalars['String']['output'];
+  optionsJson?: Maybe<Scalars['String']['output']>;
+  reasons: Array<VariantRemovalBlockReason>;
+  sku: Scalars['String']['output'];
+};
+
+export type ProductVariantSyncImpactType = {
+  __typename?: 'ProductVariantSyncImpactType';
+  blocked: Scalars['Boolean']['output'];
+  kept: Scalars['Int']['output'];
+  new: Scalars['Int']['output'];
+  removed: Scalars['Int']['output'];
+  removedVariants: Array<ProductVariantSyncImpactRemovedType>;
+};
+
 export type ProductVariantType = {
   __typename?: 'ProductVariantType';
   id: Scalars['String']['output'];
@@ -1763,6 +1785,7 @@ export type Query = {
   productBySlug: ProductType;
   productPublishChecklist: ProductPublishChecklistType;
   productReviews: Array<ReviewType>;
+  productVariantSyncImpact: ProductVariantSyncImpactType;
   products: ProductConnection;
   recommendedProducts: Array<ProductType>;
   rejectedBrands: Array<BrandType>;
@@ -1971,6 +1994,11 @@ export type QueryProductReviewsArgs = {
   productId: Scalars['String']['input'];
 };
 
+export type QueryProductVariantSyncImpactArgs = {
+  productId: Scalars['String']['input'];
+  variants: Array<SyncProductVariantItemInput>;
+};
+
 export type QueryProductsArgs = {
   brandIds?: InputMaybe<Array<Scalars['String']['input']>>;
   category?: InputMaybe<Scalars['String']['input']>;
@@ -2122,6 +2150,7 @@ export type QueryVendorProductsArgs = {
   page?: InputMaybe<Scalars['Int']['input']>;
   petTypeIds?: InputMaybe<Array<Scalars['String']['input']>>;
   search?: InputMaybe<Scalars['String']['input']>;
+  tag?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type ReactivateAccountInput = {
@@ -2848,6 +2877,11 @@ export type ValidatePromotionInput = {
   storeId?: InputMaybe<Scalars['String']['input']>;
   subtotal: Scalars['Float']['input'];
 };
+
+export enum VariantRemovalBlockReason {
+  HasOpenCarts = 'HAS_OPEN_CARTS',
+  HasOrders = 'HAS_ORDERS',
+}
 
 export type VendorAuthPayload = {
   __typename?: 'VendorAuthPayload';

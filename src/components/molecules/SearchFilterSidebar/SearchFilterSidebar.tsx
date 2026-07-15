@@ -267,9 +267,7 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [expandedSections, setExpandedSections] = useState<Set<FilterSectionId>>(
-    () => new Set(FILTER_SECTIONS.map((section) => section.id)),
-  );
+  const [expandedSections, setExpandedSections] = useState<Set<FilterSectionId>>(() => new Set());
 
   const petTypeExpanded = expandedSections.has('pet-type');
   const brandExpanded = expandedSections.has('brand');

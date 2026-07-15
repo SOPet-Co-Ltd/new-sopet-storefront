@@ -375,6 +375,7 @@ export type OrderItemFieldsFragment = {
   unitPrice: number;
   subtotal: number;
   fulfillmentStatus: string;
+  variantOptions: string | null;
 };
 
 export type OrderStoreShippingFieldsFragment = {
@@ -418,6 +419,7 @@ export type OrderFieldsFragment = {
     unitPrice: number;
     subtotal: number;
     fulfillmentStatus: string;
+    variantOptions: string | null;
   }>;
   storeShippings: Array<{ storeId: string; optionName: string; shippingFee: number }>;
   shippingAddress: {
@@ -469,6 +471,7 @@ export type CreateOrderMutation = {
       unitPrice: number;
       subtotal: number;
       fulfillmentStatus: string;
+      variantOptions: string | null;
     }>;
     storeShippings: Array<{ storeId: string; optionName: string; shippingFee: number }>;
     shippingAddress: {
@@ -654,6 +657,7 @@ export type OrderTrackingFieldsFragment = {
     trackingNumber: string | null;
     fulfillmentProvider: string | null;
     trackingUrl: string | null;
+    variantOptions: string | null;
   }>;
   storeShippings: Array<{ storeId: string; optionName: string; shippingFee: number }>;
 };
@@ -683,6 +687,7 @@ export type OrderTrackingQuery = {
       trackingNumber: string | null;
       fulfillmentProvider: string | null;
       trackingUrl: string | null;
+      variantOptions: string | null;
     }>;
     storeShippings: Array<{ storeId: string; optionName: string; shippingFee: number }>;
   };
@@ -721,6 +726,7 @@ export type OrderConfirmationFieldsFragment = {
     trackingNumber: string | null;
     fulfillmentProvider: string | null;
     trackingUrl: string | null;
+    variantOptions: string | null;
   }>;
   storeShippings: Array<{ storeId: string; optionName: string; shippingFee: number }>;
 };
@@ -774,6 +780,7 @@ export type OrderQuery = {
       trackingNumber: string | null;
       fulfillmentProvider: string | null;
       trackingUrl: string | null;
+      variantOptions: string | null;
     }>;
     storeShippings: Array<{ storeId: string; optionName: string; shippingFee: number }>;
   };
@@ -808,6 +815,7 @@ export type ConfirmOrderDeliveredMutation = {
       trackingNumber: string | null;
       fulfillmentProvider: string | null;
       trackingUrl: string | null;
+      variantOptions: string | null;
     }>;
     storeShippings: Array<{ storeId: string; optionName: string; shippingFee: number }>;
   };
@@ -1652,6 +1660,7 @@ export const OrderItemFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'unitPrice' } },
           { kind: 'Field', name: { kind: 'Name', value: 'subtotal' } },
           { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentStatus' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
         ],
       },
     },
@@ -1779,6 +1788,7 @@ export const OrderFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'unitPrice' } },
           { kind: 'Field', name: { kind: 'Name', value: 'subtotal' } },
           { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentStatus' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
         ],
       },
     },
@@ -1909,6 +1919,7 @@ export const OrderTrackingFieldsFragmentDoc = {
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingNumber' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentProvider' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
               ],
             },
           },
@@ -1999,6 +2010,7 @@ export const OrderConfirmationFieldsFragmentDoc = {
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingNumber' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentProvider' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
               ],
             },
           },
@@ -3496,6 +3508,7 @@ export const CreateOrderDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'unitPrice' } },
           { kind: 'Field', name: { kind: 'Name', value: 'subtotal' } },
           { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentStatus' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
         ],
       },
     },
@@ -4147,6 +4160,7 @@ export const OrderTrackingDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingNumber' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentProvider' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
               ],
             },
           },
@@ -4353,6 +4367,7 @@ export const OrderDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingNumber' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentProvider' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
               ],
             },
           },
@@ -4454,6 +4469,7 @@ export const ConfirmOrderDeliveredDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingNumber' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'fulfillmentProvider' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'trackingUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
               ],
             },
           },

@@ -35,6 +35,7 @@ fragment OrderConfirmationFields on OrderType {
     trackingNumber
     fulfillmentProvider
     trackingUrl
+    variantOptions
   }
   storeShippings {
     storeId

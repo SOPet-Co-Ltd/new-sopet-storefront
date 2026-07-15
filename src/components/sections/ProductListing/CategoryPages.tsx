@@ -70,7 +70,7 @@ export function CategoryPLP({
       <CategoryHeader categorySlug={categorySlug} />
       <SearchResultsLayout>
         {categoryUnresolvable ? (
-          <EmptySearchResults message="ไม่พบสินค้าในหมวดหมู่นี้" showSuggestedCategories={false} />
+          <EmptySearchResults message="ไม่พบสินค้าในหมวดหมู่นี้" />
         ) : awaitingCategoryResolution ? (
           <ProductListingSkeleton />
         ) : (

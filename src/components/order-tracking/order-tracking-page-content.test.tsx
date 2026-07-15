@@ -26,6 +26,7 @@ const mockOrderData: OrderTrackingQuery['orderTracking'] = {
       trackingNumber: 'TH123',
       fulfillmentProvider: 'kerry',
       trackingUrl: 'https://track.example.com/TH123',
+      variantOptions: null,
     },
   ],
   storeShippings: [{ storeId: 'store-1', optionName: 'Standard', shippingFee: 50 }],

@@ -25,6 +25,10 @@ function getPushedQuery(): URLSearchParams {
   return new URLSearchParams(queryIndex >= 0 ? pushedUrl.slice(queryIndex + 1) : '');
 }
 
+async function expandSection(user: ReturnType<typeof userEvent.setup>, name: RegExp | string) {
+  await user.click(screen.getByRole('button', { name }));
+}
+
 beforeEach(() => {
   pathname = '/categories/dog-food';
   searchParams = new URLSearchParams();
@@ -32,11 +36,28 @@ beforeEach(() => {
 });
 
 describe('SearchFilterSidebar taxonomy filters', () => {
+  it('keeps filter sections collapsed by default', () => {
+    render(<SearchFilterSidebar />, { wrapper: createWrapper() });
+
+    expect(screen.getByRole('button', { name: /ประเภทสัตว์เลี้ยง/ })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: /แบรนด์/ })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: /แท็ก/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: /ราคา/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  });
+
   it('updates URL on current pathname when pet type is toggled (AC-019)', async () => {
     const user = userEvent.setup();
 
     render(<SearchFilterSidebar />, { wrapper: createWrapper() });
 
+    await expandSection(user, /ประเภทสัตว์เลี้ยง/);
     const petTypeCheckbox = await screen.findByRole('checkbox', { name: 'สุนัข' });
     await user.click(petTypeCheckbox);
 
@@ -67,9 +88,9 @@ describe('SearchFilterSidebar taxonomy filters', () => {
 
     render(<SearchFilterSidebar />, { wrapper: createWrapper() });
 
-    const tagSectionToggle = screen.getByRole('button', { name: /แท็ก/ });
-    await user.click(tagSectionToggle);
-    await user.click(tagSectionToggle);
+    expect(approvedTagsRequested).toBe(false);
+
+    await expandSection(user, /แท็ก/);
 
     await waitFor(() => {
       expect(approvedTagsRequested).toBe(true);
@@ -80,6 +101,8 @@ describe('SearchFilterSidebar taxonomy filters', () => {
   });
 
   it('shows empty copy when approved tags list is empty (AC-020)', async () => {
+    const user = userEvent.setup();
+
     server.use(
       graphql.query('ApprovedTags', () => {
         return HttpResponse.json({
@@ -89,11 +112,14 @@ describe('SearchFilterSidebar taxonomy filters', () => {
     );
 
     render(<SearchFilterSidebar />, { wrapper: createWrapper() });
+    await expandSection(user, /แท็ก/);
 
     expect(await screen.findByText('ไม่มีแท็ก')).toBeInTheDocument();
   });
 
   it('shows error copy when approved tags query fails (AC-020)', async () => {
+    const user = userEvent.setup();
+
     server.use(
       graphql.query('ApprovedTags', () => {
         return HttpResponse.json({
@@ -103,6 +129,7 @@ describe('SearchFilterSidebar taxonomy filters', () => {
     );
 
     render(<SearchFilterSidebar />, { wrapper: createWrapper() });
+    await expandSection(user, /แท็ก/);
 
     expect(await screen.findByText('โหลดแท็กไม่สำเร็จ')).toBeInTheDocument();
   });
@@ -111,6 +138,7 @@ describe('SearchFilterSidebar taxonomy filters', () => {
     const user = userEvent.setup();
 
     render(<SearchFilterSidebar />, { wrapper: createWrapper() });
+    await expandSection(user, /แท็ก/);
 
     const firstTag = await screen.findByRole('checkbox', { name: 'Grain Free' });
     await user.click(firstTag);
@@ -148,6 +176,7 @@ describe('SearchFilterSidebar taxonomy filters', () => {
     });
 
     render(<SearchFilterSidebar />, { wrapper: createWrapper() });
+    await expandSection(user, /ราคา/);
 
     await user.click(screen.getByRole('button', { name: 'ล้างค่า' }));
 

@@ -106,6 +106,7 @@ export const sampleOrder = {
       unitPrice: 500,
       subtotal: 500,
       fulfillmentStatus: 'pending',
+      variantOptions: null,
     },
   ],
   storeShippings: [

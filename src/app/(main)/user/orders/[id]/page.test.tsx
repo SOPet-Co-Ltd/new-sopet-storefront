@@ -48,6 +48,7 @@ function createOrder(status: string): OrderDetail {
         trackingNumber: null,
         fulfillmentProvider: null,
         trackingUrl: null,
+        variantOptions: null,
       },
     ],
     storeShippings: [],

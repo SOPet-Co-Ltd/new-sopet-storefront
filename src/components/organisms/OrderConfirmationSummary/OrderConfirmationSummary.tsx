@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ProductThumbnail } from '@/components/molecules/ProductThumbnail/ProductThumbnail';
 import { buildProductHref } from '@/components/organisms/ProductCard';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
+import { formatOrderVariantOptions } from '@/lib/order/formatOrderVariantOptions';
 import { cn } from '@/lib/utils';
 
 /** Fields required to render summary — satisfied by OrderType and OrderTrackingType subsets */
@@ -19,6 +20,8 @@ export type OrderSummaryDisplayOrder = {
     quantity: number;
     unitPrice: number;
     subtotal: number;
+    /** Snapshot JSON string or parsed map; omit display when empty */
+    variantOptions?: string | Record<string, string> | null;
   }>;
   storeShippings: Array<{
     storeId: string;
@@ -42,6 +45,7 @@ type OrderConfirmationSummaryProps = {
 
 function OrderConfirmationItemRow({ item }: { item: OrderSummaryDisplayItem }) {
   const productHref = item.productId ? buildProductHref(item.productId) : null;
+  const variantOptionsLabel = formatOrderVariantOptions(item.variantOptions);
   const rowClassName =
     'flex items-start justify-between gap-4 border-b border-sop-neutral-grayalpha-100 pb-4 last:border-b-0 last:pb-0';
 
@@ -51,6 +55,14 @@ function OrderConfirmationItemRow({ item }: { item: OrderSummaryDisplayItem }) {
         <ProductThumbnail alt={item.productName} imageUrl={item.productImageUrl} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="sop-body-sm-medium text-sop-neutral-gray-200">{item.productName}</p>
+          {variantOptionsLabel ? (
+            <p
+              className="sop-body-xs-regular text-sop-neutral-gray-400"
+              data-testid="order-item-variant-options"
+            >
+              {variantOptionsLabel}
+            </p>
+          ) : null}
           <p className="sop-body-xs-regular text-sop-neutral-gray-400">
             จำนวน {item.quantity} × {formatPrice(item.unitPrice)}
           </p>

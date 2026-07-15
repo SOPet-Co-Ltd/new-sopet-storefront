@@ -2,7 +2,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const filePath = process.argv[2];
-if (!filePath?.endsWith('graphql.ts')) {
+// Accept split codegen output (`operations.ts`) and legacy combined (`graphql.ts`).
+if (!filePath?.endsWith('operations.ts') && !filePath?.endsWith('graphql.ts')) {
   process.exit(0);
 }
 
@@ -83,10 +84,12 @@ writeFileSync(filePath, content);
 writeFragmentRegistry(filePath, content);
 
 /**
- * With `dedupeFragments: true`, operation documents keep FragmentSpreads but
- * omit FragmentDefinitions. Also strip any remaining inline FragmentDefinitions
- * that match a canonical *FragmentDoc export (single-line DocumentNode exports).
+ * Operation documents keep FragmentSpreads but must omit FragmentDefinitions that
+ * already have a canonical *FragmentDoc export. Duplicate definitions trigger
+ * graphql-tag uniqueness warnings and break UAT soft-navigation/hydration.
  * Apollo resolves spreads via createFragmentRegistry (see fragmentRegistry.ts).
+ *
+ * Supports both compact JSON single-line exports and Prettier multi-line object literals.
  */
 function dedupeInlineFragmentDefinitions(source) {
   const fragmentDocNames = new Set(
@@ -97,53 +100,131 @@ function dedupeInlineFragmentDefinitions(source) {
     return source;
   }
 
-  return source
-    .split('\n')
-    .map((line) => {
-      const match = line.match(
-        /^export const (\w+Document) = (\{.*\}) as unknown as (DocumentNode<[^>]+>;)$/,
-      );
+  const exportPrefix = /^export const (\w+Document) = /gm;
+  let result = '';
+  let lastIndex = 0;
+  let match;
 
-      if (!match) {
-        return line;
+  while ((match = exportPrefix.exec(source)) !== null) {
+    const exportName = match[1];
+    const objectStart = match.index + match[0].length;
+
+    if (source[objectStart] !== '{') {
+      continue;
+    }
+
+    const objectEnd = findMatchingBraceEnd(source, objectStart);
+    if (objectEnd < 0) {
+      continue;
+    }
+
+    const typeSuffixMatch = source
+      .slice(objectEnd + 1)
+      .match(/^\s*as unknown as (DocumentNode<[^;]+>;)/);
+    if (!typeSuffixMatch) {
+      continue;
+    }
+
+    const objectLiteral = source.slice(objectStart, objectEnd + 1);
+    const typeSuffix = typeSuffixMatch[1];
+    const typeSuffixEnd = objectEnd + 1 + typeSuffixMatch[0].length;
+
+    let document;
+    try {
+      document = parseDocumentLiteral(objectLiteral);
+    } catch {
+      continue;
+    }
+
+    const hasOperation = document.definitions?.some(
+      (definition) => definition.kind === 'OperationDefinition',
+    );
+
+    if (!hasOperation) {
+      continue;
+    }
+
+    const filteredDefinitions = document.definitions.filter((definition) => {
+      if (definition.kind !== 'FragmentDefinition') {
+        return true;
       }
 
-      const [, exportName, jsonLiteral, typeSuffix] = match;
+      const fragmentName = definition.name?.value;
+      return !fragmentDocNames.has(fragmentName);
+    });
 
-      let document;
-      try {
-        document = JSON.parse(jsonLiteral);
-      } catch {
-        return line;
-      }
+    result += source.slice(lastIndex, match.index);
 
-      const hasOperation = document.definitions?.some(
-        (definition) => definition.kind === 'OperationDefinition',
-      );
-
-      if (!hasOperation) {
-        return line;
-      }
-
-      const filteredDefinitions = document.definitions.filter((definition) => {
-        if (definition.kind !== 'FragmentDefinition') {
-          return true;
-        }
-
-        const fragmentName = definition.name?.value;
-        return !fragmentDocNames.has(fragmentName);
-      });
-
-      if (filteredDefinitions.length === document.definitions.length) {
-        return line;
-      }
-
-      return `export const ${exportName} = ${JSON.stringify({
+    if (filteredDefinitions.length === document.definitions.length) {
+      result += source.slice(match.index, typeSuffixEnd);
+    } else {
+      result += `export const ${exportName} = ${JSON.stringify({
         ...document,
         definitions: filteredDefinitions,
       })} as unknown as ${typeSuffix}`;
-    })
-    .join('\n');
+    }
+
+    lastIndex = typeSuffixEnd;
+    exportPrefix.lastIndex = typeSuffixEnd;
+  }
+
+  result += source.slice(lastIndex);
+  return result;
+}
+
+function findMatchingBraceEnd(source, openIndex) {
+  let depth = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let escaped = false;
+
+  for (let i = openIndex; i < source.length; i += 1) {
+    const char = source[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\' && (inSingle || inDouble)) {
+      escaped = true;
+      continue;
+    }
+
+    if (!inDouble && char === "'") {
+      inSingle = !inSingle;
+      continue;
+    }
+
+    if (!inSingle && char === '"') {
+      inDouble = !inDouble;
+      continue;
+    }
+
+    if (inSingle || inDouble) {
+      continue;
+    }
+
+    if (char === '{') {
+      depth += 1;
+    } else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return i;
+      }
+    }
+  }
+
+  return -1;
+}
+
+function parseDocumentLiteral(objectLiteral) {
+  try {
+    return JSON.parse(objectLiteral);
+  } catch {
+    // Multi-line codegen output uses JS object-literal syntax (unquoted keys, single quotes).
+    return new Function(`"use strict"; return (${objectLiteral});`)();
+  }
 }
 
 function writeFragmentRegistry(generatedGraphqlPath, source) {

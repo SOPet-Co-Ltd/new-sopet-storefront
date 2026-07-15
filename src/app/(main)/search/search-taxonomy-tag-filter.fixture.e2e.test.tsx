@@ -59,6 +59,10 @@ function getPushedQuery(): URLSearchParams {
   return new URLSearchParams(queryIndex >= 0 ? pushedUrl.slice(queryIndex + 1) : '');
 }
 
+async function expandSection(user: ReturnType<typeof userEvent.setup>, name: RegExp | string) {
+  await user.click(screen.getByRole('button', { name }));
+}
+
 describe('Search taxonomy tag filter fixture-e2e harness', () => {
   it('registers ApprovedTags handler in default MSW handlers', () => {
     expect(
@@ -104,6 +108,7 @@ describe('Search taxonomy tag filter fixture-e2e harness', () => {
       wrapper: createWrapper(),
     });
 
+    await expandSection(user, /แท็ก/);
     const tagCheckbox = await screen.findByRole('checkbox', { name: 'Grain Free' });
     await user.click(tagCheckbox);
 
@@ -128,6 +133,7 @@ describe('Search taxonomy tag filter fixture-e2e harness', () => {
       wrapper: createWrapper(),
     });
 
+    await expandSection(user, 'ราคา');
     await user.click(screen.getByRole('button', { name: 'ล้างค่า' }));
 
     await waitFor(() => {

@@ -42,6 +42,10 @@ function getPushedQuery(): URLSearchParams {
   return new URLSearchParams(queryIndex >= 0 ? pushedUrl.slice(queryIndex + 1) : '');
 }
 
+async function expandSection(user: ReturnType<typeof userEvent.setup>, name: RegExp | string) {
+  await user.click(screen.getByRole('button', { name }));
+}
+
 beforeEach(() => {
   pathname = '/';
   searchParams = new URLSearchParams();
@@ -99,6 +103,7 @@ describe('Category PLP filter journey', () => {
       sidebar.compareDocumentPosition(listing) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
+    await expandSection(user, /ประเภทสัตว์เลี้ยง/);
     const petTypeCheckbox = await screen.findByRole('checkbox', { name: 'สุนัข' });
     await user.click(petTypeCheckbox);
 

@@ -26,6 +26,7 @@ const ORDERED_PRODUCTS = [
     averageRating: 4,
     reviewCount: 1,
     soldCount: 1,
+    variants: null,
     store: {
       __typename: 'StoreType' as const,
       id: CATALOG_STORE_ID,
@@ -45,6 +46,7 @@ const ORDERED_PRODUCTS = [
     averageRating: 4,
     reviewCount: 1,
     soldCount: 1,
+    variants: null,
     store: {
       __typename: 'StoreType' as const,
       id: CATALOG_STORE_ID,
@@ -64,6 +66,7 @@ const ORDERED_PRODUCTS = [
     averageRating: 4,
     reviewCount: 1,
     soldCount: 1,
+    variants: null,
     store: {
       __typename: 'StoreType' as const,
       id: CATALOG_STORE_ID,

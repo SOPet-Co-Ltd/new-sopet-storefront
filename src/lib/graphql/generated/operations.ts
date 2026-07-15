@@ -567,6 +567,7 @@ export type ProductCardFieldsFragment = {
   averageRating: number;
   reviewCount: number;
   soldCount: number;
+  variants: Array<{ id: string; price: number }> | null;
 };
 
 export type HealthQueryVariables = Exact<{ [key: string]: never }>;
@@ -589,6 +590,7 @@ export type LatestPurchaseProductsQuery = {
     averageRating: number;
     reviewCount: number;
     soldCount: number;
+    variants: Array<{ id: string; price: number }> | null;
   }>;
 };
 
@@ -1151,6 +1153,7 @@ export type ProductsQuery = {
       reviewCount: number;
       soldCount: number;
       store: { id: string; name: string; slug: string } | null;
+      variants: Array<{ id: string; price: number }> | null;
     }>;
     pagination: { page: number; limit: number; total: number; totalPages: number };
   };
@@ -1243,6 +1246,7 @@ export type RecommendedProductsQuery = {
     averageRating: number;
     reviewCount: number;
     soldCount: number;
+    variants: Array<{ id: string; price: number }> | null;
   }>;
 };
 
@@ -1880,6 +1884,17 @@ export const ProductCardFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
           { kind: 'Field', name: { kind: 'Name', value: 'reviewCount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'soldCount' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'variants' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'price' } },
+              ],
+            },
+          },
         ],
       },
     },
@@ -3933,6 +3948,17 @@ export const LatestPurchaseProductsDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
           { kind: 'Field', name: { kind: 'Name', value: 'reviewCount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'soldCount' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'variants' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'price' } },
+              ],
+            },
+          },
         ],
       },
     },
@@ -5481,6 +5507,17 @@ export const ProductsDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
           { kind: 'Field', name: { kind: 'Name', value: 'reviewCount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'soldCount' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'variants' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'price' } },
+              ],
+            },
+          },
         ],
       },
     },
@@ -5742,6 +5779,17 @@ export const RecommendedProductsDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
           { kind: 'Field', name: { kind: 'Name', value: 'reviewCount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'soldCount' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'variants' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'price' } },
+              ],
+            },
+          },
         ],
       },
     },

@@ -35,6 +35,7 @@ const SAMPLE_PRODUCT = {
   averageRating: 4.5,
   reviewCount: 12,
   soldCount: 48,
+  variants: null,
   store: {
     __typename: 'StoreType' as const,
     id: 'store-1',

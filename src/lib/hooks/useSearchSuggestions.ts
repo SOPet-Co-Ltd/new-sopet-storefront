@@ -12,6 +12,7 @@ import {
   SEARCH_SUGGESTIONS_DEBOUNCE_MS,
   SEARCH_SUGGESTIONS_LIMIT,
 } from '@/lib/search/constants';
+import { queryGraphemeLength } from '@/lib/search/queryLength';
 
 export type SearchSuggestionProduct =
   SearchSuggestionsQuery['searchSuggestions']['products'][number];
@@ -20,7 +21,7 @@ export type SearchSuggestionQuery = SearchSuggestionsQuery['searchSuggestions'][
 
 export function useSearchSuggestions(query: string, enabled = true) {
   const trimmed = query.trim();
-  const canFetch = enabled && trimmed.length >= MIN_SEARCH_QUERY_LENGTH;
+  const canFetch = enabled && queryGraphemeLength(trimmed) >= MIN_SEARCH_QUERY_LENGTH;
   const sessionId = useSessionId(canFetch);
   const debouncedQuery = useDebouncedValue(trimmed, SEARCH_SUGGESTIONS_DEBOUNCE_MS, canFetch);
   const isDebouncing = canFetch && trimmed !== debouncedQuery;

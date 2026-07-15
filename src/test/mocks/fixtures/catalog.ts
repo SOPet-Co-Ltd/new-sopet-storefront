@@ -15,6 +15,7 @@ export const sampleProductCard = {
   averageRating: 4.5,
   reviewCount: 12,
   soldCount: 48,
+  variants: null,
   store: {
     __typename: 'StoreType' as const,
     id: CATALOG_STORE_ID,
@@ -41,7 +42,7 @@ export const sampleProductDetail = {
     description: 'Your pet shop',
   },
   images: [],
-  variants: [],
+  variants: null,
 };
 
 export const sampleStore = {

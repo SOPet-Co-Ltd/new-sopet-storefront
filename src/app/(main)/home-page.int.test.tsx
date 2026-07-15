@@ -32,6 +32,7 @@ const SAMPLE_PRODUCT = {
   averageRating: 4.5,
   reviewCount: 12,
   soldCount: 40,
+  variants: null,
 };
 
 describe('Home SSR reconciliation', () => {

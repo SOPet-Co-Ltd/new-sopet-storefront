@@ -21,7 +21,7 @@ describe('UserFavoritesPage', () => {
       favorites: [],
       loading: false,
       removeFavorite: vi.fn(),
-    } as ReturnType<typeof useFavorites>);
+    } as unknown as ReturnType<typeof useFavorites>);
 
     render(<UserFavoritesPage />);
 
@@ -33,7 +33,7 @@ describe('UserFavoritesPage', () => {
       favorites: [],
       loading: false,
       removeFavorite: vi.fn(),
-    } as ReturnType<typeof useFavorites>);
+    } as unknown as ReturnType<typeof useFavorites>);
 
     render(<UserFavoritesPage />);
 
@@ -61,7 +61,7 @@ describe('UserFavoritesPage', () => {
       ],
       loading: false,
       removeFavorite: vi.fn(),
-    } as ReturnType<typeof useFavorites>);
+    } as unknown as ReturnType<typeof useFavorites>);
 
     render(<UserFavoritesPage />);
 

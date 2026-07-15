@@ -47,7 +47,7 @@ describe('UserOrdersPage', () => {
       confirmOrderDelivered: vi.fn(),
       confirmingDelivery: false,
       refetch: vi.fn(),
-    } as ReturnType<typeof useOrders>);
+    } as unknown as ReturnType<typeof useOrders>);
 
     render(<UserOrdersPage />);
 
@@ -73,7 +73,7 @@ describe('UserOrdersPage', () => {
       confirmOrderDelivered: vi.fn(),
       confirmingDelivery: false,
       refetch: vi.fn(),
-    } as ReturnType<typeof useOrders>);
+    } as unknown as ReturnType<typeof useOrders>);
 
     render(<UserOrdersPage />);
 
@@ -98,7 +98,7 @@ describe('UserOrdersPage', () => {
       confirmOrderDelivered: vi.fn(),
       confirmingDelivery: false,
       refetch: vi.fn(),
-    } as ReturnType<typeof useOrders>);
+    } as unknown as ReturnType<typeof useOrders>);
 
     render(<UserOrdersPage />);
 
@@ -115,7 +115,7 @@ describe('UserOrdersPage', () => {
       confirmOrderDelivered: vi.fn(),
       confirmingDelivery: false,
       refetch: vi.fn(),
-    } as ReturnType<typeof useOrders>);
+    } as unknown as ReturnType<typeof useOrders>);
 
     render(<UserOrdersPage />);
 

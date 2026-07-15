@@ -29,8 +29,7 @@ function StoreLogo({
   return (
     <div
       className={cn(
-        'relative shrink-0 overflow-hidden rounded-full border-4 border-sop-base-white bg-sop-primary-100 shadow-[0_8px_24px_rgba(15,23,42,0.12)]',
-        'h-20 w-20 md:h-24 md:w-24',
+        'relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-sop-neutral-grayalpha-200 bg-sop-neutral-gray-500',
         className,
       )}
       data-testid="seller-heading-logo"
@@ -40,12 +39,12 @@ function StoreLogo({
           src={logoUrl}
           alt={name}
           fill
-          sizes="96px"
+          sizes="48px"
           className="object-cover"
           onError={() => setLogoError(true)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center sop-headline-sm-medium text-sop-primary-600">
+        <div className="flex h-full w-full items-center justify-center sop-body-xs-regular text-sop-neutral-gray-400">
           {getStoreInitial(name)}
         </div>
       )}
@@ -59,11 +58,11 @@ export function SellerHeading({ store }: SellerHeadingProps) {
 
   return (
     <div
-      className="overflow-hidden rounded-sop-16 border border-sop-neutral-grayalpha-200 bg-sop-base-white shadow-sm"
+      className="overflow-hidden rounded-sop-16 border border-sop-neutral-grayalpha-200 bg-sop-base-white"
       data-testid="seller-heading"
     >
-      <div className="relative h-32 w-full md:h-44">
-        {showBannerImage && store.bannerUrl ? (
+      {showBannerImage && store.bannerUrl ? (
+        <div className="relative h-32 w-full md:h-40">
           <Image
             src={store.bannerUrl}
             alt={`แบนเนอร์ ${store.name}`}
@@ -74,33 +73,21 @@ export function SellerHeading({ store }: SellerHeadingProps) {
             data-testid="seller-heading-banner"
             onError={() => setBannerError(true)}
           />
-        ) : (
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-br from-sop-primary-200 via-sop-primary-50 to-sop-base-white"
-            data-testid="seller-heading-banner-fallback"
-          />
-        )}
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-gradient-to-t from-sop-neutral-gray-200/25 via-transparent to-transparent"
-        />
-      </div>
-
-      <div className="relative px-4 pb-5 md:px-6 md:pb-6">
-        <div className="-mt-10 flex flex-col gap-3 md:-mt-12 md:flex-row md:items-end md:gap-5">
-          <StoreLogo logoUrl={store.logoUrl} name={store.name} />
-          <div className="min-w-0 flex-1 md:pb-1">
-            <h1 className="sop-headline-sm-medium md:sop-headline-md-medium text-sop-neutral-gray-200">
-              {store.name}
-            </h1>
-            {store.description ? (
-              <p className="mt-2 whitespace-pre-line sop-body-sm-regular text-sop-neutral-gray-400 md:mt-1 md:line-clamp-3">
-                {store.description}
-              </p>
-            ) : null}
-          </div>
         </div>
+      ) : null}
+
+      <div className="flex flex-col gap-4 p-4 md:p-5">
+        <div className="flex min-w-0 items-center gap-3 md:gap-4">
+          <StoreLogo logoUrl={store.logoUrl} name={store.name} />
+          <h1 className="min-w-0 truncate sop-headline-sm-regular md:sop-headline-md-regular text-sop-neutral-gray-300">
+            {store.name}
+          </h1>
+        </div>
+        {store.description ? (
+          <p className="whitespace-pre-line sop-body-md-regular text-sop-neutral-gray-300">
+            {store.description}
+          </p>
+        ) : null}
       </div>
     </div>
   );

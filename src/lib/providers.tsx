@@ -13,7 +13,9 @@ import { CheckoutProvider } from '@/lib/providers/CheckoutProvider';
 const ROUTE_LOADING_DELAY_MS = 0;
 
 function RouteLoadingPreviewInner() {
-  const [visible, setVisible] = useState(true);
+  // Start hidden: this remounts after pathname already changed, so showing
+  // GlobalLoadingStage here only flashes a full-screen overlay post-navigation.
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setVisible(false), ROUTE_LOADING_DELAY_MS);

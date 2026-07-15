@@ -104,7 +104,14 @@ describe('buildProductJsonLd', () => {
     const productWithRelativeImage = {
       ...sampleProductDetail,
       thumbnailUrl: '/images/dog-food.jpg',
-      images: [{ imageUrl: '/images/dog-food-alt.jpg' }],
+      images: [
+        {
+          id: 'img-alt-1',
+          imageUrl: '/images/dog-food-alt.jpg',
+          isThumbnail: false,
+          sortOrder: 1,
+        },
+      ],
     };
     const jsonLd = buildProductJsonLd(productWithRelativeImage, pageUrl);
 

@@ -23,7 +23,7 @@ let pathname = '/';
 let searchParams = new URLSearchParams();
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, prefetch: vi.fn() }),
   usePathname: () => pathname,
   useSearchParams: () => searchParams,
 }));

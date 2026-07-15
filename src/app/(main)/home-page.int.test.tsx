@@ -4,6 +4,10 @@ import { HomeCategories } from '@/components/sections/HomeCategories';
 import { HomeRecommendedProductSection } from '@/components/sections/HomeRecommendedProductSection';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
+}));
+
 vi.mock('next/image', () => ({
   default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
     <img src={src} alt={alt} {...props} />

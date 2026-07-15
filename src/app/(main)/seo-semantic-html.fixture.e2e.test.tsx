@@ -28,7 +28,7 @@ const push = vi.fn();
 let pathname = '/';
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, prefetch: vi.fn() }),
   usePathname: () => pathname,
   useSearchParams: () => new URLSearchParams(),
   notFound: vi.fn(),

@@ -37,6 +37,7 @@ describe('Navbar', () => {
       pendingDeletion: false,
       sendOtp: vi.fn(),
       verifyOtp: vi.fn(),
+      changeCustomerPhone: vi.fn(),
       reactivateAccount: vi.fn(),
       logout: vi.fn(),
     });
@@ -62,6 +63,7 @@ describe('Navbar', () => {
       updateItem: vi.fn(),
       changeItemVariant: vi.fn(),
       removeItem: vi.fn(),
+      pruneDeselectedIds: vi.fn(),
       refetch: vi.fn(),
     });
   });

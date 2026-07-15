@@ -140,7 +140,7 @@ export default function ProductDetailsPage({ productId, initialProduct }: Produc
       </div>
 
       <article aria-labelledby="product-title">
-        <div className="-mx-4 grid grid-cols-1 gap-4 rounded-none bg-sop-base-white px-0 pb-4 md:mx-0 md:px-0 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-[10px] lg:py-5">
+        <div className="-mx-4 grid grid-cols-1 gap-4 rounded-none bg-sop-base-white px-4 pb-4 md:mx-0 md:px-4 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-6 lg:py-5">
           <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
           <ProductDetails
             product={product}

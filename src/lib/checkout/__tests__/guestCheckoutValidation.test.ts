@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOG_PRODUCT_ID, CATALOG_STORE_ID } from '@/test/mocks/fixtures/catalog';
 import { sampleCart, sampleCartItem } from '@/test/mocks/fixtures/cart';
-import type { CartType } from '@/lib/graphql/generated/graphql';
+import type { CartQuery } from '@/lib/graphql/generated/graphql';
 import {
   getCustomerContactPrefill,
   toCreateOrderInput,
@@ -147,7 +147,7 @@ describe('toCreateOrderInput', () => {
     const secondStoreId = 'd3c4b5a6-7890-4abc-def1-234567890abc';
     const secondShippingOptionId = 'e4d5c6b7-8901-4bcd-ef12-345678901bcd';
 
-    const multiStoreCart: CartType = {
+    const multiStoreCart: CartQuery['cart'] = {
       ...sampleCart,
       items: [
         sampleCartItem,

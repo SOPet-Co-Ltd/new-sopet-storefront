@@ -1,4 +1,4 @@
-import { act } from 'react';
+import { act, type ComponentProps } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing/react';
@@ -41,7 +41,7 @@ async function waitFor(predicate: () => boolean, timeoutMs = 2_000): Promise<voi
 
 function renderAuthProbe(
   onContext: (context: AuthContextValue) => void,
-  mocks: Parameters<typeof MockedProvider>[0]['mocks'] = [],
+  mocks: ComponentProps<typeof MockedProvider>['mocks'] = [],
 ): { container: HTMLDivElement; root: Root } {
   const container = document.createElement('div');
   document.body.appendChild(container);

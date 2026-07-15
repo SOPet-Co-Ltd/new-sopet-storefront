@@ -24,7 +24,7 @@ describe('UserAddressesPage', () => {
       loading: false,
       deleteAddress: vi.fn(),
       setDefaultAddress: vi.fn(),
-    } as ReturnType<typeof useAddresses>);
+    } as unknown as ReturnType<typeof useAddresses>);
 
     render(<UserAddressesPage />);
 
@@ -38,7 +38,7 @@ describe('UserAddressesPage', () => {
       loading: true,
       deleteAddress: vi.fn(),
       setDefaultAddress: vi.fn(),
-    } as ReturnType<typeof useAddresses>);
+    } as unknown as ReturnType<typeof useAddresses>);
 
     render(<UserAddressesPage />);
 
@@ -52,7 +52,7 @@ describe('UserAddressesPage', () => {
       loading: false,
       deleteAddress: vi.fn(),
       setDefaultAddress: vi.fn(),
-    } as ReturnType<typeof useAddresses>);
+    } as unknown as ReturnType<typeof useAddresses>);
 
     render(<UserAddressesPage />);
 
@@ -75,7 +75,7 @@ describe('UserAddressesPage', () => {
       loading: false,
       deleteAddress,
       setDefaultAddress: vi.fn(),
-    } as ReturnType<typeof useAddresses>);
+    } as unknown as ReturnType<typeof useAddresses>);
 
     render(<UserAddressesPage />);
 

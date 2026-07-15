@@ -14,12 +14,14 @@ describe('Payment3dsAutoRedirect', () => {
   const navigate = vi.fn();
 
   beforeEach(() => {
+    vi.restoreAllMocks();
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
     navigate.mockReset();
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
   });

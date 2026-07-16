@@ -1186,6 +1186,7 @@ export type StorePromotionFieldsFragment = {
   expiresAt: string | null;
   scope: string;
   storeId: string | null;
+  conditions: string | null;
 };
 
 export type ActiveStorePromotionsQueryVariables = Exact<{
@@ -1205,6 +1206,7 @@ export type ActiveStorePromotionsQuery = {
     expiresAt: string | null;
     scope: string;
     storeId: string | null;
+    conditions: string | null;
   }>;
 };
 
@@ -1223,6 +1225,7 @@ export type ActivePlatformPromotionsQuery = {
     expiresAt: string | null;
     scope: string;
     storeId: string | null;
+    conditions: string | null;
   }>;
 };
 
@@ -2186,6 +2189,7 @@ export const StorePromotionFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'expiresAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'scope' } },
           { kind: 'Field', name: { kind: 'Name', value: 'storeId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'conditions' } },
         ],
       },
     },

@@ -5,6 +5,7 @@ import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import { Modal } from '@/components/atoms/Modal';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
 import {
@@ -62,6 +63,8 @@ export function CheckoutPlatformPromotionModal({
   onConfirm,
 }: CheckoutPlatformPromotionModalProps) {
   const isMobile = useIsMobile(768);
+  const { isAuthenticated } = useAuth();
+  const isGuest = !isAuthenticated;
   const { promotions, loading, error } = useActivePlatformPromotions(isOpen);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
 
@@ -92,8 +95,8 @@ export function CheckoutPlatformPromotionModal({
   const catalogPromotions = allPromotions as StorePromotion[];
 
   const { available, unavailable } = useMemo(
-    () => categorizeStorePromotions(catalogPromotions, subtotal),
-    [catalogPromotions, subtotal],
+    () => categorizeStorePromotions(catalogPromotions, subtotal, { isGuest }),
+    [catalogPromotions, isGuest, subtotal],
   );
 
   const selectedPromotion = useMemo(() => {
@@ -168,6 +171,7 @@ export function CheckoutPlatformPromotionModal({
             expiresAt: null,
             scope: 'platform',
             storeId: null,
+            conditions: null,
           },
         ]);
         setSelection({ type: 'promo', code: result.code });
@@ -349,6 +353,7 @@ export function CheckoutPlatformPromotionModal({
                     key={promotion.id}
                     promotion={promotion}
                     storeSubtotal={subtotal}
+                    isGuest={isGuest}
                   />
                 ))}
               </div>

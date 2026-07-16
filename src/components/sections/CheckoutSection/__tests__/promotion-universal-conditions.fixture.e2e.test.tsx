@@ -77,7 +77,12 @@
 // - Soft INSUFFICIENT_QTY / MISSING_LINES → BXGY_QTY customer copy; no hard invalid-code toast
 // - validatePromotion request includes cart lines (productId, quantity, unitPrice)
 
-import { describe, expect, it } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CheckoutPlatformPromotionModal } from '@/components/sections/CheckoutPromotionSection/CheckoutPlatformPromotionModal';
+import { CheckoutStorePromotionModal } from '@/components/sections/CheckoutSection/CheckoutStorePromotionModal';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import {
   AUTH_MOCK_USAGE,
   BXGY_PRODUCT_ID,
@@ -96,11 +101,54 @@ import {
   validatePromotionBxGyEligible,
   validatePromotionBxGyInsufficientQty,
 } from '@/test/mocks/fixtures/promotion-universal-conditions';
+import { CHECKOUT_STORE_ID } from '@/test/mocks/fixtures/checkout';
 import {
   createBxGyJourneyPromotionHandlers,
   guestJourneyPromotionHandlers,
   promotionUniversalConditionsHandlers,
 } from '@/test/mocks/promotion-universal-conditions.handlers';
+import { server } from '@/test/mocks/server';
+
+vi.mock('@/lib/hooks/useAuth', () => ({
+  useAuth: vi.fn(),
+}));
+
+vi.mock('@/hooks/useIsMobile', () => ({
+  useIsMobile: () => false,
+}));
+
+import { useAuth } from '@/lib/hooks/useAuth';
+
+const mockedUseAuth = vi.mocked(useAuth);
+
+const ApolloTestWrapper = createApolloTestWrapper();
+
+function mockGuestAuth() {
+  mockedUseAuth.mockReturnValue({
+    customer: null,
+    isAuthenticated: AUTH_MOCK_USAGE.guest.useAuthReturn.isAuthenticated,
+    isLoading: false,
+    pendingDeletion: false,
+    sendOtp: vi.fn(),
+    verifyOtp: vi.fn(),
+    changeCustomerPhone: vi.fn(),
+    reactivateAccount: vi.fn(),
+    logout: vi.fn(),
+  });
+}
+
+function assertGuestUnavailableCard(container: HTMLElement) {
+  expect(within(container).getByTestId('unavailable-promotion-warning')).toHaveTextContent(
+    SOFT_REASON_FIXTURE_LABELS.GUEST_REQUIRED,
+  );
+  expect(within(container).queryByText(/PAID|PROCESSING/i)).not.toBeInTheDocument();
+
+  const loginCta = within(container).getByRole('link', {
+    name: SOFT_REASON_FIXTURE_LABELS.GUEST_CTA,
+  });
+  expect(loginCta).toHaveAttribute('href', '/login');
+  expect(loginCta).toHaveAttribute('data-testid', 'unavailable-promotion-login-cta');
+}
 
 describe('Promotion universal conditions Phase 0 fixtures', () => {
   it('returns conditions JSON with newCustomer keys for guest journey promos', () => {
@@ -152,5 +200,73 @@ describe('Promotion universal conditions Phase 0 fixtures', () => {
     expect(createBxGyJourneyPromotionHandlers('bxgy-eligible').length).toBeGreaterThan(0);
     expect(promotionUniversalConditionsHandlers).toBe(guestJourneyPromotionHandlers);
     expect(AUTH_MOCK_USAGE.loggedIn.useAuthReturn.isAuthenticated).toBe(true);
+  });
+});
+
+describe('Promotion universal conditions Journey 1 — guest soft messaging', () => {
+  beforeEach(() => {
+    mockGuestAuth();
+    server.use(...guestJourneyPromotionHandlers);
+  });
+
+  it('shows conditioned store promo as unavailable with GUEST_REQUIRED copy and login CTA', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+
+    render(
+      <ApolloTestWrapper>
+        <CheckoutStorePromotionModal
+          isOpen
+          storeId={CHECKOUT_STORE_ID}
+          storeName="ร้านทดสอบ"
+          storeSubtotal={500}
+          appliedPromotion={null}
+          onClose={vi.fn()}
+          onConfirm={onConfirm}
+        />
+      </ApolloTestWrapper>,
+    );
+
+    const modal = await screen.findByTestId('checkout-store-promotion-modal');
+
+    await waitFor(() => {
+      expect(within(modal).getByText('ใช้ไม่ได้ตอนนี้ (1)')).toBeInTheDocument();
+    });
+
+    expect(within(modal).queryByText('ใช้ได้ตอนนี้')).not.toBeInTheDocument();
+    expect(within(modal).queryByText(guestNewCustomerStorePromotion.name)).not.toBeInTheDocument();
+
+    assertGuestUnavailableCard(modal);
+
+    expect(within(modal).queryByRole('button', { name: /ส่วนลด 10%/ })).not.toBeInTheDocument();
+
+    await user.click(within(modal).getByTestId('unavailable-promotion-login-cta'));
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('shows conditioned platform promo as unavailable with the same shared GUEST_REQUIRED UX', async () => {
+    const onConfirm = vi.fn();
+
+    render(
+      <ApolloTestWrapper>
+        <CheckoutPlatformPromotionModal
+          isOpen
+          subtotal={500}
+          appliedPromotion={null}
+          onClose={vi.fn()}
+          onConfirm={onConfirm}
+        />
+      </ApolloTestWrapper>,
+    );
+
+    const modal = await screen.findByTestId('checkout-platform-promotion-modal');
+
+    await waitFor(() => {
+      expect(within(modal).getByText('ใช้ไม่ได้ตอนนี้ (1)')).toBeInTheDocument();
+    });
+
+    expect(within(modal).queryByText('ใช้ได้ตอนนี้')).not.toBeInTheDocument();
+    assertGuestUnavailableCard(modal);
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 });

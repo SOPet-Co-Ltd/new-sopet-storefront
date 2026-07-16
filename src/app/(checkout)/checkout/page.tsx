@@ -7,6 +7,7 @@ import { CheckoutMobileBottomBar } from '@/components/molecules/CheckoutMobileBo
 import { CheckoutPaymentSelection } from '@/components/molecules/CheckoutPaymentSelection/CheckoutPaymentSelection';
 import { CheckoutSummarySection } from '@/components/molecules/CheckoutSummarySection/CheckoutSummarySection';
 import { CheckoutPromotionSection } from '@/components/sections/CheckoutPromotionSection/CheckoutPromotionSection';
+import { CheckoutAutoApplyController } from '@/components/sections/CheckoutSection/CheckoutAutoApplyController';
 import { CheckoutSection } from '@/components/sections/CheckoutSection/CheckoutSection';
 import type { AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import type {
@@ -145,6 +146,7 @@ export default function CheckoutPage() {
   return (
     <div data-testid="checkout-page">
       <CheckoutPageReset />
+      <CheckoutAutoApplyController />
       <CheckoutErrorToast />
       <div className="lg:px-sop-80px flex flex-col px-0 lg:pb-sop-80px lg:pt-sop-20px">
         <div className="flex w-full flex-col gap-sop-16px xl:flex-row xl:items-start xl:gap-sop-20px">

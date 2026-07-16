@@ -3,15 +3,19 @@
 // UI Spec: promotion-auto-apply-ui-spec.md
 // PRD: promotion-auto-apply-prd.md (AC-008–012, AC-014–017, AC-020–022; Rules AA2, AA3, C1, C2)
 // ADR: ADR-0008-promotion-auto-apply-checkout.md
-// Promoted from: promotion-auto-apply.int.skeleton.ts (cases 1–2; case 3 deferred to Phase 3)
+// Promoted from: promotion-auto-apply.int.skeleton.ts (cases 1–3)
 //
 // Test Boundaries compliance (Frontend Design Doc § Test Boundaries):
-// Mock: Apollo validatePromotion / active* via injectable fn (cases 1–2); MSW for case 3 only
+// Mock: Apollo validatePromotion / active* via injectable fn (cases 1–2); injectable
+// fetchStorePromotions for case 3 (real CheckoutProvider dual-lane writes)
 // @real-dependency: sessionStorage (case 2 — real API; stub throw for Map fallback);
+// CheckoutProvider (case 3 — real provider for dual-lane writes)
 // Ranking helper / once-gate util: real pure modules
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { render, waitFor } from '@testing-library/react';
+import { createElement, useEffect, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   hasAutoApplyAttempted,
@@ -23,9 +27,15 @@ import {
   type AutoApplyCandidate,
   type ScoredAutoApplyCandidate,
 } from '@/lib/checkout/rankAutoApplyPromotions';
+import { runCheckoutAutoApply } from '@/lib/checkout/runCheckoutAutoApply';
 import * as storePromotionUtils from '@/lib/checkout/storePromotionUtils';
 import { SoftPromotionIneligibilityError } from '@/lib/checkout/validateCheckoutPromotion';
 import type { PromotionValidation } from '@/lib/hooks/useCheckout';
+import {
+  CheckoutProvider,
+  useCheckout,
+  type CheckoutContextValue,
+} from '@/lib/providers/CheckoutProvider';
 import { samplePromotionValidation } from '@/test/mocks/fixtures/checkout';
 
 const AUTO_APPLY_ATTEMPTED_KEY = 'sopet.checkout.autoApplyAttempted';
@@ -34,8 +44,8 @@ type ValidateFn = (candidate: AutoApplyCandidate) => Promise<PromotionValidation
 
 /**
  * Int-local score+rank pipeline (Design Doc Ranking Algorithm steps 1–4).
- * Production `runCheckoutAutoApply` lands in Phase 3 — this exercises the same
- * boundary: injectable validate → soft/hard skip → pure ranker.
+ * Exercises the same boundary as production: injectable validate → soft/hard
+ * skip → pure ranker (production orchestration is Integration 3 + runner unit).
  */
 async function scoreAndRankLane(
   candidates: AutoApplyCandidate[],
@@ -318,9 +328,275 @@ describe('promotion-auto-apply integration', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Integration 3 of 3 — deferred until Phase 3 (runCheckoutAutoApply)
+  // Integration 3 of 3 — C1 empty-lane snapshot + dual-lane write into CheckoutProvider
   // ---------------------------------------------------------------------------
-  it.todo(
-    'Integration 3 — C1 empty-lane snapshot + dual-lane write into CheckoutProvider (Phase 3)',
-  );
+  describe('Integration 3 — C1 + dual-lane CheckoutProvider + prefetch', () => {
+    function CheckoutStateProbe({
+      onContext,
+    }: {
+      onContext: (context: CheckoutContextValue) => void;
+    }) {
+      const context = useCheckout();
+      useEffect(() => {
+        onContext(context);
+      }, [context, onContext]);
+      return null;
+    }
+
+    function renderWithCheckout(onContext: (context: CheckoutContextValue) => void): void {
+      function Wrapper({ children }: { children: ReactNode }) {
+        return createElement(CheckoutProvider, null, children);
+      }
+      render(createElement(Wrapper, null, createElement(CheckoutStateProbe, { onContext })));
+    }
+
+    it('preserves prefilled lanes, fills empty store independently, prefetches all storeIds (AC-012, AC-020)', async () => {
+      let checkout: CheckoutContextValue | undefined;
+      renderWithCheckout((ctx) => {
+        checkout = ctx;
+      });
+
+      await waitFor(() => {
+        expect(checkout).toBeDefined();
+      });
+
+      checkout!.setPromotion('USER_PLAT');
+      checkout!.setPromotionName('User platform');
+      checkout!.setPromotionDiscount(5);
+      checkout!.setStorePromotion('store-a', {
+        code: 'USER_STORE_A',
+        name: 'User store A',
+        discountAmount: 15,
+      });
+
+      await waitFor(() => {
+        expect(checkout!.promotionCode).toBe('USER_PLAT');
+        expect(checkout!.storePromotionsByStoreId['store-a']?.code).toBe('USER_STORE_A');
+      });
+
+      const queriedStoreIds: string[] = [];
+      const fetchStorePromotions = vi.fn(async (storeId: string) => {
+        queriedStoreIds.push(storeId);
+        if (storeId === 'store-a') {
+          return [
+            {
+              id: 'sa',
+              code: 'AUTO_A',
+              name: 'Auto A',
+              autoApply: true,
+              priority: 1,
+              type: 'fixed_amount',
+              conditions: null,
+            },
+          ];
+        }
+        return [
+          {
+            id: 'sb',
+            code: 'AUTO_B',
+            name: 'Auto B',
+            autoApply: true,
+            priority: 1,
+            type: 'fixed_amount',
+            conditions: null,
+          },
+        ];
+      });
+
+      const validatePromotion = vi.fn(async (input: { code: string }) =>
+        validation(40, input.code),
+      );
+
+      const result = await runCheckoutAutoApply({
+        promotionCode: checkout!.promotionCode,
+        storePromotionsByStoreId: checkout!.storePromotionsByStoreId,
+        storeIds: ['store-a', 'store-b'],
+        platformSubtotal: 500,
+        storeSubtotals: { 'store-a': 200, 'store-b': 300 },
+        platformPromotions: [
+          {
+            id: 'p',
+            code: 'AUTO_PLAT',
+            name: 'Auto platform',
+            autoApply: true,
+            priority: 1,
+            type: 'fixed_amount',
+            conditions: null,
+          },
+        ],
+        fetchStorePromotions,
+        validatePromotion,
+        setPromotion: checkout!.setPromotion,
+        setPromotionName: checkout!.setPromotionName,
+        setPromotionDiscount: checkout!.setPromotionDiscount,
+        setPromotionFreeUnits: checkout!.setPromotionFreeUnits,
+        setPromotionProductId: checkout!.setPromotionProductId,
+        setStorePromotion: checkout!.setStorePromotion,
+      });
+
+      expect(result.settled).toBe(true);
+      expect(queriedStoreIds.sort()).toEqual(['store-a', 'store-b']);
+      expect(fetchStorePromotions).toHaveBeenCalledTimes(2);
+
+      await waitFor(() => {
+        // C1: prefilled unchanged
+        expect(checkout!.promotionCode).toBe('USER_PLAT');
+        expect(checkout!.promotionDiscount).toBe(5);
+        expect(checkout!.storePromotionsByStoreId['store-a']?.code).toBe('USER_STORE_A');
+        // Empty store-b filled independently
+        expect(checkout!.storePromotionsByStoreId['store-b']?.code).toBe('AUTO_B');
+        expect(checkout!.storePromotionsByStoreId['store-b']?.discountAmount).toBe(40);
+      });
+
+      // Prefilled platform/store-a candidates must not be validated for overwrite
+      const validatedCodes = validatePromotion.mock.calls.map((c) => c[0].code);
+      expect(validatedCodes).not.toContain('AUTO_PLAT');
+      expect(validatedCodes).not.toContain('AUTO_A');
+      expect(validatedCodes).toContain('AUTO_B');
+    });
+
+    it('chooses Store A and Store B winners independently when both lanes empty (AC-012)', async () => {
+      let checkout: CheckoutContextValue | undefined;
+      renderWithCheckout((ctx) => {
+        checkout = ctx;
+      });
+
+      await waitFor(() => {
+        expect(checkout).toBeDefined();
+      });
+
+      const queriedStoreIds: string[] = [];
+      const fetchStorePromotions = vi.fn(async (storeId: string) => {
+        queriedStoreIds.push(storeId);
+        if (storeId === 'store-a') {
+          return [
+            {
+              id: 'sa',
+              code: 'AUTO_A',
+              name: 'Auto A',
+              autoApply: true,
+              priority: 1,
+              type: 'fixed_amount',
+              conditions: null,
+            },
+          ];
+        }
+        return [
+          {
+            id: 'sb',
+            code: 'AUTO_B',
+            name: 'Auto B',
+            autoApply: true,
+            priority: 1,
+            type: 'fixed_amount',
+            conditions: null,
+          },
+        ];
+      });
+
+      const validatePromotion = vi.fn(async (input: { code: string }) => {
+        if (input.code === 'AUTO_A') return validation(30, 'AUTO_A');
+        if (input.code === 'AUTO_B') return validation(40, 'AUTO_B');
+        return validation(50, input.code);
+      });
+
+      const result = await runCheckoutAutoApply({
+        promotionCode: checkout!.promotionCode,
+        storePromotionsByStoreId: checkout!.storePromotionsByStoreId,
+        storeIds: ['store-a', 'store-b'],
+        platformSubtotal: 500,
+        storeSubtotals: { 'store-a': 200, 'store-b': 300 },
+        platformPromotions: [
+          {
+            id: 'p',
+            code: 'AUTO_PLAT',
+            name: 'Auto platform',
+            autoApply: true,
+            priority: 1,
+            type: 'fixed_amount',
+            conditions: null,
+          },
+        ],
+        fetchStorePromotions,
+        validatePromotion,
+        setPromotion: checkout!.setPromotion,
+        setPromotionName: checkout!.setPromotionName,
+        setPromotionDiscount: checkout!.setPromotionDiscount,
+        setPromotionFreeUnits: checkout!.setPromotionFreeUnits,
+        setPromotionProductId: checkout!.setPromotionProductId,
+        setStorePromotion: checkout!.setStorePromotion,
+      });
+
+      expect(result.settled).toBe(true);
+      expect(queriedStoreIds.sort()).toEqual(['store-a', 'store-b']);
+      expect(fetchStorePromotions).toHaveBeenCalledTimes(2);
+
+      await waitFor(() => {
+        expect(checkout!.promotionCode).toBe('AUTO_PLAT');
+        expect(checkout!.storePromotionsByStoreId['store-a']?.code).toBe('AUTO_A');
+        expect(checkout!.storePromotionsByStoreId['store-a']?.discountAmount).toBe(30);
+        expect(checkout!.storePromotionsByStoreId['store-b']?.code).toBe('AUTO_B');
+        expect(checkout!.storePromotionsByStoreId['store-b']?.discountAmount).toBe(40);
+      });
+
+      // AC-012: independent winners — not a shared single code across stores
+      expect(checkout!.storePromotionsByStoreId['store-a']?.code).not.toBe(
+        checkout!.storePromotionsByStoreId['store-b']?.code,
+      );
+
+      const validatedCodes = validatePromotion.mock.calls.map((c) => c[0].code).sort();
+      expect(validatedCodes).toEqual(['AUTO_A', 'AUTO_B', 'AUTO_PLAT']);
+    });
+
+    it('applies nothing for a lane with zero autoApply candidates (AC-022)', async () => {
+      let checkout: CheckoutContextValue | undefined;
+      renderWithCheckout((ctx) => {
+        checkout = ctx;
+      });
+
+      await waitFor(() => {
+        expect(checkout).toBeDefined();
+      });
+
+      await runCheckoutAutoApply({
+        promotionCode: checkout!.promotionCode,
+        storePromotionsByStoreId: checkout!.storePromotionsByStoreId,
+        storeIds: ['store-a'],
+        platformSubtotal: 500,
+        storeSubtotals: { 'store-a': 200 },
+        platformPromotions: [
+          {
+            id: 'manual',
+            code: 'MANUAL',
+            autoApply: false,
+            priority: 99,
+            type: 'fixed_amount',
+            conditions: null,
+          },
+        ],
+        fetchStorePromotions: async () => [
+          {
+            id: 's',
+            code: 'MANUAL_S',
+            autoApply: false,
+            priority: 1,
+            type: 'fixed_amount',
+            conditions: null,
+          },
+        ],
+        validatePromotion: vi.fn(async () => validation(100, 'SHOULD_NOT')),
+        setPromotion: checkout!.setPromotion,
+        setPromotionName: checkout!.setPromotionName,
+        setPromotionDiscount: checkout!.setPromotionDiscount,
+        setPromotionFreeUnits: checkout!.setPromotionFreeUnits,
+        setPromotionProductId: checkout!.setPromotionProductId,
+        setStorePromotion: checkout!.setStorePromotion,
+      });
+
+      await waitFor(() => {
+        expect(checkout!.promotionCode).toBeNull();
+        expect(checkout!.storePromotionsByStoreId['store-a']).toBeUndefined();
+      });
+    });
+  });
 });

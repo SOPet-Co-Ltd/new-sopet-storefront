@@ -26,3 +26,17 @@ query ActivePlatformPromotions {
     ...StorePromotionFields
   }
 }
+
+query ValidatePromotions($input: ValidatePromotionsInput!) {
+  validatePromotions(input: $input) {
+    items {
+      id
+      code
+      name
+      eligible
+      ineligibilityReason
+      discountAmount
+      freeUnits
+    }
+  }
+}

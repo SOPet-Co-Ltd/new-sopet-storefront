@@ -22,10 +22,14 @@ import {
   validatePromotionBxGyInsufficientQty,
   validatePromotionGuestRequired,
   validatePromotionLoggedInOnlyGuestRequired,
+  validatePromotionsBatchOrderHistorySoft,
+  validatePromotionsBatchSuccess,
 } from './fixtures/promotion-universal-conditions';
 
 export type ValidatePromotionStubMode =
   'bxgy-eligible' | 'bxgy-insufficient' | 'guest-required' | 'logged-in-only-guest-required';
+
+export type ValidatePromotionsStubMode = 'success' | 'order-history' | 'transport-error';
 
 function resolveValidatePromotion(mode: ValidatePromotionStubMode) {
   switch (mode) {
@@ -40,6 +44,55 @@ function resolveValidatePromotion(mode: ValidatePromotionStubMode) {
       return validatePromotionBxGyEligible;
   }
 }
+
+function resolveValidatePromotions(mode: Exclude<ValidatePromotionsStubMode, 'transport-error'>) {
+  switch (mode) {
+    case 'order-history':
+      return validatePromotionsBatchOrderHistorySoft;
+    case 'success':
+    default:
+      return validatePromotionsBatchSuccess;
+  }
+}
+
+/** Decision 6 list-time batch — success / ORDER_HISTORY soft / transport error. */
+export function createValidatePromotionsHandlers(mode: ValidatePromotionsStubMode = 'success') {
+  if (mode === 'transport-error') {
+    return [
+      graphql.query('ValidatePromotions', () => {
+        return HttpResponse.json(
+          {
+            errors: [
+              {
+                message: 'Network error while validating promotions',
+                extensions: { code: 'INTERNAL_SERVER_ERROR' },
+              },
+            ],
+          },
+          { status: 500 },
+        );
+      }),
+    ];
+  }
+
+  return [
+    graphql.query('ValidatePromotions', ({ variables }) => {
+      const input = variables?.input as
+        { promotions?: Array<{ id?: string; code?: string }> } | undefined;
+      // Roundtrip: callers assert promotions[] length; handler echoes stub items.
+      void input?.promotions;
+      return HttpResponse.json({
+        data: { validatePromotions: resolveValidatePromotions(mode) },
+      });
+    }),
+  ];
+}
+
+export const validatePromotionsSuccessHandlers = createValidatePromotionsHandlers('success');
+export const validatePromotionsOrderHistoryHandlers =
+  createValidatePromotionsHandlers('order-history');
+export const validatePromotionsTransportErrorHandlers =
+  createValidatePromotionsHandlers('transport-error');
 
 /** Journey 1: active lists return newCustomer-conditioned promos only. */
 export const guestJourneyPromotionHandlers = [

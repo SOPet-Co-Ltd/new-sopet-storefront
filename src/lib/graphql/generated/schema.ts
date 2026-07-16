@@ -1674,6 +1674,17 @@ export type ProductVariantType = {
   stockQuantity: Scalars['Int']['output'];
 };
 
+export type PromotionEligibilityResult = {
+  __typename?: 'PromotionEligibilityResult';
+  code: Scalars['String']['output'];
+  discountAmount?: Maybe<Scalars['Float']['output']>;
+  eligible: Scalars['Boolean']['output'];
+  freeUnits?: Maybe<Scalars['Int']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  ineligibilityReason?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+};
+
 export type PromotionType = {
   __typename?: 'PromotionType';
   autoApply: Scalars['Boolean']['output'];
@@ -1822,6 +1833,7 @@ export type Query = {
   topProducts: Array<TopProductType>;
   unreadNotificationsCount: Scalars['Int']['output'];
   validatePromotion: PromotionValidationResult;
+  validatePromotions: ValidatePromotionsResult;
   vendorCustomer: VendorCustomerType;
   vendorCustomerDetail: VendorCustomerDetailType;
   vendorCustomers: VendorCustomerConnection;
@@ -2119,6 +2131,10 @@ export type QueryTopProductsArgs = {
 
 export type QueryValidatePromotionArgs = {
   input: ValidatePromotionInput;
+};
+
+export type QueryValidatePromotionsArgs = {
+  input: ValidatePromotionsInput;
 };
 
 export type QueryVendorCustomerArgs = {
@@ -2887,6 +2903,23 @@ export type ValidatePromotionLineInput = {
   storeId?: InputMaybe<Scalars['String']['input']>;
   unitPrice: Scalars['Float']['input'];
   variantId?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ValidatePromotionsInput = {
+  lines?: InputMaybe<Array<ValidatePromotionLineInput>>;
+  promotions: Array<ValidatePromotionsTargetInput>;
+  storeId?: InputMaybe<Scalars['String']['input']>;
+  subtotal: Scalars['Float']['input'];
+};
+
+export type ValidatePromotionsResult = {
+  __typename?: 'ValidatePromotionsResult';
+  items: Array<PromotionEligibilityResult>;
+};
+
+export type ValidatePromotionsTargetInput = {
+  code?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['String']['input']>;
 };
 
 export enum VariantRemovalBlockReason {

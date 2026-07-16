@@ -260,6 +260,63 @@ export const validatePromotionLoggedInOnlyGuestRequired = {
   freeUnits: null as number | null,
 };
 
+/**
+ * validatePromotions batch shapes (Decision 6 / list-time).
+ * Soft per-item: eligible=false + ineligibilityReason — no hard GraphQL error.
+ */
+export const validatePromotionsBatchSuccess = {
+  __typename: 'ValidatePromotionsResult' as const,
+  items: [
+    {
+      __typename: 'PromotionEligibilityResult' as const,
+      id: bxgyStorePromotion.id,
+      code: bxgyStorePromotion.code,
+      name: bxgyStorePromotion.name,
+      eligible: true,
+      ineligibilityReason: null as string | null,
+      discountAmount: 200,
+      freeUnits: 1,
+    },
+    {
+      __typename: 'PromotionEligibilityResult' as const,
+      id: fixedAmountClampPromotion.id,
+      code: fixedAmountClampPromotion.code,
+      name: fixedAmountClampPromotion.name,
+      eligible: true,
+      ineligibilityReason: null as string | null,
+      discountAmount: 60,
+      freeUnits: null as number | null,
+    },
+  ],
+};
+
+/** Batch with one ORDER_HISTORY soft item (map → NOT_NEW_CUSTOMER at merge). */
+export const validatePromotionsBatchOrderHistorySoft = {
+  __typename: 'ValidatePromotionsResult' as const,
+  items: [
+    {
+      __typename: 'PromotionEligibilityResult' as const,
+      id: guestNewCustomerStorePromotion.id,
+      code: guestNewCustomerStorePromotion.code,
+      name: guestNewCustomerStorePromotion.name,
+      eligible: true,
+      ineligibilityReason: null as string | null,
+      discountAmount: 50,
+      freeUnits: null as number | null,
+    },
+    {
+      __typename: 'PromotionEligibilityResult' as const,
+      id: guestNewCustomerPlatformPromotion.id,
+      code: guestNewCustomerPlatformPromotion.code,
+      name: guestNewCustomerPlatformPromotion.name,
+      eligible: false,
+      ineligibilityReason: 'ORDER_HISTORY',
+      discountAmount: 0,
+      freeUnits: null as number | null,
+    },
+  ],
+};
+
 /** Cart lines for Journey 2 — Q=3 of product P (Buy2Get1 → freeN=1). */
 export const bxgyCartLines = [
   {

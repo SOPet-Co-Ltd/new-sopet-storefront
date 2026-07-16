@@ -1241,6 +1241,24 @@ export type ActivePlatformPromotionsQuery = {
   }>;
 };
 
+export type ValidatePromotionsQueryVariables = Exact<{
+  input: Types.ValidatePromotionsInput;
+}>;
+
+export type ValidatePromotionsQuery = {
+  validatePromotions: {
+    items: Array<{
+      id: string | null;
+      code: string;
+      name: string | null;
+      eligible: boolean;
+      ineligibilityReason: string | null;
+      discountAmount: number | null;
+      freeUnits: number | null;
+    }>;
+  };
+};
+
 export type RecommendedProductsQueryVariables = Exact<{
   limit?: number | null | undefined;
   sessionId?: string | null | undefined;
@@ -4521,6 +4539,63 @@ export const ActivePlatformPromotionsDocument = {
     },
   ],
 } as unknown as DocumentNode<ActivePlatformPromotionsQuery, ActivePlatformPromotionsQueryVariables>;
+export const ValidatePromotionsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ValidatePromotions' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ValidatePromotionsInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'validatePromotions' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'items' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'code' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'eligible' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'ineligibilityReason' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'discountAmount' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'freeUnits' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ValidatePromotionsQuery, ValidatePromotionsQueryVariables>;
 export const RecommendedProductsDocument = {
   kind: 'Document',
   definitions: [

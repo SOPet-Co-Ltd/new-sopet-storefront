@@ -25,6 +25,7 @@ import { CheckoutPromotionSection } from '@/components/sections/CheckoutPromotio
 import { CheckoutAutoApplyController } from '@/components/sections/CheckoutSection/CheckoutAutoApplyController';
 import { CheckoutStoreActionsRow } from '@/components/sections/CheckoutSection/CheckoutStoreActionsRow';
 import {
+  buildAutoApplyCartFingerprint,
   hasAutoApplyAttempted,
   resetAutoApplyOnceGateMemory,
 } from '@/lib/checkout/autoApplyOnceGate';
@@ -44,6 +45,10 @@ import {
 import { server } from '@/test/mocks/server';
 
 const AUTO_APPLY_KEY = 'sopet.checkout.autoApplyAttempted';
+const CART_FINGERPRINT = buildAutoApplyCartFingerprint([
+  { variantId: 'var-a', quantity: sampleCartItem.quantity },
+  { variantId: 'var-b', quantity: sampleCartItem.quantity },
+]);
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -102,6 +107,7 @@ vi.mock('@/lib/hooks/useShippingOptions', () => ({
 const storeAItem = {
   ...sampleCartItem,
   id: 'cart-item-a',
+  variantId: 'var-a',
   productVariant: {
     ...sampleCartItem.productVariant!,
     id: 'var-a',
@@ -120,6 +126,7 @@ const storeAItem = {
 const storeBItem = {
   ...sampleCartItem,
   id: 'cart-item-b',
+  variantId: 'var-b',
   productVariant: {
     ...sampleCartItem.productVariant!,
     id: 'var-b',
@@ -278,8 +285,8 @@ describe('Promotion auto-apply fixture-e2e', () => {
 
       // Gate only after CheckoutAutoApplyController.finally settles (not harness-owned).
       await waitFor(() => {
-        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe('1');
-        expect(hasAutoApplyAttempted()).toBe(true);
+        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe(CART_FINGERPRINT);
+        expect(hasAutoApplyAttempted(CART_FINGERPRINT)).toBe(true);
       });
 
       expect(
@@ -305,7 +312,7 @@ describe('Promotion auto-apply fixture-e2e', () => {
       render(<AutoApplyCheckoutHarness prefillPlatformCode="USER_KEEP" />);
 
       await waitFor(() => {
-        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe('1');
+        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe(CART_FINGERPRINT);
       });
 
       expect(screen.queryByText(autoApplyPlatformPromotion.name)).not.toBeInTheDocument();
@@ -325,7 +332,7 @@ describe('Promotion auto-apply fixture-e2e', () => {
 
       const { unmount } = render(<AutoApplyCheckoutHarness />);
       await waitFor(() => {
-        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe('1');
+        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe(CART_FINGERPRINT);
         expect(screen.getByTestId('applied-platform-promotion')).toBeInTheDocument();
       });
 
@@ -348,7 +355,7 @@ describe('Promotion auto-apply fixture-e2e', () => {
       );
 
       await waitFor(() => {
-        expect(hasAutoApplyAttempted()).toBe(true);
+        expect(hasAutoApplyAttempted(CART_FINGERPRINT)).toBe(true);
       });
 
       expect(screen.queryByTestId('applied-platform-promotion')).not.toBeInTheDocument();
@@ -366,7 +373,7 @@ describe('Promotion auto-apply fixture-e2e', () => {
       render(<AutoApplyCheckoutHarness />);
 
       await waitFor(() => {
-        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe('1');
+        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe(CART_FINGERPRINT);
       });
 
       expect(screen.queryByTestId('applied-platform-promotion')).not.toBeInTheDocument();
@@ -382,7 +389,7 @@ describe('Promotion auto-apply fixture-e2e', () => {
       render(<AutoApplyCheckoutHarness />);
 
       await waitFor(() => {
-        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe('1');
+        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe(CART_FINGERPRINT);
       });
 
       expect(screen.queryByTestId('applied-platform-promotion')).not.toBeInTheDocument();

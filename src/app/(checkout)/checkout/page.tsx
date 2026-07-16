@@ -43,12 +43,23 @@ const FORM_FIELD_TO_ERROR_KEY: Partial<Record<keyof GuestCheckoutFormState, Gues
   email: 'email',
 };
 
+/** Bumps on each checkout mount so Strict Mode remount can cancel a deferred leave-reset. */
+let checkoutPageResetGeneration = 0;
+
 function CheckoutPageReset() {
   const { reset } = useCheckout();
 
   useEffect(() => {
+    const generation = ++checkoutPageResetGeneration;
     return () => {
-      reset();
+      // Defer so React Strict Mode remount (same generation bump) cancels this wipe.
+      // Without this, cleanup reset() clears auto-applied promos while the once-gate
+      // stays set — first checkout visit looks like auto-apply never ran.
+      queueMicrotask(() => {
+        if (generation === checkoutPageResetGeneration) {
+          reset();
+        }
+      });
     };
   }, [reset]);
 

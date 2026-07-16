@@ -303,27 +303,30 @@ describe('promotion-auto-apply integration', () => {
   // Integration 2 of 3 — Once-gate sessionStorage + in-memory Map fallback
   // ---------------------------------------------------------------------------
   describe('Integration 2 — once-gate sessionStorage + Map fallback', () => {
-    it('mark writes sentinel key/value; has* mirrors storage; clear resets (AC-008–009)', () => {
-      expect(hasAutoApplyAttempted()).toBe(false);
+    const FP = 'var-a:1';
 
-      markAutoApplyAttempted();
+    it('mark writes fingerprint; has* matches only that fingerprint; clear resets (AC-008–009)', () => {
+      expect(hasAutoApplyAttempted(FP)).toBe(false);
 
-      expect(sessionStorage.getItem(AUTO_APPLY_ATTEMPTED_KEY)).toBe('1');
-      expect(hasAutoApplyAttempted()).toBe(true);
+      markAutoApplyAttempted(FP);
+
+      expect(sessionStorage.getItem(AUTO_APPLY_ATTEMPTED_KEY)).toBe(FP);
+      expect(hasAutoApplyAttempted(FP)).toBe(true);
+      expect(hasAutoApplyAttempted('var-a:2')).toBe(false);
       expect(sessionStorage.length).toBe(1);
 
       sessionStorage.clear();
-      expect(hasAutoApplyAttempted()).toBe(false);
+      expect(hasAutoApplyAttempted(FP)).toBe(false);
     });
 
     it('falls back to SPA Map when sessionStorage throws; reset clears Map seam', () => {
       stubThrowingSessionStorage();
 
-      expect(() => markAutoApplyAttempted()).not.toThrow();
-      expect(hasAutoApplyAttempted()).toBe(true);
+      expect(() => markAutoApplyAttempted(FP)).not.toThrow();
+      expect(hasAutoApplyAttempted(FP)).toBe(true);
 
       resetAutoApplyOnceGateMemory();
-      expect(hasAutoApplyAttempted()).toBe(false);
+      expect(hasAutoApplyAttempted(FP)).toBe(false);
     });
   });
 

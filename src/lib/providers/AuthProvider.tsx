@@ -22,6 +22,7 @@ import {
   type MessagePayload,
 } from '@/lib/graphql/generated/graphql';
 import { clearTokens, getAccessToken, setOnAuthFailure, setTokens } from '@/lib/graphql/authLink';
+import { clearAutoApplyAttempted } from '@/lib/checkout/autoApplyOnceGate';
 import { getSessionId } from '@/lib/session';
 
 export type AuthContextValue = {
@@ -128,6 +129,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTokens(payload.tokens.accessToken, payload.tokens.refreshToken);
         setHasToken(true);
         setPendingDeletion(false);
+        // Guest checkout may have burned the once-gate on loggedInOnly soft-fails;
+        // allow one more auto-apply attempt after the shopper authenticates.
+        clearAutoApplyAttempted();
         await refetch();
       }
 
@@ -150,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTokens(payload.tokens.accessToken, payload.tokens.refreshToken);
       setHasToken(true);
       setPendingDeletion(false);
+      clearAutoApplyAttempted();
       await refetch();
 
       return payload;
@@ -171,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTokens(payload.tokens.accessToken, payload.tokens.refreshToken);
       setHasToken(true);
       setPendingDeletion(false);
+      clearAutoApplyAttempted();
       await refetch();
     },
     [reactivateAccountMutation, refetch],

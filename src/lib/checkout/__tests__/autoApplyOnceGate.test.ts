@@ -1,11 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  buildAutoApplyCartFingerprint,
+  clearAutoApplyAttempted,
+  getAutoApplyAttemptedFingerprint,
   hasAutoApplyAttempted,
   markAutoApplyAttempted,
   resetAutoApplyOnceGateMemory,
 } from '@/lib/checkout/autoApplyOnceGate';
 
 const AUTO_APPLY_ATTEMPTED_KEY = 'sopet.checkout.autoApplyAttempted';
+const FP_A = 'var-a:1|var-b:2';
+const FP_B = 'var-a:2|var-b:2';
 
 function stubThrowingSessionStorage(): void {
   const throwingStorage = {
@@ -61,65 +66,122 @@ describe('autoApplyOnceGate', () => {
     resetAutoApplyOnceGateMemory();
   });
 
-  it('is unmarked until mark writes sentinel key/value', () => {
-    expect(hasAutoApplyAttempted()).toBe(false);
-
-    markAutoApplyAttempted();
-
-    expect(sessionStorage.getItem(AUTO_APPLY_ATTEMPTED_KEY)).toBe('1');
-    expect(hasAutoApplyAttempted()).toBe(true);
+  it('buildAutoApplyCartFingerprint is stable and order-independent', () => {
+    expect(
+      buildAutoApplyCartFingerprint([
+        { variantId: 'var-b', quantity: 2 },
+        { variantId: 'var-a', quantity: 1 },
+      ]),
+    ).toBe(FP_A);
+    expect(
+      buildAutoApplyCartFingerprint([
+        { variantId: 'var-a', quantity: 1 },
+        { variantId: 'var-b', quantity: 2 },
+      ]),
+    ).toBe(FP_A);
   });
 
-  it('stores sentinel only (no promotion payload / PII)', () => {
-    markAutoApplyAttempted();
+  it('buildAutoApplyCartFingerprint changes when quantity changes', () => {
+    expect(
+      buildAutoApplyCartFingerprint([
+        { variantId: 'var-a', quantity: 2 },
+        { variantId: 'var-b', quantity: 2 },
+      ]),
+    ).toBe(FP_B);
+    expect(FP_A).not.toBe(FP_B);
+  });
 
-    expect(sessionStorage.getItem(AUTO_APPLY_ATTEMPTED_KEY)).toBe('1');
+  it('is unmarked until mark writes fingerprint; has* matches only that fingerprint', () => {
+    expect(hasAutoApplyAttempted(FP_A)).toBe(false);
+
+    markAutoApplyAttempted(FP_A);
+
+    expect(sessionStorage.getItem(AUTO_APPLY_ATTEMPTED_KEY)).toBe(FP_A);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(true);
+    expect(hasAutoApplyAttempted(FP_B)).toBe(false);
+    expect(getAutoApplyAttemptedFingerprint()).toBe(FP_A);
+  });
+
+  it('stores fingerprint only (no promotion payload / PII)', () => {
+    markAutoApplyAttempted(FP_A);
+
+    expect(sessionStorage.getItem(AUTO_APPLY_ATTEMPTED_KEY)).toBe(FP_A);
     expect(sessionStorage.length).toBe(1);
   });
 
-  it('returns false after sessionStorage is cleared (happy path does not pin Map)', () => {
-    markAutoApplyAttempted();
-    expect(hasAutoApplyAttempted()).toBe(true);
+  it('returns false after sessionStorage is cleared', () => {
+    markAutoApplyAttempted(FP_A);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(true);
 
     sessionStorage.clear();
 
-    expect(hasAutoApplyAttempted()).toBe(false);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(false);
   });
 
-  it('rejects non-sentinel stored values', () => {
+  it('rejects legacy sentinel and unrelated stored values for a real fingerprint', () => {
+    sessionStorage.setItem(AUTO_APPLY_ATTEMPTED_KEY, '1');
+    expect(hasAutoApplyAttempted(FP_A)).toBe(false);
+
     sessionStorage.setItem(AUTO_APPLY_ATTEMPTED_KEY, 'true');
-    expect(hasAutoApplyAttempted()).toBe(false);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(false);
 
     sessionStorage.setItem(AUTO_APPLY_ATTEMPTED_KEY, 'SAVE10');
-    expect(hasAutoApplyAttempted()).toBe(false);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(false);
   });
 
   it('falls back to SPA Map when sessionStorage get/set throw', () => {
     stubThrowingSessionStorage();
 
-    expect(() => markAutoApplyAttempted()).not.toThrow();
-    expect(hasAutoApplyAttempted()).toBe(true);
+    expect(() => markAutoApplyAttempted(FP_A)).not.toThrow();
+    expect(hasAutoApplyAttempted(FP_A)).toBe(true);
+    expect(hasAutoApplyAttempted(FP_B)).toBe(false);
   });
 
   it('keeps Map mark without storage and clears via resetAutoApplyOnceGateMemory', () => {
     stubThrowingSessionStorage();
 
-    markAutoApplyAttempted();
-    expect(hasAutoApplyAttempted()).toBe(true);
+    markAutoApplyAttempted(FP_A);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(true);
 
     resetAutoApplyOnceGateMemory();
-    expect(hasAutoApplyAttempted()).toBe(false);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(false);
   });
 
   it('coexists with other sopet.checkout.* sessionStorage keys', () => {
     sessionStorage.setItem('sopet.checkout.allowEntry', '1');
     sessionStorage.setItem('sopet.checkout.pendingPayment', '{"paymentId":"p1","orderId":"o1"}');
 
-    markAutoApplyAttempted();
+    markAutoApplyAttempted(FP_A);
 
     expect(sessionStorage.getItem('sopet.checkout.allowEntry')).toBe('1');
     expect(sessionStorage.getItem('sopet.checkout.pendingPayment')).toContain('p1');
-    expect(sessionStorage.getItem(AUTO_APPLY_ATTEMPTED_KEY)).toBe('1');
-    expect(hasAutoApplyAttempted()).toBe(true);
+    expect(sessionStorage.getItem(AUTO_APPLY_ATTEMPTED_KEY)).toBe(FP_A);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(true);
+  });
+
+  it('clearAutoApplyAttempted removes fingerprint from sessionStorage and memory', () => {
+    markAutoApplyAttempted(FP_A);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(true);
+
+    clearAutoApplyAttempted();
+
+    expect(sessionStorage.getItem(AUTO_APPLY_ATTEMPTED_KEY)).toBeNull();
+    expect(hasAutoApplyAttempted(FP_A)).toBe(false);
+    expect(getAutoApplyAttemptedFingerprint()).toBeNull();
+  });
+
+  it('clearAutoApplyAttempted clears Map fallback when sessionStorage throws', () => {
+    stubThrowingSessionStorage();
+    markAutoApplyAttempted(FP_A);
+    expect(hasAutoApplyAttempted(FP_A)).toBe(true);
+
+    expect(() => clearAutoApplyAttempted()).not.toThrow();
+    expect(hasAutoApplyAttempted(FP_A)).toBe(false);
+  });
+
+  it('empty fingerprint never marks or matches', () => {
+    markAutoApplyAttempted('');
+    expect(getAutoApplyAttemptedFingerprint()).toBeNull();
+    expect(hasAutoApplyAttempted('')).toBe(false);
   });
 });

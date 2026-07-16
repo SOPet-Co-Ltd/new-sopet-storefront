@@ -1193,6 +1193,8 @@ export type StorePromotionFieldsFragment = {
   scope: string;
   storeId: string | null;
   conditions: string | null;
+  autoApply: boolean;
+  priority: number;
 };
 
 export type ActiveStorePromotionsQueryVariables = Exact<{
@@ -1213,6 +1215,8 @@ export type ActiveStorePromotionsQuery = {
     scope: string;
     storeId: string | null;
     conditions: string | null;
+    autoApply: boolean;
+    priority: number;
   }>;
 };
 
@@ -1232,6 +1236,8 @@ export type ActivePlatformPromotionsQuery = {
     scope: string;
     storeId: string | null;
     conditions: string | null;
+    autoApply: boolean;
+    priority: number;
   }>;
 };
 
@@ -2196,6 +2202,8 @@ export const StorePromotionFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'scope' } },
           { kind: 'Field', name: { kind: 'Name', value: 'storeId' } },
           { kind: 'Field', name: { kind: 'Name', value: 'conditions' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'autoApply' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
         ],
       },
     },

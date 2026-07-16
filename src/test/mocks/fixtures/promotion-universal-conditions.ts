@@ -96,6 +96,8 @@ const basePromotionFields = {
   minPurchaseAmount: null as number | null,
   maxDiscountAmount: null as number | null,
   expiresAt: '2027-05-24T00:00:00.000Z',
+  autoApply: false,
+  priority: 0,
 };
 
 /** Journey 1 — store promo gated by newCustomer (guest → unavailable). */

@@ -59,6 +59,8 @@ export const sampleStorePromotion = {
   expiresAt: '2027-05-24T00:00:00.000Z',
   scope: 'store',
   storeId: CHECKOUT_STORE_ID,
+  autoApply: false,
+  priority: 0,
 };
 
 export const samplePlatformPromotion = {
@@ -74,6 +76,8 @@ export const samplePlatformPromotion = {
   expiresAt: '2027-05-24T00:00:00.000Z',
   scope: 'platform',
   storeId: null,
+  autoApply: false,
+  priority: 0,
 };
 
 export const samplePromotionValidation = {

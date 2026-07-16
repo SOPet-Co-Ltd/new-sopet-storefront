@@ -11,6 +11,8 @@ fragment StorePromotionFields on PromotionType {
   scope
   storeId
   conditions
+  autoApply
+  priority
 }
 
 query ActiveStorePromotions($storeId: String!) {

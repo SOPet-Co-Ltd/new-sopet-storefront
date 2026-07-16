@@ -178,6 +178,8 @@ export function CheckoutStorePromotionModal({
             scope: 'store',
             storeId,
             conditions: null,
+            autoApply: false,
+            priority: 0,
           },
         ]);
         setSelection({ type: 'promo', code: result.code });

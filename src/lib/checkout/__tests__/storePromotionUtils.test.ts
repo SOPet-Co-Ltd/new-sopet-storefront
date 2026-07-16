@@ -10,8 +10,11 @@ import {
   hasLoggedInOnlyConditionEnabled,
   isPromotionAvailable,
   mapSoftIneligibilityReason,
+  mergeListTimeEligibility,
   parseStorePromotionConditions,
+  type PromotionEligibilityBatchItem,
   type PromotionEstimateCartLine,
+  type StorePromotion,
 } from '@/lib/checkout/storePromotionUtils';
 import { sampleStorePromotion } from '@/test/mocks/fixtures/checkout';
 import {
@@ -307,6 +310,223 @@ describe('storePromotionUtils', () => {
         label: 'ช้อปเพิ่ม',
         href: '/cart',
       });
+    });
+
+    it('Conflict-001: maps PROMOTION_MIN_PURCHASE → MIN_PURCHASE (not UNKNOWN)', () => {
+      expect(mapSoftIneligibilityReason('PROMOTION_MIN_PURCHASE')).toBe('MIN_PURCHASE');
+      expect(mapSoftIneligibilityReason('PROMOTION_MIN_PURCHASE')).not.toBe('UNKNOWN');
+      expect(getUnavailablePromotionCta('MIN_PURCHASE')).toEqual({
+        label: 'ช้อปเพิ่ม',
+        href: '/cart',
+      });
+    });
+
+    it('maps Soft reason → UI Spec copy table verbatim (Rule H)', () => {
+      expect(mapSoftIneligibilityReason('GUEST')).toBe('GUEST_REQUIRED');
+      expect(mapSoftIneligibilityReason('ORDER_HISTORY')).toBe('NOT_NEW_CUSTOMER');
+      expect(mapSoftIneligibilityReason('ACCOUNT_AGE')).toBe('NOT_NEW_CUSTOMER');
+      expect(mapSoftIneligibilityReason('INSUFFICIENT_QTY')).toBe('BXGY_QTY');
+      expect(mapSoftIneligibilityReason('MISSING_LINES')).toBe('BXGY_QTY');
+      expect(mapSoftIneligibilityReason('PROMOTION_MIN_PURCHASE')).toBe('MIN_PURCHASE');
+      expect(mapSoftIneligibilityReason('INVALID_PROMOTION')).toBe('UNKNOWN');
+      expect(mapSoftIneligibilityReason(null)).toBe('UNKNOWN');
+    });
+  });
+
+  /**
+   * Frontend DD Decision 6 Early Verification Point — mergeListTimeEligibility (a)–(e)
+   * before either checkout modal wires batch / softReasonOverride / AC-051 banner.
+   */
+  describe('mergeListTimeEligibility Early Verification (a)–(e)', () => {
+    const availablePromo: StorePromotion = {
+      ...promotionWithConditions,
+      id: 'promo-available',
+      code: 'AVAIL10',
+      minPurchaseAmount: null,
+    };
+    const minPurchasePromo: StorePromotion = {
+      ...promotionWithConditions,
+      id: 'promo-min',
+      code: 'MIN200',
+      minPurchaseAmount: 200,
+    };
+    const newCustomerPromo: StorePromotion = {
+      ...guestNewCustomerStorePromotion,
+      id: 'promo-new',
+      code: 'NEW30',
+    };
+    const catalog = [availablePromo, minPurchasePromo, newCustomerPromo];
+    const subtotalBelowMin = 100;
+
+    it('(a) client-local-only when batchStatus !== success', () => {
+      const client = categorizeStorePromotions(catalog, subtotalBelowMin, { isGuest: false });
+      const softBatch: PromotionEligibilityBatchItem[] = [
+        {
+          id: availablePromo.id,
+          code: availablePromo.code,
+          eligible: false,
+          ineligibilityReason: 'ORDER_HISTORY',
+        },
+      ];
+
+      for (const batchStatus of ['idle', 'loading', 'error'] as const) {
+        const merged = mergeListTimeEligibility(
+          catalog,
+          subtotalBelowMin,
+          { isGuest: false },
+          softBatch,
+          batchStatus,
+        );
+
+        expect(merged.available.map((p) => p.id)).toEqual(client.available.map((p) => p.id));
+        expect(merged.unavailable.map((e) => e.promotion.id)).toEqual(
+          client.unavailable.map((p) => p.id),
+        );
+        expect(merged.unavailable.every((e) => e.softReasonOverride === undefined)).toBe(true);
+        expect(merged.softEligibilityError).toBe(batchStatus === 'error');
+      }
+
+      const nullItems = mergeListTimeEligibility(
+        catalog,
+        subtotalBelowMin,
+        { isGuest: false },
+        null,
+        'success',
+      );
+      expect(nullItems.available.map((p) => p.id)).toEqual(client.available.map((p) => p.id));
+      expect(nullItems.softEligibilityError).toBe(false);
+    });
+
+    it('(b) eligible===false → unavailable with mapped softReasonOverride or UNKNOWN when absent', () => {
+      const withReason = mergeListTimeEligibility(
+        [availablePromo],
+        500,
+        { isGuest: false },
+        [
+          {
+            id: availablePromo.id,
+            code: availablePromo.code,
+            eligible: false,
+            ineligibilityReason: 'ORDER_HISTORY',
+          },
+        ],
+        'success',
+      );
+      expect(withReason.available).toHaveLength(0);
+      expect(withReason.unavailable).toEqual([
+        {
+          promotion: availablePromo,
+          softReasonOverride: 'NOT_NEW_CUSTOMER',
+        },
+      ]);
+
+      const withoutReason = mergeListTimeEligibility(
+        [availablePromo],
+        500,
+        { isGuest: false },
+        [{ id: availablePromo.id, code: availablePromo.code, eligible: false }],
+        'success',
+      );
+      expect(withoutReason.available).toHaveLength(0);
+      expect(withoutReason.unavailable[0]?.softReasonOverride).toBe('UNKNOWN');
+    });
+
+    it('(c) batch soft union + override supersedes client reason', () => {
+      const merged = mergeListTimeEligibility(
+        catalog,
+        subtotalBelowMin,
+        { isGuest: false },
+        [
+          {
+            id: availablePromo.id,
+            code: availablePromo.code,
+            eligible: false,
+            ineligibilityReason: 'ACCOUNT_AGE',
+          },
+          {
+            id: minPurchasePromo.id,
+            code: minPurchasePromo.code,
+            eligible: false,
+            ineligibilityReason: 'ORDER_HISTORY',
+          },
+        ],
+        'success',
+      );
+
+      const unavailableIds = merged.unavailable.map((e) => e.promotion.id);
+      expect(unavailableIds).toEqual(
+        expect.arrayContaining([availablePromo.id, minPurchasePromo.id]),
+      );
+      expect(new Set(unavailableIds).size).toBe(unavailableIds.length);
+
+      const minEntry = merged.unavailable.find((e) => e.promotion.id === minPurchasePromo.id);
+      expect(minEntry?.softReasonOverride).toBe('NOT_NEW_CUSTOMER');
+      expect(minEntry?.softReasonOverride).not.toBe('MIN_PURCHASE');
+
+      expect(merged.available.map((p) => p.id)).not.toContain(availablePromo.id);
+      expect(merged.softEligibilityError).toBe(false);
+    });
+
+    it('(d) batchStatus===error → softEligibilityError=true; client-local retained (never unlock)', () => {
+      const client = categorizeStorePromotions(catalog, subtotalBelowMin, { isGuest: false });
+      const merged = mergeListTimeEligibility(
+        catalog,
+        subtotalBelowMin,
+        { isGuest: false },
+        [
+          {
+            id: minPurchasePromo.id,
+            code: minPurchasePromo.code,
+            eligible: true,
+            ineligibilityReason: null,
+          },
+        ],
+        'error',
+      );
+
+      expect(merged.softEligibilityError).toBe(true);
+      expect(merged.unavailable.map((e) => e.promotion.id)).toEqual(
+        client.unavailable.map((p) => p.id),
+      );
+      expect(merged.available.map((p) => p.id)).toEqual(client.available.map((p) => p.id));
+      expect(merged.unavailable.some((e) => e.promotion.id === minPurchasePromo.id)).toBe(true);
+    });
+
+    it('(e) Conflict-001: batch PROMOTION_MIN_PURCHASE → softReasonOverride MIN_PURCHASE', () => {
+      const merged = mergeListTimeEligibility(
+        [availablePromo],
+        500,
+        { isGuest: false },
+        [
+          {
+            id: availablePromo.id,
+            code: availablePromo.code,
+            eligible: false,
+            ineligibilityReason: 'PROMOTION_MIN_PURCHASE',
+          },
+        ],
+        'success',
+      );
+
+      expect(merged.unavailable).toHaveLength(1);
+      expect(merged.unavailable[0]?.softReasonOverride).toBe('MIN_PURCHASE');
+      expect(merged.unavailable[0]?.softReasonOverride).not.toBe('UNKNOWN');
+      expect(getUnavailablePromotionCta(merged.unavailable[0]!.softReasonOverride!)).toEqual({
+        label: 'ช้อปเพิ่ม',
+        href: '/cart',
+      });
+    });
+
+    it('never moves batch soft-ineligible into available even when reason absent', () => {
+      const merged = mergeListTimeEligibility(
+        [availablePromo],
+        500,
+        { isGuest: false },
+        [{ id: availablePromo.id, eligible: false, ineligibilityReason: null }],
+        'success',
+      );
+      expect(merged.available).toHaveLength(0);
+      expect(merged.unavailable[0]?.softReasonOverride).toBe('UNKNOWN');
     });
   });
 

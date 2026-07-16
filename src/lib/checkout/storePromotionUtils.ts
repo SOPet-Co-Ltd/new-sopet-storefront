@@ -53,13 +53,30 @@ const MIN_PURCHASE_CTA_LABEL = 'ช้อปเพิ่ม';
 const MIN_PURCHASE_CTA_HREF = '/cart';
 const UNKNOWN_UNAVAILABLE_WARNING = 'ยังใช้โปรโมชันนี้ไม่ได้ในขณะนี้';
 
+const RULE_H_CUSTOMER_REASONS = new Set<SoftCustomerReason>([
+  'GUEST_REQUIRED',
+  'NOT_NEW_CUSTOMER',
+  'MIN_PURCHASE',
+  'BXGY_QTY',
+  'UNKNOWN',
+]);
+
 /**
- * Collapse validatePromotion `ineligibilityReason` → UI Spec customer reason.
- * Scope: validatePromotion soft UX only — do not reuse for createOrder classification.
+ * Collapse validatePromotion / batch `ineligibilityReason` → UI Spec customer reason.
+ * Scope: soft UX only — do not reuse for createOrder classification.
+ * Conflict-001: `PROMOTION_MIN_PURCHASE` → `MIN_PURCHASE` (preserve ช้อปเพิ่ม CTA).
+ * UI-D-007: Rule H family strings already in the union pass through unchanged.
  */
 export function mapSoftIneligibilityReason(
   ineligibilityReason: string | null | undefined,
 ): SoftCustomerReason {
+  if (
+    ineligibilityReason != null &&
+    RULE_H_CUSTOMER_REASONS.has(ineligibilityReason as SoftCustomerReason)
+  ) {
+    return ineligibilityReason as SoftCustomerReason;
+  }
+
   switch (ineligibilityReason) {
     case 'GUEST':
       return 'GUEST_REQUIRED';
@@ -69,10 +86,33 @@ export function mapSoftIneligibilityReason(
     case 'INSUFFICIENT_QTY':
     case 'MISSING_LINES':
       return 'BXGY_QTY';
+    case 'PROMOTION_MIN_PURCHASE':
+      return 'MIN_PURCHASE';
     default:
       return 'UNKNOWN';
   }
 }
+
+/** Batch list-time eligibility item (Decision 6 / fixture shape before codegen). */
+export type PromotionEligibilityBatchItem = {
+  id?: string | null;
+  code?: string | null;
+  eligible: boolean;
+  ineligibilityReason?: string | null;
+};
+
+export type ListTimeBatchStatus = 'idle' | 'loading' | 'success' | 'error';
+
+export type UnavailableStorePromotionEntry = {
+  promotion: StorePromotion;
+  softReasonOverride?: UnavailablePromotionReason;
+};
+
+export type MergedListTimeEligibility = {
+  available: StorePromotion[];
+  unavailable: UnavailableStorePromotionEntry[];
+  softEligibilityError: boolean;
+};
 
 /**
  * Parse GraphQL `conditions: String` (ADR camelCase JSON).
@@ -395,6 +435,106 @@ export function categorizeStorePromotions(
   }
 
   return { available, unavailable };
+}
+
+function indexBatchItems(batchItems: PromotionEligibilityBatchItem[]): {
+  byId: Map<string, PromotionEligibilityBatchItem>;
+  byCode: Map<string, PromotionEligibilityBatchItem>;
+} {
+  const byId = new Map<string, PromotionEligibilityBatchItem>();
+  const byCode = new Map<string, PromotionEligibilityBatchItem>();
+
+  for (const item of batchItems) {
+    if (item.id) {
+      byId.set(item.id, item);
+    }
+    if (item.code) {
+      byCode.set(item.code.toUpperCase(), item);
+    }
+  }
+
+  return { byId, byCode };
+}
+
+function resolveBatchItem(
+  promotion: StorePromotion,
+  byId: Map<string, PromotionEligibilityBatchItem>,
+  byCode: Map<string, PromotionEligibilityBatchItem>,
+): PromotionEligibilityBatchItem | undefined {
+  const byPromoId = byId.get(promotion.id);
+  if (byPromoId) return byPromoId;
+  return byCode.get(promotion.code.toUpperCase());
+}
+
+function softReasonOverrideFromBatch(
+  batchItem: PromotionEligibilityBatchItem,
+): UnavailablePromotionReason {
+  const reason = batchItem.ineligibilityReason;
+  if (reason == null || reason === '') {
+    return 'UNKNOWN';
+  }
+  return mapSoftIneligibilityReason(reason);
+}
+
+/**
+ * Hybrid Rule G: client-local ∪ batch soft-ineligible, batch override per promo.
+ * Shared by both checkout promotion modals — do not fork per modal.
+ */
+export function mergeListTimeEligibility(
+  promotions: StorePromotion[],
+  storeSubtotal: number,
+  context: PromotionAvailabilityContext | undefined,
+  batchItems: PromotionEligibilityBatchItem[] | null | undefined,
+  batchStatus: ListTimeBatchStatus,
+): MergedListTimeEligibility {
+  const client = categorizeStorePromotions(promotions, storeSubtotal, context);
+  const softEligibilityError = batchStatus === 'error';
+
+  if (batchStatus !== 'success' || !batchItems) {
+    return {
+      available: client.available,
+      unavailable: client.unavailable.map((promotion) => ({ promotion })),
+      softEligibilityError,
+    };
+  }
+
+  const { byId, byCode } = indexBatchItems(batchItems);
+  const clientUnavailableIds = new Set(client.unavailable.map((p) => p.id));
+  const unavailable: UnavailableStorePromotionEntry[] = [];
+  const unavailableIds = new Set<string>();
+
+  for (const promotion of promotions) {
+    if (unavailableIds.has(promotion.id)) continue;
+
+    const batchItem = resolveBatchItem(promotion, byId, byCode);
+
+    if (batchItem && batchItem.eligible === false) {
+      unavailable.push({
+        promotion,
+        softReasonOverride: softReasonOverrideFromBatch(batchItem),
+      });
+      unavailableIds.add(promotion.id);
+      continue;
+    }
+
+    if (clientUnavailableIds.has(promotion.id)) {
+      unavailable.push({ promotion });
+      unavailableIds.add(promotion.id);
+    }
+  }
+
+  const available: StorePromotion[] = [];
+  for (const promotion of client.available) {
+    if (!unavailableIds.has(promotion.id)) {
+      available.push(promotion);
+    }
+  }
+
+  return {
+    available,
+    unavailable,
+    softEligibilityError: false,
+  };
 }
 
 /**

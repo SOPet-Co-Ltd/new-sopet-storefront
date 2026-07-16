@@ -64,7 +64,12 @@ export function createBxGyJourneyPromotionHandlers(
         data: { activePlatformPromotions: [] },
       });
     }),
-    graphql.query('ValidatePromotion', () => {
+    graphql.query('ValidatePromotion', ({ variables }) => {
+      const input = variables?.input as
+        | { lines?: Array<{ productId?: string; quantity?: number; unitPrice?: number }> }
+        | undefined;
+      // Soft/hard stubs still return; lines presence is asserted by journey tests via last request.
+      void input?.lines;
       return HttpResponse.json({
         data: { validatePromotion: resolveValidatePromotion(validateMode) },
       });

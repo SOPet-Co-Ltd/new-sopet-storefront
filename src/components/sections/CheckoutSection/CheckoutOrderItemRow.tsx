@@ -3,13 +3,16 @@
 import Image from 'next/image';
 import type { CartItem } from '@/lib/cart/cartUtils';
 import { getCartItemUnitPrice } from '@/lib/cart/cartUtils';
+import { CheckoutOrderLineFreeUnitIndicator } from './CheckoutOrderLineFreeUnitIndicator';
 import { formatCheckoutPrice, formatCheckoutVariantLabel } from './checkoutOrderItemUtils';
 
 type CheckoutOrderItemRowProps = {
   item: CartItem;
+  /** Gate A: free units from validatePromotion.freeUnits allocation only. */
+  freeQuantity?: number;
 };
 
-export function CheckoutOrderItemRow({ item }: CheckoutOrderItemRowProps) {
+export function CheckoutOrderItemRow({ item, freeQuantity = 0 }: CheckoutOrderItemRowProps) {
   const unitPrice = getCartItemUnitPrice(item);
   const product = item.productVariant?.product;
   const variantLabel = formatCheckoutVariantLabel(item.productVariant?.optionsJson);
@@ -33,6 +36,7 @@ export function CheckoutOrderItemRow({ item }: CheckoutOrderItemRowProps) {
           {variantLabel ? (
             <span className="sop-body-xs-regular text-sop-neutral-gray-400">{variantLabel}</span>
           ) : null}
+          <CheckoutOrderLineFreeUnitIndicator freeQuantity={freeQuantity} />
         </div>
       </div>
 

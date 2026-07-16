@@ -189,6 +189,7 @@ export function CheckoutPromotionSection() {
       await applyCheckoutPromotionCode({
         code: normalizedCode,
         subtotal,
+        lines: cartLines,
         validatePromotion,
         setPromotion,
         setPromotionName,

@@ -1,9 +1,10 @@
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import { ClipboardListIcon, ShopIcon } from '@/components/atoms/icons';
 import type { StoreCartGroup } from '@/lib/cart/cartUtils';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
+import { allocateServerFreeUnitsToLines } from './allocateServerFreeUnits';
 import { CheckoutOrderItemRow } from './CheckoutOrderItemRow';
 import { CheckoutStoreActionsRow } from './CheckoutStoreActionsRow';
 import { formatCheckoutPrice } from './checkoutOrderItemUtils';
@@ -17,8 +18,20 @@ function CheckoutStoreCard({ group }: CheckoutStoreCardProps) {
 
   const itemCount = group.items.reduce((total, item) => total + item.quantity, 0);
   const selectedShippingFee = shippingByStoreId[group.storeId]?.shippingFee ?? 0;
-  const storeDiscount = storePromotionsByStoreId[group.storeId]?.discountAmount ?? 0;
+  const appliedStorePromo = storePromotionsByStoreId[group.storeId] ?? null;
+  const storeDiscount = appliedStorePromo?.discountAmount ?? 0;
   const storeTotal = group.subtotal + selectedShippingFee - storeDiscount;
+
+  const freeQuantityByItemId = useMemo(() => {
+    const freeUnits = appliedStorePromo?.freeUnits ?? 0;
+    // Gate A: only server freeUnits; local Rule B estimate must not drive badges.
+    if (!freeUnits || freeUnits <= 0) return {};
+    return allocateServerFreeUnitsToLines(
+      freeUnits,
+      group.items,
+      appliedStorePromo?.productId ?? null,
+    );
+  }, [appliedStorePromo?.freeUnits, appliedStorePromo?.productId, group.items]);
 
   return (
     <section className="flex flex-col" data-testid={`checkout-store-${group.storeId}`}>
@@ -33,7 +46,7 @@ function CheckoutStoreCard({ group }: CheckoutStoreCardProps) {
       <div className="flex flex-col gap-sop-20px bg-sop-base-white px-sop-16px py-sop-20px lg:px-sop-24px lg:py-sop-28px">
         {group.items.map((item, index) => (
           <Fragment key={item.id}>
-            <CheckoutOrderItemRow item={item} />
+            <CheckoutOrderItemRow item={item} freeQuantity={freeQuantityByItemId[item.id] ?? 0} />
             {index < group.items.length - 1 ? (
               <div className="h-px w-full bg-sop-neutral-grayalpha-200" />
             ) : null}

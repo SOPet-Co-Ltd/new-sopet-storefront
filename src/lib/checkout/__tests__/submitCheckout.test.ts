@@ -127,10 +127,19 @@ describe('submitCheckout', () => {
     const result = await submitCheckout(params, createSubmitCheckoutGuard());
 
     expect(callOrder).toEqual(['validatePromotion', 'createOrder', 'createPayment']);
-    expect(validatePromotion).toHaveBeenCalledWith({
-      code: 'SAVE10',
-      subtotal: 890,
-    });
+    expect(validatePromotion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'SAVE10',
+        subtotal: 890,
+        lines: expect.arrayContaining([
+          expect.objectContaining({
+            productId: expect.any(String),
+            quantity: expect.any(Number),
+            unitPrice: expect.any(Number),
+          }),
+        ]),
+      }),
+    );
     expect(createOrder).toHaveBeenCalledTimes(1);
     expect(createPayment).toHaveBeenCalledWith({
       orderId: CHECKOUT_ORDER_ID,

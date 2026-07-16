@@ -439,7 +439,13 @@ export type ValidatePromotionQueryVariables = Exact<{
 }>;
 
 export type ValidatePromotionQuery = {
-  validatePromotion: { code: string; name: string; discountAmount: number };
+  validatePromotion: {
+    code: string;
+    name: string;
+    discountAmount: number;
+    ineligibilityReason: string | null;
+    freeUnits: number | null;
+  };
 };
 
 export type CreateOrderMutationVariables = Exact<{
@@ -3003,6 +3009,8 @@ export const ValidatePromotionDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'code' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'name' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'discountAmount' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'ineligibilityReason' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'freeUnits' } },
               ],
             },
           },

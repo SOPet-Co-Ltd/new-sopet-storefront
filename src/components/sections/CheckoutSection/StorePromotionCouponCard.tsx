@@ -10,7 +10,11 @@ import {
   UserIcon,
 } from '@/components/atoms/icons';
 import { cn } from '@/lib/utils';
-import type { StorePromotion } from '@/lib/checkout/storePromotionUtils';
+import type {
+  PromotionEstimateCartLine,
+  StorePromotion,
+  UnavailablePromotionReason,
+} from '@/lib/checkout/storePromotionUtils';
 import {
   formatPromotionConditionText,
   formatPromotionDiscountTitle,
@@ -290,14 +294,22 @@ type UnavailableStorePromotionCardProps = {
   storeSubtotal: number;
   /** When true, newCustomer-conditioned promos show GUEST_REQUIRED soft copy + login CTA. */
   isGuest?: boolean;
+  /** Cart lines for BxGy soft BXGY_QTY reason when freeN=0. */
+  cartLines?: PromotionEstimateCartLine[];
+  /** Override reason from validatePromotion soft map (takes precedence). */
+  softReasonOverride?: UnavailablePromotionReason;
 };
 
 export function UnavailableStorePromotionCard({
   promotion,
   storeSubtotal,
   isGuest = false,
+  cartLines,
+  softReasonOverride,
 }: UnavailableStorePromotionCardProps) {
-  const reason = getUnavailablePromotionReason(promotion, storeSubtotal, { isGuest });
+  const reason =
+    softReasonOverride ??
+    getUnavailablePromotionReason(promotion, storeSubtotal, { isGuest, cartLines });
   const warningText = getUnavailablePromotionWarning(reason, promotion, storeSubtotal);
   const cta = getUnavailablePromotionCta(reason);
 

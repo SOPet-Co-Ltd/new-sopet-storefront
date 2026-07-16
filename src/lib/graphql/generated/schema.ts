@@ -1703,6 +1703,8 @@ export type PromotionValidationResult = {
   __typename?: 'PromotionValidationResult';
   code: Scalars['String']['output'];
   discountAmount: Scalars['Float']['output'];
+  freeUnits?: Maybe<Scalars['Int']['output']>;
+  ineligibilityReason?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
 };
 
@@ -2874,8 +2876,17 @@ export type UserProfile = {
 
 export type ValidatePromotionInput = {
   code: Scalars['String']['input'];
+  lines?: InputMaybe<Array<ValidatePromotionLineInput>>;
   storeId?: InputMaybe<Scalars['String']['input']>;
   subtotal: Scalars['Float']['input'];
+};
+
+export type ValidatePromotionLineInput = {
+  productId: Scalars['String']['input'];
+  quantity: Scalars['Int']['input'];
+  storeId?: InputMaybe<Scalars['String']['input']>;
+  unitPrice: Scalars['Float']['input'];
+  variantId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export enum VariantRemovalBlockReason {

@@ -10,6 +10,7 @@ import {
 } from '@/lib/checkout/submitCheckout';
 import {
   PromotionValidationError,
+  SoftPromotionIneligibilityError,
   validateCheckoutPromotionCode,
 } from '@/lib/checkout/validateCheckoutPromotion';
 import {
@@ -282,6 +283,7 @@ export function useCheckoutSubmit(
 export async function applyCheckoutPromotionCode({
   code,
   subtotal,
+  lines,
   validatePromotion,
   setPromotion,
   setPromotionName,
@@ -289,6 +291,7 @@ export async function applyCheckoutPromotionCode({
 }: {
   code: string;
   subtotal: number;
+  lines?: import('@/lib/checkout/storePromotionUtils').PromotionEstimateCartLine[];
   validatePromotion: ReturnType<typeof useCheckoutMutations>['validatePromotion'];
   setPromotion: (code: string | null) => void;
   setPromotionName: (name: string | null) => void;
@@ -297,6 +300,7 @@ export async function applyCheckoutPromotionCode({
   const validation = await validateCheckoutPromotionCode({
     code,
     subtotal,
+    lines,
     validatePromotion,
   });
 
@@ -306,6 +310,10 @@ export async function applyCheckoutPromotionCode({
 }
 
 export function getPromotionApplyErrorMessage(error: unknown): string {
+  if (error instanceof SoftPromotionIneligibilityError) {
+    return error.message;
+  }
+
   if (error instanceof PromotionValidationError) {
     return error.message;
   }

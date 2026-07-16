@@ -8,6 +8,7 @@ import {
   getUnavailablePromotionReason,
   getUnavailablePromotionWarning,
   isPromotionAvailable,
+  mapSoftIneligibilityReason,
   parseStorePromotionConditions,
   type PromotionEstimateCartLine,
 } from '@/lib/checkout/storePromotionUtils';
@@ -138,15 +139,20 @@ describe('storePromotionUtils', () => {
       expect(getUnavailablePromotionReason(promo, 100, { isGuest: true })).toBe('GUEST_REQUIRED');
     });
 
-    it('uses MIN_PURCHASE with shop-more CTA when only min purchase blocks', () => {
-      const promo = {
-        ...promotionWithConditions,
-        minPurchaseAmount: 500,
-        conditions: null,
-      };
+    it('maps soft ORDER_HISTORY / ACCOUNT_AGE collapse and BXGY freeN=0', () => {
+      expect(mapSoftIneligibilityReason('ORDER_HISTORY')).toBe('NOT_NEW_CUSTOMER');
+      expect(mapSoftIneligibilityReason('ACCOUNT_AGE')).toBe('NOT_NEW_CUSTOMER');
+      expect(mapSoftIneligibilityReason('INSUFFICIENT_QTY')).toBe('BXGY_QTY');
+      expect(mapSoftIneligibilityReason('MISSING_LINES')).toBe('BXGY_QTY');
 
-      const reason = getUnavailablePromotionReason(promo, 100, { isGuest: true });
-      expect(reason).toBe('MIN_PURCHASE');
+      const reason = getUnavailablePromotionReason(bxgyStorePromotion, 500, {
+        isGuest: false,
+        cartLines: [{ productId: BXGY_PRODUCT_ID, quantity: 1, unitPrice: 100 }],
+      });
+      expect(reason).toBe('BXGY_QTY');
+      expect(getUnavailablePromotionWarning(reason, bxgyStorePromotion, 500)).toBe(
+        SOFT_REASON_FIXTURE_LABELS.BXGY_QTY,
+      );
       expect(getUnavailablePromotionCta(reason)).toEqual({
         label: 'ช้อปเพิ่ม',
         href: '/cart',

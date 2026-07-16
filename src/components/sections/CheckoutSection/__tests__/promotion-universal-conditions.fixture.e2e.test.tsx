@@ -79,10 +79,16 @@
 
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useEffect } from 'react';
+import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CheckoutPlatformPromotionModal } from '@/components/sections/CheckoutPromotionSection/CheckoutPlatformPromotionModal';
+import { CheckoutOrderItemRow } from '@/components/sections/CheckoutSection/CheckoutOrderItemRow';
 import { CheckoutStorePromotionModal } from '@/components/sections/CheckoutSection/CheckoutStorePromotionModal';
+import { allocateServerFreeUnitsToLines } from '@/components/sections/CheckoutSection/allocateServerFreeUnits';
+import { CheckoutProvider, useCheckout } from '@/lib/providers/CheckoutProvider';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
+import { sampleCartItem } from '@/test/mocks/fixtures/cart';
 import {
   AUTH_MOCK_USAGE,
   BXGY_PRODUCT_ID,
@@ -108,6 +114,13 @@ import {
   promotionUniversalConditionsHandlers,
 } from '@/test/mocks/promotion-universal-conditions.handlers';
 import { server } from '@/test/mocks/server';
+
+vi.mock('next/image', () => ({
+  default: (props: { alt?: string }) => {
+    // eslint-disable-next-line @next/next/no-img-element -- test stub
+    return <img alt={props.alt ?? ''} />;
+  },
+}));
 
 vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: vi.fn(),
@@ -268,5 +281,255 @@ describe('Promotion universal conditions Journey 1 — guest soft messaging', ()
     expect(within(modal).queryByText('ใช้ได้ตอนนี้')).not.toBeInTheDocument();
     assertGuestUnavailableCard(modal);
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+});
+
+describe('Promotion universal conditions Journey 2 — BxGy + fixed clamp + Gate A freeUnits', () => {
+  function mockLoggedInAuth() {
+    mockedUseAuth.mockReturnValue({
+      customer: AUTH_MOCK_USAGE.loggedIn.useAuthReturn.customer as never,
+      isAuthenticated: true,
+      isLoading: false,
+      pendingDeletion: false,
+      sendOtp: vi.fn(),
+      verifyOtp: vi.fn(),
+      changeCustomerPhone: vi.fn(),
+      reactivateAccount: vi.fn(),
+      logout: vi.fn(),
+    });
+  }
+
+  const cartLines = bxgyCartLines.map((line) => ({
+    productId: line.productId,
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    variantId: line.variantId,
+  }));
+
+  beforeEach(() => {
+    mockLoggedInAuth();
+  });
+
+  it('shows BxGy title ซื้อ 2 แถม 1 and fixed_amount footer clamp min(V,B)=฿60', async () => {
+    const user = userEvent.setup();
+    server.use(...createBxGyJourneyPromotionHandlers('bxgy-eligible'));
+
+    render(
+      <ApolloTestWrapper>
+        <CheckoutStorePromotionModal
+          isOpen
+          storeId={CHECKOUT_STORE_ID}
+          storeName="ร้านทดสอบ"
+          storeSubtotal={FIXED_AMOUNT_ELIGIBLE_BASE}
+          cartLines={cartLines}
+          appliedPromotion={null}
+          onClose={vi.fn()}
+          onConfirm={vi.fn()}
+        />
+      </ApolloTestWrapper>,
+    );
+
+    const modal = await screen.findByTestId('checkout-store-promotion-modal');
+
+    await waitFor(() => {
+      expect(within(modal).getByText('ใช้ได้ตอนนี้ (2)')).toBeInTheDocument();
+    });
+
+    expect(within(modal).getByText('ซื้อ 2 แถม 1')).toBeInTheDocument();
+    expect(within(modal).getByText('ส่วนลด ฿100.00')).toBeInTheDocument();
+
+    await user.click(within(modal).getByText('ส่วนลด ฿100.00'));
+
+    await waitFor(() => {
+      expect(within(modal).getByText('- ฿60.00')).toBeInTheDocument();
+    });
+  });
+
+  it('BxGy freeN>0 estimate > ฿0; confirm soft INSUFFICIENT_QTY shows BXGY_QTY without invalid-code toast', async () => {
+    const user = userEvent.setup();
+    server.use(...createBxGyJourneyPromotionHandlers('bxgy-insufficient'));
+    const onConfirm = vi.fn();
+
+    render(
+      <ApolloTestWrapper>
+        <CheckoutStorePromotionModal
+          isOpen
+          storeId={CHECKOUT_STORE_ID}
+          storeName="ร้านทดสอบ"
+          storeSubtotal={800}
+          cartLines={cartLines}
+          appliedPromotion={null}
+          onClose={vi.fn()}
+          onConfirm={onConfirm}
+        />
+      </ApolloTestWrapper>,
+    );
+
+    const modal = await screen.findByTestId('checkout-store-promotion-modal');
+
+    await waitFor(() => {
+      expect(within(modal).getByText('ซื้อ 2 แถม 1')).toBeInTheDocument();
+    });
+
+    await user.click(within(modal).getByText('ซื้อ 2 แถม 1'));
+
+    await waitFor(() => {
+      // Rule B: cheapest free unit of P among 200 + 300+300 → ฿200
+      expect(within(modal).getByText('- ฿200.00')).toBeInTheDocument();
+    });
+
+    await user.click(within(modal).getByTestId('store-promotion-confirm-button'));
+
+    await waitFor(() => {
+      expect(within(modal).getByText(SOFT_REASON_FIXTURE_LABELS.BXGY_QTY)).toBeInTheDocument();
+    });
+
+    expect(
+      within(modal).queryByText('โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว'),
+    ).not.toBeInTheDocument();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('after validate freeUnits>0, CheckoutOrderItemRow shows แถมฟรี; cleared when promo removed', () => {
+    const items = [
+      {
+        ...sampleCartItem,
+        id: 'line-cheap',
+        quantity: 1,
+        variantId: 'var-bxgy-b',
+        productVariant: {
+          ...sampleCartItem.productVariant!,
+          id: 'var-bxgy-b',
+          price: 200,
+          product: {
+            ...sampleCartItem.productVariant!.product!,
+            id: BXGY_PRODUCT_ID,
+            storeId: CHECKOUT_STORE_ID,
+          },
+        },
+      },
+      {
+        ...sampleCartItem,
+        id: 'line-dear',
+        quantity: 2,
+        variantId: 'var-bxgy-a',
+        productVariant: {
+          ...sampleCartItem.productVariant!,
+          id: 'var-bxgy-a',
+          price: 300,
+          product: {
+            ...sampleCartItem.productVariant!.product!,
+            id: BXGY_PRODUCT_ID,
+            storeId: CHECKOUT_STORE_ID,
+          },
+        },
+      },
+    ];
+
+    function Harness({ freeUnits }: { freeUnits: number }) {
+      const { setStorePromotion } = useCheckout();
+      useEffect(() => {
+        setStorePromotion(CHECKOUT_STORE_ID, {
+          code: 'BUY2GET1',
+          name: 'ซื้อ 2 แถม 1',
+          discountAmount: 200,
+          freeUnits,
+          productId: BXGY_PRODUCT_ID,
+        });
+      }, [freeUnits, setStorePromotion]);
+
+      const alloc = allocateServerFreeUnitsToLines(freeUnits, items, BXGY_PRODUCT_ID);
+
+      return (
+        <div>
+          {items.map((item) => (
+            <CheckoutOrderItemRow key={item.id} item={item} freeQuantity={alloc[item.id] ?? 0} />
+          ))}
+        </div>
+      );
+    }
+
+    const { rerender } = render(
+      <CheckoutProvider>
+        <Harness freeUnits={1} />
+      </CheckoutProvider>,
+    );
+
+    expect(screen.getByTestId('checkout-order-line-free-unit-indicator')).toHaveTextContent(
+      'แถมฟรี',
+    );
+
+    // Gate A negative: freeUnits=0 (promo removed / estimate-only) → no badge
+    rerender(
+      <CheckoutProvider>
+        <Harness freeUnits={0} />
+      </CheckoutProvider>,
+    );
+    expect(screen.queryByTestId('checkout-order-line-free-unit-indicator')).not.toBeInTheDocument();
+  });
+
+  it('validatePromotion eligible path includes cart lines and confirms freeUnits onto selection', async () => {
+    const user = userEvent.setup();
+    let capturedLines: unknown;
+    server.use(
+      graphql.query('ActiveStorePromotions', () => {
+        return HttpResponse.json({
+          data: {
+            activeStorePromotions: [bxgyStorePromotion, fixedAmountClampPromotion],
+          },
+        });
+      }),
+      graphql.query('ValidatePromotion', ({ variables }) => {
+        capturedLines = (variables as { input?: { lines?: unknown } })?.input?.lines;
+        return HttpResponse.json({
+          data: { validatePromotion: validatePromotionBxGyEligible },
+        });
+      }),
+    );
+
+    const onConfirm = vi.fn();
+
+    render(
+      <ApolloTestWrapper>
+        <CheckoutStorePromotionModal
+          isOpen
+          storeId={CHECKOUT_STORE_ID}
+          storeName="ร้านทดสอบ"
+          storeSubtotal={800}
+          cartLines={cartLines}
+          appliedPromotion={null}
+          onClose={vi.fn()}
+          onConfirm={onConfirm}
+        />
+      </ApolloTestWrapper>,
+    );
+
+    const modal = await screen.findByTestId('checkout-store-promotion-modal');
+    await waitFor(() => {
+      expect(within(modal).getByText('ซื้อ 2 แถม 1')).toBeInTheDocument();
+    });
+
+    await user.click(within(modal).getByText('ซื้อ 2 แถม 1'));
+    await user.click(within(modal).getByTestId('store-promotion-confirm-button'));
+
+    await waitFor(() => {
+      expect(onConfirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: 'BUY2GET1',
+          freeUnits: 1,
+          discountAmount: expect.any(Number),
+        }),
+      );
+    });
+
+    expect(capturedLines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          productId: BXGY_PRODUCT_ID,
+          quantity: expect.any(Number),
+          unitPrice: expect.any(Number),
+        }),
+      ]),
+    );
   });
 });

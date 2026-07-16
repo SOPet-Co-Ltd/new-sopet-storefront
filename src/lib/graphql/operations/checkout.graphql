@@ -58,6 +58,8 @@ query ValidatePromotion($input: ValidatePromotionInput!) {
     code
     name
     discountAmount
+    ineligibilityReason
+    freeUnits
   }
 }
 

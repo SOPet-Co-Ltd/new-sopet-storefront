@@ -5,9 +5,13 @@ import {
 } from '@/lib/checkout/guestCheckoutValidation';
 import { mapCheckoutPaymentMethodForApi } from '@/lib/checkout/checkoutPaymentMethod';
 import {
+  extractPromotionErrorCode,
+  isCreateOrderHardEligibilityCode,
   PromotionValidationError,
+  SoftPromotionIneligibilityError,
   validateCheckoutPromotionCode,
 } from '@/lib/checkout/validateCheckoutPromotion';
+import { toPromotionEstimateCartLines } from '@/lib/checkout/storePromotionUtils';
 import type { UseCheckoutResult } from '@/lib/hooks/useCheckout';
 import type { CheckoutStep } from '@/lib/providers/CheckoutProvider';
 
@@ -78,9 +82,14 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
       await validateCheckoutPromotionCode({
         code: params.checkoutContext.promotionCode,
         subtotal: params.subtotal,
+        lines: toPromotionEstimateCartLines(params.cart.items),
         validatePromotion: params.checkoutHook.validatePromotion,
       });
     } catch (error) {
+      if (error instanceof SoftPromotionIneligibilityError) {
+        // Soft fail ≠ invalid-code toast wording path — still blocks apply at submit.
+        throw new SubmitCheckoutError(error.message, 'promotion_invalid');
+      }
       if (error instanceof PromotionValidationError) {
         throw new SubmitCheckoutError(error.message, 'promotion_invalid');
       }
@@ -90,7 +99,24 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
 
   const orderInput = toCreateOrderInput(params.guestForm, params.cart, params.checkoutContext);
 
-  const order = await params.checkoutHook.createOrder(orderInput);
+  let order: Awaited<ReturnType<UseCheckoutResult['createOrder']>>;
+  try {
+    order = await params.checkoutHook.createOrder(orderInput);
+  } catch (error) {
+    const code = extractPromotionErrorCode(error);
+    // Candidate-001: hard eligibility → order error; INSUFFICIENT_QTY is never hard here.
+    if (isCreateOrderHardEligibilityCode(code) || code == null) {
+      const message =
+        error instanceof Error && error.message ? error.message : 'ไม่สามารถสร้างคำสั่งซื้อได้';
+      throw new SubmitCheckoutError(message, 'order_failed');
+    }
+    // Defensive: unknown non-hard promo codes still fail the order path.
+    throw new SubmitCheckoutError(
+      error instanceof Error ? error.message : 'ไม่สามารถสร้างคำสั่งซื้อได้',
+      'order_failed',
+    );
+  }
+
   if (!order?.id) {
     throw new SubmitCheckoutError('ไม่สามารถสร้างคำสั่งซื้อได้', 'order_failed');
   }

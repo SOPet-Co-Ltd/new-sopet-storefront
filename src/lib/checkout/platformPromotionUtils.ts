@@ -7,6 +7,8 @@ export type PlatformPromotionSelection = {
   code: string;
   name: string;
   discountAmount: number;
+  /** Server validatePromotion.freeUnits only — Gate A (task-09). */
+  freeUnits?: number | null;
 } | null;
 
 export type PlatformPromotionModalSelection = { type: 'promo'; code: string } | { type: 'none' };

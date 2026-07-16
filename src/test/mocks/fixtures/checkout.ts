@@ -81,6 +81,8 @@ export const samplePromotionValidation = {
   code: 'SAVE10',
   name: 'ลด 10 บาท',
   discountAmount: 10,
+  ineligibilityReason: null as string | null,
+  freeUnits: null as number | null,
 };
 
 export const sampleOrder = {

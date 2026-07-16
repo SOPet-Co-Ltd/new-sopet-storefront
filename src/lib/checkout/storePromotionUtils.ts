@@ -7,6 +7,10 @@ export type StorePromotionSelection = {
   code: string;
   name: string;
   discountAmount: number;
+  /** Server validatePromotion.freeUnits only — Gate A line badges (task-09). */
+  freeUnits?: number | null;
+  /** BxGy product P for Gate A free-unit line allocation (from conditions). */
+  productId?: string | null;
 } | null;
 
 export type StorePromotionModalSelection = { type: 'promo'; code: string } | { type: 'none' };
@@ -26,7 +30,11 @@ export type PromotionAvailabilityContext = {
   cartLines?: PromotionEstimateCartLine[];
 };
 
-export type UnavailablePromotionReason = 'GUEST_REQUIRED' | 'MIN_PURCHASE' | 'UNKNOWN';
+export type UnavailablePromotionReason =
+  'GUEST_REQUIRED' | 'NOT_NEW_CUSTOMER' | 'MIN_PURCHASE' | 'BXGY_QTY' | 'UNKNOWN';
+
+/** Customer-facing soft reason after validatePromotion ineligibility collapse. */
+export type SoftCustomerReason = UnavailablePromotionReason;
 
 export type ParsedStorePromotionConditions = {
   newCustomer?: { enabled: true; nDays: number };
@@ -38,9 +46,32 @@ export type ParsedStorePromotionConditions = {
 const GUEST_REQUIRED_WARNING = 'โปรโมชันนี้สำหรับสมาชิกเท่านั้น กรุณาเข้าสู่ระบบหรือสมัครสมาชิก';
 const GUEST_REQUIRED_CTA_LABEL = 'เข้าสู่ระบบ';
 const GUEST_REQUIRED_CTA_HREF = '/login';
+const NOT_NEW_CUSTOMER_WARNING = 'โปรโมชันนี้สำหรับลูกค้าใหม่เท่านั้น';
+const BXGY_QTY_WARNING = 'เพิ่มสินค้าในโปรให้ครบเงื่อนไขซื้อแถม';
 const MIN_PURCHASE_CTA_LABEL = 'ช้อปเพิ่ม';
 const MIN_PURCHASE_CTA_HREF = '/cart';
 const UNKNOWN_UNAVAILABLE_WARNING = 'ยังใช้โปรโมชันนี้ไม่ได้ในขณะนี้';
+
+/**
+ * Collapse validatePromotion `ineligibilityReason` → UI Spec customer reason.
+ * Scope: validatePromotion soft UX only — do not reuse for createOrder classification.
+ */
+export function mapSoftIneligibilityReason(
+  ineligibilityReason: string | null | undefined,
+): SoftCustomerReason {
+  switch (ineligibilityReason) {
+    case 'GUEST':
+      return 'GUEST_REQUIRED';
+    case 'ORDER_HISTORY':
+    case 'ACCOUNT_AGE':
+      return 'NOT_NEW_CUSTOMER';
+    case 'INSUFFICIENT_QTY':
+    case 'MISSING_LINES':
+      return 'BXGY_QTY';
+    default:
+      return 'UNKNOWN';
+  }
+}
 
 /**
  * Parse GraphQL `conditions: String` (ADR camelCase JSON).
@@ -348,7 +379,7 @@ export function categorizeStorePromotions(
 
 /**
  * Prefer specific soft reason when known (UI Spec UnavailableStorePromotionCard).
- * Guest + newCustomer wins over min-purchase.
+ * Guest + newCustomer wins over min-purchase; BxGy freeN=0 → BXGY_QTY.
  */
 export function getUnavailablePromotionReason(
   promotion: StorePromotion,
@@ -364,6 +395,12 @@ export function getUnavailablePromotionReason(
     return 'MIN_PURCHASE';
   }
 
+  if (promotion.type === 'buy_x_get_y' && context?.cartLines !== undefined) {
+    if (computeBxGyFreeUnits(promotion, context.cartLines) === 0) {
+      return 'BXGY_QTY';
+    }
+  }
+
   return 'UNKNOWN';
 }
 
@@ -375,6 +412,10 @@ export function getUnavailablePromotionWarning(
   switch (reason) {
     case 'GUEST_REQUIRED':
       return GUEST_REQUIRED_WARNING;
+    case 'NOT_NEW_CUSTOMER':
+      return NOT_NEW_CUSTOMER_WARNING;
+    case 'BXGY_QTY':
+      return BXGY_QTY_WARNING;
     case 'MIN_PURCHASE': {
       const minPurchase = promotion.minPurchaseAmount ?? 0;
       const remaining = Math.max(minPurchase - storeSubtotal, 0);
@@ -396,7 +437,9 @@ export function getUnavailablePromotionCta(
     case 'GUEST_REQUIRED':
       return { label: GUEST_REQUIRED_CTA_LABEL, href: GUEST_REQUIRED_CTA_HREF };
     case 'MIN_PURCHASE':
+    case 'BXGY_QTY':
       return { label: MIN_PURCHASE_CTA_LABEL, href: MIN_PURCHASE_CTA_HREF };
+    case 'NOT_NEW_CUSTOMER':
     case 'UNKNOWN':
     default:
       return null;

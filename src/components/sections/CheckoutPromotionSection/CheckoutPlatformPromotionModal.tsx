@@ -9,6 +9,10 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
 import {
+  SoftPromotionIneligibilityError,
+  validateCheckoutPromotionCode,
+} from '@/lib/checkout/validateCheckoutPromotion';
+import {
   getInitialPlatformPromotionSelection,
   type PlatformPromotion,
   type PlatformPromotionModalSelection,
@@ -144,15 +148,12 @@ export function CheckoutPlatformPromotionModal({
     setManualError(null);
 
     try {
-      const result = await validatePromotion({
+      const result = await validateCheckoutPromotionCode({
         code: normalizedCode,
         subtotal,
+        lines: cartLines,
+        validatePromotion,
       });
-
-      if (!result) {
-        setManualError('โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว');
-        return;
-      }
 
       const matchedPromotion = allPromotions.find(
         (promotion) => promotion.code.toUpperCase() === result.code.toUpperCase(),
@@ -180,7 +181,11 @@ export function CheckoutPlatformPromotionModal({
         ]);
         setSelection({ type: 'promo', code: result.code });
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof SoftPromotionIneligibilityError) {
+        setManualError(error.message);
+        return;
+      }
       setManualError('โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว');
     }
   };
@@ -196,23 +201,25 @@ export function CheckoutPlatformPromotionModal({
         return;
       }
 
-      const result = await validatePromotion({
+      const result = await validateCheckoutPromotionCode({
         code: selection.code,
         subtotal,
+        lines: cartLines,
+        validatePromotion,
       });
-
-      if (!result) {
-        setConfirmError('คูปองไม่ถูกต้อง หรือเงื่อนไขไม่ครบถ้วน');
-        return;
-      }
 
       onConfirm({
         code: result.code,
         name: result.name,
         discountAmount: result.discountAmount,
+        freeUnits: result.freeUnits ?? null,
       });
       onClose();
-    } catch {
+    } catch (error) {
+      if (error instanceof SoftPromotionIneligibilityError) {
+        setConfirmError(error.message);
+        return;
+      }
       setConfirmError('คูปองไม่ถูกต้อง หรือเงื่อนไขไม่ครบถ้วน');
     } finally {
       setIsConfirming(false);
@@ -358,6 +365,7 @@ export function CheckoutPlatformPromotionModal({
                     promotion={promotion}
                     storeSubtotal={subtotal}
                     isGuest={isGuest}
+                    cartLines={cartLines}
                   />
                 ))}
               </div>

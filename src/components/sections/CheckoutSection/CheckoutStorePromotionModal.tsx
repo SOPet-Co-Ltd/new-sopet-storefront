@@ -9,10 +9,15 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActiveStorePromotions } from '@/lib/hooks/useActiveStorePromotions';
 import {
+  SoftPromotionIneligibilityError,
+  validateCheckoutPromotionCode,
+} from '@/lib/checkout/validateCheckoutPromotion';
+import {
   categorizeStorePromotions,
   estimatePromotionDiscount,
   formatStorePromotionDiscountLabel,
   getInitialStorePromotionSelection,
+  parseStorePromotionConditions,
   type PromotionEstimateCartLine,
   type StorePromotion,
   type StorePromotionModalSelection,
@@ -143,16 +148,13 @@ export function CheckoutStorePromotionModal({
     setManualError(null);
 
     try {
-      const result = await validatePromotion({
+      const result = await validateCheckoutPromotionCode({
         code: normalizedCode,
         subtotal: storeSubtotal,
         storeId,
+        lines: cartLines,
+        validatePromotion,
       });
-
-      if (!result) {
-        setManualError('โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว');
-        return;
-      }
 
       const matchedPromotion = allPromotions.find(
         (promotion) => promotion.code.toUpperCase() === result.code.toUpperCase(),
@@ -180,7 +182,11 @@ export function CheckoutStorePromotionModal({
         ]);
         setSelection({ type: 'promo', code: result.code });
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof SoftPromotionIneligibilityError) {
+        setManualError(error.message);
+        return;
+      }
       setManualError('โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว');
     }
   };
@@ -196,24 +202,34 @@ export function CheckoutStorePromotionModal({
         return;
       }
 
-      const result = await validatePromotion({
+      const result = await validateCheckoutPromotionCode({
         code: selection.code,
         subtotal: storeSubtotal,
         storeId,
+        lines: cartLines,
+        validatePromotion,
       });
 
-      if (!result) {
-        setConfirmError('คูปองไม่ถูกต้อง หรือเงื่อนไขไม่ครบถ้วน');
-        return;
-      }
+      const matched = allPromotions.find(
+        (promotion) => promotion.code.toUpperCase() === result.code.toUpperCase(),
+      );
+      const productId = matched
+        ? (parseStorePromotionConditions(matched.conditions).productId ?? null)
+        : null;
 
       onConfirm({
         code: result.code,
         name: result.name,
         discountAmount: result.discountAmount,
+        freeUnits: result.freeUnits ?? null,
+        productId,
       });
       onClose();
-    } catch {
+    } catch (error) {
+      if (error instanceof SoftPromotionIneligibilityError) {
+        setConfirmError(error.message);
+        return;
+      }
       setConfirmError('คูปองไม่ถูกต้อง หรือเงื่อนไขไม่ครบถ้วน');
     } finally {
       setIsConfirming(false);
@@ -361,6 +377,7 @@ export function CheckoutStorePromotionModal({
                     promotion={promotion}
                     storeSubtotal={storeSubtotal}
                     isGuest={isGuest}
+                    cartLines={cartLines}
                   />
                 ))}
               </div>

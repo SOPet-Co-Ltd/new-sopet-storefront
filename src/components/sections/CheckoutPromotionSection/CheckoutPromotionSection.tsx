@@ -16,7 +16,11 @@ import {
   type PlatformPromotionSectionStage,
   type PlatformPromotionSelection,
 } from '@/lib/checkout/platformPromotionUtils';
-import { categorizeStorePromotions, type StorePromotion } from '@/lib/checkout/storePromotionUtils';
+import {
+  categorizeStorePromotions,
+  toPromotionEstimateCartLines,
+  type StorePromotion,
+} from '@/lib/checkout/storePromotionUtils';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
 import { useCart } from '@/lib/providers/CartProvider';
@@ -122,7 +126,7 @@ function PlatformPromotionBottomCard({
 
 export function CheckoutPromotionSection() {
   const isMobile = useIsMobile(768);
-  const { selectedSubtotal: subtotal } = useCart();
+  const { selectedSubtotal: subtotal, selectedItems } = useCart();
   const { promotions, loading: loadingPromotions } = useActivePlatformPromotions(true);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
   const {
@@ -137,6 +141,8 @@ export function CheckoutPromotionSection() {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const cartLines = useMemo(() => toPromotionEstimateCartLines(selectedItems), [selectedItems]);
+
   const appliedPromotion = useMemo<PlatformPromotionSelection>(() => {
     if (!promotionCode) return null;
 
@@ -148,9 +154,11 @@ export function CheckoutPromotionSection() {
   }, [promotionCode, promotionDiscount, promotionName]);
 
   const availablePromotionCount = useMemo(() => {
-    const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal);
+    const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal, {
+      cartLines,
+    });
     return available.length;
-  }, [promotions, subtotal]);
+  }, [cartLines, promotions, subtotal]);
 
   const stage = getPlatformPromotionSectionStage(
     Boolean(appliedPromotion),
@@ -291,6 +299,7 @@ export function CheckoutPromotionSection() {
       <CheckoutPlatformPromotionModal
         isOpen={isModalOpen}
         subtotal={subtotal}
+        cartLines={cartLines}
         appliedPromotion={appliedPromotion}
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleModalConfirm}

@@ -1,15 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
   categorizeStorePromotions,
+  estimatePromotionDiscount,
+  formatPromotionDiscountTitle,
   formatPromotionConditionText,
   getUnavailablePromotionCta,
   getUnavailablePromotionReason,
   getUnavailablePromotionWarning,
   isPromotionAvailable,
   parseStorePromotionConditions,
+  type PromotionEstimateCartLine,
 } from '@/lib/checkout/storePromotionUtils';
 import { sampleStorePromotion } from '@/test/mocks/fixtures/checkout';
 import {
+  BXGY_PRODUCT_ID,
+  bxgyStorePromotion,
+  buildBxGyConditions,
+  fixedAmountClampPromotion,
   guestNewCustomerPlatformPromotion,
   guestNewCustomerStorePromotion,
   SOFT_REASON_FIXTURE_LABELS,
@@ -144,6 +151,99 @@ describe('storePromotionUtils', () => {
         label: 'ช้อปเพิ่ม',
         href: '/cart',
       });
+    });
+  });
+
+  /**
+   * UI-D-004 / AC-037–038 — client estimate mirrors Backend Rule A/B for coupon preview.
+   * estimatePromotionDiscount is for modal preview only — NOT the source for
+   * CheckoutOrderItemRow free-unit badges (those use validatePromotion.freeUnits; Gate A / task-09).
+   */
+  describe('estimatePromotionDiscount Rule A/B + fixed_amount clamp', () => {
+    const linesForQ = (
+      rows: Array<{ quantity: number; unitPrice: number; variantId?: string }>,
+    ): PromotionEstimateCartLine[] =>
+      rows.map((row, index) => ({
+        productId: BXGY_PRODUCT_ID,
+        quantity: row.quantity,
+        unitPrice: row.unitPrice,
+        variantId: row.variantId ?? `v-${index}`,
+      }));
+
+    it.each([
+      { Q: 2, freeN: 0, expectedDiscount: 0 },
+      { Q: 3, freeN: 1, expectedDiscount: 100 },
+      { Q: 5, freeN: 1, expectedDiscount: 100 },
+      { Q: 6, freeN: 2, expectedDiscount: 200 },
+    ])(
+      'Rule A: Buy 2 Get 1 for Q=$Q → freeN=$freeN preview=$expectedDiscount (unitPrice 100)',
+      ({ Q, expectedDiscount }) => {
+        const discount = estimatePromotionDiscount(
+          bxgyStorePromotion,
+          1000,
+          linesForQ([{ quantity: Q, unitPrice: 100 }]),
+        );
+        expect(discount).toBe(expectedDiscount);
+      },
+    );
+
+    it('Rule B: preview equals sum of cheapest freeN unit prices (ignores foreign productId)', () => {
+      // Q=6 → freeN=2; multiset 50,80,100,110,120,130 → cheapest two = 50+80 = 130
+      const lines: PromotionEstimateCartLine[] = [
+        { productId: BXGY_PRODUCT_ID, variantId: 'a', quantity: 1, unitPrice: 50 },
+        { productId: BXGY_PRODUCT_ID, variantId: 'b', quantity: 1, unitPrice: 80 },
+        { productId: BXGY_PRODUCT_ID, variantId: 'c', quantity: 1, unitPrice: 100 },
+        { productId: BXGY_PRODUCT_ID, variantId: 'd', quantity: 1, unitPrice: 110 },
+        { productId: BXGY_PRODUCT_ID, variantId: 'e', quantity: 1, unitPrice: 120 },
+        { productId: BXGY_PRODUCT_ID, variantId: 'f', quantity: 1, unitPrice: 130 },
+        { productId: 'foreign', variantId: 'x', quantity: 10, unitPrice: 1 },
+      ];
+
+      expect(estimatePromotionDiscount(bxgyStorePromotion, 1000, lines)).toBe(130);
+    });
+
+    it('freeN=0 with lines → ฿0; missing cartLines → ฿0', () => {
+      expect(
+        estimatePromotionDiscount(
+          bxgyStorePromotion,
+          1000,
+          linesForQ([{ quantity: 2, unitPrice: 100 }]),
+        ),
+      ).toBe(0);
+      expect(estimatePromotionDiscount(bxgyStorePromotion, 1000)).toBe(0);
+      expect(estimatePromotionDiscount(bxgyStorePromotion, 1000, undefined)).toBe(0);
+    });
+
+    it('fixed_amount Rule C: preview = min(V, eligibleBase) after maxDiscount', () => {
+      expect(estimatePromotionDiscount(fixedAmountClampPromotion, 80)).toBe(80);
+      expect(estimatePromotionDiscount(fixedAmountClampPromotion, 150)).toBe(100);
+
+      const capped = {
+        ...fixedAmountClampPromotion,
+        discountValue: 100,
+        maxDiscountAmount: 40,
+      };
+      expect(estimatePromotionDiscount(capped, 150)).toBe(40);
+    });
+
+    it('formatPromotionDiscountTitle for buy_x_get_y uses ซื้อ {X} แถม {Y}', () => {
+      expect(formatPromotionDiscountTitle(bxgyStorePromotion)).toBe('ซื้อ 2 แถม 1');
+      expect(
+        formatPromotionDiscountTitle({
+          ...bxgyStorePromotion,
+          conditions: stringifyConditions(buildBxGyConditions({ buyQuantity: 3, getQuantity: 2 })),
+        }),
+      ).toBe('ซื้อ 3 แถม 2');
+    });
+
+    it('marks BxGy freeN=0 unavailable when cartLines provided (preview path)', () => {
+      const insufficient = linesForQ([{ quantity: 2, unitPrice: 100 }]);
+      expect(isPromotionAvailable(bxgyStorePromotion, 1000, { cartLines: insufficient })).toBe(
+        false,
+      );
+
+      const sufficient = linesForQ([{ quantity: 3, unitPrice: 100 }]);
+      expect(isPromotionAvailable(bxgyStorePromotion, 1000, { cartLines: sufficient })).toBe(true);
     });
   });
 });

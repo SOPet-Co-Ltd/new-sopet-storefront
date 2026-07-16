@@ -13,6 +13,7 @@ import {
   estimatePromotionDiscount,
   formatStorePromotionDiscountLabel,
   getInitialStorePromotionSelection,
+  type PromotionEstimateCartLine,
   type StorePromotion,
   type StorePromotionModalSelection,
   type StorePromotionSelection,
@@ -49,6 +50,8 @@ type CheckoutStorePromotionModalProps = {
   storeId: string;
   storeName: string;
   storeSubtotal: number;
+  /** Cart lines for BxGy Rule A/B preview (optional; omit → BxGy estimate ฿0). */
+  cartLines?: PromotionEstimateCartLine[];
   appliedPromotion: StorePromotionSelection;
   onClose: () => void;
   onConfirm: (promotion: StorePromotionSelection) => void;
@@ -59,6 +62,7 @@ export function CheckoutStorePromotionModal({
   storeId,
   storeName,
   storeSubtotal,
+  cartLines,
   appliedPromotion,
   onClose,
   onConfirm,
@@ -94,8 +98,8 @@ export function CheckoutStorePromotionModal({
   }, [promotions, validatedPromotions]);
 
   const { available, unavailable } = useMemo(
-    () => categorizeStorePromotions(allPromotions, storeSubtotal, { isGuest }),
-    [allPromotions, isGuest, storeSubtotal],
+    () => categorizeStorePromotions(allPromotions, storeSubtotal, { isGuest, cartLines }),
+    [allPromotions, cartLines, isGuest, storeSubtotal],
   );
 
   const selectedPromotion = useMemo(() => {
@@ -109,8 +113,8 @@ export function CheckoutStorePromotionModal({
 
   const footerDiscountAmount = useMemo(() => {
     if (selection.type === 'none' || !selectedPromotion) return 0;
-    return estimatePromotionDiscount(selectedPromotion, storeSubtotal);
-  }, [selectedPromotion, selection, storeSubtotal]);
+    return estimatePromotionDiscount(selectedPromotion, storeSubtotal, cartLines);
+  }, [cartLines, selectedPromotion, selection, storeSubtotal]);
 
   const showApplyFooter = available.length > 0 || Boolean(appliedPromotion);
 

@@ -220,6 +220,53 @@ export const fixedAmountClampPromotion = {
 };
 
 /**
+ * List-time hybrid Journey 1 — client-local MIN_PURCHASE unavailable when subtotal < 1000.
+ * Catalog-only (no eligibility fields — AC-047).
+ */
+export const listTimeMinPurchaseStorePromotion = {
+  __typename: 'PromotionType' as const,
+  id: 'promo-list-time-store-min-purchase',
+  code: 'MINPUR1000',
+  name: 'ลดเมื่อซื้อครบ',
+  type: 'fixed_amount',
+  discountValue: 50,
+  ...basePromotionFields,
+  minPurchaseAmount: 1000,
+  scope: 'store',
+  storeId: CHECKOUT_STORE_ID,
+  conditions: stringifyConditions({}),
+};
+
+/** List-time hybrid — platform usable (no soft gates) for ใช้ได้ตอนนี้ membership. */
+export const listTimeUsablePlatformPromotion = {
+  __typename: 'PromotionType' as const,
+  id: 'promo-list-time-platform-usable',
+  code: 'PLATUSABLE50',
+  name: 'ลดแพลตฟอร์ม 50',
+  type: 'fixed_amount',
+  discountValue: 50,
+  ...basePromotionFields,
+  scope: 'platform',
+  storeId: null as string | null,
+  conditions: stringifyConditions({}),
+};
+
+/** List-time hybrid — platform client-local MIN_PURCHASE. */
+export const listTimeMinPurchasePlatformPromotion = {
+  __typename: 'PromotionType' as const,
+  id: 'promo-list-time-platform-min-purchase',
+  code: 'PLATMIN1000',
+  name: 'แพลตฟอร์มซื้อครบ',
+  type: 'fixed_amount',
+  discountValue: 40,
+  ...basePromotionFields,
+  minPurchaseAmount: 1000,
+  scope: 'platform',
+  storeId: null as string | null,
+  conditions: stringifyConditions({}),
+};
+
+/**
  * validatePromotion soft/hard shapes (Backend DD / Design Doc).
  * Soft: discountAmount=0 + ineligibilityReason — no hard GraphQL error.
  */
@@ -344,6 +391,8 @@ export const SOFT_REASON_FIXTURE_LABELS = {
   GUEST_CTA: 'เข้าสู่ระบบ',
   BXGY_QTY: 'เพิ่มสินค้าในโปรให้ครบเงื่อนไขซื้อแถม',
   NOT_NEW_CUSTOMER: 'โปรโมชันนี้สำหรับลูกค้าใหม่เท่านั้น',
+  /** remaining = minPurchase − subtotal when subtotal=500, min=1000 */
+  MIN_PURCHASE_REMAINING_500: 'ซื้อเพิ่มอีก ฿500.00 เพื่อใช้ส่วนลดนี้',
 } as const;
 
 export const AUTH_MOCK_USAGE = {

@@ -7,6 +7,9 @@
  * `guestLoggedInOnlyJourneyPromotionHandlers` /
  * `loggedInLoggedInOnlyJourneyPromotionHandlers` /
  * `guestBothKeysJourneyPromotionHandlers` (newCustomer-only remains `guestJourneyPromotionHandlers`).
+ *
+ * Decision 6 list-time fixture-e2e: `createListTimeHybridJourneyHandlers` /
+ * `createListTimeBatchFailureHandlers` / `createListTimeAvailableConfirmHandlers`.
  */
 import { graphql, HttpResponse } from 'msw';
 import {
@@ -18,6 +21,9 @@ import {
   guestLoggedInOnlyStorePromotion,
   guestNewCustomerPlatformPromotion,
   guestNewCustomerStorePromotion,
+  listTimeMinPurchasePlatformPromotion,
+  listTimeMinPurchaseStorePromotion,
+  listTimeUsablePlatformPromotion,
   validatePromotionBxGyEligible,
   validatePromotionBxGyInsufficientQty,
   validatePromotionGuestRequired,
@@ -211,6 +217,234 @@ export function createBxGyJourneyPromotionHandlers(
       void input?.lines;
       return HttpResponse.json({
         data: { validatePromotion: resolveValidatePromotion(validateMode) },
+      });
+    }),
+  ];
+}
+
+/**
+ * Decision 6 list-time hybrid Journey 1 — catalog mix (usable + newCustomer + minPurchase)
+ * + ValidatePromotions ORDER_HISTORY soft on new-customer id + eligible ValidatePromotion on confirm.
+ * Catalog payloads omit eligibility fields (AC-047).
+ */
+export function createListTimeHybridJourneyHandlers(scope: 'store' | 'platform') {
+  const storeCatalog = [
+    fixedAmountClampPromotion,
+    guestNewCustomerStorePromotion,
+    listTimeMinPurchaseStorePromotion,
+  ];
+  const platformCatalog = [
+    listTimeUsablePlatformPromotion,
+    guestNewCustomerPlatformPromotion,
+    listTimeMinPurchasePlatformPromotion,
+  ];
+
+  const batchItems =
+    scope === 'store'
+      ? [
+          {
+            __typename: 'PromotionEligibilityResult' as const,
+            id: fixedAmountClampPromotion.id,
+            code: fixedAmountClampPromotion.code,
+            name: fixedAmountClampPromotion.name,
+            eligible: true,
+            ineligibilityReason: null as string | null,
+            discountAmount: 100,
+            freeUnits: null as number | null,
+          },
+          {
+            __typename: 'PromotionEligibilityResult' as const,
+            id: guestNewCustomerStorePromotion.id,
+            code: guestNewCustomerStorePromotion.code,
+            name: guestNewCustomerStorePromotion.name,
+            eligible: false,
+            ineligibilityReason: 'ORDER_HISTORY',
+            discountAmount: 0,
+            freeUnits: null as number | null,
+          },
+          {
+            __typename: 'PromotionEligibilityResult' as const,
+            id: listTimeMinPurchaseStorePromotion.id,
+            code: listTimeMinPurchaseStorePromotion.code,
+            name: listTimeMinPurchaseStorePromotion.name,
+            eligible: true,
+            ineligibilityReason: null as string | null,
+            discountAmount: 50,
+            freeUnits: null as number | null,
+          },
+        ]
+      : [
+          {
+            __typename: 'PromotionEligibilityResult' as const,
+            id: listTimeUsablePlatformPromotion.id,
+            code: listTimeUsablePlatformPromotion.code,
+            name: listTimeUsablePlatformPromotion.name,
+            eligible: true,
+            ineligibilityReason: null as string | null,
+            discountAmount: 50,
+            freeUnits: null as number | null,
+          },
+          {
+            __typename: 'PromotionEligibilityResult' as const,
+            id: guestNewCustomerPlatformPromotion.id,
+            code: guestNewCustomerPlatformPromotion.code,
+            name: guestNewCustomerPlatformPromotion.name,
+            eligible: false,
+            ineligibilityReason: 'ORDER_HISTORY',
+            discountAmount: 0,
+            freeUnits: null as number | null,
+          },
+          {
+            __typename: 'PromotionEligibilityResult' as const,
+            id: listTimeMinPurchasePlatformPromotion.id,
+            code: listTimeMinPurchasePlatformPromotion.code,
+            name: listTimeMinPurchasePlatformPromotion.name,
+            eligible: true,
+            ineligibilityReason: null as string | null,
+            discountAmount: 40,
+            freeUnits: null as number | null,
+          },
+        ];
+
+  const confirmCode =
+    scope === 'store' ? fixedAmountClampPromotion.code : listTimeUsablePlatformPromotion.code;
+  const confirmName =
+    scope === 'store' ? fixedAmountClampPromotion.name : listTimeUsablePlatformPromotion.name;
+  const confirmDiscount = scope === 'store' ? 100 : 50;
+
+  return [
+    graphql.query('ActiveStorePromotions', () => {
+      return HttpResponse.json({
+        data: { activeStorePromotions: storeCatalog },
+      });
+    }),
+    graphql.query('ActivePlatformPromotions', () => {
+      return HttpResponse.json({
+        data: { activePlatformPromotions: platformCatalog },
+      });
+    }),
+    graphql.query('ValidatePromotions', () => {
+      return HttpResponse.json({
+        data: {
+          validatePromotions: {
+            __typename: 'ValidatePromotionsResult',
+            items: batchItems,
+          },
+        },
+      });
+    }),
+    graphql.query('ValidatePromotion', () => {
+      return HttpResponse.json({
+        data: {
+          validatePromotion: {
+            __typename: 'PromotionValidationResult',
+            code: confirmCode,
+            name: confirmName,
+            discountAmount: confirmDiscount,
+            ineligibilityReason: null,
+            freeUnits: null,
+          },
+        },
+      });
+    }),
+  ];
+}
+
+/** Journey 3 — available selectable + confirm; batch marks usable eligible. */
+export function createListTimeAvailableConfirmHandlers() {
+  return [
+    graphql.query('ActiveStorePromotions', () => {
+      return HttpResponse.json({
+        data: {
+          activeStorePromotions: [fixedAmountClampPromotion, guestNewCustomerStorePromotion],
+        },
+      });
+    }),
+    graphql.query('ActivePlatformPromotions', () => {
+      return HttpResponse.json({
+        data: {
+          activePlatformPromotions: [
+            listTimeUsablePlatformPromotion,
+            guestNewCustomerPlatformPromotion,
+          ],
+        },
+      });
+    }),
+    graphql.query('ValidatePromotions', () => {
+      return HttpResponse.json({
+        data: {
+          validatePromotions: {
+            __typename: 'ValidatePromotionsResult',
+            items: [
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: fixedAmountClampPromotion.id,
+                code: fixedAmountClampPromotion.code,
+                name: fixedAmountClampPromotion.name,
+                eligible: true,
+                ineligibilityReason: null,
+                discountAmount: 100,
+                freeUnits: null,
+              },
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: guestNewCustomerStorePromotion.id,
+                code: guestNewCustomerStorePromotion.code,
+                name: guestNewCustomerStorePromotion.name,
+                eligible: false,
+                ineligibilityReason: 'ORDER_HISTORY',
+                discountAmount: 0,
+                freeUnits: null,
+              },
+            ],
+          },
+        },
+      });
+    }),
+    graphql.query('ValidatePromotion', () => {
+      return HttpResponse.json({
+        data: {
+          validatePromotion: {
+            __typename: 'PromotionValidationResult',
+            code: fixedAmountClampPromotion.code,
+            name: fixedAmountClampPromotion.name,
+            discountAmount: 100,
+            ineligibilityReason: null,
+            freeUnits: null,
+          },
+        },
+      });
+    }),
+  ];
+}
+
+/**
+ * Journey 2 / AC-051 — catalog with client-local available + unavailable; ValidatePromotions transport error.
+ * UI-D-005: retain both sections; never unlock; banner polite.
+ */
+export function createListTimeBatchFailureHandlers() {
+  return [
+    graphql.query('ActiveStorePromotions', () => {
+      return HttpResponse.json({
+        data: {
+          activeStorePromotions: [fixedAmountClampPromotion, guestNewCustomerStorePromotion],
+        },
+      });
+    }),
+    graphql.query('ActivePlatformPromotions', () => {
+      return HttpResponse.json({
+        data: {
+          activePlatformPromotions: [
+            listTimeUsablePlatformPromotion,
+            guestNewCustomerPlatformPromotion,
+          ],
+        },
+      });
+    }),
+    ...createValidatePromotionsHandlers('transport-error'),
+    graphql.query('ValidatePromotion', () => {
+      return HttpResponse.json({
+        data: { validatePromotion: validatePromotionGuestRequired },
       });
     }),
   ];

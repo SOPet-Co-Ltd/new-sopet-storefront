@@ -7,6 +7,7 @@ import {
   getUnavailablePromotionCta,
   getUnavailablePromotionReason,
   getUnavailablePromotionWarning,
+  hasLoggedInOnlyConditionEnabled,
   isPromotionAvailable,
   mapSoftIneligibilityReason,
   parseStorePromotionConditions,
@@ -17,7 +18,11 @@ import {
   BXGY_PRODUCT_ID,
   bxgyStorePromotion,
   buildBxGyConditions,
+  buildLoggedInOnlyConditions,
   fixedAmountClampPromotion,
+  guestLoggedInOnlyAndNewCustomerStorePromotion,
+  guestLoggedInOnlyPlatformPromotion,
+  guestLoggedInOnlyStorePromotion,
   guestNewCustomerPlatformPromotion,
   guestNewCustomerStorePromotion,
   SOFT_REASON_FIXTURE_LABELS,
@@ -71,9 +76,117 @@ describe('storePromotionUtils', () => {
         newCustomer: { enabled: true, nDays: 30 },
       });
     });
+
+    it('parses loggedInOnly.enabled === true and ignores false/absent', () => {
+      expect(parseStorePromotionConditions(guestLoggedInOnlyStorePromotion.conditions)).toEqual({
+        loggedInOnly: { enabled: true },
+      });
+      expect(
+        parseStorePromotionConditions(JSON.stringify({ loggedInOnly: { enabled: false } })),
+      ).toEqual({});
+      expect(parseStorePromotionConditions(stringifyConditions({}))).toEqual({});
+      expect(
+        parseStorePromotionConditions(guestLoggedInOnlyAndNewCustomerStorePromotion.conditions),
+      ).toEqual({
+        loggedInOnly: { enabled: true },
+        newCustomer: { enabled: true, nDays: 30 },
+      });
+    });
   });
 
-  describe('isPromotionAvailable / categorizeStorePromotions (guest + newCustomer)', () => {
+  /**
+   * Frontend DD Output Comparison — guest OR-gate (UI-L-005) + availablePromotionCount parity.
+   * Count = categorizeStorePromotions(...).available.length when isGuest is passed (IP-S4).
+   */
+  describe('isPromotionAvailable / categorizeStorePromotions (guest OR-gate loggedInOnly)', () => {
+    it.each([
+      {
+        label: 'guest + none',
+        promo: { ...promotionWithConditions, conditions: stringifyConditions({}) },
+        isGuest: true,
+        available: true,
+        countIncludes: true,
+      },
+      {
+        label: 'guest + newCustomer only',
+        promo: guestNewCustomerStorePromotion,
+        isGuest: true,
+        available: false,
+        countIncludes: false,
+      },
+      {
+        label: 'guest + loggedInOnly only',
+        promo: guestLoggedInOnlyStorePromotion,
+        isGuest: true,
+        available: false,
+        countIncludes: false,
+      },
+      {
+        label: 'guest + both keys',
+        promo: guestLoggedInOnlyAndNewCustomerStorePromotion,
+        isGuest: true,
+        available: false,
+        countIncludes: false,
+      },
+      {
+        label: 'logged-in + loggedInOnly only',
+        promo: guestLoggedInOnlyStorePromotion,
+        isGuest: false,
+        available: true,
+        countIncludes: true,
+      },
+      {
+        label: 'logged-in + newCustomer only',
+        promo: guestNewCustomerStorePromotion,
+        isGuest: false,
+        available: true,
+        countIncludes: true,
+      },
+      {
+        label: 'logged-in + both keys',
+        promo: guestLoggedInOnlyAndNewCustomerStorePromotion,
+        isGuest: false,
+        available: true,
+        countIncludes: true,
+      },
+    ])(
+      '$label → available=$available; countIncludes=$countIncludes',
+      ({ promo, isGuest, available, countIncludes }) => {
+        expect(isPromotionAvailable(promo, 500, { isGuest })).toBe(available);
+
+        const { available: availableList } = categorizeStorePromotions([promo], 500, { isGuest });
+        expect(availableList.some((p) => p.code === promo.code)).toBe(countIncludes);
+      },
+    );
+
+    it('hasLoggedInOnlyConditionEnabled is true only when enabled === true', () => {
+      expect(hasLoggedInOnlyConditionEnabled(guestLoggedInOnlyStorePromotion)).toBe(true);
+      expect(hasLoggedInOnlyConditionEnabled(guestNewCustomerStorePromotion)).toBe(false);
+      expect(
+        hasLoggedInOnlyConditionEnabled({
+          ...promotionWithConditions,
+          conditions: JSON.stringify({ loggedInOnly: { enabled: false } }),
+        }),
+      ).toBe(false);
+      expect(
+        hasLoggedInOnlyConditionEnabled({
+          ...promotionWithConditions,
+          conditions: stringifyConditions(buildLoggedInOnlyConditions()),
+        }),
+      ).toBe(true);
+    });
+
+    it('categorizes loggedInOnly promos into unavailable for guests (store + platform)', () => {
+      const { available, unavailable } = categorizeStorePromotions(
+        [guestLoggedInOnlyStorePromotion, guestLoggedInOnlyPlatformPromotion],
+        500,
+        { isGuest: true },
+      );
+
+      expect(available).toHaveLength(0);
+      expect(unavailable.map((p) => p.code)).toEqual(['MEMBERSTORE10', 'MEMBERPLAT50']);
+    });
+
     it('marks guest + newCustomer.enabled as unavailable even when min purchase is met', () => {
       const promo = guestNewCustomerStorePromotion;
 
@@ -82,7 +195,7 @@ describe('storePromotionUtils', () => {
       expect(isPromotionAvailable(promo, 999, { isGuest: false })).toBe(true);
     });
 
-    it('keeps promotions without newCustomer.enabled available for guests', () => {
+    it('keeps promotions without guest gates available for guests', () => {
       const promo = {
         ...promotionWithConditions,
         conditions: stringifyConditions({}),
@@ -91,7 +204,7 @@ describe('storePromotionUtils', () => {
       expect(isPromotionAvailable(promo, 100, { isGuest: true })).toBe(true);
     });
 
-    it('categorizes conditioned promos into unavailable for guests (store + platform shapes)', () => {
+    it('categorizes newCustomer-conditioned promos into unavailable for guests (store + platform)', () => {
       const { available, unavailable } = categorizeStorePromotions(
         [guestNewCustomerStorePromotion, guestNewCustomerPlatformPromotion],
         500,
@@ -104,18 +217,18 @@ describe('storePromotionUtils', () => {
 
     it('leaves conditioned promos available when not guest', () => {
       const { available, unavailable } = categorizeStorePromotions(
-        [guestNewCustomerStorePromotion],
+        [guestNewCustomerStorePromotion, guestLoggedInOnlyStorePromotion],
         500,
         { isGuest: false },
       );
 
-      expect(available).toHaveLength(1);
+      expect(available).toHaveLength(2);
       expect(unavailable).toHaveLength(0);
     });
   });
 
   describe('unavailable reason / soft copy (GUEST path)', () => {
-    it('maps guest + conditioned to GUEST_REQUIRED with login CTA copy', () => {
+    it('maps guest + newCustomer to GUEST_REQUIRED with login CTA copy', () => {
       const reason = getUnavailablePromotionReason(guestNewCustomerStorePromotion, 500, {
         isGuest: true,
       });
@@ -130,7 +243,44 @@ describe('storePromotionUtils', () => {
       });
     });
 
-    it('prefers GUEST_REQUIRED over min-purchase when both apply', () => {
+    it('maps guest + loggedInOnly-only to the same GUEST_REQUIRED warning and CTA', () => {
+      const reason = getUnavailablePromotionReason(guestLoggedInOnlyStorePromotion, 500, {
+        isGuest: true,
+      });
+
+      expect(reason).toBe('GUEST_REQUIRED');
+      expect(getUnavailablePromotionWarning(reason, guestLoggedInOnlyStorePromotion, 500)).toBe(
+        SOFT_REASON_FIXTURE_LABELS.GUEST_REQUIRED,
+      );
+      expect(getUnavailablePromotionCta(reason)).toEqual({
+        label: SOFT_REASON_FIXTURE_LABELS.GUEST_CTA,
+        href: '/login',
+      });
+    });
+
+    it('maps guest + both keys to a single GUEST_REQUIRED string (UI-L-003)', () => {
+      const reason = getUnavailablePromotionReason(
+        guestLoggedInOnlyAndNewCustomerStorePromotion,
+        500,
+        { isGuest: true },
+      );
+
+      expect(reason).toBe('GUEST_REQUIRED');
+      expect(
+        getUnavailablePromotionWarning(reason, guestLoggedInOnlyAndNewCustomerStorePromotion, 500),
+      ).toBe(SOFT_REASON_FIXTURE_LABELS.GUEST_REQUIRED);
+    });
+
+    it('prefers GUEST_REQUIRED over min-purchase when both apply (loggedInOnly)', () => {
+      const promo = {
+        ...guestLoggedInOnlyStorePromotion,
+        minPurchaseAmount: 1000,
+      };
+
+      expect(getUnavailablePromotionReason(promo, 100, { isGuest: true })).toBe('GUEST_REQUIRED');
+    });
+
+    it('prefers GUEST_REQUIRED over min-purchase when both apply (newCustomer)', () => {
       const promo = {
         ...guestNewCustomerStorePromotion,
         minPurchaseAmount: 1000,

@@ -23,6 +23,7 @@ import {
 } from '@/lib/checkout/storePromotionUtils';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
@@ -126,6 +127,8 @@ function PlatformPromotionBottomCard({
 
 export function CheckoutPromotionSection() {
   const isMobile = useIsMobile(768);
+  const { isAuthenticated } = useAuth();
+  const isGuest = !isAuthenticated;
   const { selectedSubtotal: subtotal, selectedItems } = useCart();
   const { promotions, loading: loadingPromotions } = useActivePlatformPromotions(true);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
@@ -161,10 +164,11 @@ export function CheckoutPromotionSection() {
 
   const availablePromotionCount = useMemo(() => {
     const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal, {
+      isGuest,
       cartLines,
     });
     return available.length;
-  }, [cartLines, promotions, subtotal]);
+  }, [cartLines, isGuest, promotions, subtotal]);
 
   const stage = getPlatformPromotionSectionStage(
     Boolean(appliedPromotion),

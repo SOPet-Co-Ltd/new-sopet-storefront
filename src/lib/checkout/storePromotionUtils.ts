@@ -24,7 +24,7 @@ export type PromotionEstimateCartLine = {
 };
 
 export type PromotionAvailabilityContext = {
-  /** When true, promotions with newCustomer.enabled are unavailable (GUEST_REQUIRED). */
+  /** When true, promotions with loggedInOnly or newCustomer.enabled are unavailable (GUEST_REQUIRED). */
   isGuest?: boolean;
   /** Cart lines for BxGy Rule A qty check (same shape as estimate). */
   cartLines?: PromotionEstimateCartLine[];
@@ -37,6 +37,7 @@ export type UnavailablePromotionReason =
 export type SoftCustomerReason = UnavailablePromotionReason;
 
 export type ParsedStorePromotionConditions = {
+  loggedInOnly?: { enabled: true };
   newCustomer?: { enabled: true; nDays: number };
   productId?: string;
   buyQuantity?: number;
@@ -91,6 +92,16 @@ export function parseStorePromotionConditions(
     const record = parsed as Record<string, unknown>;
     const result: ParsedStorePromotionConditions = {};
 
+    const loggedInOnlyRaw = record.loggedInOnly;
+    if (
+      typeof loggedInOnlyRaw === 'object' &&
+      loggedInOnlyRaw !== null &&
+      !Array.isArray(loggedInOnlyRaw) &&
+      (loggedInOnlyRaw as Record<string, unknown>).enabled === true
+    ) {
+      result.loggedInOnly = { enabled: true };
+    }
+
     const newCustomerRaw = record.newCustomer;
     if (
       typeof newCustomerRaw === 'object' &&
@@ -131,6 +142,15 @@ export function parseStorePromotionConditions(
 
 export function hasNewCustomerConditionEnabled(promotion: StorePromotion): boolean {
   return parseStorePromotionConditions(promotion.conditions).newCustomer?.enabled === true;
+}
+
+export function hasLoggedInOnlyConditionEnabled(promotion: StorePromotion): boolean {
+  return parseStorePromotionConditions(promotion.conditions).loggedInOnly?.enabled === true;
+}
+
+/** Guest soft gate (UI-L-005): loggedInOnly OR newCustomer → GUEST_REQUIRED. */
+function hasGuestAuthConditionEnabled(promotion: StorePromotion): boolean {
+  return hasLoggedInOnlyConditionEnabled(promotion) || hasNewCustomerConditionEnabled(promotion);
 }
 
 export function formatPromotionDiscountTitle(promotion: StorePromotion): string {
@@ -337,7 +357,7 @@ export function isPromotionAvailable(
   storeSubtotal: number,
   context?: PromotionAvailabilityContext,
 ): boolean {
-  if (context?.isGuest && hasNewCustomerConditionEnabled(promotion)) {
+  if (context?.isGuest && hasGuestAuthConditionEnabled(promotion)) {
     return false;
   }
 
@@ -379,14 +399,14 @@ export function categorizeStorePromotions(
 
 /**
  * Prefer specific soft reason when known (UI Spec UnavailableStorePromotionCard).
- * Guest + newCustomer wins over min-purchase; BxGy freeN=0 → BXGY_QTY.
+ * Guest + (loggedInOnly OR newCustomer) wins over min-purchase; BxGy freeN=0 → BXGY_QTY.
  */
 export function getUnavailablePromotionReason(
   promotion: StorePromotion,
   storeSubtotal: number,
   context?: PromotionAvailabilityContext,
 ): UnavailablePromotionReason {
-  if (context?.isGuest && hasNewCustomerConditionEnabled(promotion)) {
+  if (context?.isGuest && hasGuestAuthConditionEnabled(promotion)) {
     return 'GUEST_REQUIRED';
   }
 

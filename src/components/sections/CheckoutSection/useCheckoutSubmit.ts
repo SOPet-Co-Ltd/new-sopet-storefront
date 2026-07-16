@@ -20,6 +20,7 @@ import {
   type GuestCheckoutField,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import { parseStorePromotionConditions } from '@/lib/checkout/storePromotionUtils';
 import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -284,18 +285,24 @@ export async function applyCheckoutPromotionCode({
   code,
   subtotal,
   lines,
+  promotions,
   validatePromotion,
   setPromotion,
   setPromotionName,
   setPromotionDiscount,
+  setPromotionFreeUnits,
+  setPromotionProductId,
 }: {
   code: string;
   subtotal: number;
   lines?: import('@/lib/checkout/storePromotionUtils').PromotionEstimateCartLine[];
+  promotions?: Array<{ code: string; conditions?: string | null }>;
   validatePromotion: ReturnType<typeof useCheckoutMutations>['validatePromotion'];
   setPromotion: (code: string | null) => void;
   setPromotionName: (name: string | null) => void;
   setPromotionDiscount: (amount: number) => void;
+  setPromotionFreeUnits?: (freeUnits: number | null) => void;
+  setPromotionProductId?: (productId: string | null) => void;
 }): Promise<void> {
   const validation = await validateCheckoutPromotionCode({
     code,
@@ -304,9 +311,18 @@ export async function applyCheckoutPromotionCode({
     validatePromotion,
   });
 
+  const matched = promotions?.find(
+    (promotion) => promotion.code.toUpperCase() === validation.code.toUpperCase(),
+  );
+  const productId = matched
+    ? (parseStorePromotionConditions(matched.conditions).productId ?? null)
+    : null;
+
   setPromotion(validation.code);
   setPromotionName(validation.name);
   setPromotionDiscount(validation.discountAmount);
+  setPromotionFreeUnits?.(validation.freeUnits ?? null);
+  setPromotionProductId?.(productId);
 }
 
 export function getPromotionApplyErrorMessage(error: unknown): string {

@@ -22,6 +22,7 @@ import {
   categorizeStorePromotions,
   estimatePromotionDiscount,
   formatStorePromotionDiscountLabel,
+  parseStorePromotionConditions,
   type PromotionEstimateCartLine,
   type StorePromotion,
 } from '@/lib/checkout/storePromotionUtils';
@@ -208,11 +209,19 @@ export function CheckoutPlatformPromotionModal({
         validatePromotion,
       });
 
+      const matched = allPromotions.find(
+        (promotion) => promotion.code.toUpperCase() === result.code.toUpperCase(),
+      );
+      const productId = matched
+        ? (parseStorePromotionConditions(matched.conditions).productId ?? null)
+        : null;
+
       onConfirm({
         code: result.code,
         name: result.name,
         discountAmount: result.discountAmount,
         freeUnits: result.freeUnits ?? null,
+        productId,
       });
       onClose();
     } catch (error) {

@@ -133,9 +133,13 @@ export function CheckoutPromotionSection() {
     promotionCode,
     promotionName,
     promotionDiscount,
+    promotionFreeUnits,
+    promotionProductId,
     setPromotion,
     setPromotionName,
     setPromotionDiscount,
+    setPromotionFreeUnits,
+    setPromotionProductId,
   } = useCheckout();
   const [manualCode, setManualCode] = useState(promotionCode ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -150,8 +154,10 @@ export function CheckoutPromotionSection() {
       code: promotionCode,
       name: promotionName ?? promotionCode,
       discountAmount: promotionDiscount,
+      freeUnits: promotionFreeUnits,
+      productId: promotionProductId,
     };
-  }, [promotionCode, promotionDiscount, promotionName]);
+  }, [promotionCode, promotionDiscount, promotionFreeUnits, promotionName, promotionProductId]);
 
   const availablePromotionCount = useMemo(() => {
     const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal, {
@@ -171,6 +177,8 @@ export function CheckoutPromotionSection() {
     setPromotion(null);
     setPromotionName(null);
     setPromotionDiscount(0);
+    setPromotionFreeUnits(null);
+    setPromotionProductId(null);
     setManualCode('');
     setError(null);
   };
@@ -190,15 +198,20 @@ export function CheckoutPromotionSection() {
         code: normalizedCode,
         subtotal,
         lines: cartLines,
+        promotions: promotions as StorePromotion[],
         validatePromotion,
         setPromotion,
         setPromotionName,
         setPromotionDiscount,
+        setPromotionFreeUnits,
+        setPromotionProductId,
       });
     } catch (applyError) {
       setPromotion(null);
       setPromotionName(null);
       setPromotionDiscount(0);
+      setPromotionFreeUnits(null);
+      setPromotionProductId(null);
       setError(getPromotionApplyErrorMessage(applyError));
     }
   };
@@ -212,6 +225,8 @@ export function CheckoutPromotionSection() {
     setPromotion(promotion.code);
     setPromotionName(promotion.name);
     setPromotionDiscount(promotion.discountAmount);
+    setPromotionFreeUnits(promotion.freeUnits ?? null);
+    setPromotionProductId(promotion.productId ?? null);
     setManualCode(promotion.code);
     setError(null);
   };

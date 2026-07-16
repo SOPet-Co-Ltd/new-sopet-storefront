@@ -104,17 +104,27 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     order = await params.checkoutHook.createOrder(orderInput);
   } catch (error) {
     const code = extractPromotionErrorCode(error);
-    // Candidate-001: hard eligibility → order error; INSUFFICIENT_QTY is never hard here.
+    // Candidate-001: only hard eligibility / unknown → order_failed.
+    // INSUFFICIENT_QTY is apply-skip — retry once without promo codes.
     if (isCreateOrderHardEligibilityCode(code) || code == null) {
       const message =
         error instanceof Error && error.message ? error.message : 'ไม่สามารถสร้างคำสั่งซื้อได้';
       throw new SubmitCheckoutError(message, 'order_failed');
     }
-    // Defensive: unknown non-hard promo codes still fail the order path.
-    throw new SubmitCheckoutError(
-      error instanceof Error ? error.message : 'ไม่สามารถสร้างคำสั่งซื้อได้',
-      'order_failed',
-    );
+
+    try {
+      order = await params.checkoutHook.createOrder({
+        ...orderInput,
+        platformPromotionCode: undefined,
+        storePromotionCodes: undefined,
+      });
+    } catch (retryError) {
+      const message =
+        retryError instanceof Error && retryError.message
+          ? retryError.message
+          : 'ไม่สามารถสร้างคำสั่งซื้อได้';
+      throw new SubmitCheckoutError(message, 'order_failed');
+    }
   }
 
   if (!order?.id) {

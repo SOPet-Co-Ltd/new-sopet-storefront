@@ -9,11 +9,23 @@ import { CheckoutOrderItemRow } from './CheckoutOrderItemRow';
 import { CheckoutStoreActionsRow } from './CheckoutStoreActionsRow';
 import { formatCheckoutPrice } from './checkoutOrderItemUtils';
 
+function mergeFreeQuantityMaps(...maps: Array<Record<string, number>>): Record<string, number> {
+  const merged: Record<string, number> = {};
+  for (const map of maps) {
+    for (const [itemId, qty] of Object.entries(map)) {
+      if (qty <= 0) continue;
+      merged[itemId] = (merged[itemId] ?? 0) + qty;
+    }
+  }
+  return merged;
+}
+
 type CheckoutStoreCardProps = {
   group: StoreCartGroup;
+  platformFreeByItemId: Record<string, number>;
 };
 
-function CheckoutStoreCard({ group }: CheckoutStoreCardProps) {
+function CheckoutStoreCard({ group, platformFreeByItemId }: CheckoutStoreCardProps) {
   const { shippingByStoreId, storePromotionsByStoreId } = useCheckout();
 
   const itemCount = group.items.reduce((total, item) => total + item.quantity, 0);
@@ -25,13 +37,28 @@ function CheckoutStoreCard({ group }: CheckoutStoreCardProps) {
   const freeQuantityByItemId = useMemo(() => {
     const freeUnits = appliedStorePromo?.freeUnits ?? 0;
     // Gate A: only server freeUnits; local Rule B estimate must not drive badges.
-    if (!freeUnits || freeUnits <= 0) return {};
-    return allocateServerFreeUnitsToLines(
-      freeUnits,
-      group.items,
-      appliedStorePromo?.productId ?? null,
-    );
-  }, [appliedStorePromo?.freeUnits, appliedStorePromo?.productId, group.items]);
+    const storeAlloc =
+      freeUnits && freeUnits > 0
+        ? allocateServerFreeUnitsToLines(
+            freeUnits,
+            group.items,
+            appliedStorePromo?.productId ?? null,
+          )
+        : {};
+
+    const platformAlloc: Record<string, number> = {};
+    for (const item of group.items) {
+      const qty = platformFreeByItemId[item.id];
+      if (qty && qty > 0) platformAlloc[item.id] = qty;
+    }
+
+    return mergeFreeQuantityMaps(storeAlloc, platformAlloc);
+  }, [
+    appliedStorePromo?.freeUnits,
+    appliedStorePromo?.productId,
+    group.items,
+    platformFreeByItemId,
+  ]);
 
   return (
     <section className="flex flex-col" data-testid={`checkout-store-${group.storeId}`}>
@@ -77,6 +104,16 @@ type CheckoutOrderItemsProps = {
 };
 
 export function CheckoutOrderItems({ groups }: CheckoutOrderItemsProps) {
+  const { promotionFreeUnits, promotionProductId } = useCheckout();
+
+  // Platform BxGy is order-wide — allocate once across all cart lines (not per store).
+  const platformFreeByItemId = useMemo(() => {
+    const freeUnits = promotionFreeUnits ?? 0;
+    if (!freeUnits || freeUnits <= 0) return {};
+    const allItems = groups.flatMap((group) => group.items);
+    return allocateServerFreeUnitsToLines(freeUnits, allItems, promotionProductId);
+  }, [groups, promotionFreeUnits, promotionProductId]);
+
   return (
     <div
       className="flex flex-col gap-sop-12px px-sop-16px py-sop-20px"
@@ -91,7 +128,11 @@ export function CheckoutOrderItems({ groups }: CheckoutOrderItemsProps) {
 
       <div className="flex flex-col gap-sop-16px">
         {groups.map((group) => (
-          <CheckoutStoreCard key={group.storeId} group={group} />
+          <CheckoutStoreCard
+            key={group.storeId}
+            group={group}
+            platformFreeByItemId={platformFreeByItemId}
+          />
         ))}
       </div>
     </div>

@@ -20,6 +20,10 @@ export type CheckoutState = {
   promotionCode: string | null;
   promotionName: string | null;
   promotionDiscount: number;
+  /** Platform BxGy Gate A — server freeUnits only. */
+  promotionFreeUnits: number | null;
+  /** Platform BxGy product P from conditions JSON. */
+  promotionProductId: string | null;
   storePromotionsByStoreId: Record<string, StorePromotionSelection>;
   paymentMethod: PaymentMethod | null;
   requiredStoreIds: string[];
@@ -33,6 +37,8 @@ function createInitialCheckoutState(): CheckoutState {
     promotionCode: null,
     promotionName: null,
     promotionDiscount: 0,
+    promotionFreeUnits: null,
+    promotionProductId: null,
     storePromotionsByStoreId: {},
     paymentMethod: null,
     requiredStoreIds: [],
@@ -46,6 +52,8 @@ export type CheckoutContextValue = CheckoutState & {
   setPromotion: (code: string | null) => void;
   setPromotionName: (name: string | null) => void;
   setPromotionDiscount: (amount: number) => void;
+  setPromotionFreeUnits: (freeUnits: number | null) => void;
+  setPromotionProductId: (productId: string | null) => void;
   setStorePromotion: (storeId: string, promotion: StorePromotionSelection) => void;
   setPaymentMethod: (method: PaymentMethod | null) => void;
   setRequiredStoreIds: (storeIds: string[]) => void;
@@ -119,6 +127,8 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       promotionCode: code,
       promotionDiscount: code ? prev.promotionDiscount : 0,
       promotionName: code ? prev.promotionName : null,
+      promotionFreeUnits: code ? prev.promotionFreeUnits : null,
+      promotionProductId: code ? prev.promotionProductId : null,
     }));
   }, []);
 
@@ -128,6 +138,14 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
 
   const setPromotionDiscount = useCallback((amount: number) => {
     setState((prev) => ({ ...prev, promotionDiscount: amount }));
+  }, []);
+
+  const setPromotionFreeUnits = useCallback((freeUnits: number | null) => {
+    setState((prev) => ({ ...prev, promotionFreeUnits: freeUnits }));
+  }, []);
+
+  const setPromotionProductId = useCallback((productId: string | null) => {
+    setState((prev) => ({ ...prev, promotionProductId: productId }));
   }, []);
 
   const setStorePromotion = useCallback((storeId: string, promotion: StorePromotionSelection) => {
@@ -157,6 +175,8 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setPromotion,
       setPromotionName,
       setPromotionDiscount,
+      setPromotionFreeUnits,
+      setPromotionProductId,
       setStorePromotion,
       setPaymentMethod,
       setRequiredStoreIds,
@@ -172,6 +192,8 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setPromotion,
       setPromotionName,
       setPromotionDiscount,
+      setPromotionFreeUnits,
+      setPromotionProductId,
       setStorePromotion,
       setPaymentMethod,
       setRequiredStoreIds,

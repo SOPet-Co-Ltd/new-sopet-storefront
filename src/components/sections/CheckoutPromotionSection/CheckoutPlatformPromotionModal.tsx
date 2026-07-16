@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import { Modal } from '@/components/atoms/Modal';
@@ -8,6 +8,10 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
+import {
+  buildValidatePromotionsInput,
+  useValidatePromotions,
+} from '@/lib/hooks/useValidatePromotions';
 import {
   SoftPromotionIneligibilityError,
   validateCheckoutPromotionCode,
@@ -19,10 +23,12 @@ import {
   type PlatformPromotionSelection,
 } from '@/lib/checkout/platformPromotionUtils';
 import {
-  categorizeStorePromotions,
   estimatePromotionDiscount,
   formatStorePromotionDiscountLabel,
+  mergeListTimeEligibility,
   parseStorePromotionConditions,
+  type ListTimeBatchStatus,
+  type PromotionEligibilityBatchItem,
   type PromotionEstimateCartLine,
   type StorePromotion,
 } from '@/lib/checkout/storePromotionUtils';
@@ -31,6 +37,7 @@ import {
   NoStoreDiscountCard,
   PromotionCouponsEmptyState,
   SelectableStorePromotionCard,
+  SoftEligibilityErrorBanner,
   UnavailableStorePromotionCard,
 } from '@/components/sections/CheckoutSection/StorePromotionCouponCard';
 
@@ -76,6 +83,7 @@ export function CheckoutPlatformPromotionModal({
   const isGuest = !isAuthenticated;
   const { promotions, loading, error } = useActivePlatformPromotions(isOpen);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
+  const { validatePromotions } = useValidatePromotions();
 
   const [manualCode, setManualCode] = useState('');
   const [selection, setSelection] = useState<PlatformPromotionModalSelection>(() =>
@@ -86,6 +94,8 @@ export function CheckoutPlatformPromotionModal({
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [batchStatus, setBatchStatus] = useState<ListTimeBatchStatus>('idle');
+  const [batchItems, setBatchItems] = useState<PromotionEligibilityBatchItem[] | null>(null);
 
   const allPromotions = useMemo(() => {
     const byCode = new Map<string, PlatformPromotion>();
@@ -103,9 +113,16 @@ export function CheckoutPlatformPromotionModal({
 
   const catalogPromotions = allPromotions as StorePromotion[];
 
-  const { available, unavailable } = useMemo(
-    () => categorizeStorePromotions(catalogPromotions, subtotal, { isGuest, cartLines }),
-    [cartLines, catalogPromotions, isGuest, subtotal],
+  const { available, unavailable, softEligibilityError } = useMemo(
+    () =>
+      mergeListTimeEligibility(
+        catalogPromotions,
+        subtotal,
+        { isGuest, cartLines },
+        batchStatus === 'success' ? batchItems : null,
+        batchStatus,
+      ),
+    [batchItems, batchStatus, cartLines, catalogPromotions, isGuest, subtotal],
   );
 
   const selectedPromotion = useMemo(() => {
@@ -132,12 +149,62 @@ export function CheckoutPlatformPromotionModal({
       setSelection(getInitialPlatformPromotionSelection(appliedPromotion));
       setManualCode('');
       setValidatedPromotions([]);
+      setBatchStatus('idle');
+      setBatchItems(null);
     } else {
       setManualError(null);
       setConfirmError(null);
       setIsConfirming(false);
+      setBatchStatus('idle');
+      setBatchItems(null);
     }
   }
+
+  // Empty catalog → clear batch during render (avoids set-state-in-effect).
+  if (
+    isOpen &&
+    !loading &&
+    !error &&
+    promotions.length === 0 &&
+    (batchStatus !== 'idle' || batchItems !== null)
+  ) {
+    setBatchStatus('idle');
+    setBatchItems(null);
+  }
+
+  // List-time batch on open (AC-046) — one validatePromotions; cancel stale on close/catalog change.
+  useEffect(() => {
+    if (!isOpen || loading || error || promotions.length === 0) return;
+
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setBatchStatus('loading');
+    });
+
+    const input = buildValidatePromotionsInput({
+      promotions,
+      subtotal,
+      storeId: null,
+      lines: cartLines,
+    });
+
+    void validatePromotions(input).then((result) => {
+      if (cancelled) return;
+      if (result?.items) {
+        setBatchItems(result.items);
+        setBatchStatus('success');
+      } else {
+        setBatchItems(null);
+        setBatchStatus('error');
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cartLines, error, isOpen, loading, promotions, subtotal, validatePromotions]);
 
   const handleApplyManualCode = async () => {
     const normalizedCode = manualCode.trim();
@@ -184,9 +251,9 @@ export function CheckoutPlatformPromotionModal({
         ]);
         setSelection({ type: 'promo', code: result.code });
       }
-    } catch (error) {
-      if (error instanceof SoftPromotionIneligibilityError) {
-        setManualError(error.message);
+    } catch (err) {
+      if (err instanceof SoftPromotionIneligibilityError) {
+        setManualError(err.message);
         return;
       }
       setManualError('โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว');
@@ -226,9 +293,9 @@ export function CheckoutPlatformPromotionModal({
         productId,
       });
       onClose();
-    } catch (error) {
-      if (error instanceof SoftPromotionIneligibilityError) {
-        setConfirmError(error.message);
+    } catch (err) {
+      if (err instanceof SoftPromotionIneligibilityError) {
+        setConfirmError(err.message);
         return;
       }
       setConfirmError('คูปองไม่ถูกต้อง หรือเงื่อนไขไม่ครบถ้วน');
@@ -342,8 +409,10 @@ export function CheckoutPlatformPromotionModal({
 
         {!loading ? (
           <>
+            {softEligibilityError ? <SoftEligibilityErrorBanner /> : null}
+
             <PromoSection title="ใช้ได้ตอนนี้" count={available.length}>
-              <div className="grid grid-cols-1 gap-sop-12px sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-sop-8px sm:grid-cols-2">
                 {available.map((promotion) => {
                   const isSelected =
                     selection.type === 'promo' &&
@@ -369,14 +438,15 @@ export function CheckoutPlatformPromotionModal({
             </PromoSection>
 
             <PromoSection title="ใช้ไม่ได้ตอนนี้" count={unavailable.length}>
-              <div className="grid grid-cols-1 gap-sop-12px sm:grid-cols-2">
-                {unavailable.map((promotion) => (
+              <div className="grid grid-cols-1 gap-sop-8px sm:grid-cols-2">
+                {unavailable.map((entry) => (
                   <UnavailableStorePromotionCard
-                    key={promotion.id}
-                    promotion={promotion}
+                    key={entry.promotion.id}
+                    promotion={entry.promotion}
                     storeSubtotal={subtotal}
                     isGuest={isGuest}
                     cartLines={cartLines}
+                    softReasonOverride={entry.softReasonOverride}
                   />
                 ))}
               </div>

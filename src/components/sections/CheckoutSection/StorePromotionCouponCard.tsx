@@ -376,3 +376,19 @@ export function PromotionCouponsEmptyState() {
     </div>
   );
 }
+
+/** AC-051 / UI-D-005 — exact Thai copy; polite live region (non-interruptive). */
+export const SOFT_ELIGIBILITY_ERROR_MESSAGE = 'ไม่สามารถตรวจสอบสิทธิ์โปรโมชันบางรายการได้ในขณะนี้';
+
+export function SoftEligibilityErrorBanner() {
+  return (
+    <p
+      role="status"
+      aria-live="polite"
+      className="sop-body-sm-regular text-sop-system-warning-500"
+      data-testid="soft-eligibility-error-banner"
+    >
+      {SOFT_ELIGIBILITY_ERROR_MESSAGE}
+    </p>
+  );
+}

@@ -1,18 +1,9 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import type { SearchSortValue } from '@/components/molecules/SearchSortBar';
-import {
-  ProductsDocument,
-  ApprovedBrandsDocument,
-  ApprovedPetTypesDocument,
-  type ProductsQuery,
-} from '@/lib/graphql/generated/graphql';
-import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
-import {
-  buildApprovedBrandsVariables,
-  buildApprovedPetTypesVariables,
-  buildProductsListingVariables,
-} from '@/lib/graphql/query-variables';
+import { ProductsDocument, type ProductsQuery } from '@/lib/graphql/generated/graphql';
+import { getClient } from '@/lib/graphql/apollo-rsc';
+import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
 import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
 import { parseSearchSort } from '@/lib/search/searchSort';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
@@ -64,42 +55,21 @@ export default async function SearchPage({ searchParams }: Props) {
     sessionId: sessionId ?? undefined,
     ...toProductsFilterVariables(filters),
   });
-  const petTypesVariables = buildApprovedPetTypesVariables();
-  const brandsVariables = buildApprovedBrandsVariables();
 
   let initialProducts: ProductsQuery['products']['items'] | undefined;
-  let canPreloadQueries = false;
 
   const preload = await runSsrPreloadQueries('search', async () => {
     const result = await getClient().query({
       query: ProductsDocument,
       variables,
+      errorPolicy: 'all',
     });
     return result.data?.products.items;
   });
 
   if (preload.ok) {
     initialProducts = preload.data;
-    canPreloadQueries = true;
   }
 
-  const searchPage = <SearchResultsPage initialProducts={initialProducts} />;
-
-  if (!canPreloadQueries) {
-    return searchPage;
-  }
-
-  return (
-    <PreloadQuery query={ProductsDocument} variables={variables} errorPolicy="all">
-      <PreloadQuery
-        query={ApprovedPetTypesDocument}
-        variables={petTypesVariables}
-        errorPolicy="all"
-      >
-        <PreloadQuery query={ApprovedBrandsDocument} variables={brandsVariables} errorPolicy="all">
-          {searchPage}
-        </PreloadQuery>
-      </PreloadQuery>
-    </PreloadQuery>
-  );
+  return <SearchResultsPage initialProducts={initialProducts} />;
 }

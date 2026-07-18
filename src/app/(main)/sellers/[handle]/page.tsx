@@ -5,7 +5,7 @@ import {
   type ProductsQuery,
   type StoreBySlugQuery,
 } from '@/lib/graphql/generated/graphql';
-import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
+import { getClient } from '@/lib/graphql/apollo-rsc';
 import {
   buildProductsListingVariables,
   buildSellerStorefrontVariables,
@@ -48,63 +48,42 @@ export default async function SellerPage({ params }: Props) {
 
   let initialStore: StoreBySlugQuery['storeBySlug'] | undefined;
   let initialProducts: ProductsQuery['products']['items'] | undefined;
-  let productVariables: ReturnType<typeof buildProductsListingVariables> | null = null;
-  let canPreloadQueries = false;
 
   const preload = await runSsrPreloadQueries('seller', async () => {
     const storeResult = await getClient().query({
       query: StoreBySlugDocument,
       variables: storeVariables,
+      errorPolicy: 'all',
     });
     const store = storeResult.data?.storeBySlug ?? null;
 
     let products: ProductsQuery['products']['items'] | undefined;
-    let productsVars: ReturnType<typeof buildProductsListingVariables> | null = null;
 
     if (store?.id) {
-      productsVars = buildProductsListingVariables({
+      const productsVars = buildProductsListingVariables({
         storeId: store.id,
         page: 1,
       });
       const productsResult = await getClient().query({
         query: ProductsDocument,
         variables: productsVars,
+        errorPolicy: 'all',
       });
       products = productsResult.data?.products.items;
     }
 
-    return { store, products, productsVars };
+    return { store, products };
   });
 
   if (preload.ok) {
     initialStore = preload.data.store ?? undefined;
     initialProducts = preload.data.products;
-    productVariables = preload.data.productsVars;
-    canPreloadQueries = true;
+  } else {
+    const store = await fetchStoreBySlug(handle);
+    initialStore = store ?? undefined;
   }
 
   const store = initialStore;
-
-  const storefront = (
-    <main className="w-full min-h-[calc(100dvh-109px)] px-4 py-4 lg:px-20">
-      {store ? (
-        <div className="mb-2">
-          <Breadcrumbs
-            items={[
-              { label: 'หน้าแรก', path: '/' },
-              { label: store.name, path: `/sellers/${handle}` },
-            ]}
-          />
-        </div>
-      ) : null}
-      <SellerStorefront
-        handle={handle}
-        activeTab="products"
-        initialStore={initialStore}
-        initialProducts={initialProducts}
-      />
-    </main>
-  );
 
   const sellerPath = `/sellers/${handle}`;
   const breadcrumbJsonLd =
@@ -118,21 +97,24 @@ export default async function SellerPage({ params }: Props) {
   return (
     <>
       {breadcrumbJsonLd ? <JsonLdScript data={breadcrumbJsonLd} /> : null}
-      {canPreloadQueries ? (
-        productVariables ? (
-          <PreloadQuery query={StoreBySlugDocument} variables={storeVariables} errorPolicy="all">
-            <PreloadQuery query={ProductsDocument} variables={productVariables} errorPolicy="all">
-              {storefront}
-            </PreloadQuery>
-          </PreloadQuery>
-        ) : (
-          <PreloadQuery query={StoreBySlugDocument} variables={storeVariables} errorPolicy="all">
-            {storefront}
-          </PreloadQuery>
-        )
-      ) : (
-        storefront
-      )}
+      <main className="w-full min-h-[calc(100dvh-109px)] px-4 py-4 lg:px-20">
+        {store ? (
+          <div className="mb-2">
+            <Breadcrumbs
+              items={[
+                { label: 'หน้าแรก', path: '/' },
+                { label: store.name, path: `/sellers/${handle}` },
+              ]}
+            />
+          </div>
+        ) : null}
+        <SellerStorefront
+          handle={handle}
+          activeTab="products"
+          initialStore={initialStore}
+          initialProducts={initialProducts}
+        />
+      </main>
     </>
   );
 }

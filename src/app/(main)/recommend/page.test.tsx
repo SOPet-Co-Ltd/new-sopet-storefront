@@ -49,15 +49,21 @@ describe('RecommendPage SSR degrade', () => {
     expect(consoleError).toHaveBeenCalledWith('[ssr-preload]', 'recommend', expect.any(Error));
   });
 
-  it('wraps with PreloadQuery and errorPolicy=all when SSR succeeds', async () => {
+  it('renders initial data without PreloadQuery when SSR succeeds', async () => {
     queryMock.mockResolvedValue({
       data: { recommendedProducts: [] },
     });
 
     const { default: RecommendPage } = await import('./page');
     const element = await RecommendPage({ searchParams: Promise.resolve({}) });
-    renderToStaticMarkup(element);
+    const html = renderToStaticMarkup(element);
 
-    expect(preloadQueryCalls).toEqual([{ errorPolicy: 'all' }]);
+    expect(html).toContain('listing');
+    expect(preloadQueryCalls).toHaveLength(0);
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        errorPolicy: 'all',
+      }),
+    );
   });
 });

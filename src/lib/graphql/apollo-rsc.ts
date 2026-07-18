@@ -4,7 +4,7 @@ import {
   InMemoryCache,
   registerApolloClient,
 } from '@apollo/client-integration-nextjs';
-import { GRAPHQL_URL } from '@/lib/config';
+import { buildGraphqlSsrBypassHeaders, GRAPHQL_URL } from '@/lib/config';
 import { typePolicies } from '@/lib/graphql/cachePolicies';
 import { fragmentRegistry } from '@/lib/graphql/fragmentRegistry';
 
@@ -14,6 +14,7 @@ function makeRscApolloClient(): ApolloClient {
     link: new HttpLink({
       uri: GRAPHQL_URL,
       credentials: 'include',
+      headers: buildGraphqlSsrBypassHeaders(),
     }),
   });
 }

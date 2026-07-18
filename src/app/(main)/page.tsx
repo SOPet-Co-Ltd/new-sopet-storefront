@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import HomePage from '@/components/pages/HomePage';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
-import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
+import { getClient } from '@/lib/graphql/apollo-rsc';
 import {
   ApprovedCategoriesDocument,
   RecommendedProductsDocument,
@@ -33,17 +33,18 @@ export default async function Home() {
 
   let initialCategories: ApprovedCategoriesQuery['approvedCategories'] | undefined;
   let initialRecommendedProducts: RecommendedProductsQuery['recommendedProducts'] | undefined;
-  let canPreloadQueries = false;
 
   const preload = await runSsrPreloadQueries('home', async () => {
     const [categoriesResult, recommendedResult] = await Promise.all([
       getClient().query({
         query: ApprovedCategoriesDocument,
         variables: categoriesVariables,
+        errorPolicy: 'all',
       }),
       getClient().query({
         query: RecommendedProductsDocument,
         variables: recommendedVariables,
+        errorPolicy: 'all',
       }),
     ]);
 
@@ -56,40 +57,19 @@ export default async function Home() {
   if (preload.ok) {
     initialCategories = preload.data.categories;
     initialRecommendedProducts = preload.data.recommendedProducts;
-    canPreloadQueries = true;
   }
 
   const siteConfig = getSiteConfig();
   const organizationJsonLd = buildOrganizationJsonLd(siteConfig);
   const webSiteJsonLd = buildWebSiteJsonLd(siteConfig);
 
-  const homePage = (
-    <HomePage
-      initialCategories={initialCategories}
-      initialRecommendedProducts={initialRecommendedProducts}
-    />
-  );
-
   return (
     <>
       <JsonLdScript data={[organizationJsonLd, webSiteJsonLd]} />
-      {canPreloadQueries ? (
-        <PreloadQuery
-          query={ApprovedCategoriesDocument}
-          variables={categoriesVariables}
-          errorPolicy="all"
-        >
-          <PreloadQuery
-            query={RecommendedProductsDocument}
-            variables={recommendedVariables}
-            errorPolicy="all"
-          >
-            {homePage}
-          </PreloadQuery>
-        </PreloadQuery>
-      ) : (
-        homePage
-      )}
+      <HomePage
+        initialCategories={initialCategories}
+        initialRecommendedProducts={initialRecommendedProducts}
+      />
     </>
   );
 }

@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
-import {
-  ApprovedCategoriesDocument,
-  ProductsDocument,
-  type ProductsQuery,
-} from '@/lib/graphql/generated/graphql';
-import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
+import { ProductsDocument, type ProductsQuery } from '@/lib/graphql/generated/graphql';
+import { getClient } from '@/lib/graphql/apollo-rsc';
 import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
 import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
 import {
@@ -92,19 +88,18 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   });
 
   let initialProducts: ProductsQuery['products']['items'] | undefined;
-  let canPreloadQueries = false;
 
   const preload = await runSsrPreloadQueries('category', async () => {
     const result = await getClient().query({
       query: ProductsDocument,
       variables,
+      errorPolicy: 'all',
     });
     return result.data?.products.items;
   });
 
   if (preload.ok) {
     initialProducts = preload.data;
-    canPreloadQueries = true;
   }
 
   const indexation = getCategoryIndexation(categorySlug, resolvedSearchParams);
@@ -117,29 +112,17 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         ])
       : null;
 
-  const categoryPage = (
-    <main className="w-full px-4 py-4 lg:px-20">
-      <CategoryPLP
-        categorySlug={categorySlug}
-        categoryFilter={categoryFilter}
-        initialProducts={initialProducts}
-        initialPage={currentPage}
-      />
-    </main>
-  );
-
   return (
     <>
       {breadcrumbJsonLd ? <JsonLdScript data={breadcrumbJsonLd} /> : null}
-      {canPreloadQueries ? (
-        <PreloadQuery query={ApprovedCategoriesDocument} variables={{}} errorPolicy="all">
-          <PreloadQuery query={ProductsDocument} variables={variables} errorPolicy="all">
-            {categoryPage}
-          </PreloadQuery>
-        </PreloadQuery>
-      ) : (
-        categoryPage
-      )}
+      <main className="w-full px-4 py-4 lg:px-20">
+        <CategoryPLP
+          categorySlug={categorySlug}
+          categoryFilter={categoryFilter}
+          initialProducts={initialProducts}
+          initialPage={currentPage}
+        />
+      </main>
     </>
   );
 }

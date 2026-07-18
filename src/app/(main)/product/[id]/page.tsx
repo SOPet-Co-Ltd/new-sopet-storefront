@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import ProductDetailsPage from '@/components/sections/ProductDetailsPage';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { ProductByIdDocument } from '@/lib/graphql/generated/graphql';
-import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
+import { getClient } from '@/lib/graphql/apollo-rsc';
 import { buildProductByIdVariables } from '@/lib/graphql/query-variables';
 import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
 import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
@@ -45,19 +45,19 @@ export default async function ProductPage({ params }: Props) {
     const result = await getClient().query({
       query: ProductByIdDocument,
       variables,
+      errorPolicy: 'all',
     });
     return result.data?.product ?? null;
   });
 
-  // Transport failure: degrade without PreloadQuery (avoid production digest).
+  // Transport failure: render client page without SSR product (avoid production digest).
   // Missing / non-indexable product: notFound().
   if (!preload.ok) {
-    const productPage = (
+    return (
       <main className="container mx-auto lg:px-20 px-4 py-4 pb-24 md:pb-24 max-w-full">
         <ProductDetailsPage productId={id} />
       </main>
     );
-    return productPage;
   }
 
   const product = preload.data;
@@ -90,18 +90,12 @@ export default async function ProductPage({ params }: Props) {
   ];
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(breadcrumbItems);
 
-  const productPage = (
-    <main className="container mx-auto lg:px-20 px-4 py-4 pb-24 md:pb-24 max-w-full">
-      <ProductDetailsPage productId={id} initialProduct={product} />
-    </main>
-  );
-
   return (
     <>
       <JsonLdScript data={[productJsonLd, breadcrumbJsonLd]} />
-      <PreloadQuery query={ProductByIdDocument} variables={variables} errorPolicy="all">
-        {productPage}
-      </PreloadQuery>
+      <main className="container mx-auto lg:px-20 px-4 py-4 pb-24 md:pb-24 max-w-full">
+        <ProductDetailsPage productId={id} initialProduct={product} />
+      </main>
     </>
   );
 }

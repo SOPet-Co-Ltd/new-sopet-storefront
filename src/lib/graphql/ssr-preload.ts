@@ -4,8 +4,9 @@ export type SsrPreloadResult<T> = SsrPreloadSuccess<T> | SsrPreloadFailure;
 
 /**
  * Runs SSR GraphQL work and converts transport/GraphQL failures into a soft
- * degrade signal. Callers must skip `PreloadQuery` when `ok` is false so Apollo
- * does not rethrow and produce a production Server Components digest.
+ * degrade signal. Callers should pass `data` as `initial*` props and must not
+ * wrap the tree in `PreloadQuery` (Apollo's PreloadQuery rethrows network
+ * failures during RSC render and produces a production Server Components digest).
  */
 export async function runSsrPreloadQueries<T>(
   label: string,

@@ -16,12 +16,22 @@ SSR → direct backend URL.
 
 WebSocket subscriptions use `getGraphqlWsUrl()` (defaults to `ws://localhost:3002/graphql`). Optional overrides: `NEXT_PUBLIC_GRAPHQL_WS_URL`, `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN`, `GRAPHQL_WS_SSR_URL`.
 
+### Cloudflare SSR bypass (UAT/prod)
+
+Cloudflare Bot Fight / Browser Integrity can return **Error 1010** for Node `fetch` used by Next SSR. The RSC Apollo client sends a server-only header when `GRAPHQL_SSR_BYPASS_SECRET` is set:
+
+- Header: `x-sopet-ssr-bypass: <GRAPHQL_SSR_BYPASS_SECRET>`
+- Never use `NEXT_PUBLIC_*` for this value (must not reach the browser bundle)
+- Browser traffic keeps using `/graphql` without the secret (rewrite forwards the browser User-Agent)
+
+See [cloudflare-ssr-bypass.md](./cloudflare-ssr-bypass.md) for the WAF rule and Vercel env checklist.
+
 ## Clients
 
-| Client  | File                            | Use                                                |
-| ------- | ------------------------------- | -------------------------------------------------- |
-| Browser | `src/lib/graphql/client.ts`     | `makeApolloClient()` — auth link, WS subscriptions |
-| RSC     | `src/lib/graphql/apollo-rsc.ts` | `getClient()`, `PreloadQuery` — no auth link       |
+| Client  | File                            | Use                                                    |
+| ------- | ------------------------------- | ------------------------------------------------------ |
+| Browser | `src/lib/graphql/client.ts`     | `makeApolloClient()` — auth link, WS subscriptions     |
+| RSC     | `src/lib/graphql/apollo-rsc.ts` | `getClient()` — SSR preload; optional CF bypass header |
 
 Browser client wires `authLink`, HTTP, and a split link for GraphQL subscriptions (payment status updates). Cache uses `cachePolicies.ts` type policies plus `fragmentRegistry.ts`.
 

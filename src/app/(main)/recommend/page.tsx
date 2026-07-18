@@ -5,6 +5,7 @@ import {
 } from '@/lib/graphql/generated/graphql';
 import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
 import { buildRecommendedProductsVariables } from '@/lib/graphql/query-variables';
+import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
 import { RecommendProductListing } from '@/components/sections/RecommendProductListing';
 
 export const revalidate = 0;
@@ -27,31 +28,43 @@ export default async function RecommendPage({ searchParams }: Props) {
   });
 
   let initialRecommendedProducts: RecommendedProductsQuery['recommendedProducts'] | undefined;
+  let canPreloadQueries = false;
 
-  try {
+  const preload = await runSsrPreloadQueries('recommend', async () => {
     const result = await getClient().query({
       query: RecommendedProductsDocument,
       variables,
     });
-    initialRecommendedProducts = result.data?.recommendedProducts;
-  } catch {
-    // Degrade to client-side fetch when SSR transport fails.
+    return result.data?.recommendedProducts;
+  });
+
+  if (preload.ok) {
+    initialRecommendedProducts = preload.data;
+    canPreloadQueries = true;
+  }
+
+  const recommendPage = (
+    <main className="w-full min-h-[calc(100dvh-109px)] px-4 py-4 lg:px-20">
+      <h1 className="sop-headline-md-medium uppercase text-sop-neutral-gray-300">
+        สินค้าแนะนำสำหรับคุณ
+      </h1>
+      <div className="mt-6">
+        <RecommendProductListing
+          shuffleSeed={shuffleSeed}
+          fromProductId={from}
+          initialRecommendedProducts={initialRecommendedProducts}
+        />
+      </div>
+    </main>
+  );
+
+  if (!canPreloadQueries) {
+    return recommendPage;
   }
 
   return (
-    <PreloadQuery query={RecommendedProductsDocument} variables={variables}>
-      <main className="w-full min-h-[calc(100dvh-109px)] px-4 py-4 lg:px-20">
-        <h1 className="sop-headline-md-medium uppercase text-sop-neutral-gray-300">
-          สินค้าแนะนำสำหรับคุณ
-        </h1>
-        <div className="mt-6">
-          <RecommendProductListing
-            shuffleSeed={shuffleSeed}
-            fromProductId={from}
-            initialRecommendedProducts={initialRecommendedProducts}
-          />
-        </div>
-      </main>
+    <PreloadQuery query={RecommendedProductsDocument} variables={variables} errorPolicy="all">
+      {recommendPage}
     </PreloadQuery>
   );
 }

@@ -4,8 +4,9 @@ import { notFound } from 'next/navigation';
 import ProductDetailsPage from '@/components/sections/ProductDetailsPage';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { ProductByIdDocument } from '@/lib/graphql/generated/graphql';
-import { PreloadQuery } from '@/lib/graphql/apollo-rsc';
+import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
 import { buildProductByIdVariables } from '@/lib/graphql/query-variables';
+import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
 import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
 import { fetchApprovedCategories, fetchProductById } from '@/lib/seo/fetch';
@@ -38,7 +39,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
-  const product = await fetchProductById(id);
+  const variables = buildProductByIdVariables({ id });
+
+  const preload = await runSsrPreloadQueries('product', async () => {
+    const result = await getClient().query({
+      query: ProductByIdDocument,
+      variables,
+    });
+    return result.data?.product ?? null;
+  });
+
+  // Transport failure: degrade without PreloadQuery (avoid production digest).
+  // Missing / non-indexable product: notFound().
+  if (!preload.ok) {
+    const productPage = (
+      <main className="container mx-auto lg:px-20 px-4 py-4 pb-24 md:pb-24 max-w-full">
+        <ProductDetailsPage productId={id} />
+      </main>
+    );
+    return productPage;
+  }
+
+  const product = preload.data;
 
   if (!product || !isProductIndexable(product)) {
     notFound();
@@ -67,15 +89,18 @@ export default async function ProductPage({ params }: Props) {
     { name: product.name, url: pageUrl },
   ];
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(breadcrumbItems);
-  const variables = buildProductByIdVariables({ id });
+
+  const productPage = (
+    <main className="container mx-auto lg:px-20 px-4 py-4 pb-24 md:pb-24 max-w-full">
+      <ProductDetailsPage productId={id} initialProduct={product} />
+    </main>
+  );
 
   return (
     <>
       <JsonLdScript data={[productJsonLd, breadcrumbJsonLd]} />
-      <PreloadQuery query={ProductByIdDocument} variables={variables}>
-        <main className="container mx-auto lg:px-20 px-4 py-4 pb-24 md:pb-24 max-w-full">
-          <ProductDetailsPage productId={id} initialProduct={product} />
-        </main>
+      <PreloadQuery query={ProductByIdDocument} variables={variables} errorPolicy="all">
+        {productPage}
       </PreloadQuery>
     </>
   );

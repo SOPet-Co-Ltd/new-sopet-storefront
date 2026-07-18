@@ -13,6 +13,7 @@ import {
   buildApprovedCategoriesVariables,
   buildRecommendedProductsVariables,
 } from '@/lib/graphql/query-variables';
+import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/seo/json-ld';
 import { buildHomeMetadata, getSiteConfig } from '@/lib/seo/metadata';
 
@@ -34,7 +35,7 @@ export default async function Home() {
   let initialRecommendedProducts: RecommendedProductsQuery['recommendedProducts'] | undefined;
   let canPreloadQueries = false;
 
-  try {
+  const preload = await runSsrPreloadQueries('home', async () => {
     const [categoriesResult, recommendedResult] = await Promise.all([
       getClient().query({
         query: ApprovedCategoriesDocument,
@@ -46,11 +47,16 @@ export default async function Home() {
       }),
     ]);
 
-    initialCategories = categoriesResult.data?.approvedCategories;
-    initialRecommendedProducts = recommendedResult.data?.recommendedProducts;
+    return {
+      categories: categoriesResult.data?.approvedCategories,
+      recommendedProducts: recommendedResult.data?.recommendedProducts,
+    };
+  });
+
+  if (preload.ok) {
+    initialCategories = preload.data.categories;
+    initialRecommendedProducts = preload.data.recommendedProducts;
     canPreloadQueries = true;
-  } catch {
-    // Degrade to client-side fetch when SSR transport fails.
   }
 
   const siteConfig = getSiteConfig();

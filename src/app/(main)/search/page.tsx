@@ -13,6 +13,7 @@ import {
   buildApprovedPetTypesVariables,
   buildProductsListingVariables,
 } from '@/lib/graphql/query-variables';
+import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
 import { parseSearchSort } from '@/lib/search/searchSort';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { SearchResultsPage } from '@/components/pages/SearchResultsPage';
@@ -67,22 +68,36 @@ export default async function SearchPage({ searchParams }: Props) {
   const brandsVariables = buildApprovedBrandsVariables();
 
   let initialProducts: ProductsQuery['products']['items'] | undefined;
+  let canPreloadQueries = false;
 
-  try {
+  const preload = await runSsrPreloadQueries('search', async () => {
     const result = await getClient().query({
       query: ProductsDocument,
       variables,
     });
-    initialProducts = result.data?.products.items;
-  } catch {
-    // Degrade to client-side fetch when SSR transport fails.
+    return result.data?.products.items;
+  });
+
+  if (preload.ok) {
+    initialProducts = preload.data;
+    canPreloadQueries = true;
+  }
+
+  const searchPage = <SearchResultsPage initialProducts={initialProducts} />;
+
+  if (!canPreloadQueries) {
+    return searchPage;
   }
 
   return (
-    <PreloadQuery query={ProductsDocument} variables={variables}>
-      <PreloadQuery query={ApprovedPetTypesDocument} variables={petTypesVariables}>
-        <PreloadQuery query={ApprovedBrandsDocument} variables={brandsVariables}>
-          <SearchResultsPage initialProducts={initialProducts} />
+    <PreloadQuery query={ProductsDocument} variables={variables} errorPolicy="all">
+      <PreloadQuery
+        query={ApprovedPetTypesDocument}
+        variables={petTypesVariables}
+        errorPolicy="all"
+      >
+        <PreloadQuery query={ApprovedBrandsDocument} variables={brandsVariables} errorPolicy="all">
+          {searchPage}
         </PreloadQuery>
       </PreloadQuery>
     </PreloadQuery>

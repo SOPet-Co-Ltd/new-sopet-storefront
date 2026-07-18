@@ -1,11 +1,8 @@
 import type { Metadata } from 'next';
-import {
-  ApprovedCategoriesDocument,
-  ProductsDocument,
-  type ProductsQuery,
-} from '@/lib/graphql/generated/graphql';
-import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
+import { ProductsDocument, type ProductsQuery } from '@/lib/graphql/generated/graphql';
+import { getClient } from '@/lib/graphql/apollo-rsc';
 import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
+import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
 import {
   decodeRouteParam,
   resolveCategoryBySlug,
@@ -92,14 +89,16 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   let initialProducts: ProductsQuery['products']['items'] | undefined;
 
-  try {
+  const preload = await runSsrPreloadQueries('category', async () => {
     const result = await getClient().query({
       query: ProductsDocument,
       variables,
     });
-    initialProducts = result.data?.products.items;
-  } catch {
-    // Degrade to client-side fetch when SSR transport fails.
+    return result.data?.products.items;
+  });
+
+  if (preload.ok) {
+    initialProducts = preload.data;
   }
 
   const indexation = getCategoryIndexation(categorySlug, resolvedSearchParams);
@@ -115,18 +114,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   return (
     <>
       {breadcrumbJsonLd ? <JsonLdScript data={breadcrumbJsonLd} /> : null}
-      <PreloadQuery query={ApprovedCategoriesDocument} variables={{}}>
-        <PreloadQuery query={ProductsDocument} variables={variables}>
-          <main className="w-full px-4 py-4 lg:px-20">
-            <CategoryPLP
-              categorySlug={categorySlug}
-              categoryFilter={categoryFilter}
-              initialProducts={initialProducts}
-              initialPage={currentPage}
-            />
-          </main>
-        </PreloadQuery>
-      </PreloadQuery>
+      <main className="w-full px-4 py-4 lg:px-20">
+        <CategoryPLP
+          categorySlug={categorySlug}
+          categoryFilter={categoryFilter}
+          initialProducts={initialProducts}
+          initialPage={currentPage}
+        />
+      </main>
     </>
   );
 }

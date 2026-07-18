@@ -16,6 +16,7 @@
     "graphql:watch": "graphql-codegen --config codegen.ts --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "verify:ssr-bypass": "bash ./scripts/verify-ssr-bypass.sh",
     "prebuild": "yarn graphql:codegen"
   },
   "dependencies": {

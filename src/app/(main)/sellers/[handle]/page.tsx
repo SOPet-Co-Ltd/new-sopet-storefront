@@ -5,11 +5,12 @@ import {
   type ProductsQuery,
   type StoreBySlugQuery,
 } from '@/lib/graphql/generated/graphql';
-import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
+import { getClient } from '@/lib/graphql/apollo-rsc';
 import {
   buildProductsListingVariables,
   buildSellerStorefrontVariables,
 } from '@/lib/graphql/query-variables';
+import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
 import { SellerStorefront } from '@/components/organisms/SellerTabs';
 import { Breadcrumbs } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
@@ -44,49 +45,43 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SellerPage({ params }: Props) {
   const { handle } = await params;
   const storeVariables = buildSellerStorefrontVariables({ handle });
-  const store = await fetchStoreBySlug(handle);
 
-  const initialStore: StoreBySlugQuery['storeBySlug'] | undefined = store ?? undefined;
+  let initialStore: StoreBySlugQuery['storeBySlug'] | undefined;
   let initialProducts: ProductsQuery['products']['items'] | undefined;
-  let productVariables: ReturnType<typeof buildProductsListingVariables> | null = null;
 
-  if (store?.id) {
-    productVariables = buildProductsListingVariables({
-      storeId: store.id,
-      page: 1,
+  const preload = await runSsrPreloadQueries('seller', async () => {
+    const storeResult = await getClient().query({
+      query: StoreBySlugDocument,
+      variables: storeVariables,
     });
+    const store = storeResult.data?.storeBySlug ?? null;
 
-    try {
+    let products: ProductsQuery['products']['items'] | undefined;
+
+    if (store?.id) {
+      const productsVars = buildProductsListingVariables({
+        storeId: store.id,
+        page: 1,
+      });
       const productsResult = await getClient().query({
         query: ProductsDocument,
-        variables: productVariables,
+        variables: productsVars,
       });
-      initialProducts = productsResult.data?.products.items;
-    } catch {
-      // Degrade to client-side fetch when SSR transport fails.
+      products = productsResult.data?.products.items;
     }
+
+    return { store, products };
+  });
+
+  if (preload.ok) {
+    initialStore = preload.data.store ?? undefined;
+    initialProducts = preload.data.products;
+  } else {
+    const store = await fetchStoreBySlug(handle);
+    initialStore = store ?? undefined;
   }
 
-  const storefront = (
-    <main className="w-full min-h-[calc(100dvh-109px)] px-4 py-4 lg:px-20">
-      {store ? (
-        <div className="mb-2">
-          <Breadcrumbs
-            items={[
-              { label: 'หน้าแรก', path: '/' },
-              { label: store.name, path: `/sellers/${handle}` },
-            ]}
-          />
-        </div>
-      ) : null}
-      <SellerStorefront
-        handle={handle}
-        activeTab="products"
-        initialStore={initialStore}
-        initialProducts={initialProducts}
-      />
-    </main>
-  );
+  const store = initialStore;
 
   const sellerPath = `/sellers/${handle}`;
   const breadcrumbJsonLd =
@@ -97,25 +92,27 @@ export default async function SellerPage({ params }: Props) {
         ])
       : null;
 
-  if (!productVariables) {
-    return (
-      <>
-        {breadcrumbJsonLd ? <JsonLdScript data={breadcrumbJsonLd} /> : null}
-        <PreloadQuery query={StoreBySlugDocument} variables={storeVariables}>
-          {storefront}
-        </PreloadQuery>
-      </>
-    );
-  }
-
   return (
     <>
       {breadcrumbJsonLd ? <JsonLdScript data={breadcrumbJsonLd} /> : null}
-      <PreloadQuery query={StoreBySlugDocument} variables={storeVariables}>
-        <PreloadQuery query={ProductsDocument} variables={productVariables}>
-          {storefront}
-        </PreloadQuery>
-      </PreloadQuery>
+      <main className="w-full min-h-[calc(100dvh-109px)] px-4 py-4 lg:px-20">
+        {store ? (
+          <div className="mb-2">
+            <Breadcrumbs
+              items={[
+                { label: 'หน้าแรก', path: '/' },
+                { label: store.name, path: `/sellers/${handle}` },
+              ]}
+            />
+          </div>
+        ) : null}
+        <SellerStorefront
+          handle={handle}
+          activeTab="products"
+          initialStore={initialStore}
+          initialProducts={initialProducts}
+        />
+      </main>
     </>
   );
 }

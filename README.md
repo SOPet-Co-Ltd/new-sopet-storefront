@@ -47,6 +47,7 @@ cp .env.example .env.local
 | -------------------------------------- | --------------------------------- | ------------------------------------------------------------------- |
 | `NEXT_PUBLIC_GRAPHQL_URL`              | `/graphql`                        | Browser GraphQL (proxied)                                           |
 | `GRAPHQL_SSR_URL`                      | `http://localhost:3002/graphql`   | Server-side GraphQL                                                 |
+| `GRAPHQL_SSR_BYPASS_SECRET`            | —                                 | Server-only; Cloudflare SSR bypass (see docs/cloudflare-ssr-bypass) |
 | `NEXT_PUBLIC_OMISE_PUBLIC_KEY`         | —                                 | Must match backend `OMISE_PUBLIC_KEY`                               |
 | `NEXT_PUBLIC_FACEBOOK_APP_ID`          | —                                 | Optional; Messenger share on products                               |
 | `NEXT_PUBLIC_BASE_URL`                 | `http://localhost:3000`           | Canonical URLs, Open Graph, sitemap, robots                         |

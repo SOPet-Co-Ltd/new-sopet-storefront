@@ -53,6 +53,15 @@ describe('PaymentRetryPanel', () => {
     expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
   });
 
+  it('heading uses text-gray-900 for AA contrast (UI Spec lock)', () => {
+    render(<PaymentRetryPanel />);
+
+    const heading = screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' });
+    expect(heading).toHaveClass('sop-body-lg-medium');
+    expect(heading).toHaveClass('text-gray-900');
+    expect(heading).not.toHaveClass('text-sop-primary-500');
+  });
+
   it('empty saved cards → new-card form only when card selected (empty state)', async () => {
     const user = userEvent.setup();
     render(<PaymentRetryPanel />);

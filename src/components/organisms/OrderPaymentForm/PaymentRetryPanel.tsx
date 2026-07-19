@@ -210,7 +210,7 @@ export function PaymentRetryPanel({
     >
       <div className="flex items-center gap-sop-8px">
         <WalletIcon size={{ mobile: 24 }} color="#9C6ADE" />
-        <h2 className="sop-body-lg-medium text-sop-primary-500">เลือกวิธีชำระเงินใหม่</h2>
+        <h2 className="sop-body-lg-medium text-gray-900">เลือกวิธีชำระเงินใหม่</h2>
       </div>
 
       <div className="mt-sop-16px flex flex-col gap-sop-20px">

@@ -116,11 +116,6 @@ async function submitPromptPayRetry(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
 }
 
-async function submitCodRetry(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('radio', { name: /เก็บเงินปลายทาง/i }));
-  await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
-}
-
 async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>) {
   await waitFor(() => {
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
@@ -374,38 +369,20 @@ describe('PaymentPage', () => {
     expect(sessionStorage.getItem(threeDSAutoRedirectStorageKey(CHECKOUT_PAYMENT_ID))).toBeNull();
   });
 
-  // Mid-QR non-PromptPay matrix spot: COD → new paymentId (AC-017 / method matrix)
-  // Journey AC: "When Mid-QR expanded and customer submits COD (non-PromptPay), createPayment
-  // returns NEW paymentId then router.push(/payment/{newId})"
-  // Behavior: expand → select COD → submit → createPayment paymentMethod:'cod' → mockPush new id
+  // Mid-QR method matrix: COD is not offered on payment change panel
   // @category: integration
   // @lane: integration
-  // @dependency: vi.mock parent-pattern intentional exception vs MSW — createPayment via useCheckout
-  //   mock (not MSW GraphQL); real PaymentRetryPanel COD radio + PaymentPage handleRetryPayment
-  // @complexity: medium
-  // ROI: proves at least one non-PromptPay Mid-QR submit path at PaymentPage boundary
-  it('Mid-QR COD submit navigates to new paymentId (AC-017 non-PromptPay)', async () => {
+  it('Mid-QR change panel does not offer COD', async () => {
     const user = userEvent.setup();
     paymentState.payment = samplePendingPayment;
 
     render(<PaymentPage />, { wrapper: createWrapper() });
 
     await expandMidQrChangeMethod(user);
-    await submitCodRetry(user);
 
-    await waitFor(() => {
-      expect(mockCreatePayment).toHaveBeenCalledWith({
-        orderId: CHECKOUT_ORDER_ID,
-        amount: samplePendingPayment.amount,
-        currency: 'THB',
-        paymentMethod: 'cod',
-      });
-    });
-
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
-    });
-    expect(mockPush).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
+    expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
   });
 
   // Mid-QR AC-023: submit disabled while createPayment / retrySubmitting in flight

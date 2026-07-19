@@ -118,11 +118,6 @@ async function submitPromptPayRetry(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
 }
 
-async function submitCodRetry(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('radio', { name: /เก็บเงินปลายทาง/i }));
-  await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
-}
-
 describe('Unpaid order payment method switch — fixture-e2e', () => {
   beforeEach(() => {
     mockReplace.mockReset();
@@ -179,33 +174,18 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(screen.queryByText('ชำระเงินสำเร็จ กำลังเปลี่ยนหน้า...')).not.toBeInTheDocument();
     });
 
-    it('COD submit navigates to new paymentId (AC-017 non-PromptPay matrix)', async () => {
+    it('change panel offers PromptPay and card only (no COD)', async () => {
       const user = userEvent.setup();
-      let createVariables: unknown;
 
-      server.use(
-        paymentQueryHandler(midQrLivePayment),
-        createPaymentSuccessHandler(undefined, {
-          onVariables: (variables) => {
-            createVariables = variables;
-          },
-        }),
-      );
+      server.use(paymentQueryHandler(midQrLivePayment));
 
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      await submitCodRetry(user);
 
-      await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
-      });
-      expect(createVariables).toMatchObject({
-        input: {
-          orderId: CHECKOUT_ORDER_ID,
-          paymentMethod: 'cod',
-        },
-      });
+      expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+      expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
     });
 
     it('fail-open success navigates new id without cancel-only blocking modal (AC-011)', async () => {

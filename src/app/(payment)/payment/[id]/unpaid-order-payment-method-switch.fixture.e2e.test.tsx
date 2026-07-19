@@ -259,8 +259,8 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
   // ---------------------------------------------------------------------------
   // Journey 2: Ineligible createPayment → retrySubmitError, stay on page
   // ---------------------------------------------------------------------------
-  describe('Journey 2 — ORDER_NOT_PAYABLE stays with error (AC-002)', () => {
-    it('ineligible createPayment shows error, keeps panel, does not navigate', async () => {
+  describe('Journey 2 — ORDER_NOT_PAYABLE hides recovery panel (AC-002)', () => {
+    it('ineligible createPayment hides panel and shows cancelled message', async () => {
       const user = userEvent.setup();
 
       server.use(paymentQueryHandler(midQrLivePayment), createPaymentOrderNotPayableHandler());
@@ -268,22 +268,22 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      // Server-authoritative: CTA was shown on live pending QR (no client order.status hide)
       expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toBeInTheDocument();
 
       await submitPromptPayRetry(user);
 
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toHaveTextContent(ORDER_NOT_PAYABLE_MESSAGE);
+        expect(screen.getByTestId('payment-order-not-payable')).toBeInTheDocument();
       });
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'คำสั่งซื้อนี้หมดเวลาชำระเงินแล้ว หรือถูกยกเลิกแล้ว กรุณาทำรายการสั่งซื้อใหม่',
+      );
+      expect(screen.getByRole('link', { name: 'กลับหน้าแรก' })).toHaveAttribute('href', '/');
       expect(mockPush).not.toHaveBeenCalled();
       expect(mockReplace).not.toHaveBeenCalled();
-      expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
-        'aria-expanded',
-        'true',
-      );
-      expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+      expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
+      expect(screen.queryByText(ORDER_NOT_PAYABLE_MESSAGE)).not.toBeInTheDocument();
     });
   });
 
@@ -327,17 +327,18 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
     });
 
-    it('QR-expired interim shows amber alert and does not mount Mid-QR CTA', async () => {
+    it('QR-expired interim shows cancelled message and does not mount Mid-QR CTA', async () => {
       server.use(paymentQueryHandler(midQrExpiredInterimPayment));
 
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(screen.getByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).toBeInTheDocument();
+        expect(screen.getByTestId('payment-order-not-payable')).toBeInTheDocument();
       });
       expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
       expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
       expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'กลับหน้าแรก' })).toHaveAttribute('href', '/');
     });
   });
 });

@@ -9,6 +9,7 @@ import { clearPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useCheckout } from '@/lib/hooks/useCheckout';
 import { usePayment } from '@/lib/hooks/usePayment';
 import { invalidateCustomerOrders } from '@/lib/orders/invalidateCustomerOrders';
+import { isOrderNotPayableError } from '@/lib/payment/orderNotPayable';
 import {
   buildPaymentRetryInput,
   clearPriorPayment3dsAutoRedirect,
@@ -48,6 +49,7 @@ export default function PaymentPage() {
   const { createPayment, creatingPayment } = useCheckout();
   const [lookupMode, setLookupMode] = useState<LookupMode>('paymentId');
   const [retrySubmitError, setRetrySubmitError] = useState<string | null>(null);
+  const [paymentRecoveryUnavailable, setPaymentRecoveryUnavailable] = useState(false);
   const hasTriedFallback = useRef(false);
   const hasRedirected = useRef(false);
 
@@ -111,6 +113,11 @@ export default function PaymentPage() {
         clearPriorPayment3dsAutoRedirect(payment.id);
         router.push(`/payment/${newPaymentId}`);
       } catch (retryError) {
+        if (isOrderNotPayableError(retryError)) {
+          setPaymentRecoveryUnavailable(true);
+          setRetrySubmitError(null);
+          return;
+        }
         setRetrySubmitError(retryErrorMessage(retryError));
       }
     },
@@ -132,6 +139,7 @@ export default function PaymentPage() {
         onRetryPayment={handleRetryPayment}
         retrySubmitError={retrySubmitError}
         retrySubmitting={creatingPayment}
+        paymentRecoveryUnavailable={paymentRecoveryUnavailable}
       />
     </main>
   );

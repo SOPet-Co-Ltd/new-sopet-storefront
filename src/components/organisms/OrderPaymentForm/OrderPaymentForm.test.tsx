@@ -82,7 +82,7 @@ describe('OrderPaymentForm', () => {
     expect(screen.queryByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).not.toBeInTheDocument();
   });
 
-  it('shows updating message when pending PromptPay QR countdown has expired', () => {
+  it('shows cancelled message when pending PromptPay QR countdown has expired', () => {
     render(
       <OrderPaymentForm
         payment={{
@@ -95,8 +95,15 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    expect(screen.getByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).toBeInTheDocument();
+    expect(screen.getByTestId('payment-order-not-payable')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'คำสั่งซื้อนี้หมดเวลาชำระเงินแล้ว หรือถูกยกเลิกแล้ว กรุณาทำรายการสั่งซื้อใหม่',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'กลับหน้าแรก' })).toHaveAttribute('href', '/');
     expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
   });
 
   it('authorizeUri present → redirecting state and auto-navigates once (AC-003/004)', () => {
@@ -210,19 +217,55 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
   });
 
-  it('shows QR expired message when failed PromptPay payment had expiresAt', () => {
+  it('hides PaymentRetryPanel when failed PromptPay payment QR has expired', () => {
     render(
       <OrderPaymentForm
-        payment={{ ...basePayment, status: 'failed' }}
+        payment={{ ...basePayment, status: 'failed', expiresAt: pastExpiresAt }}
         loading={false}
         error={undefined}
       />,
     );
 
+    expect(screen.getByTestId('payment-order-not-payable')).toBeInTheDocument();
     expect(
-      screen.getByText('QR Code หมดอายุแล้ว กรุณาทำรายการใหม่จากหน้าชำระเงิน'),
+      screen.getByText(
+        'คำสั่งซื้อนี้หมดเวลาชำระเงินแล้ว หรือถูกยกเลิกแล้ว กรุณาทำรายการสั่งซื้อใหม่',
+      ),
     ).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'กลับหน้าแรก' })).toHaveAttribute('href', '/');
+  });
+
+  it('shows PaymentRetryPanel when failed payment has not expired', () => {
+    render(
+      <OrderPaymentForm
+        payment={{ ...basePayment, status: 'failed', expiresAt: futureExpiresAt }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')).toBeInTheDocument();
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+  });
+
+  it('hides PaymentRetryPanel when paymentRecoveryUnavailable is set', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+        paymentRecoveryUnavailable
+      />,
+    );
+
+    expect(screen.getByTestId('payment-order-not-payable')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
   });
 
   it('shows retry message when backend is unavailable', async () => {
@@ -366,7 +409,7 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    expect(screen.getByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).toBeInTheDocument();
+    expect(screen.getByTestId('payment-order-not-payable')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
   });

@@ -277,4 +277,113 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
     expect(navigate).not.toHaveBeenCalled();
   });
+
+  it('Mid-QR live pending: CTA collapsed by default (aria-expanded=false, panel absent)', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    const cta = screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' });
+    expect(cta).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+  });
+
+  it('Mid-QR expand mounts PaymentRetryPanel under QR without createPayment', async () => {
+    const user = userEvent.setup();
+    const onRetryPayment = vi.fn();
+
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+        onRetryPayment={onRetryPayment}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+
+    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+    expect(onRetryPayment).not.toHaveBeenCalled();
+  });
+
+  it('Mid-QR remount resets recoveryExpanded to collapsed', async () => {
+    const user = userEvent.setup();
+    const liveQrPayment = {
+      ...basePayment,
+      qrCodeUrl: 'https://example.com/qr.png',
+      expiresAt: futureExpiresAt,
+    };
+
+    const { unmount } = render(
+      <OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+
+    unmount();
+
+    render(<OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />);
+
+    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+  });
+
+  it('QR-expired interim does not mount Mid-QR change-method CTA', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: pastExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+  });
+
+  it('frictionless pending (no qrCodeUrl) does not mount Mid-QR CTA', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...cardPendingPayment,
+          authorizeUri: null,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByTestId('payment-waiting-frictionless')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
+  });
 });

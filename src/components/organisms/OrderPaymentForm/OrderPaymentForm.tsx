@@ -4,13 +4,13 @@ import { Button } from '@/components/atoms/Button';
 import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { formatCountdown, usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Payment3dsAutoRedirect, threeDSAutoRedirectStorageKey } from './Payment3dsAutoRedirect';
 import { Payment3dsRedirectingState } from './Payment3dsRedirectingState';
 import { PaymentFailedState } from './PaymentFailedState';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
 import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
-import type { PaymentRetryPanelProps } from './PaymentRetryPanel';
+import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
 
 export type OrderPaymentFormProps = {
   payment: PaymentRecord | null;
@@ -39,6 +39,40 @@ function hasCompleted3dsAutoRedirect(paymentId: string, authorizeUri: string): b
   } catch {
     return false;
   }
+}
+
+/** Inline Mid-QR chrome (UI-LOCK-01 B) — local state resets when branch unmounts. */
+function MidQrChangeMethodChrome({
+  onRetrySubmit,
+  submitError,
+  isSubmitting,
+}: {
+  onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
+  submitError?: PaymentRetryPanelProps['submitError'];
+  isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
+}) {
+  const [recoveryExpanded, setRecoveryExpanded] = useState(false);
+
+  return (
+    <div className="mt-4 flex flex-col items-center gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full max-w-xs"
+        onClick={() => setRecoveryExpanded((open) => !open)}
+        aria-expanded={recoveryExpanded}
+      >
+        เปลี่ยนวิธีชำระเงิน
+      </Button>
+      {recoveryExpanded ? (
+        <PaymentRetryPanel
+          onSubmit={onRetrySubmit}
+          submitError={submitError}
+          isSubmitting={isSubmitting}
+        />
+      ) : null}
+    </div>
+  );
 }
 
 export function OrderPaymentForm({
@@ -255,6 +289,14 @@ export function OrderPaymentForm({
           <PaymentWaitingFrictionlessState />
         )}
       </div>
+
+      {hasQrCode ? (
+        <MidQrChangeMethodChrome
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+        />
+      ) : null}
 
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         กำลังรอการชำระเงิน

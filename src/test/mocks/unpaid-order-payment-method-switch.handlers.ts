@@ -1,7 +1,19 @@
 import { delay, graphql, HttpResponse } from 'msw';
 import { samplePendingPayment, sampleRetryPendingPayment } from '@/test/mocks/fixtures/checkout';
 
-export type MidQrPaymentFixture = typeof samplePendingPayment;
+/** Payment payload shape for Mid-QR fixture-e2e MSW handlers (nullable QR / authorize fields). */
+export type MidQrPaymentFixture = {
+  __typename: 'PaymentType';
+  id: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  paymentMethod: string;
+  authorizeUri: string | null;
+  qrCodeUrl: string | null;
+  expiresAt: string | null;
+};
 
 export const ORDER_NOT_PAYABLE_MESSAGE = 'This order is no longer awaiting payment';
 

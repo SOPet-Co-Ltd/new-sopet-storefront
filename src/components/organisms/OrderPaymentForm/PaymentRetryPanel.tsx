@@ -2,13 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
-import {
-  PlusIcon,
-  QrCodeIcon,
-  SubtractIcon,
-  TruckIcon,
-  WalletIcon,
-} from '@/components/atoms/icons';
+import { PlusIcon, QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/atoms/icons';
 import { CardPaymentForm } from '@/components/molecules/CheckoutPaymentSelection/CardPaymentForm';
 import {
   EMPTY_CHECKOUT_CARD_FORM,
@@ -26,7 +20,8 @@ import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
 
 export type PaymentRetrySubmitInput = {
-  paymentMethod: 'promptpay' | 'credit_card' | 'cod';
+  /** Mid-QR / recovery: PromptPay + card only (COD not offered on payment page). */
+  paymentMethod: 'promptpay' | 'credit_card';
   omiseToken?: string;
   savedPaymentMethodId?: string;
 };
@@ -58,11 +53,6 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     value: 'card',
     label: 'บัตรเครดิต/บัตรเดบิต',
     icon: <SubtractIcon size={{ mobile: 28 }} color="#9C6ADE" />,
-  },
-  {
-    value: 'cod',
-    label: 'เก็บเงินปลายทาง',
-    icon: <TruckIcon size={{ mobile: 28 }} color="#9C6ADE" />,
   },
 ];
 
@@ -144,7 +134,12 @@ export function PaymentRetryPanel({
 
     let apiPaymentMethod: PaymentRetrySubmitInput['paymentMethod'];
     try {
-      apiPaymentMethod = mapCheckoutPaymentMethodForApi(paymentMethod);
+      const mapped = mapCheckoutPaymentMethodForApi(paymentMethod);
+      if (mapped === 'cod') {
+        setLocalError('ไม่รองรับวิธีการชำระเงินที่เลือก');
+        return;
+      }
+      apiPaymentMethod = mapped;
     } catch (error) {
       setLocalError(error instanceof Error ? error.message : 'ไม่รองรับวิธีการชำระเงินที่เลือก');
       return;
@@ -210,7 +205,7 @@ export function PaymentRetryPanel({
     >
       <div className="flex items-center gap-sop-8px">
         <WalletIcon size={{ mobile: 24 }} color="#9C6ADE" />
-        <h2 className="sop-body-lg-medium text-sop-primary-500">เลือกวิธีชำระเงินใหม่</h2>
+        <h2 className="sop-body-lg-medium text-gray-900">เลือกวิธีชำระเงินใหม่</h2>
       </div>
 
       <div className="mt-sop-16px flex flex-col gap-sop-20px">

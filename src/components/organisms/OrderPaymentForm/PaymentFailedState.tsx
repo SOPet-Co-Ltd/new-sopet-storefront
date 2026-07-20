@@ -24,7 +24,7 @@ export function PaymentFailedState({
       >
         <p className="font-medium text-red-600">
           {isQrExpired
-            ? 'QR Code หมดอายุแล้ว กรุณาทำรายการใหม่จากหน้าชำระเงิน'
+            ? 'QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'
             : 'การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'}
         </p>
       </div>

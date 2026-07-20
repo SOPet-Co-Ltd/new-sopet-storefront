@@ -29,13 +29,11 @@ export function buildPaymentRetryInput(
     amount: context.amount,
     currency: context.currency || 'THB',
     paymentMethod: submit.paymentMethod,
-    ...(submit.paymentMethod === 'cod'
-      ? {}
-      : submit.savedPaymentMethodId
-        ? { savedPaymentMethodId: submit.savedPaymentMethodId }
-        : submit.omiseToken
-          ? { omiseToken: submit.omiseToken }
-          : {}),
+    ...(submit.savedPaymentMethodId
+      ? { savedPaymentMethodId: submit.savedPaymentMethodId }
+      : submit.omiseToken
+        ? { omiseToken: submit.omiseToken }
+        : {}),
   };
 }
 

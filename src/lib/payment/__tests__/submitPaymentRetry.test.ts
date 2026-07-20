@@ -56,13 +56,6 @@ describe('submitPaymentRetry', () => {
       currency: 'THB',
       paymentMethod: 'promptpay',
     });
-
-    expect(buildPaymentRetryInput(context, { paymentMethod: 'cod' })).toEqual({
-      orderId: 'order-1',
-      amount: 540,
-      currency: 'THB',
-      paymentMethod: 'cod',
-    });
   });
 
   it('resolveNewPaymentId accepts a distinct id and rejects same/missing', () => {

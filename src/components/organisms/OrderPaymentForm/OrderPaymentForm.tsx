@@ -4,13 +4,15 @@ import { Button } from '@/components/atoms/Button';
 import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { formatCountdown, usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { hasQrExpiredAt } from '@/lib/payment/orderNotPayable';
 import { Payment3dsAutoRedirect, threeDSAutoRedirectStorageKey } from './Payment3dsAutoRedirect';
 import { Payment3dsRedirectingState } from './Payment3dsRedirectingState';
 import { PaymentFailedState } from './PaymentFailedState';
+import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
 import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
-import type { PaymentRetryPanelProps } from './PaymentRetryPanel';
+import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
 
 export type OrderPaymentFormProps = {
   payment: PaymentRecord | null;
@@ -24,6 +26,8 @@ export type OrderPaymentFormProps = {
   onRetryPayment?: PaymentRetryPanelProps['onSubmit'];
   retrySubmitError?: PaymentRetryPanelProps['submitError'];
   retrySubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  /** Order cancelled / unpaid window closed — hide change-method UI */
+  paymentRecoveryUnavailable?: boolean;
 };
 
 function formatAmount(amount: number, currency: string): string {
@@ -41,6 +45,40 @@ function hasCompleted3dsAutoRedirect(paymentId: string, authorizeUri: string): b
   }
 }
 
+/** Inline Mid-QR chrome (UI-LOCK-01 B) — local state resets when branch unmounts. */
+function MidQrChangeMethodChrome({
+  onRetrySubmit,
+  submitError,
+  isSubmitting,
+}: {
+  onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
+  submitError?: PaymentRetryPanelProps['submitError'];
+  isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
+}) {
+  const [recoveryExpanded, setRecoveryExpanded] = useState(false);
+
+  return (
+    <div className="mt-4 flex flex-col items-center gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full max-w-xs"
+        onClick={() => setRecoveryExpanded((open) => !open)}
+        aria-expanded={recoveryExpanded}
+      >
+        เปลี่ยนวิธีชำระเงิน
+      </Button>
+      {recoveryExpanded ? (
+        <PaymentRetryPanel
+          onSubmit={onRetrySubmit}
+          submitError={submitError}
+          isSubmitting={isSubmitting}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export function OrderPaymentForm({
   payment,
   loading,
@@ -51,6 +89,7 @@ export function OrderPaymentForm({
   onRetryPayment,
   retrySubmitError,
   retrySubmitting,
+  paymentRecoveryUnavailable = false,
 }: OrderPaymentFormProps) {
   const hasQrCode = Boolean(payment?.qrCodeUrl);
   const handleExpire = useCallback(() => {
@@ -60,6 +99,20 @@ export function OrderPaymentForm({
     hasQrCode && payment?.status === 'pending' ? payment.expiresAt : null,
     handleExpire,
   );
+
+  if (paymentRecoveryUnavailable && payment) {
+    return (
+      <section
+        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
+        aria-labelledby="payment-unavailable-title"
+      >
+        <h1 id="payment-unavailable-title" className="text-xl font-bold text-gray-900">
+          ชำระเงิน
+        </h1>
+        <PaymentOrderNotPayableState />
+      </section>
+    );
+  }
 
   if (error && !payment) {
     return (
@@ -110,7 +163,7 @@ export function OrderPaymentForm({
   }
 
   if (payment.status === 'failed') {
-    const isQrExpired = Boolean(payment.expiresAt);
+    const isQrExpired = hasQrExpiredAt(payment.expiresAt);
 
     return (
       <section
@@ -155,13 +208,12 @@ export function OrderPaymentForm({
         <h1 id="payment-expired-title" className="text-xl font-bold text-gray-900">
           ชำระเงิน
         </h1>
-        <div
-          className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4"
-          role="alert"
-          aria-live="polite"
-        >
-          <p className="font-medium text-amber-800">QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...</p>
-        </div>
+        <PaymentFailedState
+          isQrExpired
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+        />
       </section>
     );
   }
@@ -255,6 +307,14 @@ export function OrderPaymentForm({
           <PaymentWaitingFrictionlessState />
         )}
       </div>
+
+      {hasQrCode ? (
+        <MidQrChangeMethodChrome
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+        />
+      ) : null}
 
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         กำลังรอการชำระเงิน

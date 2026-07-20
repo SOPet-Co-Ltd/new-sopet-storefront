@@ -82,7 +82,7 @@ describe('OrderPaymentForm', () => {
     expect(screen.queryByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).not.toBeInTheDocument();
   });
 
-  it('shows updating message when pending PromptPay QR countdown has expired', () => {
+  it('shows retry panel when pending PromptPay QR countdown has expired', () => {
     render(
       <OrderPaymentForm
         payment={{
@@ -95,8 +95,10 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    expect(screen.getByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).toBeInTheDocument();
+    expect(screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่')).toBeInTheDocument();
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('payment-order-not-payable')).not.toBeInTheDocument();
   });
 
   it('authorizeUri present → redirecting state and auto-navigates once (AC-003/004)', () => {
@@ -210,19 +212,50 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
   });
 
-  it('shows QR expired message when failed PromptPay payment had expiresAt', () => {
+  it('shows PaymentRetryPanel when failed PromptPay payment QR has expired', () => {
     render(
       <OrderPaymentForm
-        payment={{ ...basePayment, status: 'failed' }}
+        payment={{ ...basePayment, status: 'failed', expiresAt: pastExpiresAt }}
         loading={false}
         error={undefined}
       />,
     );
 
-    expect(
-      screen.getByText('QR Code หมดอายุแล้ว กรุณาทำรายการใหม่จากหน้าชำระเงิน'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่')).toBeInTheDocument();
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-order-not-payable')).not.toBeInTheDocument();
+  });
+
+  it('shows PaymentRetryPanel when failed payment has not expired', () => {
+    render(
+      <OrderPaymentForm
+        payment={{ ...basePayment, status: 'failed', expiresAt: futureExpiresAt }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')).toBeInTheDocument();
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+  });
+
+  it('hides PaymentRetryPanel when paymentRecoveryUnavailable is set', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+        paymentRecoveryUnavailable
+      />,
+    );
+
+    expect(screen.getByTestId('payment-order-not-payable')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
   });
 
   it('shows retry message when backend is unavailable', async () => {
@@ -276,5 +309,114 @@ describe('OrderPaymentForm', () => {
     await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('Mid-QR live pending: CTA collapsed by default (aria-expanded=false, panel absent)', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    const cta = screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' });
+    expect(cta).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+  });
+
+  it('Mid-QR expand mounts PaymentRetryPanel under QR without createPayment', async () => {
+    const user = userEvent.setup();
+    const onRetryPayment = vi.fn();
+
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+        onRetryPayment={onRetryPayment}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+
+    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+    expect(onRetryPayment).not.toHaveBeenCalled();
+  });
+
+  it('Mid-QR remount resets recoveryExpanded to collapsed', async () => {
+    const user = userEvent.setup();
+    const liveQrPayment = {
+      ...basePayment,
+      qrCodeUrl: 'https://example.com/qr.png',
+      expiresAt: futureExpiresAt,
+    };
+
+    const { unmount } = render(
+      <OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+
+    unmount();
+
+    render(<OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />);
+
+    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+  });
+
+  it('QR-expired interim shows retry panel and does not mount Mid-QR change-method CTA', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: pastExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
+    expect(screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่')).toBeInTheDocument();
+  });
+
+  it('frictionless pending (no qrCodeUrl) does not mount Mid-QR CTA', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...cardPendingPayment,
+          authorizeUri: null,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByTestId('payment-waiting-frictionless')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
   });
 });

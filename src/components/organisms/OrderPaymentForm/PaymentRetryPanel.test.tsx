@@ -43,14 +43,23 @@ describe('PaymentRetryPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('default: shows method options including PromptPay, card, and COD', () => {
+  it('default: shows PromptPay and card only (no COD)', () => {
     render(<PaymentRetryPanel />);
 
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /เก็บเงินปลายทาง/i })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
+  });
+
+  it('heading uses text-gray-900 for AA contrast (UI Spec lock)', () => {
+    render(<PaymentRetryPanel />);
+
+    const heading = screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' });
+    expect(heading).toHaveClass('sop-body-lg-medium');
+    expect(heading).toHaveClass('text-gray-900');
+    expect(heading).not.toHaveClass('text-sop-primary-500');
   });
 
   it('empty saved cards → new-card form only when card selected (empty state)', async () => {
@@ -113,10 +122,10 @@ describe('PaymentRetryPanel', () => {
     const user = userEvent.setup();
     render(<PaymentRetryPanel submitError="ไม่สามารถสร้างการชำระเงินได้" />);
 
-    await user.click(screen.getByTestId('payment-method-cod'));
+    await user.click(screen.getByTestId('payment-method-promptpay'));
 
     expect(screen.getByRole('alert')).toHaveTextContent('ไม่สามารถสร้างการชำระเงินได้');
-    expect(screen.getByTestId('payment-method-cod')).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('payment-method-promptpay')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('external isSubmitting disables double-submit', () => {

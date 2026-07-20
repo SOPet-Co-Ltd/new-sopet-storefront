@@ -1,6 +1,5 @@
 'use client';
 
-import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
 import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
 
 export type PaymentFailedStateProps = {
@@ -16,14 +15,6 @@ export function PaymentFailedState({
   submitError,
   isSubmitting,
 }: PaymentFailedStateProps) {
-  if (isQrExpired) {
-    return (
-      <div data-testid="payment-failed-state">
-        <PaymentOrderNotPayableState />
-      </div>
-    );
-  }
-
   return (
     <div data-testid="payment-failed-state">
       <div
@@ -31,7 +22,11 @@ export function PaymentFailedState({
         role="alert"
         aria-live="polite"
       >
-        <p className="font-medium text-red-600">การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</p>
+        <p className="font-medium text-red-600">
+          {isQrExpired
+            ? 'QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'
+            : 'การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'}
+        </p>
       </div>
 
       <PaymentRetryPanel

@@ -327,18 +327,20 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
     });
 
-    it('QR-expired interim shows cancelled message and does not mount Mid-QR CTA', async () => {
+    it('QR-expired interim shows retry panel and does not mount Mid-QR CTA', async () => {
       server.use(paymentQueryHandler(midQrExpiredInterimPayment));
 
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(screen.getByTestId('payment-order-not-payable')).toBeInTheDocument();
+        expect(
+          screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'),
+        ).toBeInTheDocument();
       });
+      expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
-      expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
       expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'กลับหน้าแรก' })).toHaveAttribute('href', '/');
+      expect(screen.queryByTestId('payment-order-not-payable')).not.toBeInTheDocument();
     });
   });
 });

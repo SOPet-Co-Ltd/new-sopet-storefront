@@ -208,7 +208,12 @@ export function OrderPaymentForm({
         <h1 id="payment-expired-title" className="text-xl font-bold text-gray-900">
           ชำระเงิน
         </h1>
-        <PaymentOrderNotPayableState />
+        <PaymentFailedState
+          isQrExpired
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+        />
       </section>
     );
   }

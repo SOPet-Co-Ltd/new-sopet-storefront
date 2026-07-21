@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckoutErrorToast } from '@/components/atoms/CheckoutErrorToast/CheckoutErrorToast';
 import { CheckoutMobileBottomBar } from '@/components/molecules/CheckoutMobileBottomBar/CheckoutMobileBottomBar';
@@ -14,7 +14,7 @@ import type {
   GuestCheckoutField,
   GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
-import { consumeCheckoutEntryAllowed, getPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { useCart } from '@/lib/providers/CartProvider';
@@ -119,20 +119,8 @@ export default function CheckoutPage() {
     }
   };
 
-  // Resume pending payment immediately for direct /checkout visits — do not wait
-  // for the cart query, because checked-out items are already removed from cart.
-  useLayoutEffect(() => {
-    const pendingCheckout = getPendingCheckout();
-    if (!pendingCheckout) {
-      return;
-    }
-
-    const allowedEntry = consumeCheckoutEntryAllowed();
-    if (!allowedEntry) {
-      router.replace(`/payment/${pendingCheckout.paymentId}`);
-    }
-  }, [router]);
-
+  // A pending payment only resumes when there is nothing selected to check out —
+  // customers with selected items can always start a new order.
   useEffect(() => {
     if (loading) {
       return;

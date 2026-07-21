@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { AccountBackLink } from '@/components/molecules/account/AccountBackLink';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
+import { OrderPaymentCountdown } from '@/components/molecules/account/OrderPaymentCountdown';
 import { Button } from '@/components/atoms/Button';
 import { OrderShipmentTrackingList } from '@/components/order-tracking/order-shipment-tracking-list';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
@@ -111,6 +112,10 @@ export default function OrderDetailPage() {
             ) : null}
           </div>
         </div>
+
+        {isPendingPaymentStatus(order.status) ? (
+          <OrderPaymentCountdown createdAt={order.createdAt} />
+        ) : null}
 
         {actionError ? (
           <p className="sop-body-sm-regular text-sop-system-error-400" role="alert">

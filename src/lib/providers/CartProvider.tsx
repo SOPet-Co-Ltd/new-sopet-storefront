@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { ApolloCache } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { toast } from 'sonner';
 import {
@@ -78,10 +79,28 @@ function getSessionIdForCart(): string {
   return ensureSessionId();
 }
 
+/**
+ * Re-point the watched Cart query at whatever cart the server just returned.
+ * Required when the mutation cart id differs from the previously cached cart
+ * (guest→customer merge, identity flip on @Public cart routes, cart recreate).
+ * Without this, Apollo only writes the new CartType entity and ROOT_QUERY.cart
+ * keeps referencing the stale (often empty) cart until a full page refresh.
+ */
+function writeCartToQuery(cache: ApolloCache, cart: CartQuery['cart']): void {
+  cache.writeQuery({
+    query: CartDocument,
+    variables: { sessionId: getSessionIdForCart() },
+    data: { cart },
+  });
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   const wasAuthenticatedRef = useRef(isAuthenticated);
   const sessionId = typeof window !== 'undefined' ? getSessionIdForCart() : null;
+  // Serialize cart mutations against explicit refetches so a slow in-flight Cart
+  // response cannot land after a mutation and wipe the items the mutation wrote.
+  const cartOpLockRef = useRef(Promise.resolve());
 
   // `sessionId` is null during SSR but defined on the client, which flips the
   // derived `loading` state between the server and the first client render.
@@ -97,13 +116,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { data, loading, error, refetch } = useQuery(CartDocument, {
     variables: { sessionId: sessionId ?? undefined },
     skip: !sessionId,
-    fetchPolicy: 'cache-and-network',
+    // cache-first: mutations writeQuery the authoritative cart; explicit refetchCart
+    // covers post-checkout / post-login. Avoids cache-and-network races where a
+    // stale in-flight Cart response overwrites items a mutation just wrote.
+    fetchPolicy: 'cache-first',
   });
 
-  const [addToCartMutation] = useMutation(AddToCartDocument);
-  const [updateCartItemMutation] = useMutation(UpdateCartItemDocument);
-  const [removeCartItemMutation] = useMutation(RemoveCartItemDocument);
-  const [mergeCartMutation] = useMutation(MergeCartDocument);
+  const [addToCartMutation] = useMutation(AddToCartDocument, {
+    update: (cache, { data }) => {
+      if (data?.addToCart) {
+        writeCartToQuery(cache, data.addToCart);
+      }
+    },
+  });
+  const [updateCartItemMutation] = useMutation(UpdateCartItemDocument, {
+    update: (cache, { data }) => {
+      if (data?.updateCartItem) {
+        writeCartToQuery(cache, data.updateCartItem);
+      }
+    },
+  });
+  const [removeCartItemMutation] = useMutation(RemoveCartItemDocument, {
+    update: (cache, { data }) => {
+      if (data?.removeCartItem) {
+        writeCartToQuery(cache, data.removeCartItem);
+      }
+    },
+  });
+  const [mergeCartMutation] = useMutation(MergeCartDocument, {
+    update: (cache, { data }) => {
+      if (data?.mergeCart) {
+        writeCartToQuery(cache, data.mergeCart);
+      }
+    },
+  });
+
+  const withCartOpLock = useCallback(async <T,>(operation: () => Promise<T>): Promise<T> => {
+    const run = cartOpLockRef.current.then(operation, operation);
+    cartOpLockRef.current = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }, []);
 
   const cart = data?.cart ?? null;
   const items = useMemo(() => cart?.items ?? [], [cart]);
@@ -204,21 +259,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const runCartMutation = useCallback(
     async (operation: () => Promise<unknown>, errorMessage: string) => {
-      try {
-        const result = (await operation()) as {
-          errors?: Array<{ message: string }>;
-        };
-        if (result.errors?.length) {
-          throw new Error(result.errors[0]?.message ?? errorMessage);
+      await withCartOpLock(async () => {
+        try {
+          const result = (await operation()) as {
+            errors?: Array<{ message: string }>;
+          };
+          if (result.errors?.length) {
+            throw new Error(result.errors[0]?.message ?? errorMessage);
+          }
+        } catch (mutationError) {
+          const message = mutationError instanceof Error ? mutationError.message : errorMessage;
+          toast.error(message);
+          throw mutationError;
         }
-      } catch (mutationError) {
-        const message = mutationError instanceof Error ? mutationError.message : errorMessage;
-        toast.error(message);
-        throw mutationError;
-      }
+      });
     },
-    [],
+    [withCartOpLock],
   );
+
+  const refetchCart = useCallback(() => withCartOpLock(() => refetch()), [refetch, withCartOpLock]);
 
   const addItem = useCallback(
     async (variantId: string, quantity = 1) => {
@@ -350,11 +409,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     void mergeCartMutation({
       variables: { sessionId: guestSessionId },
     })
-      .then(() => refetch())
+      .then(() => refetchCart())
       .catch(() => {
         toast.error('ไม่สามารถรวมตะกร้าหลังเข้าสู่ระบบได้');
       });
-  }, [isAuthenticated, mergeCartMutation, refetch]);
+  }, [isAuthenticated, mergeCartMutation, refetchCart]);
 
   const value = useMemo<CartContextValue>(
     () => ({
@@ -380,7 +439,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       changeItemVariant,
       removeItem,
       pruneDeselectedIds,
-      refetch: () => refetch(),
+      refetch: () => refetchCart(),
     }),
     [
       addItem,
@@ -396,7 +455,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       itemsByStore,
       loading,
       pruneDeselectedIds,
-      refetch,
+      refetchCart,
       removeItem,
       selectedItemCount,
       selectedItems,

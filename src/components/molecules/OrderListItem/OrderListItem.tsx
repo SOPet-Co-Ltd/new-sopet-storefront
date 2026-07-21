@@ -2,9 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ORDER_STATUS_LABELS, getOrderStatusBadgeVariant } from '@/lib/constants/orderStatus';
+import {
+  ORDER_STATUS_LABELS,
+  getOrderStatusBadgeVariant,
+  isPendingPaymentStatus,
+} from '@/lib/constants/orderStatus';
 import { prefetchOrderDetail } from '@/lib/account/prefetchAccountPage';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
+import { OrderPaymentCountdown } from '@/components/molecules/account/OrderPaymentCountdown';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 import type { OrderSummary } from '@/lib/hooks/useOrders';
 
@@ -54,6 +59,11 @@ export function OrderListItem({ order, showReviewedTag = false }: OrderListItemP
           </AccountStatusBadge>
         </div>
       </div>
+      {isPendingPaymentStatus(order.status) ? (
+        <div className="mt-3">
+          <OrderPaymentCountdown createdAt={order.createdAt} compact />
+        </div>
+      ) : null}
       <ul className="mt-3 space-y-1">
         {order.items.map((item) => (
           <li

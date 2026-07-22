@@ -184,8 +184,8 @@
   /* ================= Typography ================= */
   /* Font family */
   --font-sans:
-    Mitr, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
+    var(--font-google-sans), 'Google Sans', ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
   /* Font weights (labels retained for reference; Tailwind utilities used in practice) */
   --font-weight-sop-Light: 300;

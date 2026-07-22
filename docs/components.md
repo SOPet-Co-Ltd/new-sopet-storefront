@@ -66,7 +66,7 @@ import { cn } from '@/lib/utils';
 <div className={cn('sop-body-sm-regular', isActive && 'text-sop-primary-100')} />
 ```
 
-Font: Google `Mitr` (loaded in root `layout.tsx`).
+Font: Google `Google Sans` (loaded in root `layout.tsx`).
 
 ## Client boundary
 

@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
-import { Mitr } from 'next/font/google';
+import { Google_Sans } from 'next/font/google';
 import { AppProviders } from '@/lib/providers';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
 import { getSiteConfig } from '@/lib/seo/metadata';
 import './globals.css';
 
-const mitr = Mitr({
-  variable: '--font-mitr',
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
+const googleSans = Google_Sans({
+  variable: '--font-google-sans',
+  subsets: ['latin', 'thai'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
   preload: true,
 });
@@ -41,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${mitr.variable} ${mitr.className} h-full antialiased`}>
+    <html lang="th" className={`${googleSans.variable} ${googleSans.className} h-full antialiased`}>
       <body className="flex min-h-dvh flex-col bg-sop-primary-100">
         <AppProviders>{children}</AppProviders>
       </body>

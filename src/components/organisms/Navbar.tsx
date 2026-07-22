@@ -24,6 +24,7 @@ function NavbarCartButton() {
       href="/cart"
       className="relative inline-flex"
       aria-label={itemCount > 0 ? `ตะกร้าสินค้า ${itemCount} ชิ้น` : 'ตะกร้าสินค้า'}
+      data-fly-to-cart-target=""
     >
       <UserManagementShoppingBagIcon
         size={{ mobile: 18, desktop: 18 }}

@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 import { SpinnerIcon } from './icons/outline';
 
@@ -50,20 +51,23 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   iconLeft?: React.ReactNode;
 }
 
-export function Button({
-  children,
-  variant,
-  uiType,
-  size,
-  rounded = 'full',
-  fill,
-  loading = false,
-  disabled = false,
-  className,
-  type,
-  iconLeft,
-  ...props
-}: ButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    children,
+    variant,
+    uiType,
+    size,
+    rounded = 'full',
+    fill,
+    loading = false,
+    disabled = false,
+    className,
+    type,
+    iconLeft,
+    ...props
+  },
+  ref,
+) {
   const isIconUiType = uiType === 'icon' || variant === 'icon' || size === 'icon';
 
   const resolvedUiType: ButtonUiType = isIconUiType ? 'icon' : 'button';
@@ -166,6 +170,7 @@ export function Button({
 
   return (
     <button
+      ref={ref}
       type={type ?? 'button'}
       disabled={isDisabled}
       aria-busy={loading || undefined}
@@ -198,4 +203,4 @@ export function Button({
       </span>
     </button>
   );
-}
+});

@@ -295,7 +295,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }),
         'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้',
       );
-      toast.success('เพิ่มสินค้าลงตะกร้าแล้ว');
     },
     [addToCartMutation, isAuthenticated, runCartMutation],
   );

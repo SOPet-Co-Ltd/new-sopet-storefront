@@ -60,6 +60,31 @@ describe('OrderConfirmationSummary', () => {
     );
   });
 
+  it('renders multiple line items that share the same productId', () => {
+    const baseItem = createOrder().items[0];
+    render(
+      <OrderConfirmationSummary
+        order={createOrder({
+          items: [
+            { ...baseItem, id: 'item-1', variantOptions: '{"ขนาด":"1kg"}' },
+            {
+              ...baseItem,
+              id: 'item-2',
+              variantOptions: '{"ขนาด":"3kg"}',
+              unitPrice: 400,
+              subtotal: 400,
+            },
+          ],
+          subtotal: 650,
+          total: 700,
+        })}
+      />,
+    );
+
+    expect(screen.getAllByTestId('order-confirmation-item')).toHaveLength(2);
+    expect(screen.getAllByTestId('order-item-variant-options')).toHaveLength(2);
+  });
+
   it('renders items without links when productId is missing', () => {
     render(
       <OrderConfirmationSummary

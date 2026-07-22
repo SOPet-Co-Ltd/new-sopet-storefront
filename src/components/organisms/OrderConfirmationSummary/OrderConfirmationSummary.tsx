@@ -14,6 +14,8 @@ export type OrderSummaryDisplayOrder = {
   discountAmount: number;
   total: number;
   items: Array<{
+    /** Unique line-item id when available (order detail); omit for guest tracking snapshots */
+    id?: string | null;
     productName: string;
     productImageUrl?: string | null;
     productId?: string | null;
@@ -125,7 +127,7 @@ export function OrderConfirmationSummary({
       <div className="space-y-4">
         {order.items.map((item, index) => (
           <OrderConfirmationItemRow
-            key={item.productId ?? `${item.productName}-${index}`}
+            key={item.id ?? `${item.productId ?? item.productName}-${index}`}
             item={item}
           />
         ))}

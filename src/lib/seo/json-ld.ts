@@ -1,3 +1,4 @@
+import { getDefaultVariant } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 
 import { resolveAbsoluteImageUrl, stripMarkdownForMeta, truncateDescription } from './metadata';
@@ -14,17 +15,18 @@ type BreadcrumbItem = {
 
 /**
  * JSON-LD offer price must come from server-fetched product data only — never from
- * client-side variant selection state, so structured data matches the initial SSR price.
+ * client-side variant selection state, so structured data matches the initial SSR price
+ * (cheapest in-stock variant, same as the PDP default selection).
  */
 export function getDefaultOfferPrice(product: ProductDetail): number {
-  const firstVariant = product.variants?.[0];
-  return firstVariant?.price ?? product.basePrice;
+  const defaultVariant = getDefaultVariant(product.variants);
+  return defaultVariant?.price ?? product.basePrice;
 }
 
 function getDefaultStockQuantity(product: ProductDetail): number {
-  const firstVariant = product.variants?.[0];
-  if (firstVariant != null) {
-    return firstVariant.stockQuantity;
+  const defaultVariant = getDefaultVariant(product.variants);
+  if (defaultVariant != null) {
+    return defaultVariant.stockQuantity;
   }
 
   return product.basePrice > 0 ? 1 : 0;

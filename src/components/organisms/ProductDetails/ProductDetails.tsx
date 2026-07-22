@@ -5,7 +5,8 @@ import { ProductReviewStars } from '@/components/molecules/ProductReviewStars/Pr
 import ProductDetailsVariantSelection from '@/components/organisms/ProductDetailsVariantSelection/ProductDetailsVariantSelection';
 import { ProductExpiryDate } from '@/components/sections/ProductExpiryDate/ProductExpiryDate';
 import {
-  getDefaultSelectedOptions,
+  getDefaultVariant,
+  resolveSelectedOptionsFromSearchParams,
   type VariantOptions,
 } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 import { ProductShowPrice } from '@/components/sections/ProductShowPrice/ProductShowPrice';
@@ -13,6 +14,8 @@ import type { ProductDetail } from '@/lib/hooks/useProduct';
 
 type ProductDetailsProps = {
   product: ProductDetail;
+  /** Raw Next.js `searchParams` so shared links like `?test=test` select on first paint. */
+  variantSearchParams?: Record<string, string | string[] | undefined>;
   onVariantChange?: (
     variantId: string | null,
     price: number,
@@ -23,19 +26,43 @@ type ProductDetailsProps = {
   onShareModalOpenChange?: (open: boolean) => void;
 };
 
+function toSearchParamsGetter(
+  raw: Record<string, string | string[] | undefined> | undefined,
+): Pick<URLSearchParams, 'get'> | null {
+  if (!raw) return null;
+
+  return {
+    get(key: string) {
+      const value = raw[key];
+      if (typeof value === 'string') return value;
+      if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+      return null;
+    },
+  };
+}
+
+function readClientSearchParams(): Pick<URLSearchParams, 'get'> | null {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search);
+}
+
 export function ProductDetails({
   product,
+  variantSearchParams,
   onVariantChange,
   shareModalOpen,
   onShareModalOpenChange,
 }: ProductDetailsProps) {
   const [selectedOptions, setSelectedOptions] = useState<VariantOptions>(() =>
-    getDefaultSelectedOptions(product.variants),
+    resolveSelectedOptionsFromSearchParams(
+      product.variants,
+      toSearchParamsGetter(variantSearchParams) ?? readClientSearchParams(),
+    ),
   );
 
   const hasAnyPrice = useMemo(() => {
-    const firstVariant = product.variants?.[0];
-    return (firstVariant?.price ?? product.basePrice) > 0;
+    const defaultVariant = getDefaultVariant(product.variants);
+    return (defaultVariant?.price ?? product.basePrice) > 0;
   }, [product.basePrice, product.variants]);
 
   return (

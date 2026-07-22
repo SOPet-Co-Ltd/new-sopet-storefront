@@ -20,6 +20,7 @@ import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/category
 type ProductDetailsPageProps = {
   productId: string;
   initialProduct?: ProductByIdQuery['product'];
+  variantSearchParams?: Record<string, string | string[] | undefined>;
 };
 
 function computeReviewSummary(
@@ -58,7 +59,11 @@ function ProductDetailsSkeleton() {
   );
 }
 
-export default function ProductDetailsPage({ productId, initialProduct }: ProductDetailsPageProps) {
+export default function ProductDetailsPage({
+  productId,
+  initialProduct,
+  variantSearchParams,
+}: ProductDetailsPageProps) {
   const {
     product: fetchedProduct,
     loading,
@@ -144,6 +149,7 @@ export default function ProductDetailsPage({ productId, initialProduct }: Produc
           <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
           <ProductDetails
             product={product}
+            variantSearchParams={variantSearchParams}
             shareModalOpen={shareModalOpen}
             onShareModalOpenChange={setShareModalOpen}
           />

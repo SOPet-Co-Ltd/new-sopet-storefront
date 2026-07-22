@@ -23,19 +23,20 @@ describe('getDefaultOfferPrice', () => {
     expect(getDefaultOfferPrice(sampleProductDetail)).toBe(sampleProductDetail.basePrice);
   });
 
-  // AC: Product JSON-LD price matches first variant price when variants exist
-  // Behavior: Product with variants → getDefaultOfferPrice → first variant price (not basePrice)
+  // AC: Product JSON-LD price matches cheapest in-stock variant when variants exist
+  // Behavior: Product with variants → getDefaultOfferPrice → cheapest in-stock price (not basePrice)
   // @category: core-functionality
   // @lane: unit
   // @dependency: inline variant fixture
   // ROI: 91 (BV:9 × Freq:9 + Legal:0 + Defect:8)
-  it('returns the first variant price when variants exist', () => {
+  it('returns the cheapest in-stock variant price when variants exist', () => {
     const productWithVariants = {
       ...sampleProductDetail,
       basePrice: 500,
       variants: [
-        { id: 'v1', sku: 'SKU-1', price: 750, stockQuantity: 10, optionsJson: null },
-        { id: 'v2', sku: 'SKU-2', price: 800, stockQuantity: 5, optionsJson: null },
+        { id: 'v1', sku: 'SKU-1', price: 800, stockQuantity: 10, optionsJson: null },
+        { id: 'v2', sku: 'SKU-2', price: 750, stockQuantity: 5, optionsJson: null },
+        { id: 'v3', sku: 'SKU-3', price: 700, stockQuantity: 0, optionsJson: null },
       ],
     };
 

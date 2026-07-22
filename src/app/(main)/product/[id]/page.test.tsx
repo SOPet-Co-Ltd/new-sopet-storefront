@@ -46,6 +46,7 @@ describe('ProductPage SSR soft-degrade', () => {
     const { default: ProductPage } = await import('./page');
     const element = await ProductPage({
       params: Promise.resolve({ id: 'prod-1' }),
+      searchParams: Promise.resolve({}),
     });
     const html = renderToStaticMarkup(element as ReactNode);
 
@@ -58,9 +59,12 @@ describe('ProductPage SSR soft-degrade', () => {
     queryMock.mockResolvedValue({ data: { product: null } });
 
     const { default: ProductPage } = await import('./page');
-    await expect(ProductPage({ params: Promise.resolve({ id: 'missing' }) })).rejects.toThrow(
-      'NEXT_NOT_FOUND',
-    );
+    await expect(
+      ProductPage({
+        params: Promise.resolve({ id: 'missing' }),
+        searchParams: Promise.resolve({}),
+      }),
+    ).rejects.toThrow('NEXT_NOT_FOUND');
     expect(notFoundMock).toHaveBeenCalled();
   });
 });

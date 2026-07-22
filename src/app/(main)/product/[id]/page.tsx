@@ -18,6 +18,7 @@ export const revalidate = 60;
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -58,8 +59,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildProductMetadata(product, productPath);
 }
 
-export default async function ProductPage({ params }: Props) {
+export default async function ProductPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const variantSearchParams = await searchParams;
   const variables = buildProductByIdVariables({ id });
 
   const preload = await runSsrPreloadQueries('product', async () => {
@@ -74,7 +76,7 @@ export default async function ProductPage({ params }: Props) {
   if (!preload.ok) {
     return (
       <main className="container mx-auto lg:px-20 px-4 py-4 pb-24 md:pb-24 max-w-full">
-        <ProductDetailsPage productId={id} />
+        <ProductDetailsPage productId={id} variantSearchParams={variantSearchParams} />
       </main>
     );
   }
@@ -114,7 +116,11 @@ export default async function ProductPage({ params }: Props) {
     <>
       <JsonLdScript data={[productJsonLd, breadcrumbJsonLd]} />
       <main className="container mx-auto lg:px-20 px-4 py-4 pb-24 md:pb-24 max-w-full">
-        <ProductDetailsPage productId={id} initialProduct={product} />
+        <ProductDetailsPage
+          productId={id}
+          initialProduct={product}
+          variantSearchParams={variantSearchParams}
+        />
       </main>
     </>
   );

@@ -10,15 +10,19 @@ import { Payment3dsAutoRedirect, threeDSAutoRedirectStorageKey } from './Payment
 import { Payment3dsRedirectingState } from './Payment3dsRedirectingState';
 import { PaymentFailedState } from './PaymentFailedState';
 import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
+import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
 import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
 import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
+import { HeldUnpaidPaymentBlock } from './HeldUnpaidPaymentBlock';
 
 export type OrderPaymentFormProps = {
   payment: PaymentRecord | null;
   loading: boolean;
   error: Error | undefined;
   onRetry?: () => void;
+  /** One-shot refetch of payment status from the backend (no continuous polling). */
+  onCheckStatus?: () => void | Promise<unknown>;
   onExpired?: () => void;
   /** Test seam / optional override for 3DS auto-redirect navigation */
   navigateToAuthorizeUri?: (uri: string) => void;
@@ -28,6 +32,8 @@ export type OrderPaymentFormProps = {
   retrySubmitting?: PaymentRetryPanelProps['isSubmitting'];
   /** Order cancelled / unpaid window closed — hide change-method UI */
   paymentRecoveryUnavailable?: boolean;
+  /** Decision #15: any item on_hold while pending payment — block pay / Mid-QR / retry */
+  heldUnpaidBlocked?: boolean;
 };
 
 function formatAmount(amount: number, currency: string): string {
@@ -50,15 +56,18 @@ function MidQrChangeMethodChrome({
   onRetrySubmit,
   submitError,
   isSubmitting,
+  onCheckStatus,
 }: {
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  onCheckStatus?: () => void | Promise<unknown>;
 }) {
   const [recoveryExpanded, setRecoveryExpanded] = useState(false);
 
   return (
     <div className="mt-4 flex flex-col items-center gap-2">
+      <PaymentStatusCheckButton onCheckStatus={onCheckStatus} />
       <Button
         type="button"
         variant="outline"
@@ -70,6 +79,7 @@ function MidQrChangeMethodChrome({
       </Button>
       {recoveryExpanded ? (
         <PaymentRetryPanel
+          hidePromptPay
           onSubmit={onRetrySubmit}
           submitError={submitError}
           isSubmitting={isSubmitting}
@@ -84,19 +94,21 @@ export function OrderPaymentForm({
   loading,
   error,
   onRetry,
+  onCheckStatus,
   onExpired,
   navigateToAuthorizeUri,
   onRetryPayment,
   retrySubmitError,
   retrySubmitting,
   paymentRecoveryUnavailable = false,
+  heldUnpaidBlocked = false,
 }: OrderPaymentFormProps) {
   const hasQrCode = Boolean(payment?.qrCodeUrl);
   const handleExpire = useCallback(() => {
     onExpired?.();
   }, [onExpired]);
   const { remainingMs, isExpired } = usePaymentCountdown(
-    hasQrCode && payment?.status === 'pending' ? payment.expiresAt : null,
+    hasQrCode && payment?.status === 'pending' && !heldUnpaidBlocked ? payment.expiresAt : null,
     handleExpire,
   );
 
@@ -110,6 +122,24 @@ export function OrderPaymentForm({
           ชำระเงิน
         </h1>
         <PaymentOrderNotPayableState />
+      </section>
+    );
+  }
+
+  if (heldUnpaidBlocked && payment) {
+    return (
+      <section
+        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
+        aria-labelledby="payment-held-title"
+        data-testid="order-payment-form-held-block"
+      >
+        <h1 id="payment-held-title" className="text-xl font-bold text-gray-900">
+          ชำระเงิน
+        </h1>
+        <p className="mt-2 text-sm text-gray-500">
+          ยอดชำระ {formatAmount(payment.amount, payment.currency)}
+        </p>
+        <HeldUnpaidPaymentBlock />
       </section>
     );
   }
@@ -243,6 +273,7 @@ export function OrderPaymentForm({
           <PaymentWaitingAfterReturnState
             authorizeUri={authorizeUri}
             amountLabel={amountLabel}
+            onCheckStatus={onCheckStatus}
             onRetrySubmit={onRetryPayment}
             submitError={retrySubmitError}
             isSubmitting={retrySubmitting}
@@ -310,11 +341,16 @@ export function OrderPaymentForm({
 
       {hasQrCode ? (
         <MidQrChangeMethodChrome
+          onCheckStatus={onCheckStatus}
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
           isSubmitting={retrySubmitting}
         />
-      ) : null}
+      ) : (
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <PaymentStatusCheckButton onCheckStatus={onCheckStatus} />
+        </div>
+      )}
 
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         กำลังรอการชำระเงิน

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { PlusIcon, QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/atoms/icons';
 import { CardPaymentForm } from '@/components/molecules/CheckoutPaymentSelection/CardPaymentForm';
@@ -33,6 +33,11 @@ export type PaymentRetryPanelProps = {
   submitError?: string | null;
   /** Parent mutation in-flight (task-04 createPayment) */
   isSubmitting?: boolean;
+  /**
+   * Mid-QR wait: hide PromptPay so customers switch away from the active QR
+   * (card / new card remain available). Failed and after-return keep PromptPay.
+   */
+  hidePromptPay?: boolean;
 };
 
 type CardEntryMode = 'saved' | 'new';
@@ -71,11 +76,21 @@ export function PaymentRetryPanel({
   onSubmit,
   submitError = null,
   isSubmitting: externalSubmitting = false,
+  hidePromptPay = false,
 }: PaymentRetryPanelProps) {
   const { isAuthenticated } = useAuth();
   const { paymentMethods } = usePaymentMethods();
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(initialPaymentMethod);
+  const visibleOptions = hidePromptPay
+    ? PAYMENT_OPTIONS.filter((option) => option.value !== 'promptpay')
+    : PAYMENT_OPTIONS;
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(() => {
+    if (hidePromptPay && initialPaymentMethod === 'promptpay') {
+      return null;
+    }
+    return initialPaymentMethod;
+  });
   const [cardForm, setCardForm] = useState<CheckoutCardFormState>(EMPTY_CHECKOUT_CARD_FORM);
   const [cardFormError, setCardFormError] = useState<string | null>(null);
   const [cardEntryMode, setCardEntryMode] = useState<CardEntryMode>('new');
@@ -90,36 +105,34 @@ export function PaymentRetryPanel({
   const showNewCardForm = paymentMethod === 'card' && !showSavedCards;
   const displayError = localError ?? submitError;
 
-  const clearCardForm = useCallback(() => {
+  // Plain functions: React Compiler memoizes; manual useCallback deps fought preserve-manual-memoization.
+  const clearCardForm = () => {
     setCardForm(EMPTY_CHECKOUT_CARD_FORM);
     setCardFormError(null);
     setSaveCardForNextTime(false);
-  }, []);
+  };
 
-  const handlePaymentMethodChange = useCallback(
-    (method: PaymentMethod) => {
-      setLocalError(null);
-      setCardFormError(null);
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    setLocalError(null);
+    setCardFormError(null);
 
-      if (method === 'card') {
-        if (hasSavedCards) {
-          setCardEntryMode('saved');
-          setSelectedSavedCardId((current) => current ?? resolveDefaultSavedCardId(paymentMethods));
-        } else {
-          setCardEntryMode('new');
-        }
-      } else if (paymentMethod === 'card') {
-        clearCardForm();
+    if (method === 'card') {
+      if (hasSavedCards) {
+        setCardEntryMode('saved');
+        setSelectedSavedCardId((current) => current ?? resolveDefaultSavedCardId(paymentMethods));
+      } else {
         setCardEntryMode('new');
-        setSelectedSavedCardId(null);
       }
+    } else if (paymentMethod === 'card') {
+      clearCardForm();
+      setCardEntryMode('new');
+      setSelectedSavedCardId(null);
+    }
 
-      setPaymentMethod(method);
-    },
-    [clearCardForm, hasSavedCards, paymentMethod, paymentMethods],
-  );
+    setPaymentMethod(method);
+  };
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     if (isSubmitting) {
       return;
     }
@@ -188,15 +201,7 @@ export function PaymentRetryPanel({
     } finally {
       setLocalSubmitting(false);
     }
-  }, [
-    cardEntryMode,
-    cardForm,
-    clearCardForm,
-    isSubmitting,
-    onSubmit,
-    paymentMethod,
-    selectedSavedCardId,
-  ]);
+  };
 
   return (
     <div
@@ -210,7 +215,7 @@ export function PaymentRetryPanel({
 
       <div className="mt-sop-16px flex flex-col gap-sop-20px">
         <div role="radiogroup" aria-label="วิธีการชำระเงิน" className="flex flex-col gap-sop-12px">
-          {PAYMENT_OPTIONS.map((option) => {
+          {visibleOptions.map((option) => {
             const isSelected = paymentMethod === option.value;
             return (
               <button

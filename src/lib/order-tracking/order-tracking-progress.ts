@@ -10,6 +10,7 @@ const STATUS_TO_ACTIVE_STEP: Record<string, number> = {
   pending: -1,
   paid: 0,
   processing: 1,
+  on_hold: -1,
   shipped: 2,
   delivered: 3,
   cancelled: -1,

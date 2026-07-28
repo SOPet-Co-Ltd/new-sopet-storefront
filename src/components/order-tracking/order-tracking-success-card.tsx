@@ -6,12 +6,20 @@ import {
 } from '@/components/organisms/OrderConfirmationSummary';
 import { ORDER_STATUS_LABELS, getOrderStatusBadgeVariant } from '@/lib/constants/orderStatus';
 import { labelFulfillmentStatus } from '@/lib/constants/fulfillmentStatus';
+import {
+  HOLD_FULFILLMENT_STATUS,
+  STORE_SUSPENSION_HOLD_COPY,
+} from '@/lib/constants/storeSuspensionHoldCopy';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 import {
   groupItemsByStoreShipment,
   type ShipmentTrackingItem,
 } from '@/lib/order-tracking/group-items-by-store-shipment';
-import { isTerminalOrderStatus } from '@/lib/order-tracking/order-tracking-progress';
+import {
+  resolveHoldBannerVariant,
+  shouldShowOrderTrackingProgress,
+} from '@/lib/order-tracking/holdVisibility';
+import { OrderHoldBanner } from './order-hold-banner';
 import { OrderTrackingProgressStepper } from './order-tracking-progress-stepper';
 
 type OrderTrackingSuccessCardProps = {
@@ -24,7 +32,8 @@ export function OrderTrackingSuccessCard({ order, status, items }: OrderTracking
   const statusLabel = ORDER_STATUS_LABELS[status] ?? status;
   const shipments = groupItemsByStoreShipment(items);
   const hasShipmentTracking = shipments.size > 0;
-  const showProgress = !isTerminalOrderStatus(status);
+  const showProgress = shouldShowOrderTrackingProgress(status);
+  const holdBannerVariant = resolveHoldBannerVariant(status, items);
 
   return (
     <article
@@ -67,6 +76,7 @@ export function OrderTrackingSuccessCard({ order, status, items }: OrderTracking
             </AccountStatusBadge>
           </div>
 
+          {holdBannerVariant ? <OrderHoldBanner variant={holdBannerVariant} /> : null}
           {showProgress ? <OrderTrackingProgressStepper status={status} /> : null}
         </div>
       </header>
@@ -84,51 +94,64 @@ export function OrderTrackingSuccessCard({ order, status, items }: OrderTracking
               <p className="sop-body-sm-medium text-sop-neutral-gray-200">ติดตามพัสดุ</p>
             </div>
             <ul className="space-y-4">
-              {[...shipments.entries()].map(([storeId, shipment]) => (
-                <li
-                  key={storeId}
-                  className="rounded-sop-12 border border-sop-primary-200/60 bg-sop-base-white p-3"
-                >
-                  <dl className="space-y-2">
-                    {shipment.fulfillmentProvider ? (
-                      <div className="flex justify-between gap-3">
-                        <dt className="sop-body-sm-regular text-sop-neutral-gray-400">ขนส่ง</dt>
-                        <dd className="sop-body-sm-medium text-sop-neutral-gray-200">
-                          {shipment.fulfillmentProvider}
-                        </dd>
-                      </div>
+              {[...shipments.entries()].map(([storeId, shipment]) => {
+                const isHeld = shipment.fulfillmentStatus === HOLD_FULFILLMENT_STATUS;
+                return (
+                  <li
+                    key={storeId}
+                    className="rounded-sop-12 border border-sop-primary-200/60 bg-sop-base-white p-3"
+                  >
+                    <dl className="space-y-2">
+                      {shipment.fulfillmentProvider ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="sop-body-sm-regular text-sop-neutral-gray-400">ขนส่ง</dt>
+                          <dd className="sop-body-sm-medium text-sop-neutral-gray-200">
+                            {shipment.fulfillmentProvider}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {shipment.trackingNumber ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="sop-body-sm-regular text-sop-neutral-gray-400">
+                            เลขพัสดุ
+                          </dt>
+                          <dd className="font-mono sop-body-sm-medium text-sop-secondary-600">
+                            {shipment.trackingNumber}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {shipment.fulfillmentStatus ? (
+                        <div className="flex justify-between gap-3">
+                          <dt className="sop-body-sm-regular text-sop-neutral-gray-400">
+                            สถานะจัดส่ง
+                          </dt>
+                          <dd className="sop-body-sm-medium text-sop-neutral-gray-200">
+                            {labelFulfillmentStatus(shipment.fulfillmentStatus)}
+                          </dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                    {isHeld ? (
+                      <p
+                        className="mt-2 sop-body-xs-regular text-sop-system-warning-500"
+                        data-testid="shipment-hold-hint"
+                      >
+                        {STORE_SUSPENSION_HOLD_COPY.holdItemHint}
+                      </p>
                     ) : null}
-                    {shipment.trackingNumber ? (
-                      <div className="flex justify-between gap-3">
-                        <dt className="sop-body-sm-regular text-sop-neutral-gray-400">เลขพัสดุ</dt>
-                        <dd className="font-mono sop-body-sm-medium text-sop-secondary-600">
-                          {shipment.trackingNumber}
-                        </dd>
-                      </div>
+                    {shipment.trackingUrl && !isHeld ? (
+                      <a
+                        href={shipment.trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex w-full items-center justify-center rounded-sop-8 bg-sop-primary-500 px-4 py-2 sop-body-sm-medium text-sop-base-white transition-colors hover:bg-sop-primary-600"
+                      >
+                        เปิดลิงก์ติดตามพัสดุ
+                      </a>
                     ) : null}
-                    {shipment.fulfillmentStatus ? (
-                      <div className="flex justify-between gap-3">
-                        <dt className="sop-body-sm-regular text-sop-neutral-gray-400">
-                          สถานะจัดส่ง
-                        </dt>
-                        <dd className="sop-body-sm-medium text-sop-neutral-gray-200">
-                          {labelFulfillmentStatus(shipment.fulfillmentStatus)}
-                        </dd>
-                      </div>
-                    ) : null}
-                  </dl>
-                  {shipment.trackingUrl ? (
-                    <a
-                      href={shipment.trackingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 inline-flex w-full items-center justify-center rounded-sop-8 bg-sop-primary-500 px-4 py-2 sop-body-sm-medium text-sop-base-white transition-colors hover:bg-sop-primary-600"
-                    >
-                      เปิดลิงก์ติดตามพัสดุ
-                    </a>
-                  ) : null}
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ) : null}

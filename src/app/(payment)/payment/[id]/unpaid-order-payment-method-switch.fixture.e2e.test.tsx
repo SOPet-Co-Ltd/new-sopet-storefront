@@ -22,6 +22,7 @@ import {
   resetPayment3dsAutoRedirectMemory,
   threeDSAutoRedirectStorageKey,
 } from '@/components/organisms/OrderPaymentForm/Payment3dsAutoRedirect';
+import { tokenizeCard } from '@/lib/payment/omise';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import {
   CHECKOUT_ORDER_ID,
@@ -92,6 +93,14 @@ vi.mock('@/lib/hooks/usePaymentMethods', () => ({
   })),
 }));
 
+vi.mock('@/lib/payment/omise', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/payment/omise')>('@/lib/payment/omise');
+  return {
+    ...actual,
+    tokenizeCard: vi.fn(),
+  };
+});
+
 const createWrapper = createApolloTestWrapper;
 
 async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>) {
@@ -113,8 +122,13 @@ async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>)
   expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
 }
 
-async function submitPromptPayRetry(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i }));
+/** Mid-QR hides PromptPay — switch via card + Omise token (same as payment-page.test). */
+async function submitMidQrCardRetry(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i }));
+  await user.type(screen.getByTestId('card-number-input'), '4111111111111111');
+  await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
+  await user.type(screen.getByTestId('card-expiry-input'), '12/30');
+  await user.type(screen.getByTestId('card-cvv-input'), '123');
   await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
 }
 
@@ -124,6 +138,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
     mockPush.mockReset();
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
+    vi.mocked(tokenizeCard).mockResolvedValue('tok_test_mid_qr');
   });
 
   afterEach(() => {
@@ -135,7 +150,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
   // Journey 1: Mid-QR CTA → createPayment → navigate new paymentId
   // ---------------------------------------------------------------------------
   describe('Journey 1 — Mid-QR createPayment navigates new paymentId', () => {
-    it('PromptPay restart navigates to new paymentId and clears prior 3DS key (AC-005/017)', async () => {
+    it('card switch navigates to new paymentId and clears prior 3DS key (AC-005/017)', async () => {
       const user = userEvent.setup();
       let createVariables: unknown;
       sessionStorage.setItem(
@@ -155,7 +170,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      await submitPromptPayRetry(user);
+      await submitMidQrCardRetry(user);
 
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
@@ -165,7 +180,8 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
           orderId: CHECKOUT_ORDER_ID,
           amount: midQrLivePayment.amount,
           currency: 'THB',
-          paymentMethod: 'promptpay',
+          paymentMethod: 'credit_card',
+          omiseToken: 'tok_test_mid_qr',
         },
       });
       expect(mockPush).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
@@ -174,7 +190,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(screen.queryByText('ชำระเงินสำเร็จ กำลังเปลี่ยนหน้า...')).not.toBeInTheDocument();
     });
 
-    it('change panel offers PromptPay and card only (no COD)', async () => {
+    it('change panel offers card only while live QR (no PromptPay, no COD)', async () => {
       const user = userEvent.setup();
 
       server.use(paymentQueryHandler(midQrLivePayment));
@@ -183,7 +199,9 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
 
       await expandMidQrChangeMethod(user);
 
-      expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
+      expect(
+        screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i }),
+      ).not.toBeInTheDocument();
       expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
       expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
     });
@@ -196,7 +214,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      await submitPromptPayRetry(user);
+      await submitMidQrCardRetry(user);
 
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
@@ -213,7 +231,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      await submitPromptPayRetry(user);
+      await submitMidQrCardRetry(user);
 
       await waitFor(() => {
         expect(
@@ -240,7 +258,11 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      await user.click(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i }));
+      await user.click(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i }));
+      await user.type(screen.getByTestId('card-number-input'), '4111111111111111');
+      await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
+      await user.type(screen.getByTestId('card-expiry-input'), '12/30');
+      await user.type(screen.getByTestId('card-cvv-input'), '123');
       const submit = screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' });
       expect(submit).toBeEnabled();
 
@@ -270,7 +292,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       await expandMidQrChangeMethod(user);
       expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toBeInTheDocument();
 
-      await submitPromptPayRetry(user);
+      await submitMidQrCardRetry(user);
 
       await waitFor(() => {
         expect(screen.getByTestId('payment-order-not-payable')).toBeInTheDocument();

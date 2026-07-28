@@ -82,6 +82,45 @@ describe('OrderPaymentForm', () => {
     expect(screen.queryByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).not.toBeInTheDocument();
   });
 
+  it('checks payment status from backend when status button is clicked on QR wait', async () => {
+    const user = userEvent.setup();
+    const onCheckStatus = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+        onCheckStatus={onCheckStatus}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }));
+    expect(onCheckStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show status check button when onCheckStatus is omitted', () => {
+    render(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('shows retry panel when pending PromptPay QR countdown has expired', () => {
     render(
       <OrderPaymentForm
@@ -357,6 +396,8 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
     expect(onRetryPayment).not.toHaveBeenCalled();
   });
 

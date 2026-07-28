@@ -21,7 +21,8 @@ export function groupItemsByStoreShipment(
   items: ShipmentTrackingItem[],
 ): Map<string, StoreShipmentData> {
   return items.reduce<Map<string, StoreShipmentData>>((map, item) => {
-    if (!item.trackingNumber && !item.fulfillmentProvider && !item.trackingUrl) {
+    const isHeld = item.fulfillmentStatus === 'on_hold';
+    if (!item.trackingNumber && !item.fulfillmentProvider && !item.trackingUrl && !isHeld) {
       return map;
     }
 

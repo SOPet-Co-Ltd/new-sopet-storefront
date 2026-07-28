@@ -201,6 +201,7 @@ export type CartFieldsFragment = {
       } | null;
     } | null;
   }>;
+  warnings: Array<{ code: string; message: string; variantId: string | null }> | null;
 };
 
 export type CartQueryVariables = Exact<{
@@ -231,6 +232,7 @@ export type CartQuery = {
         } | null;
       } | null;
     }>;
+    warnings: Array<{ code: string; message: string; variantId: string | null }> | null;
   };
 };
 
@@ -262,6 +264,7 @@ export type AddToCartMutation = {
         } | null;
       } | null;
     }>;
+    warnings: Array<{ code: string; message: string; variantId: string | null }> | null;
   };
 };
 
@@ -293,6 +296,7 @@ export type UpdateCartItemMutation = {
         } | null;
       } | null;
     }>;
+    warnings: Array<{ code: string; message: string; variantId: string | null }> | null;
   };
 };
 
@@ -324,6 +328,7 @@ export type RemoveCartItemMutation = {
         } | null;
       } | null;
     }>;
+    warnings: Array<{ code: string; message: string; variantId: string | null }> | null;
   };
 };
 
@@ -355,6 +360,7 @@ export type MergeCartMutation = {
         } | null;
       } | null;
     }>;
+    warnings: Array<{ code: string; message: string; variantId: string | null }> | null;
   };
 };
 
@@ -1617,6 +1623,18 @@ export const CartFieldsFragmentDoc = {
               kind: 'SelectionSet',
               selections: [
                 { kind: 'FragmentSpread', name: { kind: 'Name', value: 'CartItemFields' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'warnings' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'code' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'message' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantId' } },
               ],
             },
           },

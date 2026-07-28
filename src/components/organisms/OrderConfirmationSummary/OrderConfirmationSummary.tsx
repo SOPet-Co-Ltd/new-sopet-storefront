@@ -1,6 +1,12 @@
 import Link from 'next/link';
 import { ProductThumbnail } from '@/components/molecules/ProductThumbnail/ProductThumbnail';
 import { buildProductHref } from '@/components/organisms/ProductCard';
+import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
+import { labelFulfillmentStatus } from '@/lib/constants/fulfillmentStatus';
+import {
+  HOLD_FULFILLMENT_STATUS,
+  STORE_SUSPENSION_HOLD_COPY,
+} from '@/lib/constants/storeSuspensionHoldCopy';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 import { formatOrderVariantOptions } from '@/lib/order/formatOrderVariantOptions';
 import { cn } from '@/lib/utils';
@@ -22,6 +28,7 @@ export type OrderSummaryDisplayOrder = {
     quantity: number;
     unitPrice: number;
     subtotal: number;
+    fulfillmentStatus?: string | null;
     /** Snapshot JSON string or parsed map; omit display when empty */
     variantOptions?: string | Record<string, string> | null;
   }>;
@@ -48,6 +55,7 @@ type OrderConfirmationSummaryProps = {
 function OrderConfirmationItemRow({ item }: { item: OrderSummaryDisplayItem }) {
   const productHref = item.productId ? buildProductHref(item.productId) : null;
   const variantOptionsLabel = formatOrderVariantOptions(item.variantOptions);
+  const isHeld = item.fulfillmentStatus === HOLD_FULFILLMENT_STATUS;
   const rowClassName =
     'flex items-start justify-between gap-4 border-b border-sop-neutral-grayalpha-100 pb-4 last:border-b-0 last:pb-0';
 
@@ -68,6 +76,16 @@ function OrderConfirmationItemRow({ item }: { item: OrderSummaryDisplayItem }) {
           <p className="sop-body-xs-regular text-sop-neutral-gray-400">
             จำนวน {item.quantity} × {formatPrice(item.unitPrice)}
           </p>
+          {isHeld ? (
+            <div className="mt-2 space-y-1" data-testid="order-item-hold-chip">
+              <AccountStatusBadge variant="warning">
+                {labelFulfillmentStatus(HOLD_FULFILLMENT_STATUS)}
+              </AccountStatusBadge>
+              <p className="sop-body-xs-regular text-sop-system-warning-500">
+                {STORE_SUSPENSION_HOLD_COPY.holdItemHint}
+              </p>
+            </div>
+          ) : null}
         </div>
       </div>
       <p className="sop-body-sm-medium text-sop-neutral-gray-200">{formatPrice(item.subtotal)}</p>

@@ -8,15 +8,22 @@ import { AccountBackLink } from '@/components/molecules/account/AccountBackLink'
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { OrderPaymentCountdown } from '@/components/molecules/account/OrderPaymentCountdown';
 import { Button } from '@/components/atoms/Button';
+import { OrderHoldBanner } from '@/components/order-tracking/order-hold-banner';
 import { OrderShipmentTrackingList } from '@/components/order-tracking/order-shipment-tracking-list';
+import { HeldUnpaidPaymentBlock } from '@/components/organisms/OrderPaymentForm/HeldUnpaidPaymentBlock';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
 import {
   ORDER_STATUS_LABELS,
   getOrderStatusBadgeVariant,
   isPendingPaymentStatus,
 } from '@/lib/constants/orderStatus';
+import { STORE_SUSPENSION_HOLD_COPY } from '@/lib/constants/storeSuspensionHoldCopy';
 import { useOrderDetail } from '@/lib/hooks/useOrders';
 import { useOrderPendingReviews } from '@/lib/hooks/useOrderPendingReviews';
+import {
+  hasHeldFulfillmentItems,
+  resolveHoldBannerVariant,
+} from '@/lib/order-tracking/holdVisibility';
 import { getOrdersListReturnUrl } from '@/lib/orders/orderListReturnUrl';
 
 export default function OrderDetailPage() {
@@ -71,6 +78,10 @@ export default function OrderDetailPage() {
   }
 
   const statusLabel = ORDER_STATUS_LABELS[order.status] ?? order.status;
+  const orderHasHeldItems = hasHeldFulfillmentItems(order.items);
+  const holdBannerVariant = resolveHoldBannerVariant(order.status, order.items);
+  const heldUnpaidBlocked = isPendingPaymentStatus(order.status) && orderHasHeldItems;
+  const canPay = isPendingPaymentStatus(order.status) && !heldUnpaidBlocked;
 
   return (
     <AccountLayout title="รายละเอียดคำสั่งซื้อ">
@@ -85,10 +96,15 @@ export default function OrderDetailPage() {
             {statusLabel}
           </AccountStatusBadge>
           <div className="flex flex-wrap gap-2">
-            {isPendingPaymentStatus(order.status) ? (
+            {canPay ? (
               <Link href={`/payment/${order.id}`}>
                 <Button variant="primary">ชำระเงิน</Button>
               </Link>
+            ) : null}
+            {heldUnpaidBlocked ? (
+              <Button variant="primary" disabled data-testid="order-pay-cta-held-disabled">
+                ชำระเงิน
+              </Button>
             ) : null}
             {order.status === 'shipped' ? (
               <Button
@@ -112,6 +128,20 @@ export default function OrderDetailPage() {
             ) : null}
           </div>
         </div>
+
+        {holdBannerVariant ? <OrderHoldBanner variant={holdBannerVariant} /> : null}
+
+        {heldUnpaidBlocked ? <HeldUnpaidPaymentBlock /> : null}
+
+        {orderHasHeldItems ? (
+          <p
+            className="sop-body-sm-regular text-sop-neutral-gray-400"
+            data-testid="cancel-held-denied"
+            role="status"
+          >
+            {STORE_SUSPENSION_HOLD_COPY.cancelHeldDenied}
+          </p>
+        ) : null}
 
         {isPendingPaymentStatus(order.status) ? (
           <OrderPaymentCountdown createdAt={order.createdAt} />

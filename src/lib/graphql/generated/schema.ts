@@ -282,6 +282,14 @@ export type CartType = {
   id: Scalars['String']['output'];
   items: Array<CartItemType>;
   sessionId?: Maybe<Scalars['String']['output']>;
+  warnings?: Maybe<Array<CartWarningType>>;
+};
+
+export type CartWarningType = {
+  __typename?: 'CartWarningType';
+  code: Scalars['String']['output'];
+  message: Scalars['String']['output'];
+  variantId?: Maybe<Scalars['String']['output']>;
 };
 
 export type CategoryType = {
@@ -597,6 +605,13 @@ export type InviteVendorInput = {
   email: Scalars['String']['input'];
 };
 
+export type LoginPageImagesType = {
+  __typename?: 'LoginPageImagesType';
+  altText?: Maybe<Scalars['String']['output']>;
+  desktopImageUrl?: Maybe<Scalars['String']['output']>;
+  mobileImageUrl?: Maybe<Scalars['String']['output']>;
+};
+
 export type MeResult = {
   __typename?: 'MeResult';
   customer?: Maybe<CustomerProfile>;
@@ -635,6 +650,8 @@ export type Mutation = {
   cancelVendorOrder: OrderType;
   changeCustomerPhone: CustomerAuthPayload;
   changePassword: MessagePayload;
+  clearLoginPageDesktopImage: LoginPageImagesType;
+  clearLoginPageMobileImage: LoginPageImagesType;
   confirmGuestOrderDelivered: OrderType;
   confirmOrderDelivered: OrderType;
   createAddress: SavedAddressType;
@@ -728,6 +745,7 @@ export type Mutation = {
   updateCartItem: CartType;
   updateCategory: CategoryType;
   updateCustomerAsAdmin: AdminCustomerType;
+  updateLoginPageImages: LoginPageImagesType;
   updateOrderStatus: OrderType;
   updatePetType: PetTypeType;
   updatePlatformAd: PlatformAdType;
@@ -1225,6 +1243,10 @@ export type MutationUpdateCustomerAsAdminArgs = {
   input: UpdateCustomerAsAdminInput;
 };
 
+export type MutationUpdateLoginPageImagesArgs = {
+  input: UpdateLoginPageImagesInput;
+};
+
 export type MutationUpdateOrderStatusArgs = {
   input: UpdateOrderStatusInput;
 };
@@ -1335,6 +1357,17 @@ export type MutationVerifyCustomerOtpArgs = {
 
 export type MutationVerifyEmailArgs = {
   input: VerifyEmailInput;
+};
+
+export type MyPendingStoreInvitationType = {
+  __typename?: 'MyPendingStoreInvitationType';
+  expiresAt: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  role: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  storeId: Scalars['String']['output'];
+  storeName: Scalars['String']['output'];
+  token: Scalars['String']['output'];
 };
 
 export type MyStoreType = {
@@ -1757,9 +1790,11 @@ export type Query = {
   health: HealthStatus;
   latestPurchaseProduct?: Maybe<ProductType>;
   latestPurchaseProducts: Array<ProductType>;
+  loginPageImages: LoginPageImagesType;
   me: MeResult;
   myBrandProposals: Array<BrandType>;
   myCategoryProposals: Array<CategoryType>;
+  myPendingStoreInvitations: Array<MyPendingStoreInvitationType>;
   myPetTypeProposals: Array<PetTypeType>;
   myReviews: Array<CustomerReviewType>;
   myStore: MyStoreType;
@@ -2680,6 +2715,12 @@ export type UpdateCustomerAsAdminInput = {
   fullName?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
   phone?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateLoginPageImagesInput = {
+  altText?: InputMaybe<Scalars['String']['input']>;
+  desktopImageUrl: Scalars['String']['input'];
+  mobileImageUrl?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateOrderStatusInput = {

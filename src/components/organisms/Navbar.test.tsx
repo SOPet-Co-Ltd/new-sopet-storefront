@@ -59,6 +59,8 @@ describe('Navbar', () => {
       setAllSelected: vi.fn(),
       loading: false,
       error: undefined,
+      warnings: [],
+      hasSuspendedStoreItemRemovedWarning: false,
       addItem: vi.fn(),
       updateItem: vi.fn(),
       changeItemVariant: vi.fn(),

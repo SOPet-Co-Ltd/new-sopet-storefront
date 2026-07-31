@@ -103,4 +103,33 @@ describe('usePayment', () => {
     expect(pollResult.status).toBe('paid');
     expect(pollResult.payment.orderId).toBe(CHECKOUT_ORDER_ID);
   });
+
+  it('refetch returns updated paid status from backend', async () => {
+    let releasePaid = false;
+
+    server.use(
+      graphql.query('Payment', () => {
+        return HttpResponse.json({
+          data: {
+            payment: releasePaid ? samplePaidPayment : samplePendingPayment,
+          },
+        });
+      }),
+    );
+
+    const { result } = renderHook(() => usePayment({ id: CHECKOUT_PAYMENT_ID }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.payment?.status).toBe('pending');
+    });
+
+    releasePaid = true;
+    await result.current.refetch();
+
+    await waitFor(() => {
+      expect(result.current.payment?.status).toBe('paid');
+    });
+  });
 });

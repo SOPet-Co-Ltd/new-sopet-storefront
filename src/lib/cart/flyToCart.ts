@@ -159,7 +159,8 @@ export function flyToCart({ source, imageUrl, onComplete }: FlyToCartOptions): v
 
 export function getProductFlyImageUrl(product: {
   thumbnailUrl?: string | null;
-  images?: Array<{ url?: string | null }> | null;
+  images?: Array<{ url?: string | null; imageUrl?: string | null }> | null;
 }): string | null {
-  return product.thumbnailUrl || product.images?.[0]?.url || null;
+  const firstImage = product.images?.[0];
+  return product.thumbnailUrl || firstImage?.url || firstImage?.imageUrl || null;
 }

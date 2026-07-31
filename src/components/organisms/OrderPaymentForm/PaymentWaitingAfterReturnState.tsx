@@ -5,12 +5,14 @@ import { Button } from '@/components/atoms/Button';
 import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import { PaymentManual3dsLink } from './PaymentManual3dsLink';
 import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
+import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
 
 const WAITING_COPY = 'กำลังยืนยันการชำระเงิน...';
 
 export type PaymentWaitingAfterReturnStateProps = {
   authorizeUri: string;
   amountLabel: string;
+  onCheckStatus?: () => void | Promise<unknown>;
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
@@ -19,6 +21,7 @@ export type PaymentWaitingAfterReturnStateProps = {
 export function PaymentWaitingAfterReturnState({
   authorizeUri,
   amountLabel,
+  onCheckStatus,
   onRetrySubmit,
   submitError,
   isSubmitting,
@@ -47,6 +50,7 @@ export function PaymentWaitingAfterReturnState({
       </div>
 
       <div className="mt-4 flex flex-col items-center gap-2">
+        <PaymentStatusCheckButton onCheckStatus={onCheckStatus} />
         <Button
           type="button"
           variant="outline"

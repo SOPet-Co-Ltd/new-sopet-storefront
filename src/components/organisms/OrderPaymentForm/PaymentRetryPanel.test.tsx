@@ -53,6 +53,13 @@ describe('PaymentRetryPanel', () => {
     expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
   });
 
+  it('hidePromptPay: shows card only (mid-QR active wait)', () => {
+    render(<PaymentRetryPanel hidePromptPay />);
+
+    expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+  });
+
   it('heading uses text-gray-900 for AA contrast (UI Spec lock)', () => {
     render(<PaymentRetryPanel />);
 

@@ -17,6 +17,7 @@ import {
   sampleRetryPendingPayment,
 } from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
+import { tokenizeCard } from '@/lib/payment/omise';
 
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
@@ -57,6 +58,24 @@ vi.mock('@/lib/hooks/usePaymentMethods', () => ({
     setDefaultPaymentMethod: vi.fn(),
   })),
 }));
+
+vi.mock('@/lib/hooks/useOrders', () => ({
+  useOrderDetail: vi.fn(() => ({
+    order: null,
+    loading: false,
+    error: undefined,
+    confirmOrderDelivered: vi.fn(),
+    confirmingDelivery: false,
+  })),
+}));
+
+vi.mock('@/lib/payment/omise', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/payment/omise')>('@/lib/payment/omise');
+  return {
+    ...actual,
+    tokenizeCard: vi.fn(),
+  };
+});
 
 /** Controllable checkout loading flags — drives PaymentPage `retrySubmitting={creatingPayment}`. */
 const checkoutState = {
@@ -116,6 +135,16 @@ async function submitPromptPayRetry(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
 }
 
+/** Mid-QR hides PromptPay — switch via card + Omise token. */
+async function submitMidQrCardRetry(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i }));
+  await user.type(screen.getByTestId('card-number-input'), '4111111111111111');
+  await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
+  await user.type(screen.getByTestId('card-expiry-input'), '12/30');
+  await user.type(screen.getByTestId('card-cvv-input'), '123');
+  await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
+}
+
 async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>) {
   await waitFor(() => {
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
@@ -135,6 +164,7 @@ describe('PaymentPage', () => {
     paymentState.payment = samplePendingPayment;
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
+    vi.mocked(tokenizeCard).mockResolvedValue('tok_test_mid_qr');
   });
 
   afterEach(() => {
@@ -330,11 +360,11 @@ describe('PaymentPage', () => {
   // (createPayment → resolveNewPaymentId → router.push) is isolated from Apollo transport.
   // Fixture-e2e Journey 1 owns MSW createPayment multi-step coverage when promoted.
   //
-  // Mid-QR AC-017: PromptPay restart → new paymentId + clear prior 3DS key
+  // Mid-QR AC-017: card switch → new paymentId + clear prior 3DS key
   // Journey AC: "When Mid-QR pending PromptPay is live, customer expands เปลี่ยนวิธีชำระเงิน,
-  // submits PromptPay, and createPayment returns a NEW paymentId, then storefront clears prior
-  // 3DS one-shot key and router.push(/payment/{newId}) — never thank-you from switch alone"
-  // Behavior: expand Mid-QR → submit PromptPay → mockCreatePayment(same orderId) → mockPush new id;
+  // submits card (PromptPay hidden while QR live), and createPayment returns a NEW paymentId,
+  // then storefront clears prior 3DS one-shot key and router.push(/payment/{newId})"
+  // Behavior: expand Mid-QR → submit card → mockCreatePayment(same orderId) → mockPush new id;
   // prior 3DS session key cleared; thank-you replace not called
   // @category: integration
   // @lane: integration
@@ -350,14 +380,15 @@ describe('PaymentPage', () => {
     render(<PaymentPage />, { wrapper: createWrapper() });
 
     await expandMidQrChangeMethod(user);
-    await submitPromptPayRetry(user);
+    await submitMidQrCardRetry(user);
 
     await waitFor(() => {
       expect(mockCreatePayment).toHaveBeenCalledWith({
         orderId: CHECKOUT_ORDER_ID,
         amount: samplePendingPayment.amount,
         currency: 'THB',
-        paymentMethod: 'promptpay',
+        paymentMethod: 'credit_card',
+        omiseToken: 'tok_test_mid_qr',
       });
     });
 
@@ -369,7 +400,7 @@ describe('PaymentPage', () => {
     expect(sessionStorage.getItem(threeDSAutoRedirectStorageKey(CHECKOUT_PAYMENT_ID))).toBeNull();
   });
 
-  // Mid-QR method matrix: COD is not offered on payment change panel
+  // Mid-QR method matrix: COD is not offered; PromptPay hidden while live QR (hidePromptPay)
   // @category: integration
   // @lane: integration
   it('Mid-QR change panel does not offer COD', async () => {
@@ -380,7 +411,7 @@ describe('PaymentPage', () => {
 
     await expandMidQrChangeMethod(user);
 
-    expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
   });
@@ -435,7 +466,7 @@ describe('PaymentPage', () => {
     render(<PaymentPage />, { wrapper: createWrapper() });
 
     await expandMidQrChangeMethod(user);
-    await submitPromptPayRetry(user);
+    await submitMidQrCardRetry(user);
 
     await waitFor(() => {
       expect(
@@ -454,7 +485,7 @@ describe('PaymentPage', () => {
   // Mid-QR AC-011: fail-open success navigates new id without cancel-only blocking modal
   // Journey AC: "When createPayment returns a distinct new payment (cancel failure server-side /
   // fail-open), then navigate new id and never show a cancel-only blocking dialog"
-  // Behavior: expand → PromptPay submit → new id → mockPush; no dialog / cancel-failure copy
+  // Behavior: expand → card submit → new id → mockPush; no dialog / cancel-failure copy
   // @category: integration
   // @lane: integration
   // @dependency: vi.mock parent-pattern intentional exception vs MSW — fail-open is invisible on
@@ -470,7 +501,7 @@ describe('PaymentPage', () => {
     render(<PaymentPage />, { wrapper: createWrapper() });
 
     await expandMidQrChangeMethod(user);
-    await submitPromptPayRetry(user);
+    await submitMidQrCardRetry(user);
 
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);

@@ -48,6 +48,14 @@ export const NOTIFICATION_TYPE_CONFIG: Record<string, NotificationTypeConfig> = 
     label: 'ชำระเงินสำเร็จ',
     badgeClasses: 'bg-sop-system-success-100 text-sop-system-success-500',
   },
+  order_items_on_hold: {
+    label: 'พักการจัดส่ง',
+    badgeClasses: 'bg-sop-system-warning-100 text-sop-system-warning-500',
+  },
+  order_items_hold_resumed: {
+    label: 'กลับมาดำเนินการ',
+    badgeClasses: 'bg-sop-system-success-100 text-sop-system-success-500',
+  },
 };
 
 const DEFAULT_NOTIFICATION_TYPE_CONFIG: NotificationTypeConfig = {
@@ -145,6 +153,23 @@ function NotificationCard({
     label: notification.type,
   };
 
+  let orderHref: string | null = null;
+  if (
+    notification.type === 'order_items_on_hold' ||
+    notification.type === 'order_items_hold_resumed'
+  ) {
+    try {
+      const parsed = notification.metadata
+        ? (JSON.parse(notification.metadata) as { orderId?: unknown })
+        : null;
+      if (parsed && typeof parsed.orderId === 'string' && parsed.orderId.length > 0) {
+        orderHref = `/user/orders/${parsed.orderId}`;
+      }
+    } catch {
+      orderHref = null;
+    }
+  }
+
   const handleActivate = () => {
     onMarkRead();
   };
@@ -186,6 +211,19 @@ function NotificationCard({
               </span>
             </div>
             <p className="sop-body-sm-regular text-sop-neutral-gray-400">{notification.message}</p>
+            {orderHref ? (
+              <a
+                href={orderHref}
+                className="mt-2 inline-flex sop-body-xs-medium text-sop-secondary-500 underline"
+                data-testid={`notification-order-link-${notification.type}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onMarkRead();
+                }}
+              >
+                ดูคำสั่งซื้อ
+              </a>
+            ) : null}
             <p className="mt-2 sop-body-xs-regular text-sop-neutral-gray-400">
               {formatThaiDateTime(notification.createdAt)}
             </p>

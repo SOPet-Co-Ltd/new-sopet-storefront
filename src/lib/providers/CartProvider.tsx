@@ -27,8 +27,12 @@ import {
   groupCartItemsByStore,
   type StoreCartGroup,
 } from '@/lib/cart/cartUtils';
+import { SUSPENDED_STORE_ITEM_REMOVED_WARNING_CODE } from '@/lib/constants/storeSuspensionHoldCopy';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { ensureSessionId } from '@/lib/session';
+import { mapStoreSuspendedCartError } from '@/lib/store-suspension/mapSuspensionErrors';
+
+export type CartWarning = NonNullable<CartQuery['cart']['warnings']>[number];
 
 export type CartContextValue = {
   cart: CartQuery['cart'] | null;
@@ -48,6 +52,8 @@ export type CartContextValue = {
   setAllSelected: (selected: boolean) => void;
   loading: boolean;
   error: Error | undefined;
+  warnings: CartWarning[];
+  hasSuspendedStoreItemRemovedWarning: boolean;
   addItem: (variantId: string, quantity?: number) => Promise<void>;
   updateItem: (itemId: string, quantity: number) => Promise<void>;
   changeItemVariant: (itemId: string, variantId: string, quantity: number) => Promise<void>;
@@ -162,6 +168,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const cart = data?.cart ?? null;
   const items = useMemo(() => cart?.items ?? [], [cart]);
+  const warnings = useMemo(() => cart?.warnings ?? [], [cart]);
+  const hasSuspendedStoreItemRemovedWarning = useMemo(
+    () => warnings.some((warning) => warning.code === SUSPENDED_STORE_ITEM_REMOVED_WARNING_CODE),
+    [warnings],
+  );
 
   const itemsByStore = useMemo(() => groupCartItemsByStore(items), [items]);
   const itemCount = useMemo(() => computeCartItemCount(items), [items]);
@@ -262,13 +273,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
       await withCartOpLock(async () => {
         try {
           const result = (await operation()) as {
-            errors?: Array<{ message: string }>;
+            errors?: Array<{ message: string; extensions?: { code?: unknown } }>;
           };
           if (result.errors?.length) {
-            throw new Error(result.errors[0]?.message ?? errorMessage);
+            throw Object.assign(new Error(result.errors[0]?.message ?? errorMessage), {
+              errors: result.errors,
+            });
           }
         } catch (mutationError) {
-          const message = mutationError instanceof Error ? mutationError.message : errorMessage;
+          const suspendedMessage = mapStoreSuspendedCartError(mutationError);
+          const message =
+            suspendedMessage ??
+            (mutationError instanceof Error ? mutationError.message : errorMessage);
           toast.error(message);
           throw mutationError;
         }
@@ -433,6 +449,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setAllSelected,
       loading: !hydrated || (Boolean(sessionId) && loading),
       error: toHookError(error),
+      warnings,
+      hasSuspendedStoreItemRemovedWarning,
       addItem,
       updateItem,
       changeItemVariant,
@@ -446,6 +464,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       cart,
       changeItemVariant,
       error,
+      hasSuspendedStoreItemRemovedWarning,
       hydrated,
       isItemSelected,
       isStoreSelected,
@@ -466,6 +485,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       subtotal,
       toggleItemSelected,
       updateItem,
+      warnings,
     ],
   );
 

@@ -10,6 +10,15 @@ function getCardBrand(value: string): 'amex' | 'unknown' {
   return 'unknown';
 }
 
+export function detectCardBrand(cardNumber: string): string {
+  const digits = cleanCardNumber(cardNumber);
+  if (/^4/.test(digits)) return 'visa';
+  if (/^5[1-5]/.test(digits) || /^2[2-7]/.test(digits)) return 'mastercard';
+  if (/^3[47]/.test(digits)) return 'amex';
+  if (/^6/.test(digits)) return 'discover';
+  return 'unknown';
+}
+
 function getCardNumberLength(value: string): number {
   return getCardBrand(value) === 'amex' ? 15 : 16;
 }

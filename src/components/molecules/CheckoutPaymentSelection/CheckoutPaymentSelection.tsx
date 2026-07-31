@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
-import { PlusIcon, QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/atoms/icons';
+import {
+  PlusIcon,
+  QrCodeIcon,
+  SubtractIcon,
+  WalletIcon,
+  LeftArrowIcon,
+} from '@/components/atoms/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
@@ -181,6 +187,11 @@ export function CheckoutPaymentSelection() {
     clearCardForm();
   }, [clearCardForm]);
 
+  const handleBackToSavedCards = useCallback(() => {
+    setCardEntryMode('saved');
+    clearCardForm();
+  }, [clearCardForm]);
+
   return (
     <div
       className="mb-sop-16px min-h-60 w-full rounded-sop-20 bg-sop-base-white p-sop-24px"
@@ -246,7 +257,18 @@ export function CheckoutPaymentSelection() {
 
             {showNewCardForm ? (
               <div className="flex flex-col gap-sop-20px">
-                <p className="sop-body-md-regular text-sop-neutral-gray-300">ข้อมูลบัตรของคุณ</p>
+                {cardEntryMode === 'new' && hasSavedCards ? (
+                  <button
+                    type="button"
+                    onClick={handleBackToSavedCards}
+                    className="flex items-center gap-sop-8px text-sop-neutral-gray-300"
+                  >
+                    <LeftArrowIcon size={{ mobile: 16 }} color="currentColor" />
+                    <span className="sop-body-md-medium">เพิ่มบัตรใหม่</span>
+                  </button>
+                ) : (
+                  <p className="sop-body-md-regular text-sop-neutral-gray-300">ข้อมูลบัตรของคุณ</p>
+                )}{' '}
                 <CardPaymentForm
                   value={cardForm}
                   onChange={(next) => {

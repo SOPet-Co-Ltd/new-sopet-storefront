@@ -53,10 +53,15 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_BASE_URL`                 | `http://localhost:3000`           | Canonical URLs, Open Graph, sitemap, robots                         |
 | `NEXT_PUBLIC_SITE_NAME`                | `Sopet`                           | Title template, Open Graph `siteName`                               |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | —                                 | Optional Google Search Console tag                                  |
+| `NEXT_PUBLIC_GTM_ID`                   | —                                 | Optional; Google Tag Manager container (`GTM-XXXX`)                 |
+| `NEXT_PUBLIC_GA4_MEASUREMENT_ID`       | —                                 | Optional; direct GA4 measurement ID (`G-XXXX`)                      |
+| `NEXT_PUBLIC_ANALYTICS_ENABLED`        | —                                 | Optional kill-switch (`false`/`0` disables all analytics)           |
 | `GRAPHQL_SCHEMA_PATH`                  | `../sopet-backend/src/schema.gql` | Codegen schema source (also accepts `sopet-backend/src/schema.gql`) |
 | `GRAPHQL_SCHEMA_GITHUB_OWNER/REPO/REF` | —                                 | Optional; fetch schema from GitHub when no local schema (CI/Vercel) |
 
 Optional WebSocket overrides (see `src/lib/config.ts`): `NEXT_PUBLIC_GRAPHQL_WS_URL`, `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN`, `GRAPHQL_WS_SSR_URL`.
+
+Analytics (GTM + GA4) setup: [docs/analytics.md](docs/analytics.md).
 
 ## Running locally
 

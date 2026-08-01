@@ -10,6 +10,7 @@ import { MeatballsMenuIcon } from '@/components/atoms/icons/filled/MeatballsMenu
 import { ProductDetailQuantitySelection } from '@/components/molecules/ProductDetailQuantitySelection/ProductDetailQuantitySelection';
 import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import { ProductVariants } from '@/components/molecules/ProductVariants/ProductVariants';
+import { trackAddToCart } from '@/lib/analytics';
 import { flyToCart, getProductFlyImageUrl } from '@/lib/cart/flyToCart';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useFavorites } from '@/lib/hooks/useFavorites';
@@ -387,6 +388,24 @@ export default function ProductDetailsVariantSelection({
     syncOptionsToUrl({ ...selectedOptions, [optionKey]: value });
   };
 
+  const pushAddToCartEvent = () => {
+    if (!variantId) return;
+    trackAddToCart({
+      value: variantPrice * safeQuantity,
+      items: [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.store?.name ?? undefined,
+          item_category: product.category ?? undefined,
+          item_variant: variantId,
+          price: variantPrice,
+          quantity: safeQuantity,
+        },
+      ],
+    });
+  };
+
   const handleAddToCart = async () => {
     if (!variantId || isOutOfStock || !hasAnyPrice) return;
 
@@ -401,6 +420,7 @@ export default function ProductDetailsVariantSelection({
     try {
       setIsAddingToCart(true);
       await addItem(variantId, safeQuantity);
+      pushAddToCartEvent();
     } finally {
       setIsAddingToCart(false);
     }
@@ -412,6 +432,7 @@ export default function ProductDetailsVariantSelection({
     try {
       setIsBuyingNow(true);
       await addItem(variantId, safeQuantity);
+      pushAddToCartEvent();
       router.push('/checkout');
     } finally {
       setIsBuyingNow(false);

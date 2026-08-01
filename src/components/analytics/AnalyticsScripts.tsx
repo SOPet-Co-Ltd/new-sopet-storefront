@@ -1,0 +1,63 @@
+import Script from 'next/script';
+import { getAnalyticsConfig } from '@/lib/analytics';
+
+/**
+ * Injects GTM (primary) and optional direct GA4 gtag bootstrap.
+ * Renders nothing when analytics is disabled or IDs are missing/invalid.
+ */
+export function AnalyticsScripts() {
+  const { enabled, gtmId, ga4MeasurementId } = getAnalyticsConfig();
+
+  if (!enabled) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* Inline stub so dataLayer/gtag exist before afterInteractive GTM/gtag.js */}
+      <script
+        id="sopet-analytics-datalayer"
+        dangerouslySetInnerHTML={{
+          __html:
+            'window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function gtag(){window.dataLayer.push(arguments);};',
+        }}
+      />
+
+      {gtmId ? (
+        <>
+          <Script id="sopet-gtm" strategy="afterInteractive">{`
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','${gtmId}');
+          `}</Script>
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+              height="0"
+              width="0"
+              style={{ display: 'none', visibility: 'hidden' }}
+              title="Google Tag Manager"
+            />
+          </noscript>
+        </>
+      ) : null}
+
+      {ga4MeasurementId ? (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${ga4MeasurementId}`}
+            strategy="afterInteractive"
+          />
+          <Script id="sopet-ga4-config" strategy="afterInteractive">{`
+            window.dataLayer = window.dataLayer || [];
+            window.gtag = window.gtag || function gtag(){window.dataLayer.push(arguments);};
+            gtag('js', new Date());
+            gtag('config', '${ga4MeasurementId}', { send_page_view: false });
+          `}</Script>
+        </>
+      ) : null}
+    </>
+  );
+}

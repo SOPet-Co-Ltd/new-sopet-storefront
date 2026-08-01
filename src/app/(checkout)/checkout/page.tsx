@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckoutErrorToast } from '@/components/atoms/CheckoutErrorToast/CheckoutErrorToast';
 import { CheckoutMobileBottomBar } from '@/components/molecules/CheckoutMobileBottomBar/CheckoutMobileBottomBar';
@@ -10,6 +10,7 @@ import { CheckoutPromotionSection } from '@/components/sections/CheckoutPromotio
 import { CheckoutAutoApplyController } from '@/components/sections/CheckoutSection/CheckoutAutoApplyController';
 import { CheckoutSection } from '@/components/sections/CheckoutSection/CheckoutSection';
 import type { AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
+import { cartLineToAnalyticsItem, trackBeginCheckout } from '@/lib/analytics';
 import type {
   GuestCheckoutField,
   GuestCheckoutFormState,
@@ -68,7 +69,7 @@ function CheckoutPageReset() {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { selectedItemCount, loading } = useCart();
+  const { selectedItemCount, selectedItems, selectedSubtotal, loading } = useCart();
   const { setAddress } = useCheckout();
   const {
     addresses,
@@ -76,6 +77,18 @@ export default function CheckoutPage() {
     error: addressesError,
     createAddress,
   } = useAddresses();
+  const beginCheckoutTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (loading || beginCheckoutTrackedRef.current || selectedItems.length === 0) {
+      return;
+    }
+    beginCheckoutTrackedRef.current = true;
+    trackBeginCheckout({
+      value: selectedSubtotal,
+      items: selectedItems.map(cartLineToAnalyticsItem),
+    });
+  }, [loading, selectedItems, selectedSubtotal]);
 
   const [guestForm, setGuestForm] = useState<GuestCheckoutFormState>(EMPTY_GUEST_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<GuestCheckoutField, string>>>({});

@@ -56,6 +56,7 @@ Two folders sit outside the atomic tiers, grouped by feature instead of by desig
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `order-tracking/` | Public order-tracking page UI (kebab-case filenames, e.g. `order-shipment-tracking-list.tsx`), shared between `/track/[orderNumber]` and the authenticated order detail page |
 | `seo/`            | `JsonLdScript.tsx` — renders JSON-LD `<script>` tags. See [SEO](seo.md).                                                                                                     |
+| `analytics/`      | GTM/GA4 scripts + SPA `page_view` tracker. See [Analytics](analytics.md).                                                                                                    |
 
 ---
 
@@ -162,6 +163,12 @@ Province/district/subdistrict data and helpers for address forms (`dataset.ts`, 
 ## `src/lib/seo/` — SEO and metadata
 
 Metadata builders, indexability rules, sitemap/JSON-LD helpers used by `robots.ts`, `sitemap.ts`, `llms.txt/route.ts`, and page-level `generateMetadata`. See [SEO](seo.md).
+
+---
+
+## `src/lib/analytics/` — GTM + GA4
+
+Config, `dataLayer` helpers, and typed ecommerce events. Scripts live under `src/components/analytics/`. See [Analytics](analytics.md).
 
 ---
 

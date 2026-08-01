@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Google_Sans } from 'next/font/google';
+import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
+import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts';
 import { AppProviders } from '@/lib/providers';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
 import { getSiteConfig } from '@/lib/seo/metadata';
@@ -43,7 +45,10 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${googleSans.variable} ${googleSans.className} h-full antialiased`}>
       <body className="flex min-h-dvh flex-col bg-sop-primary-100">
-        <AppProviders>{children}</AppProviders>
+        <AnalyticsScripts />
+        <AppProviders>
+          <AnalyticsProvider>{children}</AnalyticsProvider>
+        </AppProviders>
       </body>
     </html>
   );

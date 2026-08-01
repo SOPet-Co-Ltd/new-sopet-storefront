@@ -57,6 +57,20 @@ function isTerminalStatus(status: PaymentStatus): boolean {
   return status === 'paid' || status === 'failed' || status === 'refunded';
 }
 
+function pickFreshestPayment(
+  fromSubscription: PaymentRecord | null | undefined,
+  fromQuery: PaymentRecord | null | undefined,
+): PaymentRecord | null {
+  if (fromSubscription && fromQuery) {
+    if (isTerminalStatus(fromQuery.status) && !isTerminalStatus(fromSubscription.status)) {
+      return fromQuery;
+    }
+    return fromSubscription;
+  }
+
+  return fromSubscription ?? fromQuery ?? null;
+}
+
 export function usePayment({ id, orderId, skip = false }: UsePaymentParams = {}): UsePaymentResult {
   const apolloClient = useApolloClient();
   const queryByOrderId = Boolean(orderId) && !id;
@@ -91,15 +105,11 @@ export function usePayment({ id, orderId, skip = false }: UsePaymentParams = {})
 
   const payment = useMemo(() => {
     const fromSubscription = paymentStatusUpdatedSubscription.data?.paymentStatusUpdated;
-    if (fromSubscription) {
-      return fromSubscription;
-    }
+    const fromQuery = queryByOrderId
+      ? (paymentByOrderIdQuery.data?.paymentByOrderId ?? null)
+      : (paymentByIdQuery.data?.payment ?? null);
 
-    if (queryByOrderId) {
-      return paymentByOrderIdQuery.data?.paymentByOrderId ?? null;
-    }
-
-    return paymentByIdQuery.data?.payment ?? null;
+    return pickFreshestPayment(fromSubscription, fromQuery);
   }, [
     paymentByIdQuery.data,
     paymentByOrderIdQuery.data,

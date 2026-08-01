@@ -7,9 +7,9 @@ import CheckoutLayout from './(checkout)/layout';
 import PaymentLayout from './(payment)/layout';
 
 vi.mock('next/font/google', () => ({
-  Mitr: () => ({
-    variable: '--font-mitr',
-    className: 'mitr-class',
+  Google_Sans: () => ({
+    variable: '--font-google-sans',
+    className: 'google-sans-class',
   }),
 }));
 

@@ -14,6 +14,11 @@ import {
 import { toPromotionEstimateCartLines } from '@/lib/checkout/storePromotionUtils';
 import type { UseCheckoutResult } from '@/lib/hooks/useCheckout';
 import type { CheckoutStep } from '@/lib/providers/CheckoutProvider';
+import {
+  ORDER_CONTAINS_SUSPENDED_STORE_ERROR_CODE,
+  STORE_SUSPENSION_HOLD_COPY,
+} from '@/lib/constants/storeSuspensionHoldCopy';
+import { mapCheckoutSuspendedStoreError } from '@/lib/store-suspension/mapSuspensionErrors';
 
 export class SubmitCheckoutError extends Error {
   constructor(
@@ -103,7 +108,18 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
   try {
     order = await params.checkoutHook.createOrder(orderInput);
   } catch (error) {
+    const suspendedMessage = mapCheckoutSuspendedStoreError(error);
+    if (suspendedMessage) {
+      throw new SubmitCheckoutError(suspendedMessage, 'order_failed');
+    }
+
     const code = extractPromotionErrorCode(error);
+    if (code === ORDER_CONTAINS_SUSPENDED_STORE_ERROR_CODE) {
+      throw new SubmitCheckoutError(
+        STORE_SUSPENSION_HOLD_COPY.checkoutCreateSuspended,
+        'order_failed',
+      );
+    }
     // Candidate-001: only hard eligibility / unknown → order_failed.
     // INSUFFICIENT_QTY is apply-skip — retry once without promo codes.
     if (isCreateOrderHardEligibilityCode(code) || code == null) {
@@ -119,6 +135,10 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
         storePromotionCodes: undefined,
       });
     } catch (retryError) {
+      const retrySuspended = mapCheckoutSuspendedStoreError(retryError);
+      if (retrySuspended) {
+        throw new SubmitCheckoutError(retrySuspended, 'order_failed');
+      }
       const message =
         retryError instanceof Error && retryError.message
           ? retryError.message

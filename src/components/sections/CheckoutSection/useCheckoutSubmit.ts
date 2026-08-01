@@ -22,7 +22,13 @@ import {
 } from '@/lib/checkout/guestCheckoutValidation';
 import { parseStorePromotionConditions } from '@/lib/checkout/storePromotionUtils';
 import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
+import {
+  cleanCardNumber,
+  detectCardBrand,
+} from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { parseCardExpiry } from '@/lib/payment/omise';
+import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
@@ -56,6 +62,7 @@ export function useCheckoutSubmit(
     pruneDeselectedIds,
   } = useCart();
   const checkoutMutations = useCheckoutMutations();
+  const { addPaymentMethod } = usePaymentMethods();
   const {
     step,
     shippingByStoreId,
@@ -131,6 +138,30 @@ export function useCheckoutSubmit(
       try {
         const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
+        let finalOmiseToken = cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined;
+        let finalSavedPaymentMethodId =
+          cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined;
+
+        if (cardPayment?.type === 'token' && cardPayment.saveCardForNextTime) {
+          const digits = cleanCardNumber(cardPayment.cardForm.cardNumber);
+          const { month, year } = parseCardExpiry(cardPayment.cardForm.expiry);
+          const brand = detectCardBrand(digits);
+
+          const savedMethod = await addPaymentMethod({
+            omiseCardToken: cardPayment.omiseToken,
+            brand,
+            lastFour: digits.slice(-4),
+            expiryMonth: month,
+            expiryYear: year,
+            isDefault: true,
+          });
+
+          if (savedMethod) {
+            finalSavedPaymentMethodId = savedMethod.id;
+            finalOmiseToken = undefined;
+          }
+        }
+
         const result = await submitCheckout(
           {
             step,
@@ -142,9 +173,8 @@ export function useCheckoutSubmit(
             guestForm: isGuestCheckout ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
-            omiseToken: cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined,
-            savedPaymentMethodId:
-              cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined,
+            omiseToken: finalOmiseToken,
+            savedPaymentMethodId: finalSavedPaymentMethodId,
           },
           submitGuardRef.current,
         );
@@ -170,6 +200,7 @@ export function useCheckoutSubmit(
       }
     },
     [
+      addPaymentMethod,
       checkoutContext,
       checkoutMutations,
       guestForm,

@@ -69,6 +69,12 @@ type CartPayload = {
       };
     };
   }>;
+  warnings: Array<{
+    __typename: 'CartWarningType';
+    code: string;
+    message: string;
+    variantId: string | null;
+  }>;
 };
 
 function makeCart(cartId: string, itemVariantIds: string[]): CartPayload {
@@ -104,6 +110,8 @@ function makeCart(cartId: string, itemVariantIds: string[]): CartPayload {
         },
       },
     })),
+    // CartFields includes warnings — Apollo drops incomplete writeQuery results without it.
+    warnings: [],
   };
 }
 

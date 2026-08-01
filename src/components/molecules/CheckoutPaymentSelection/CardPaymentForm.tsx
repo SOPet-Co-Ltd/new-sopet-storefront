@@ -42,7 +42,7 @@ export function CardPaymentForm({
         <Input
           isRequire
           title="หมายเลขบัตร"
-          size="sm"
+          size="md"
           variant="bordered"
           placeholder="0000-1111-0000-1111"
           inputMode="numeric"
@@ -62,7 +62,7 @@ export function CardPaymentForm({
         <Input
           isRequire
           title="ชื่อบนบัตร"
-          size="sm"
+          size="md"
           variant="bordered"
           placeholder="จันจิรา เอสโอเพ็ท"
           autoComplete="cc-name"
@@ -76,7 +76,7 @@ export function CardPaymentForm({
         <Input
           isRequire
           title="วันหมดอายุ"
-          size="sm"
+          size="md"
           variant="bordered"
           placeholder="MM/YY"
           inputMode="numeric"
@@ -89,7 +89,7 @@ export function CardPaymentForm({
         <Input
           isRequire
           title="รหัส CVV"
-          size="sm"
+          size="md"
           variant="bordered"
           placeholder={getCvvPlaceholder(value.cardNumber)}
           inputMode="numeric"

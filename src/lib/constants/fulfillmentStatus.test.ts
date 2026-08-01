@@ -5,6 +5,7 @@ import { labelFulfillmentStatus } from './fulfillmentStatus';
 const ADMIN_MIRROR_LABELS: [status: string, label: string][] = [
   ['pending', 'รอดำเนินการ'],
   ['processing', 'กำลังเตรียม'],
+  ['on_hold', 'พักจัดส่ง'],
   ['shipped', 'จัดส่งแล้ว'],
   ['delivered', 'ส่งถึงแล้ว'],
   ['cancelled', 'ยกเลิก'],

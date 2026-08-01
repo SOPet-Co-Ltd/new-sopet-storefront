@@ -29,6 +29,11 @@ fragment CartFields on CartType {
   items {
     ...CartItemFields
   }
+  warnings {
+    code
+    message
+    variantId
+  }
 }
 
 query Cart($sessionId: String) {

@@ -84,4 +84,18 @@ describe('groupItemsByStoreShipment', () => {
       fulfillmentStatus: undefined,
     });
   });
+
+  it('includes on_hold shipments without tracking metadata', () => {
+    const result = groupItemsByStoreShipment([
+      { storeId: 'store-held', fulfillmentStatus: 'on_hold' },
+    ]);
+
+    expect(result.size).toBe(1);
+    expect(result.get('store-held')).toEqual({
+      fulfillmentProvider: undefined,
+      trackingNumber: undefined,
+      trackingUrl: undefined,
+      fulfillmentStatus: 'on_hold',
+    });
+  });
 });

@@ -1,11 +1,13 @@
 'use client';
 
 import { useQuery } from '@apollo/client/react';
+import { useEffect, useRef } from 'react';
 import { CheckIcon } from '@/components/atoms/icons';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
 import { ThankYouAction } from '@/components/organisms/ThankYouAction';
 import ThankYouPageCopyId from '@/components/organisms/ThankYouPageCopyId';
 import ThankYouRecommendedProductSection from '@/components/organisms/ThankYouRecommendedProductSection';
+import { orderLineToAnalyticsItem, trackPurchase } from '@/lib/analytics';
 import { OrderDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -21,9 +23,25 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
     variables: { id: orderId },
     fetchPolicy: 'network-only',
   });
+  const purchaseTrackedRef = useRef<string | null>(null);
 
   const isGuest = !isAuthenticated;
   const order = data?.order;
+
+  useEffect(() => {
+    if (!order?.id || purchaseTrackedRef.current === order.id) {
+      return;
+    }
+    purchaseTrackedRef.current = order.id;
+
+    const items = (order.items ?? []).map(orderLineToAnalyticsItem);
+    trackPurchase({
+      transaction_id: order.orderNumber ?? order.id,
+      value: order.total,
+      shipping: order.shippingFee ?? undefined,
+      items,
+    });
+  }, [order]);
 
   return (
     <main className="min-h-dvh flex flex-col bg-sop-primary-100">

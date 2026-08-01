@@ -2,15 +2,17 @@
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { notFound } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
 import { ProductDetails } from '@/components/organisms/ProductDetails/ProductDetails';
 import ProductDetailsSeller from '@/components/organisms/ProductDetailsSeller';
 import ProductDetailsSellerReviews from '@/components/organisms/ProductDetailsSellerReviews';
+import { getDefaultVariant } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 import { ProductGallery } from '@/components/organisms/ProductGallery/ProductGallery';
 import { ProductDetailDescription } from '@/components/sections/ProductDetailDescription/ProductDetailDescription';
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
+import { trackViewItem } from '@/lib/analytics';
 import type { ProductByIdQuery } from '@/lib/graphql/generated/graphql';
 import { useCategories } from '@/lib/hooks/useCategories';
 import { useProduct } from '@/lib/hooks/useProduct';
@@ -91,6 +93,32 @@ export default function ProductDetailsPage({
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const { categories } = useCategories();
+  const trackedViewItemIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!product || trackedViewItemIdRef.current === product.id) {
+      return;
+    }
+    trackedViewItemIdRef.current = product.id;
+
+    const defaultVariant = getDefaultVariant(product.variants);
+    const price = defaultVariant?.price ?? product.basePrice;
+
+    trackViewItem({
+      value: price,
+      items: [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.store?.name ?? undefined,
+          item_category: product.category ?? undefined,
+          item_variant: defaultVariant?.id,
+          price,
+          quantity: 1,
+        },
+      ],
+    });
+  }, [product]);
 
   const breadcrumbItems = useMemo((): BreadcrumbItem[] => {
     if (!product) {

@@ -18,6 +18,7 @@ Customer-facing Next.js application for SOPET (port **3000**). Thin GraphQL clie
 | [Feature development](feature-development.md)     | Adding pages and features                      |
 | [Development guide](development-guide.md)         | Where to put new code                          |
 | [SEO](seo.md)                                     | Metadata, sitemap, robots, JSON-LD             |
+| [Analytics](analytics.md)                         | GTM + GA4, env vars, ecommerce events          |
 
 ## Related repos
 

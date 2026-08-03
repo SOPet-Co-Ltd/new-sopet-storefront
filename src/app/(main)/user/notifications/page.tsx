@@ -156,7 +156,9 @@ function NotificationCard({
   let orderHref: string | null = null;
   if (
     notification.type === 'order_items_on_hold' ||
-    notification.type === 'order_items_hold_resumed'
+    notification.type === 'order_items_hold_resumed' ||
+    notification.type === 'payment_received' ||
+    notification.type === 'order_status_changed'
   ) {
     try {
       const parsed = notification.metadata

@@ -166,6 +166,7 @@ export type CartItemFieldsFragment = {
     id: string;
     price: number;
     sku: string;
+    stockQuantity: number;
     optionsJson: string | null;
     product: {
       id: string;
@@ -190,6 +191,7 @@ export type CartFieldsFragment = {
       id: string;
       price: number;
       sku: string;
+      stockQuantity: number;
       optionsJson: string | null;
       product: {
         id: string;
@@ -221,6 +223,7 @@ export type CartQuery = {
         id: string;
         price: number;
         sku: string;
+        stockQuantity: number;
         optionsJson: string | null;
         product: {
           id: string;
@@ -253,6 +256,7 @@ export type AddToCartMutation = {
         id: string;
         price: number;
         sku: string;
+        stockQuantity: number;
         optionsJson: string | null;
         product: {
           id: string;
@@ -285,6 +289,7 @@ export type UpdateCartItemMutation = {
         id: string;
         price: number;
         sku: string;
+        stockQuantity: number;
         optionsJson: string | null;
         product: {
           id: string;
@@ -317,6 +322,7 @@ export type RemoveCartItemMutation = {
         id: string;
         price: number;
         sku: string;
+        stockQuantity: number;
         optionsJson: string | null;
         product: {
           id: string;
@@ -349,6 +355,7 @@ export type MergeCartMutation = {
         id: string;
         price: number;
         sku: string;
+        stockQuantity: number;
         optionsJson: string | null;
         product: {
           id: string;
@@ -1568,6 +1575,7 @@ export const CartItemFieldsFragmentDoc = {
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'price' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'sku' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'stockQuantity' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'optionsJson' } },
                 {
                   kind: 'Field',
@@ -1660,6 +1668,7 @@ export const CartFieldsFragmentDoc = {
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'price' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'sku' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'stockQuantity' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'optionsJson' } },
                 {
                   kind: 'Field',

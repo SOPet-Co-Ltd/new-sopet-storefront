@@ -9,6 +9,7 @@ export const sampleCartItem: CartQuery['cart']['items'][number] = {
     id: 'var-small',
     price: 890,
     sku: 'DOG-S',
+    stockQuantity: 10,
     optionsJson: '{"size":"S"}',
     product: {
       id: CATALOG_PRODUCT_ID,

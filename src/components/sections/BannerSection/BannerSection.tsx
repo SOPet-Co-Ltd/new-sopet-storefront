@@ -173,7 +173,7 @@ export function BannerSection() {
         </div>
 
         {hasLoop && (
-          <div className="absolute right-sop-12px bottom-sop-12px rounded-sop-100px bg-sop-neutral-grayalpha-900 px-sop-12px py-sop-4px">
+          <div className="absolute right-sop-32px bottom-sop-16px rounded-sop-100px bg-sop-neutral-grayalpha-900 px-sop-12px py-sop-4px">
             <div className="flex items-center justify-center gap-sop-8px">
               {banners.map((banner, index) => {
                 const isActive = index + 1 === currentIndex;

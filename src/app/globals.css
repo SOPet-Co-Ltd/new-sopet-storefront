@@ -408,11 +408,15 @@
 
 /* Breadcrumb (20px font, 20px line-height XS, Regular weight) */
 @utility sop-breadcrumb {
-  font-size: var(--text-sop-LG);
+  font-size: var(--text-sop-SM);
   line-height: var(--leading-sop-XS);
   font-family: var(--font-sans);
   font-weight: var(--font-weight-sop-Regular);
   letter-spacing: var(--tracking-sop-SM);
+
+  @variant md {
+    font-size: var(--text-sop-LG);
+  }
 }
 
 /* Body */

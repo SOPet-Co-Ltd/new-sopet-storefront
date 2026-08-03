@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing/react';
 import { MeDocument, VerifyCustomerOtpDocument } from '@/lib/graphql/generated/graphql';
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, setTokens } from '@/lib/graphql/authLink';
+import { AUTH_COMPANION_COOKIE } from '@/lib/config';
 import { SESSION_ID_COOKIE } from '@/lib/session';
 import { AuthProvider, type AuthContextValue } from './AuthProvider';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -65,7 +65,9 @@ describe('AuthProvider', () => {
 
   beforeEach(() => {
     sessionStorage.clear();
+    document.cookie = `${AUTH_COMPANION_COOKIE}=; max-age=0; path=/`;
     document.cookie = `${SESSION_ID_COOKIE}=a1b2c3d4-e5f6-4789-a012-3456789abcde; path=/`;
+    global.fetch = async () => new Response(JSON.stringify({ ok: true }), { status: 200 });
   });
 
   afterEach(() => {
@@ -77,6 +79,7 @@ describe('AuthProvider', () => {
     roots = [];
     document.body.innerHTML = '';
     sessionStorage.clear();
+    document.cookie = `${AUTH_COMPANION_COOKIE}=; max-age=0; path=/`;
     document.cookie = `${SESSION_ID_COOKIE}=; max-age=0; path=/`;
   });
 
@@ -167,9 +170,6 @@ describe('AuthProvider', () => {
       await context!.verifyOtp('0812345678', '123456');
     });
 
-    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBe('access-jwt');
-    expect(sessionStorage.getItem(REFRESH_TOKEN_KEY)).toBe('refresh-jwt');
-
     await act(async () => {
       await waitFor(() => context!.isAuthenticated);
     });
@@ -187,7 +187,7 @@ describe('AuthProvider', () => {
   });
 
   it('clears auth tokens on logout while preserving sessionId cookie', async () => {
-    setTokens('access-jwt', 'refresh-jwt');
+    document.cookie = `${AUTH_COMPANION_COOKIE}=1; path=/`;
 
     let context: AuthContextValue | null = null;
     const { container, root } = renderAuthProbe(
@@ -217,8 +217,7 @@ describe('AuthProvider', () => {
       await context!.logout();
     });
 
-    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
-    expect(sessionStorage.getItem(REFRESH_TOKEN_KEY)).toBeNull();
+    expect(document.cookie.includes(`${AUTH_COMPANION_COOKIE}=1`)).toBe(false);
     expect(context!.isAuthenticated).toBe(false);
     expect(context!.customer).toBeNull();
     expect(

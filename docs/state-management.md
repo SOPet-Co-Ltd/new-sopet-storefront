@@ -35,10 +35,10 @@ Defined in `src/lib/providers.tsx` as `AppProviders` (also mounts route loading 
 
 **Hook:** `src/lib/hooks/useAuth.ts` (thin context wrapper)
 
-**Tokens:** `sessionStorage` via `src/lib/graphql/authLink.ts`
+**Tokens:** HttpOnly cookies via Next.js BFF (`src/app/graphql/route.ts`, `SameSite=Lax`)
 
-- `sopet_access_token`
-- `sopet_refresh_token`
+- `sopet_access_token` / `sopet_refresh_token` (HttpOnly; max-age ~1h / 7d)
+- `sopet_auth` companion flag (readable by JS; not a secret)
 
 ## CartProvider
 

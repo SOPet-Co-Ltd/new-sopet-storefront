@@ -1,0 +1,138 @@
+import { buildGraphqlSsrBypassHeaders, getGraphqlSsrBypassSecret } from '@/lib/config';
+
+const DEFAULT_UPSTREAM = 'http://localhost:3002/graphql';
+
+export function getUpstreamGraphqlUrl(): string {
+  return process.env.GRAPHQL_SSR_URL ?? DEFAULT_UPSTREAM;
+}
+
+export type AuthTokenPair = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+type GraphQLJson = {
+  data?: unknown;
+  errors?: Array<{ message?: string; extensions?: { code?: string } }>;
+};
+
+const REFRESH_MUTATION = `
+  mutation RefreshToken($input: RefreshTokenInput!) {
+    refreshToken(input: $input) {
+      accessToken
+      refreshToken
+    }
+  }
+`;
+
+export async function forwardGraphql(
+  body: string,
+  accessToken?: string,
+): Promise<{ response: Response; json: GraphQLJson }> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...buildGraphqlSsrBypassHeaders(getGraphqlSsrBypassSecret()),
+  };
+  if (accessToken) {
+    headers.authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await fetch(getUpstreamGraphqlUrl(), {
+    method: 'POST',
+    headers,
+    body,
+  });
+
+  const json = (await response.json()) as GraphQLJson;
+  return { response, json };
+}
+
+export async function refreshTokensUpstream(refreshToken: string): Promise<AuthTokenPair | null> {
+  const { response, json } = await forwardGraphql(
+    JSON.stringify({
+      query: REFRESH_MUTATION,
+      variables: { input: { refreshToken } },
+    }),
+  );
+
+  const tokens = (json.data as { refreshToken?: AuthTokenPair } | undefined)?.refreshToken;
+  if (!response.ok || json.errors?.length || !tokens?.accessToken || !tokens?.refreshToken) {
+    return null;
+  }
+
+  return tokens;
+}
+
+function isTokenPair(value: unknown): value is AuthTokenPair {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.accessToken === 'string' && typeof record.refreshToken === 'string';
+}
+
+/** Find the first AuthTokens-shaped object in a GraphQL data tree. */
+export function harvestAuthTokens(data: unknown): AuthTokenPair | null {
+  if (!data) return null;
+  if (isTokenPair(data)) return data;
+
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const found = harvestAuthTokens(item);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  if (typeof data === 'object') {
+    const record = data as Record<string, unknown>;
+    if (isTokenPair(record.tokens)) {
+      return record.tokens;
+    }
+    if (isTokenPair(record.refreshToken)) {
+      return record.refreshToken;
+    }
+    for (const value of Object.values(record)) {
+      const found = harvestAuthTokens(value);
+      if (found) return found;
+    }
+  }
+
+  return null;
+}
+
+/** Redact JWT fields in-place so browsers never receive them. */
+export function redactAuthTokens(data: unknown): unknown {
+  if (!data) return data;
+
+  if (Array.isArray(data)) {
+    return data.map((item) => redactAuthTokens(item));
+  }
+
+  if (typeof data === 'object') {
+    const record = data as Record<string, unknown>;
+    const next: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(record)) {
+      if ((key === 'accessToken' || key === 'refreshToken') && typeof value === 'string') {
+        next[key] = null;
+        continue;
+      }
+      if (key === 'tokens' && isTokenPair(value)) {
+        next[key] = { accessToken: null, refreshToken: null };
+        continue;
+      }
+      next[key] = redactAuthTokens(value);
+    }
+    return next;
+  }
+
+  return data;
+}
+
+export function isUnauthenticatedPayload(json: GraphQLJson, httpStatus: number): boolean {
+  if (httpStatus === 401) return true;
+  return Boolean(
+    json.errors?.some((error) => {
+      const code = error.extensions?.code;
+      return code === 'UNAUTHENTICATED' || code === 'UNAUTHORIZED';
+    }),
+  );
+}

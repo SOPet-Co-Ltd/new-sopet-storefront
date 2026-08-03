@@ -1,9 +1,6 @@
 import type { NextConfig } from 'next';
 import type { RemotePattern } from 'next/dist/shared/lib/image-config';
 
-const graphqlBackendOrigin =
-  process.env.GRAPHQL_SSR_URL?.replace(/\/graphql\/?$/, '') ?? 'http://localhost:3002';
-
 function cdnRemotePattern(cdnUrl: string): RemotePattern | null {
   try {
     const parsed = new URL(cdnUrl);
@@ -76,14 +73,6 @@ const nextConfig: NextConfig = {
         source: '/user/reviews/written',
         destination: '/user/reviews?tab=written',
         permanent: true,
-      },
-    ];
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/graphql',
-        destination: `${graphqlBackendOrigin}/graphql`,
       },
     ];
   },

@@ -1,13 +1,13 @@
 import { Observable } from 'rxjs';
-import { print } from 'graphql';
 import { from, type ApolloLink } from '@apollo/client/link';
-import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
 import { CombinedGraphQLErrors, ServerError, ServerParseError } from '@apollo/client/errors';
-import { GRAPHQL_URL } from '@/lib/config';
-import { RefreshTokenDocument } from '@/lib/graphql/generated/graphql';
+import { AUTH_COMPANION_COOKIE } from '@/lib/config';
+import { hasAuthCompanionCookie, logoutViaBff, refreshViaBff } from '@/lib/auth/client-session';
 
+/** @deprecated Cookie name alias — JWTs are HttpOnly via BFF; do not read from JS. */
 export const ACCESS_TOKEN_KEY = 'sopet_access_token';
+/** @deprecated Cookie name alias — JWTs are HttpOnly via BFF; do not read from JS. */
 export const REFRESH_TOKEN_KEY = 'sopet_refresh_token';
 
 const AUTH_RETRY_FLAG = 'authRetried';
@@ -15,39 +15,44 @@ const AUTH_RETRY_FLAG = 'authRetried';
 type AuthFailureHandler = () => void;
 
 let onAuthFailure: AuthFailureHandler = () => {
-  clearTokens();
+  void clearTokens();
 };
 
-let refreshPromise: Promise<void> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
+/** Client cannot read HttpOnly JWTs; use the companion flag instead. */
 export function getAccessToken(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+  return null;
 }
 
 export function getRefreshToken(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  return sessionStorage.getItem(REFRESH_TOKEN_KEY);
+  return null;
 }
 
-export function setTokens(accessToken: string, refreshToken: string): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+/** No-op — BFF `/graphql` proxy harvests tokens into HttpOnly cookies. */
+export function setTokens(_access: string, _refresh: string): void {
+  void _access;
+  void _refresh;
 }
 
-export function clearTokens(): void {
-  if (typeof window === 'undefined') {
+function clearCompanionCookie(): void {
+  if (typeof document === 'undefined') {
     return;
   }
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+  document.cookie = `${AUTH_COMPANION_COOKIE}=; max-age=0; path=/; SameSite=Lax`;
+}
+
+export async function clearTokens(): Promise<void> {
+  clearCompanionCookie();
+  try {
+    await logoutViaBff();
+  } catch {
+    // Best-effort; companion already cleared.
+  }
+}
+
+export function hasClientSession(): boolean {
+  return hasAuthCompanionCookie();
 }
 
 export function setOnAuthFailure(handler: AuthFailureHandler): void {
@@ -55,21 +60,16 @@ export function setOnAuthFailure(handler: AuthFailureHandler): void {
 }
 
 export function notifyAuthFailure(): void {
-  clearTokens();
+  clearCompanionCookie();
+  void logoutViaBff();
   if (typeof window !== 'undefined') {
     onAuthFailure();
   }
 }
 
 export function buildAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
-  const token = getAccessToken();
-  if (!token) {
-    return headers;
-  }
-  return {
-    ...headers,
-    authorization: `Bearer ${token}`,
-  };
+  // Bearer is attached by the Next.js `/graphql` BFF from HttpOnly cookies.
+  return headers;
 }
 
 function isUnauthorized(error: unknown): boolean {
@@ -83,49 +83,13 @@ function isUnauthorized(error: unknown): boolean {
   return false;
 }
 
-async function refreshAccessToken(): Promise<void> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    throw new Error('No refresh token available.');
-  }
-
-  const response = await fetch(GRAPHQL_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: print(RefreshTokenDocument),
-      variables: { input: { refreshToken } },
-    }),
-  });
-
-  const payload = (await response.json()) as {
-    data?: {
-      refreshToken?: { accessToken: string; refreshToken: string };
-    };
-    errors?: Array<{ message: string }>;
-  };
-
-  if (!response.ok || payload.errors?.length || !payload.data?.refreshToken) {
-    throw new Error(payload.errors?.[0]?.message ?? 'Token refresh failed.');
-  }
-
-  const { accessToken, refreshToken: newRefreshToken } = payload.data.refreshToken;
-  setTokens(accessToken, newRefreshToken);
-}
-
-async function runRefreshOnce(): Promise<void> {
+async function runRefreshOnce(): Promise<boolean> {
   if (!refreshPromise) {
-    refreshPromise = refreshAccessToken().finally(() => {
+    refreshPromise = refreshViaBff().finally(() => {
       refreshPromise = null;
     });
   }
-  await refreshPromise;
-}
-
-function createBearerContextLink(): SetContextLink {
-  return new SetContextLink((prevContext) => ({
-    headers: buildAuthHeaders((prevContext.headers as Record<string, string> | undefined) ?? {}),
-  }));
+  return refreshPromise;
 }
 
 function createRefreshErrorLink(): ErrorLink {
@@ -142,7 +106,7 @@ function createRefreshErrorLink(): ErrorLink {
       });
     }
 
-    if (!getRefreshToken()) {
+    if (!hasClientSession()) {
       notifyAuthFailure();
       return new Observable((observer) => {
         observer.error(error);
@@ -151,7 +115,12 @@ function createRefreshErrorLink(): ErrorLink {
 
     return new Observable((observer) => {
       runRefreshOnce()
-        .then(() => {
+        .then((ok) => {
+          if (!ok) {
+            notifyAuthFailure();
+            observer.error(error);
+            return;
+          }
           operation.setContext((previousContext) => ({
             ...previousContext,
             [AUTH_RETRY_FLAG]: true,
@@ -177,5 +146,5 @@ function createRefreshErrorLink(): ErrorLink {
 }
 
 export function createAuthLink(): ApolloLink {
-  return from([createBearerContextLink(), createRefreshErrorLink()]);
+  return from([createRefreshErrorLink()]);
 }

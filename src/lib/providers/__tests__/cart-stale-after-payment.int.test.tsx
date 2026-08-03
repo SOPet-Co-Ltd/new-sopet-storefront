@@ -57,6 +57,7 @@ type CartPayload = {
       id: string;
       price: number;
       sku: string;
+      stockQuantity: number;
       optionsJson: string | null;
       product: {
         __typename: 'ProductType';
@@ -93,6 +94,7 @@ function makeCart(cartId: string, itemVariantIds: string[]): CartPayload {
         id: variantId,
         price: 100,
         sku: `SKU-${variantId}`,
+        stockQuantity: 10,
         optionsJson: null,
         product: {
           __typename: 'ProductType',

@@ -30,4 +30,4 @@ The smallest foundational UI elements. Atoms are single-purpose, highly reusable
 
 ## Current files
 
-*Empty — add atom components here as the design system grows.*
+_Empty — add atom components here as the design system grows._

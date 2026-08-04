@@ -37,6 +37,7 @@ describe('Navbar', () => {
       pendingDeletion: false,
       sendOtp: vi.fn(),
       verifyOtp: vi.fn(),
+      changeCustomerPhone: vi.fn(),
       reactivateAccount: vi.fn(),
       logout: vi.fn(),
     });
@@ -58,10 +59,13 @@ describe('Navbar', () => {
       setAllSelected: vi.fn(),
       loading: false,
       error: undefined,
+      warnings: [],
+      hasSuspendedStoreItemRemovedWarning: false,
       addItem: vi.fn(),
       updateItem: vi.fn(),
       changeItemVariant: vi.fn(),
       removeItem: vi.fn(),
+      pruneDeselectedIds: vi.fn(),
       refetch: vi.fn(),
     });
   });
@@ -69,6 +73,9 @@ describe('Navbar', () => {
     render(<Navbar />);
 
     expect(screen.getByRole('link', { name: 'ตะกร้าสินค้า' })).toHaveAttribute('href', '/cart');
+    expect(screen.getByRole('link', { name: 'ตะกร้าสินค้า' })).toHaveAttribute(
+      'data-fly-to-cart-target',
+    );
 
     expect(screen.queryByRole('link', { name: /coupons/i })).not.toBeInTheDocument();
     expect(document.body.innerHTML).not.toContain('/coupons');

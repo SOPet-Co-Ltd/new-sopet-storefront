@@ -106,7 +106,7 @@ describe('useCustomerReviews', () => {
       ({ tab }: { tab: 'pending' | 'written' }) => useCustomerReviews({ tab }),
       {
         wrapper: createWrapper(),
-        initialProps: { tab: 'pending' as const },
+        initialProps: { tab: 'pending' as 'pending' | 'written' },
       },
     );
 

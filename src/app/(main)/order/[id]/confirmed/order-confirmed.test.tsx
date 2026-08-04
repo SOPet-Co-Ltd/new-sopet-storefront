@@ -112,7 +112,7 @@ describe('ThankYouPageContent', () => {
       expect(screen.getAllByText('ORD-1001').length).toBeGreaterThan(0);
     });
 
-    expect(screen.getByText('Recommended for You')).toBeInTheDocument();
+    expect(screen.getByText('สินค้าแนะนำ')).toBeInTheDocument();
     expect(screen.getByText('Recommended Treat Pack')).toBeInTheDocument();
     expect(screen.getByLabelText('สินค้าแนะนำ')).toBeInTheDocument();
   });

@@ -4,14 +4,36 @@ import { Button } from '@/components/atoms/Button';
 import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { formatCountdown, usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { hasQrExpiredAt } from '@/lib/payment/orderNotPayable';
+import { Payment3dsAutoRedirect, threeDSAutoRedirectStorageKey } from './Payment3dsAutoRedirect';
+import { Payment3dsRedirectingState } from './Payment3dsRedirectingState';
+import { PaymentFailedState } from './PaymentFailedState';
+import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
+import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
+import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
+import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
+import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
+import { HeldUnpaidPaymentBlock } from './HeldUnpaidPaymentBlock';
 
 export type OrderPaymentFormProps = {
   payment: PaymentRecord | null;
   loading: boolean;
   error: Error | undefined;
   onRetry?: () => void;
+  /** One-shot refetch of payment status from the backend (no continuous polling). */
+  onCheckStatus?: () => void | Promise<unknown>;
   onExpired?: () => void;
+  /** Test seam / optional override for 3DS auto-redirect navigation */
+  navigateToAuthorizeUri?: (uri: string) => void;
+  /** Same-order recovery submit (wired to createPayment in frontend-task-04) */
+  onRetryPayment?: PaymentRetryPanelProps['onSubmit'];
+  retrySubmitError?: PaymentRetryPanelProps['submitError'];
+  retrySubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  /** Order cancelled / unpaid window closed — hide change-method UI */
+  paymentRecoveryUnavailable?: boolean;
+  /** Decision #15: any item on_hold while pending payment — block pay / Mid-QR / retry */
+  heldUnpaidBlocked?: boolean;
 };
 
 function formatAmount(amount: number, currency: string): string {
@@ -21,21 +43,106 @@ function formatAmount(amount: number, currency: string): string {
   return `${amount.toFixed(2)} ${currency}`;
 }
 
+function hasCompleted3dsAutoRedirect(paymentId: string, authorizeUri: string): boolean {
+  try {
+    return sessionStorage.getItem(threeDSAutoRedirectStorageKey(paymentId)) === authorizeUri;
+  } catch {
+    return false;
+  }
+}
+
+/** Inline Mid-QR chrome (UI-LOCK-01 B) — local state resets when branch unmounts. */
+function MidQrChangeMethodChrome({
+  onRetrySubmit,
+  submitError,
+  isSubmitting,
+  onCheckStatus,
+}: {
+  onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
+  submitError?: PaymentRetryPanelProps['submitError'];
+  isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  onCheckStatus?: () => void | Promise<unknown>;
+}) {
+  const [recoveryExpanded, setRecoveryExpanded] = useState(false);
+
+  return (
+    <div className="mt-4 flex flex-col items-center gap-2">
+      <PaymentStatusCheckButton onCheckStatus={onCheckStatus} />
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full max-w-xs"
+        onClick={() => setRecoveryExpanded((open) => !open)}
+        aria-expanded={recoveryExpanded}
+      >
+        เปลี่ยนวิธีชำระเงิน
+      </Button>
+      {recoveryExpanded ? (
+        <PaymentRetryPanel
+          hidePromptPay
+          onSubmit={onRetrySubmit}
+          submitError={submitError}
+          isSubmitting={isSubmitting}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export function OrderPaymentForm({
   payment,
   loading,
   error,
   onRetry,
+  onCheckStatus,
   onExpired,
+  navigateToAuthorizeUri,
+  onRetryPayment,
+  retrySubmitError,
+  retrySubmitting,
+  paymentRecoveryUnavailable = false,
+  heldUnpaidBlocked = false,
 }: OrderPaymentFormProps) {
   const hasQrCode = Boolean(payment?.qrCodeUrl);
   const handleExpire = useCallback(() => {
     onExpired?.();
   }, [onExpired]);
   const { remainingMs, isExpired } = usePaymentCountdown(
-    hasQrCode && payment?.status === 'pending' ? payment.expiresAt : null,
+    hasQrCode && payment?.status === 'pending' && !heldUnpaidBlocked ? payment.expiresAt : null,
     handleExpire,
   );
+
+  if (paymentRecoveryUnavailable && payment) {
+    return (
+      <section
+        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
+        aria-labelledby="payment-unavailable-title"
+      >
+        <h1 id="payment-unavailable-title" className="text-xl font-bold text-gray-900">
+          ชำระเงิน
+        </h1>
+        <PaymentOrderNotPayableState />
+      </section>
+    );
+  }
+
+  if (heldUnpaidBlocked && payment) {
+    return (
+      <section
+        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
+        aria-labelledby="payment-held-title"
+        data-testid="order-payment-form-held-block"
+      >
+        <h1 id="payment-held-title" className="text-xl font-bold text-gray-900">
+          ชำระเงิน
+        </h1>
+        <p className="mt-2 text-sm text-gray-500">
+          ยอดชำระ {formatAmount(payment.amount, payment.currency)}
+        </p>
+        <HeldUnpaidPaymentBlock />
+      </section>
+    );
+  }
 
   if (error && !payment) {
     return (
@@ -86,7 +193,7 @@ export function OrderPaymentForm({
   }
 
   if (payment.status === 'failed') {
-    const isQrExpired = Boolean(payment.expiresAt);
+    const isQrExpired = hasQrExpiredAt(payment.expiresAt);
 
     return (
       <section
@@ -96,17 +203,12 @@ export function OrderPaymentForm({
         <h1 id="payment-failed-title" className="text-xl font-bold text-gray-900">
           ชำระเงิน
         </h1>
-        <div
-          className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4"
-          role="alert"
-          aria-live="polite"
-        >
-          <p className="font-medium text-red-600">
-            {isQrExpired
-              ? 'QR Code หมดอายุแล้ว กรุณาทำรายการใหม่จากหน้าชำระเงิน'
-              : 'การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'}
-          </p>
-        </div>
+        <PaymentFailedState
+          isQrExpired={isQrExpired}
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+        />
       </section>
     );
   }
@@ -116,6 +218,7 @@ export function OrderPaymentForm({
       <section
         className="flex w-full max-w-[500px] flex-col items-center gap-4 rounded-3xl bg-white p-8 shadow-xl"
         aria-live="polite"
+        data-testid="payment-paid-handoff"
       >
         <SpinnerIcon size={{ mobile: 32, desktop: 32 }} />
         <p className="text-sm text-gray-600">ชำระเงินสำเร็จ กำลังเปลี่ยนหน้า...</p>
@@ -123,7 +226,8 @@ export function OrderPaymentForm({
     );
   }
 
-  const hasRedirectUri = Boolean(payment.authorizeUri);
+  const authorizeUri = payment.authorizeUri?.trim() ? payment.authorizeUri : null;
+  const hasRedirectUri = Boolean(authorizeUri);
 
   if (hasQrCode && isExpired && payment.status === 'pending') {
     return (
@@ -134,13 +238,57 @@ export function OrderPaymentForm({
         <h1 id="payment-expired-title" className="text-xl font-bold text-gray-900">
           ชำระเงิน
         </h1>
-        <div
-          className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4"
-          role="alert"
-          aria-live="polite"
-        >
-          <p className="font-medium text-amber-800">QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...</p>
-        </div>
+        <PaymentFailedState
+          isQrExpired
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+        />
+      </section>
+    );
+  }
+
+  // Card 3DS path: pending + authorizeUri (PromptPay QR takes precedence when both present)
+  if (!hasQrCode && hasRedirectUri && authorizeUri && payment.status === 'pending') {
+    const afterReturn = hasCompleted3dsAutoRedirect(payment.id, authorizeUri);
+    const amountLabel = formatAmount(payment.amount, payment.currency);
+
+    return (
+      <section
+        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
+        aria-labelledby="payment-waiting-title"
+      >
+        <h1 id="payment-waiting-title" className="text-xl font-bold text-gray-900">
+          ชำระเงิน
+        </h1>
+
+        <Payment3dsAutoRedirect
+          paymentId={payment.id}
+          status={payment.status}
+          authorizeUri={authorizeUri}
+          navigate={navigateToAuthorizeUri}
+        />
+
+        {afterReturn ? (
+          <PaymentWaitingAfterReturnState
+            authorizeUri={authorizeUri}
+            amountLabel={amountLabel}
+            onCheckStatus={onCheckStatus}
+            onRetrySubmit={onRetryPayment}
+            submitError={retrySubmitError}
+            isSubmitting={retrySubmitting}
+          />
+        ) : (
+          <>
+            <div className="mt-4 flex items-center justify-between py-3">
+              <p className="font-medium text-gray-800">ยอดชำระรวม</p>
+              <p className="font-medium text-gray-800">{amountLabel}</p>
+            </div>
+            <div className="relative flex min-h-[250px] flex-col items-center justify-center overflow-hidden rounded-lg border border-gray-300">
+              <Payment3dsRedirectingState />
+            </div>
+          </>
+        )}
       </section>
     );
   }
@@ -186,37 +334,23 @@ export function OrderPaymentForm({
               แสกนเพื่อชำระเงินผ่านแอปธนาคารใดก็ได้
             </p>
           </div>
-        ) : hasRedirectUri ? (
-          <div className="flex flex-col items-center gap-4 p-6 text-center">
-            <p className="text-sm text-gray-600">
-              กรุณากดปุ่มด้านล่างเพื่อไปยังหน้าชำระเงินของผู้ให้บริการ
-            </p>
-            <Button
-              type="button"
-              variant="primary"
-              className="w-full max-w-xs"
-              onClick={() => {
-                window.location.href = payment.authorizeUri ?? '';
-              }}
-            >
-              ไปชำระเงิน
-            </Button>
-            <a
-              href={payment.authorizeUri ?? ''}
-              className="text-sm text-sop-secondary-500 underline underline-offset-4"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              เปิดลิงก์ชำระเงิน
-            </a>
-          </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 p-6">
-            <SpinnerIcon size={{ mobile: 28, desktop: 28 }} />
-            <p className="text-sm text-gray-500">กำลังรอการชำระเงิน...</p>
-          </div>
+          <PaymentWaitingFrictionlessState />
         )}
       </div>
+
+      {hasQrCode ? (
+        <MidQrChangeMethodChrome
+          onCheckStatus={onCheckStatus}
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+        />
+      ) : (
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <PaymentStatusCheckButton onCheckStatus={onCheckStatus} />
+        </div>
+      )}
 
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         กำลังรอการชำระเงิน

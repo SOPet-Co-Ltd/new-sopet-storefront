@@ -20,7 +20,25 @@ export type ProductCardProduct = Pick<
   | 'soldCount'
 > & {
   storeId?: string;
+  /** Present on list/card queries; used to show min variant price when basePrice is 0. */
+  variants?: ProductListItem['variants'];
 };
+
+/** Lowest sellable price: min positive variant price, else basePrice. */
+export function getProductCardDisplayPrice(product: {
+  basePrice: number;
+  variants?: Array<{ price: number } | null | undefined> | null;
+}): number {
+  const variantPrices = (product.variants ?? [])
+    .map((variant) => variant?.price)
+    .filter((price): price is number => typeof price === 'number' && price > 0);
+
+  if (variantPrices.length > 0) {
+    return Math.min(...variantPrices);
+  }
+
+  return product.basePrice;
+}
 
 type ProductCardProps = {
   product: ProductCardProduct;
@@ -107,12 +125,14 @@ function ProductCardImage({
 
 function ProductCardPrice({
   product,
+  displayPrice,
   compact = false,
 }: {
   product: ProductCardProduct;
+  displayPrice: number;
   compact?: boolean;
 }) {
-  const hasPrice = product.basePrice > 0;
+  const hasPrice = displayPrice > 0;
 
   if (!hasPrice) {
     return <span className="label-md text-secondary pt-2 pb-4">ไม่มีสินค้าในพื้นที่ของคุณ</span>;
@@ -127,9 +147,9 @@ function ProductCardPrice({
             : 'sop-body-lg-bold text-sop-secondary-500'
         }
       >
-        {formatPrice(product.basePrice)}
+        {formatPrice(displayPrice)}
       </span>
-      {product.compareAtPrice != null && product.compareAtPrice > product.basePrice && (
+      {product.compareAtPrice != null && product.compareAtPrice > displayPrice && (
         <span
           className={
             compact
@@ -169,7 +189,8 @@ export default function ProductCard({
   priority = false,
 }: ProductCardProps) {
   const href = buildProductHref(product.id);
-  const discountPercent = getDiscountPercent(product.basePrice, product.compareAtPrice);
+  const displayPrice = getProductCardDisplayPrice(product);
+  const discountPercent = getDiscountPercent(displayPrice, product.compareAtPrice);
   const cardRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -230,7 +251,7 @@ export default function ProductCard({
           >
             {product.name}
           </p>
-          <ProductCardPrice product={product} compact={compact} />
+          <ProductCardPrice product={product} displayPrice={displayPrice} compact={compact} />
           {!compact && <ProductCardReviewStars product={product} />}
         </div>
       </div>

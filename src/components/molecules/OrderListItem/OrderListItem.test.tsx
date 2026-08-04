@@ -50,6 +50,21 @@ describe('OrderListItem', () => {
     expect(screen.getByText('รอชำระเงิน')).toBeInTheDocument();
   });
 
+  it('renders payment countdown for pending_payment orders', () => {
+    render(<OrderListItem order={createOrder('pending_payment')} />);
+    expect(screen.getByTestId('order-payment-countdown')).toBeInTheDocument();
+  });
+
+  it('renders payment countdown for legacy pending orders', () => {
+    render(<OrderListItem order={createOrder('pending')} />);
+    expect(screen.getByTestId('order-payment-countdown')).toBeInTheDocument();
+  });
+
+  it('does not render payment countdown for paid orders', () => {
+    render(<OrderListItem order={createOrder('paid')} />);
+    expect(screen.queryByTestId('order-payment-countdown')).not.toBeInTheDocument();
+  });
+
   it('renders cancelled status with error badge variant', () => {
     render(<OrderListItem order={createOrder('cancelled')} />);
 

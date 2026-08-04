@@ -1,27 +1,29 @@
 # Storefront Documentation
 
-Customer-facing Next.js application for SOPET.
+Customer-facing Next.js application for SOPET (port **3000**). Thin GraphQL client — no direct database access.
 
 ## Index
 
-| Document                                      | Description                                |
-| --------------------------------------------- | ------------------------------------------ |
-| [Architecture](architecture.md)               | App Router, data flow, component hierarchy |
-| [Folder structure](folder-structure.md)       | Directory guide                            |
-| [Routing](routing.md)                         | Route groups and page patterns             |
-| [State management](state-management.md)       | Providers, Apollo cache                    |
-| [Components](components.md)                   | Atomic design conventions                  |
-| [Hooks](hooks.md)                             | Data hooks pattern                         |
-| [GraphQL](graphql.md)                         | Client, codegen, operations                |
-| [Coding conventions](coding-conventions.md)   | Naming, testing, styling                   |
-| [Feature development](feature-development.md) | Adding pages and features                  |
-| [Development guide](development-guide.md)     | Where to put new code                      |
+| Document                                          | Description                                    |
+| ------------------------------------------------- | ---------------------------------------------- |
+| [Architecture](architecture.md)                   | App Router, data flow, component hierarchy     |
+| [Folder structure](folder-structure.md)           | Directory guide                                |
+| [Routing](routing.md)                             | Route groups and page patterns                 |
+| [State management](state-management.md)           | Providers, Apollo cache                        |
+| [Components](components.md)                       | Atomic design conventions                      |
+| [Hooks](hooks.md)                                 | Data hooks pattern                             |
+| [GraphQL](graphql.md)                             | Client, codegen, operations                    |
+| [Cloudflare SSR bypass](cloudflare-ssr-bypass.md) | UAT/prod WAF rule + Vercel env for SSR GraphQL |
+| [Coding conventions](coding-conventions.md)       | Naming, testing, styling                       |
+| [Feature development](feature-development.md)     | Adding pages and features                      |
+| [Development guide](development-guide.md)         | Where to put new code                          |
+| [SEO](seo.md)                                     | Metadata, sitemap, robots, JSON-LD             |
+| [Analytics](analytics.md)                         | GTM + GA4, env vars, ecommerce events          |
 
-## Cross-repo docs
+## Related repos
 
-- [Workspace developer docs](../../new-sopet-workspace/docs/developer/README.md)
-- [Returns and disputes](../../new-sopet-workspace/docs/developer/returns-and-disputes.md)
-- [Backend API](../../new-sopet/sopet-backend/docs/api.md)
+- [Backend API](../../sopet-backend/docs/api.md) — GraphQL schema owner (`../sopet-backend`)
+- Admin panel lives in sibling repo `../sopet-admin`
 
 ## Quick start
 
@@ -31,4 +33,6 @@ yarn install
 yarn dev    # http://localhost:3000
 ```
 
-Requires backend at `http://localhost:3002`.
+Requires Node.js 22+, Yarn 1.22+, and backend at `http://localhost:3002`.
+
+Root [README](../README.md) has the full env table, scripts, and deployment notes.

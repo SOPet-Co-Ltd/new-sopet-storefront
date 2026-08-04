@@ -27,13 +27,6 @@ export function Pagination({
 }: PaginationProps) {
   const resolvedTotalPages = Math.max(totalPages, 1);
 
-  if (!alwaysShow && totalPages <= 1) {
-    return null;
-  }
-
-  const isFirstPage = currentPage <= 1;
-  const isLastPage = currentPage >= resolvedTotalPages;
-
   const handlePagePrefetch = useCallback(
     (page: number) => {
       if (disabled || !listingPrefetch || page < 1) return;
@@ -44,6 +37,13 @@ export function Pagination({
     },
     [disabled, listingPrefetch],
   );
+
+  if (!alwaysShow && totalPages <= 1) {
+    return null;
+  }
+
+  const isFirstPage = currentPage <= 1;
+  const isLastPage = currentPage >= resolvedTotalPages;
 
   return (
     <div className="flex shrink-0 items-center gap-1 py-1.5" aria-label="การแบ่งหน้า">

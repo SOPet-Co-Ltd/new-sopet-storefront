@@ -184,8 +184,8 @@
   /* ================= Typography ================= */
   /* Font family */
   --font-sans:
-    Mitr, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
+    var(--font-google-sans), 'Google Sans', ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
   /* Font weights (labels retained for reference; Tailwind utilities used in practice) */
   --font-weight-sop-Light: 300;
@@ -408,11 +408,15 @@
 
 /* Breadcrumb (20px font, 20px line-height XS, Regular weight) */
 @utility sop-breadcrumb {
-  font-size: var(--text-sop-LG);
+  font-size: var(--text-sop-SM);
   line-height: var(--leading-sop-XS);
   font-family: var(--font-sans);
   font-weight: var(--font-weight-sop-Regular);
   letter-spacing: var(--tracking-sop-SM);
+
+  @variant md {
+    font-size: var(--text-sop-LG);
+  }
 }
 
 /* Body */
@@ -927,12 +931,38 @@ input[type='range'].slider-thumb:focus::-moz-range-thumb {
   0% {
     transform: scale(1);
   }
-  35% {
-    transform: scale(1.18);
+  40% {
+    transform: scale(1.14);
   }
   100% {
     transform: scale(1);
   }
+}
+
+.animate-cart-bump {
+  animation: cart-bump 0.42s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.fly-to-cart-flyer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  pointer-events: none;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: var(--radius-sop-12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 4px 14px rgba(34, 34, 41, 0.12),
+    0 1px 3px rgba(34, 34, 41, 0.08);
+  object-fit: cover;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.fly-to-cart-flyer--fallback {
+  background: var(--color-sop-secondary-200);
 }
 
 /* ========================================================================== */

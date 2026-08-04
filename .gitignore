@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# fetched GraphQL schema for Vercel/CI codegen (see scripts/ensure-graphql-schema.mjs)
+/sopet-backend/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

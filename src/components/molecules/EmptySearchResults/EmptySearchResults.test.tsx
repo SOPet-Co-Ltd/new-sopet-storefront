@@ -1,17 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { EmptySearchResults } from '@/components/molecules/EmptySearchResults';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 
-vi.mock('next/image', () => ({
-  default: ({ alt, ...props }: { alt: string; [key: string]: unknown }) => (
-    <img alt={alt} {...props} />
-  ),
-}));
-
 describe('EmptySearchResults', () => {
   it('renders analytics recovery chips linking to search results', async () => {
-    render(<EmptySearchResults searchQuery="royal canun" showSuggestedCategories={false} />, {
+    render(<EmptySearchResults searchQuery="royal canun" />, {
       wrapper: createApolloTestWrapper(),
     });
 
@@ -27,15 +21,15 @@ describe('EmptySearchResults', () => {
   });
 
   it('shows skeleton chips while recovery suggestions are fetching', () => {
-    render(<EmptySearchResults searchQuery="royal canun" showSuggestedCategories={false} />, {
+    render(<EmptySearchResults searchQuery="royal canun" />, {
       wrapper: createApolloTestWrapper(),
     });
 
     expect(screen.getByTestId('search-recovery-chips-skeleton')).toBeInTheDocument();
   });
 
-  it('shows the searched query in the empty state message', async () => {
-    render(<EmptySearchResults searchQuery="royal canun" showSuggestedCategories={false} />, {
+  it('shows the searched query in the empty state message', () => {
+    render(<EmptySearchResults searchQuery="royal canun" />, {
       wrapper: createApolloTestWrapper(),
     });
 

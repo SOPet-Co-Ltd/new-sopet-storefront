@@ -7,6 +7,10 @@ export type PlatformPromotionSelection = {
   code: string;
   name: string;
   discountAmount: number;
+  /** Server validatePromotion.freeUnits only — Gate A (task-09). */
+  freeUnits?: number | null;
+  /** BxGy product P for Gate A free-unit line allocation (from conditions). */
+  productId?: string | null;
 } | null;
 
 export type PlatformPromotionModalSelection = { type: 'promo'; code: string } | { type: 'none' };

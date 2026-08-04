@@ -26,10 +26,14 @@ export function ProfileAvatarEditor({
   const [previewUrl, setPreviewUrl] = useState<string | null>(value ?? null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [prevValue, setPrevValue] = useState(value ?? null);
 
-  useEffect(() => {
+  // Reset the local preview when the external value changes (e.g. profile refetch),
+  // following the "adjusting state when a prop changes" pattern instead of an effect.
+  if ((value ?? null) !== prevValue) {
+    setPrevValue(value ?? null);
     setPreviewUrl(value ?? null);
-  }, [value]);
+  }
 
   useEffect(() => {
     return () => {

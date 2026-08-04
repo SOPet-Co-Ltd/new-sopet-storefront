@@ -18,7 +18,6 @@ vi.mock('next/image', () => ({
 }));
 
 const baseStore: StoreDetail = {
-  __typename: 'StoreType',
   id: 'store-1',
   name: 'SOPet Pet Shop',
   slug: 'sopet-pet-shop',
@@ -29,7 +28,7 @@ const baseStore: StoreDetail = {
 };
 
 describe('SellerHeading', () => {
-  it('renders banner and logo when store branding is available', () => {
+  it('renders banner above identity when store branding is available', () => {
     render(<SellerHeading store={baseStore} />);
 
     expect(screen.getByTestId('seller-heading-banner')).toHaveAttribute(
@@ -44,17 +43,17 @@ describe('SellerHeading', () => {
     expect(screen.getByText('Your trusted pet shop')).toBeInTheDocument();
   });
 
-  it('falls back to gradient banner when banner image fails to load', () => {
+  it('hides banner and keeps identity when banner image fails to load', () => {
     render(<SellerHeading store={baseStore} />);
 
     fireEvent.error(screen.getByTestId('seller-heading-banner'));
 
     expect(screen.queryByTestId('seller-heading-banner')).not.toBeInTheDocument();
-    expect(screen.getByTestId('seller-heading-banner-fallback')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'SOPet Pet Shop' })).toBeInTheDocument();
+    expect(screen.getByText('Your trusted pet shop')).toBeInTheDocument();
   });
 
-  it('shows gradient banner and initial when branding is missing', () => {
+  it('shows identity only when branding images are missing', () => {
     render(
       <SellerHeading
         store={{
@@ -65,8 +64,8 @@ describe('SellerHeading', () => {
       />,
     );
 
-    expect(screen.getByTestId('seller-heading-banner-fallback')).toBeInTheDocument();
-    expect(screen.getByTestId('seller-heading-logo')).toHaveTextContent('S');
     expect(screen.queryByTestId('seller-heading-banner')).not.toBeInTheDocument();
+    expect(screen.getByTestId('seller-heading-logo')).toHaveTextContent('S');
+    expect(screen.getByRole('heading', { name: 'SOPet Pet Shop' })).toBeInTheDocument();
   });
 });

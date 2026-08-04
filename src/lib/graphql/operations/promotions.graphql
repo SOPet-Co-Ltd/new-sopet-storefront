@@ -10,6 +10,9 @@ fragment StorePromotionFields on PromotionType {
   expiresAt
   scope
   storeId
+  conditions
+  autoApply
+  priority
 }
 
 query ActiveStorePromotions($storeId: String!) {
@@ -21,5 +24,19 @@ query ActiveStorePromotions($storeId: String!) {
 query ActivePlatformPromotions {
   activePlatformPromotions {
     ...StorePromotionFields
+  }
+}
+
+query ValidatePromotions($input: ValidatePromotionsInput!) {
+  validatePromotions(input: $input) {
+    items {
+      id
+      code
+      name
+      eligible
+      ineligibilityReason
+      discountAmount
+      freeUnits
+    }
   }
 }

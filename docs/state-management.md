@@ -12,30 +12,33 @@ flowchart TD
   D --> E[Page components]
 ```
 
-Defined in `src/lib/providers.tsx`.
+Defined in `src/lib/providers.tsx` as `AppProviders` (also mounts route loading preview + Sonner `Toaster`).
 
 ## AuthProvider
 
 **File:** `src/lib/providers/AuthProvider.tsx`
 
-| State             | Source                                          |
-| ----------------- | ----------------------------------------------- |
-| `customer`        | Apollo `MeDocument` query                       |
-| `isAuthenticated` | Token in sessionStorage + successful `me` query |
-| `isLoading`       | Initial auth hydration                          |
+| State             | Source                                                 |
+| ----------------- | ------------------------------------------------------ |
+| `customer`        | Apollo `MeDocument` query                              |
+| `isAuthenticated` | Token presence in sessionStorage (checked on mount)    |
+| `isLoading`       | Initial auth hydration, or `me` query in flight        |
+| `pendingDeletion` | Set when OTP verify returns a pending-deletion account |
 
-| Methods                  | GraphQL                                     |
-| ------------------------ | ------------------------------------------- |
-| `sendOtp(phone)`         | `SendCustomerOtpDocument`                   |
-| `verifyOtp(phone, code)` | `VerifyCustomerOtpDocument`                 |
-| `logout()`               | Clears tokens + `apolloClient.clearStore()` |
+| Methods                            | GraphQL                                     |
+| ---------------------------------- | ------------------------------------------- |
+| `sendOtp(phone)`                   | `SendCustomerOtpDocument`                   |
+| `verifyOtp(phone, code)`           | `VerifyCustomerOtpDocument`                 |
+| `changeCustomerPhone(phone, code)` | `ChangeCustomerPhoneDocument`               |
+| `reactivateAccount(token)`         | `ReactivateAccountDocument`                 |
+| `logout()`                         | Clears tokens + `apolloClient.clearStore()` |
 
 **Hook:** `src/lib/hooks/useAuth.ts` (thin context wrapper)
 
-**Tokens:** `sessionStorage` via `src/lib/graphql/authLink.ts`
+**Tokens:** HttpOnly cookies via Next.js BFF (`src/app/graphql/route.ts`, `SameSite=Lax`)
 
-- `sopet_access_token`
-- `sopet_refresh_token`
+- `sopet_access_token` / `sopet_refresh_token` (HttpOnly; max-age ~1h / 7d)
+- `sopet_auth` companion flag (readable by JS; not a secret)
 
 ## CartProvider
 

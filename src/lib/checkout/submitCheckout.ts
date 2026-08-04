@@ -5,11 +5,20 @@ import {
 } from '@/lib/checkout/guestCheckoutValidation';
 import { mapCheckoutPaymentMethodForApi } from '@/lib/checkout/checkoutPaymentMethod';
 import {
+  extractPromotionErrorCode,
+  isCreateOrderHardEligibilityCode,
   PromotionValidationError,
+  SoftPromotionIneligibilityError,
   validateCheckoutPromotionCode,
 } from '@/lib/checkout/validateCheckoutPromotion';
+import { toPromotionEstimateCartLines } from '@/lib/checkout/storePromotionUtils';
 import type { UseCheckoutResult } from '@/lib/hooks/useCheckout';
 import type { CheckoutStep } from '@/lib/providers/CheckoutProvider';
+import {
+  ORDER_CONTAINS_SUSPENDED_STORE_ERROR_CODE,
+  STORE_SUSPENSION_HOLD_COPY,
+} from '@/lib/constants/storeSuspensionHoldCopy';
+import { mapCheckoutSuspendedStoreError } from '@/lib/store-suspension/mapSuspensionErrors';
 
 export class SubmitCheckoutError extends Error {
   constructor(
@@ -78,9 +87,14 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
       await validateCheckoutPromotionCode({
         code: params.checkoutContext.promotionCode,
         subtotal: params.subtotal,
+        lines: toPromotionEstimateCartLines(params.cart.items),
         validatePromotion: params.checkoutHook.validatePromotion,
       });
     } catch (error) {
+      if (error instanceof SoftPromotionIneligibilityError) {
+        // Soft fail ≠ invalid-code toast wording path — still blocks apply at submit.
+        throw new SubmitCheckoutError(error.message, 'promotion_invalid');
+      }
       if (error instanceof PromotionValidationError) {
         throw new SubmitCheckoutError(error.message, 'promotion_invalid');
       }
@@ -90,7 +104,49 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
 
   const orderInput = toCreateOrderInput(params.guestForm, params.cart, params.checkoutContext);
 
-  const order = await params.checkoutHook.createOrder(orderInput);
+  let order: Awaited<ReturnType<UseCheckoutResult['createOrder']>>;
+  try {
+    order = await params.checkoutHook.createOrder(orderInput);
+  } catch (error) {
+    const suspendedMessage = mapCheckoutSuspendedStoreError(error);
+    if (suspendedMessage) {
+      throw new SubmitCheckoutError(suspendedMessage, 'order_failed');
+    }
+
+    const code = extractPromotionErrorCode(error);
+    if (code === ORDER_CONTAINS_SUSPENDED_STORE_ERROR_CODE) {
+      throw new SubmitCheckoutError(
+        STORE_SUSPENSION_HOLD_COPY.checkoutCreateSuspended,
+        'order_failed',
+      );
+    }
+    // Candidate-001: only hard eligibility / unknown → order_failed.
+    // INSUFFICIENT_QTY is apply-skip — retry once without promo codes.
+    if (isCreateOrderHardEligibilityCode(code) || code == null) {
+      const message =
+        error instanceof Error && error.message ? error.message : 'ไม่สามารถสร้างคำสั่งซื้อได้';
+      throw new SubmitCheckoutError(message, 'order_failed');
+    }
+
+    try {
+      order = await params.checkoutHook.createOrder({
+        ...orderInput,
+        platformPromotionCode: undefined,
+        storePromotionCodes: undefined,
+      });
+    } catch (retryError) {
+      const retrySuspended = mapCheckoutSuspendedStoreError(retryError);
+      if (retrySuspended) {
+        throw new SubmitCheckoutError(retrySuspended, 'order_failed');
+      }
+      const message =
+        retryError instanceof Error && retryError.message
+          ? retryError.message
+          : 'ไม่สามารถสร้างคำสั่งซื้อได้';
+      throw new SubmitCheckoutError(message, 'order_failed');
+    }
+  }
+
   if (!order?.id) {
     throw new SubmitCheckoutError('ไม่สามารถสร้างคำสั่งซื้อได้', 'order_failed');
   }

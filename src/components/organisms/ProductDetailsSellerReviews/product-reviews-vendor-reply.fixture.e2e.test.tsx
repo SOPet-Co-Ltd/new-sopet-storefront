@@ -25,7 +25,7 @@ describe('Product reviews vendor reply fixture-e2e', () => {
         rating: 4,
         comment: `Comment from customer ${index + 1}`,
         customerName: `Customer ${index + 1}`,
-        reply: null as typeof sampleProductReviewWithReply.reply,
+        reply: null as unknown as typeof sampleProductReviewWithReply.reply,
       };
 
       if (index === 1) {

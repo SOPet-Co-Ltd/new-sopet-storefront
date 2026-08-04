@@ -9,6 +9,7 @@ fragment OrderItemFields on OrderItemType {
   unitPrice
   subtotal
   fulfillmentStatus
+  variantOptions
 }
 
 fragment OrderStoreShippingFields on OrderStoreShippingType {
@@ -57,6 +58,8 @@ query ValidatePromotion($input: ValidatePromotionInput!) {
     code
     name
     discountAmount
+    ineligibilityReason
+    freeUnits
   }
 }
 

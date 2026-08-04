@@ -10,6 +10,12 @@ function parseApiDate(value: string | Date): Date {
     return new Date(trimmed);
   }
 
+  // Date-only values (e.g. customer dateOfBirth) need a full ISO datetime.
+  // Appending bare "Z" yields "YYYY-MM-DDZ", which Safari rejects as Invalid Date.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return new Date(`${trimmed}T00:00:00.000Z`);
+  }
+
   // API timestamps without an offset are UTC wall-clock values.
   return new Date(`${trimmed}Z`);
 }

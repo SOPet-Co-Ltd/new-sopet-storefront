@@ -166,15 +166,12 @@ describe('ProductListing', () => {
           },
         }),
       ),
-      graphql.query('ApprovedCategories', () =>
-        HttpResponse.json({ data: { approvedCategories: SAMPLE_CATEGORIES } }),
-      ),
     );
 
     render(<ProductListing category="dog-food" />, { wrapper: createWrapper() });
 
     expect(await screen.findByTestId('empty-search-results')).toBeInTheDocument();
     expect(screen.getByText('ไม่พบสินค้า')).toBeInTheDocument();
-    expect(await screen.findByText('อาหารสุนัข')).toBeInTheDocument();
+    expect(screen.getByText('ลองค้นหาด้วยคำอื่น')).toBeInTheDocument();
   });
 });

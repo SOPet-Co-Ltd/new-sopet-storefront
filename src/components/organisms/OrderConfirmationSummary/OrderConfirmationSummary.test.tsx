@@ -32,6 +32,7 @@ function createOrder(overrides: Partial<Order> = {}): Order {
         trackingNumber: null,
         fulfillmentProvider: null,
         trackingUrl: null,
+        variantOptions: null,
       },
     ],
     storeShippings: [
@@ -57,6 +58,31 @@ describe('OrderConfirmationSummary', () => {
       'href',
       '/product/prod-1',
     );
+  });
+
+  it('renders multiple line items that share the same productId', () => {
+    const baseItem = createOrder().items[0];
+    render(
+      <OrderConfirmationSummary
+        order={createOrder({
+          items: [
+            { ...baseItem, id: 'item-1', variantOptions: '{"ขนาด":"1kg"}' },
+            {
+              ...baseItem,
+              id: 'item-2',
+              variantOptions: '{"ขนาด":"3kg"}',
+              unitPrice: 400,
+              subtotal: 400,
+            },
+          ],
+          subtotal: 650,
+          total: 700,
+        })}
+      />,
+    );
+
+    expect(screen.getAllByTestId('order-confirmation-item')).toHaveLength(2);
+    expect(screen.getAllByTestId('order-item-variant-options')).toHaveLength(2);
   });
 
   it('renders items without links when productId is missing', () => {
@@ -95,5 +121,44 @@ describe('OrderConfirmationSummary', () => {
     expect(screen.getByText('Premium Dog Food 5kg')).toBeInTheDocument();
     expect(screen.getByText('จัดส่งมาตรฐาน')).toBeInTheDocument();
     expect(screen.getByTestId('order-confirmation-total')).toHaveTextContent('฿540');
+  });
+
+  it('renders snapshot variantOptions under product name when present (AC-014)', () => {
+    render(
+      <OrderConfirmationSummary
+        order={createOrder({
+          items: [
+            {
+              ...createOrder().items[0],
+              variantOptions: '{"รสชาติ":"ปลาแซลมอน","ขนาด":"1.5kg"}',
+            },
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByTestId('order-item-variant-options')).toHaveTextContent(
+      'ขนาด: 1.5kg · รสชาติ: ปลาแซลมอน',
+    );
+  });
+
+  it('omits the options line when variantOptions is null or empty', () => {
+    const { rerender } = render(
+      <OrderConfirmationSummary
+        order={createOrder({
+          items: [{ ...createOrder().items[0], variantOptions: null }],
+        })}
+      />,
+    );
+    expect(screen.queryByTestId('order-item-variant-options')).not.toBeInTheDocument();
+
+    rerender(
+      <OrderConfirmationSummary
+        order={createOrder({
+          items: [{ ...createOrder().items[0], variantOptions: '{}' }],
+        })}
+      />,
+    );
+    expect(screen.queryByTestId('order-item-variant-options')).not.toBeInTheDocument();
   });
 });

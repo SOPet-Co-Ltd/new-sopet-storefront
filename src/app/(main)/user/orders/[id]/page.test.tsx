@@ -48,6 +48,7 @@ function createOrder(status: string): OrderDetail {
         trackingNumber: null,
         fulfillmentProvider: null,
         trackingUrl: null,
+        variantOptions: null,
       },
     ],
     storeShippings: [],
@@ -97,6 +98,39 @@ describe('OrderDetailPage', () => {
       );
       expect(screen.queryByRole('link', { name: 'ขอคืนสินค้า' })).not.toBeInTheDocument();
     });
+  });
+
+  it('renders payment countdown when order is pending_payment', async () => {
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('pending_payment'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
+
+    render(<OrderDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('order-payment-countdown')).toBeInTheDocument();
+    });
+  });
+
+  it('does not render payment countdown for paid orders', async () => {
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('paid'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
+
+    render(<OrderDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('ชำระเงินแล้ว')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('order-payment-countdown')).not.toBeInTheDocument();
   });
 
   it('renders pay now link for legacy pending status', async () => {

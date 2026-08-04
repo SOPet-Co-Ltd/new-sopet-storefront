@@ -15,6 +15,7 @@ import {
   sampleSavedAddress,
   sampleShippingOption,
 } from '@/test/mocks/fixtures/checkout';
+import { CATALOG_PRODUCT_ID } from '@/test/mocks/fixtures/catalog';
 
 const { mockUseAuth } = vi.hoisted(() => ({
   mockUseAuth: vi.fn(),
@@ -157,6 +158,8 @@ describe('useCheckout', () => {
       items: sampleOrder.items.map((item) => ({
         variantId: item.variantId,
         quantity: item.quantity,
+        price: item.unitPrice,
+        productId: CATALOG_PRODUCT_ID,
       })),
     });
 
@@ -219,6 +222,8 @@ describe('useCheckout', () => {
       items: sampleOrder.items.map((item) => ({
         variantId: item.variantId,
         quantity: item.quantity,
+        price: item.unitPrice,
+        productId: CATALOG_PRODUCT_ID,
       })),
     });
     const payment = await checkoutHook.result.current.createPayment({

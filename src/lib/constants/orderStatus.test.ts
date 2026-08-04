@@ -14,6 +14,10 @@ describe('ORDER_STATUS_LABELS', () => {
     expect(ORDER_STATUS_LABELS.pending).toBe('รอชำระเงิน');
   });
 
+  it('maps on_hold to provisional Thai hold label', () => {
+    expect(ORDER_STATUS_LABELS.on_hold).toBe('พักการดำเนินการ');
+  });
+
   it('defines labels for all canonical status keys', () => {
     for (const key of CANONICAL_ORDER_STATUS_KEYS) {
       expect(ORDER_STATUS_LABELS[key]).toBeTruthy();
@@ -31,6 +35,11 @@ describe('ORDER_STATUS_BADGE_VARIANTS', () => {
   it('maps legacy pending to the same variant as pending_payment', () => {
     expect(ORDER_STATUS_BADGE_VARIANTS.pending).toBe(ORDER_STATUS_BADGE_VARIANTS.pending_payment);
   });
+
+  it('uses warning variant for on_hold', () => {
+    expect(ORDER_STATUS_BADGE_VARIANTS.on_hold).toBe('warning');
+    expect(getOrderStatusBadgeVariant('on_hold')).toBe('warning');
+  });
 });
 
 describe('isPendingPaymentStatus', () => {
@@ -42,6 +51,7 @@ describe('isPendingPaymentStatus', () => {
   it('returns false for other statuses', () => {
     expect(isPendingPaymentStatus('paid')).toBe(false);
     expect(isPendingPaymentStatus('cancelled')).toBe(false);
+    expect(isPendingPaymentStatus('on_hold')).toBe(false);
   });
 });
 
@@ -55,6 +65,7 @@ describe('isReturnEligibleOrderStatus', () => {
     expect(isReturnEligibleOrderStatus('pending_payment')).toBe(false);
     expect(isReturnEligibleOrderStatus('paid')).toBe(false);
     expect(isReturnEligibleOrderStatus('processing')).toBe(false);
+    expect(isReturnEligibleOrderStatus('on_hold')).toBe(false);
     expect(isReturnEligibleOrderStatus('cancelled')).toBe(false);
     expect(isReturnEligibleOrderStatus('refunded')).toBe(false);
   });

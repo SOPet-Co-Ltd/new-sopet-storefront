@@ -33,6 +33,7 @@ const authenticatedAuth = {
   pendingDeletion: false,
   sendOtp: vi.fn(),
   verifyOtp: vi.fn(),
+  changeCustomerPhone: vi.fn(),
   reactivateAccount: vi.fn(),
   logout: vi.fn(),
 };
@@ -46,6 +47,7 @@ describe('NavbarUserMenu', () => {
       pendingDeletion: false,
       sendOtp: vi.fn(),
       verifyOtp: vi.fn(),
+      changeCustomerPhone: vi.fn(),
       reactivateAccount: vi.fn(),
       logout: vi.fn(),
     });

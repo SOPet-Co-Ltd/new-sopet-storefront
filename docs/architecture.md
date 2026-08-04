@@ -50,7 +50,7 @@ flowchart TB
 
 ## Provider stack
 
-From `src/lib/providers.tsx`:
+From `src/lib/providers.tsx` (`AppProviders`):
 
 ```typescript
 <ApolloNextAppProvider makeClient={makeApolloClient}>
@@ -58,13 +58,15 @@ From `src/lib/providers.tsx`:
     <CartProvider>
       <CheckoutProvider>
         {children}
+        <RouteLoadingPreview />
+        <Toaster position="top-right" />
       </CheckoutProvider>
     </CartProvider>
   </AuthProvider>
 </ApolloNextAppProvider>
 ```
 
-Order matters: Apollo must wrap auth (auth uses Apollo mutations), cart depends on auth for merge.
+Order matters: Apollo must wrap auth (auth uses Apollo mutations), cart depends on auth for merge. Route changes briefly show `GlobalLoadingStage`; toast notifications use Sonner.
 
 ## Data flow patterns
 
@@ -80,7 +82,7 @@ Provider or hook calls Apollo directly.
 
 Local state in `CheckoutProvider`; mutations via `useCheckout` hook.
 
-See [state management](state-management.md) and [workspace data flow](../../new-sopet-workspace/docs/developer/data-flow.md).
+See [state management](state-management.md) and [GraphQL](graphql.md).
 
 ## No direct database access
 

@@ -18,6 +18,7 @@ fragment OrderTrackingFields on OrderTrackingType {
     trackingNumber
     fulfillmentProvider
     trackingUrl
+    variantOptions
   }
   storeShippings {
     storeId

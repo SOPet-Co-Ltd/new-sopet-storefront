@@ -74,23 +74,25 @@ export function ProfileContactEditLayout({
   children,
 }: ProfileContactEditLayoutProps) {
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4">
+    <div className="mx-auto w-full max-w-2xl space-y-3 sm:space-y-4">
       <AccountBackLink href="/user/profile" label="กลับไปข้อมูลส่วนตัว" />
 
-      <AccountCard padding="md" className="w-full">
-        <div className="mb-6 flex items-start gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sop-primary-50 text-sop-primary-500 [&_svg]:h-5 [&_svg]:w-5">
+      <AccountCard padding="sm" className="w-full sm:p-6">
+        <div className="mb-4 flex items-start gap-2.5 sm:mb-6 sm:gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sop-primary-50 text-sop-primary-500 sm:h-11 sm:w-11 [&_svg]:h-4 [&_svg]:w-4 sm:[&_svg]:h-5 sm:[&_svg]:w-5">
             {icon}
           </span>
           {description ? (
-            <p className="pt-2 sop-body-sm-regular text-sop-neutral-gray-400">{description}</p>
+            <p className="pt-1 sop-body-sm-regular text-sop-neutral-gray-400 sm:pt-2">
+              {description}
+            </p>
           ) : null}
         </div>
 
         {steps ? <ProfileStepIndicator current={steps.current} steps={steps.steps} /> : null}
 
         {currentValue ? (
-          <div className="mb-5 rounded-sop-8px bg-sop-primary-50 px-4 py-3">
+          <div className="mb-4 rounded-sop-8px bg-sop-primary-50 px-3 py-2.5 sm:mb-5 sm:px-4 sm:py-3">
             <p className="sop-body-xs-regular text-sop-neutral-gray-400">{currentValue.label}</p>
             <p className="mt-0.5 sop-body-sm-medium text-sop-neutral-gray-200">
               {currentValue.value}

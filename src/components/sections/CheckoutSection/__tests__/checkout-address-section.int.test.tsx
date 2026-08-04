@@ -77,6 +77,7 @@ describe('CheckoutAddressSection integration', () => {
       pendingDeletion: false,
       sendOtp: vi.fn(),
       verifyOtp: vi.fn(),
+      changeCustomerPhone: vi.fn(),
       reactivateAccount: vi.fn(),
       logout: vi.fn(),
     });
@@ -114,6 +115,7 @@ describe('CheckoutAddressSection integration', () => {
         pendingDeletion: false,
         sendOtp: vi.fn(),
         verifyOtp: vi.fn(),
+        changeCustomerPhone: vi.fn(),
         reactivateAccount: vi.fn(),
         logout: vi.fn(),
       });
@@ -143,6 +145,7 @@ describe('CheckoutAddressSection integration', () => {
         pendingDeletion: false,
         sendOtp: vi.fn(),
         verifyOtp: vi.fn(),
+        changeCustomerPhone: vi.fn(),
         reactivateAccount: vi.fn(),
         logout: vi.fn(),
       });
@@ -173,6 +176,7 @@ describe('CheckoutAddressSection integration', () => {
         pendingDeletion: false,
         sendOtp: vi.fn(),
         verifyOtp: vi.fn(),
+        changeCustomerPhone: vi.fn(),
         reactivateAccount: vi.fn(),
         logout: vi.fn(),
       });
@@ -288,6 +292,7 @@ describe('CheckoutAddressSection integration', () => {
         pendingDeletion: false,
         sendOtp: vi.fn(),
         verifyOtp: vi.fn(),
+        changeCustomerPhone: vi.fn(),
         reactivateAccount: vi.fn(),
         logout: vi.fn(),
       });

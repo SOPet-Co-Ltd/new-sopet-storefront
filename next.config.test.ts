@@ -21,3 +21,17 @@ describe('next.config redirects', () => {
     );
   });
 });
+
+describe('next.config images.remotePatterns', () => {
+  it('allows Cloudflare R2 public buckets', () => {
+    expect(nextConfig.images?.remotePatterns).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          protocol: 'https',
+          hostname: '**.r2.dev',
+          pathname: '/**',
+        }),
+      ]),
+    );
+  });
+});

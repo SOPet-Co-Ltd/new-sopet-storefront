@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/atoms/Button';
 import { ChainIcon } from '@/components/atoms/icons/filled/ChainIcon';
@@ -10,7 +10,8 @@ import { MeatballsMenuIcon } from '@/components/atoms/icons/filled/MeatballsMenu
 import { ProductDetailQuantitySelection } from '@/components/molecules/ProductDetailQuantitySelection/ProductDetailQuantitySelection';
 import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import { ProductVariants } from '@/components/molecules/ProductVariants/ProductVariants';
-import { markCheckoutEntryAllowed } from '@/lib/checkout/pendingCheckout';
+import { trackAddToCart } from '@/lib/analytics';
+import { flyToCart, getProductFlyImageUrl } from '@/lib/cart/flyToCart';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
@@ -80,6 +81,9 @@ function ProductShareModal({
   const [canNativeShare, setCanNativeShare] = useState(false);
 
   useLayoutEffect(() => {
+    // Client-only feature detection: navigator is unavailable during SSR, so this
+    // must stay false on the server render and sync once mounted in the browser.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCanNativeShare(typeof navigator.share === 'function');
   }, []);
 
@@ -337,6 +341,7 @@ export default function ProductDetailsVariantSelection({
   const setShareModalOpen = onShareModalOpenChange ?? setInternalShareOpen;
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const addToCartButtonRef = useRef<HTMLButtonElement>(null);
 
   const selectedVariant = useMemo(
     () => findVariantByOptions(product.variants, selectedOptions),
@@ -383,12 +388,39 @@ export default function ProductDetailsVariantSelection({
     syncOptionsToUrl({ ...selectedOptions, [optionKey]: value });
   };
 
+  const pushAddToCartEvent = () => {
+    if (!variantId) return;
+    trackAddToCart({
+      value: variantPrice * safeQuantity,
+      items: [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.store?.name ?? undefined,
+          item_category: product.category ?? undefined,
+          item_variant: variantId,
+          price: variantPrice,
+          quantity: safeQuantity,
+        },
+      ],
+    });
+  };
+
   const handleAddToCart = async () => {
     if (!variantId || isOutOfStock || !hasAnyPrice) return;
+
+    const source = addToCartButtonRef.current;
+    if (source) {
+      flyToCart({
+        source,
+        imageUrl: getProductFlyImageUrl(product),
+      });
+    }
 
     try {
       setIsAddingToCart(true);
       await addItem(variantId, safeQuantity);
+      pushAddToCartEvent();
     } finally {
       setIsAddingToCart(false);
     }
@@ -400,7 +432,7 @@ export default function ProductDetailsVariantSelection({
     try {
       setIsBuyingNow(true);
       await addItem(variantId, safeQuantity);
-      markCheckoutEntryAllowed();
+      pushAddToCartEvent();
       router.push('/checkout');
     } finally {
       setIsBuyingNow(false);
@@ -455,6 +487,7 @@ export default function ProductDetailsVariantSelection({
       <div className="flex flex-col gap-3">
         <div className="flex flex-nowrap items-center gap-2 lg:gap-[18px]">
           <Button
+            ref={addToCartButtonRef}
             type="button"
             onClick={() => void handleAddToCart()}
             disabled={isOutOfStock || !hasAnyPrice}

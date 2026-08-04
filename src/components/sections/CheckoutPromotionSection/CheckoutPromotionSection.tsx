@@ -16,9 +16,14 @@ import {
   type PlatformPromotionSectionStage,
   type PlatformPromotionSelection,
 } from '@/lib/checkout/platformPromotionUtils';
-import { categorizeStorePromotions, type StorePromotion } from '@/lib/checkout/storePromotionUtils';
+import {
+  categorizeStorePromotions,
+  toPromotionEstimateCartLines,
+  type StorePromotion,
+} from '@/lib/checkout/storePromotionUtils';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
@@ -122,20 +127,28 @@ function PlatformPromotionBottomCard({
 
 export function CheckoutPromotionSection() {
   const isMobile = useIsMobile(768);
-  const { selectedSubtotal: subtotal } = useCart();
+  const { isAuthenticated } = useAuth();
+  const isGuest = !isAuthenticated;
+  const { selectedSubtotal: subtotal, selectedItems } = useCart();
   const { promotions, loading: loadingPromotions } = useActivePlatformPromotions(true);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
   const {
     promotionCode,
     promotionName,
     promotionDiscount,
+    promotionFreeUnits,
+    promotionProductId,
     setPromotion,
     setPromotionName,
     setPromotionDiscount,
+    setPromotionFreeUnits,
+    setPromotionProductId,
   } = useCheckout();
   const [manualCode, setManualCode] = useState(promotionCode ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const cartLines = useMemo(() => toPromotionEstimateCartLines(selectedItems), [selectedItems]);
 
   const appliedPromotion = useMemo<PlatformPromotionSelection>(() => {
     if (!promotionCode) return null;
@@ -144,13 +157,18 @@ export function CheckoutPromotionSection() {
       code: promotionCode,
       name: promotionName ?? promotionCode,
       discountAmount: promotionDiscount,
+      freeUnits: promotionFreeUnits,
+      productId: promotionProductId,
     };
-  }, [promotionCode, promotionDiscount, promotionName]);
+  }, [promotionCode, promotionDiscount, promotionFreeUnits, promotionName, promotionProductId]);
 
   const availablePromotionCount = useMemo(() => {
-    const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal);
+    const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal, {
+      isGuest,
+      cartLines,
+    });
     return available.length;
-  }, [promotions, subtotal]);
+  }, [cartLines, isGuest, promotions, subtotal]);
 
   const stage = getPlatformPromotionSectionStage(
     Boolean(appliedPromotion),
@@ -163,6 +181,8 @@ export function CheckoutPromotionSection() {
     setPromotion(null);
     setPromotionName(null);
     setPromotionDiscount(0);
+    setPromotionFreeUnits(null);
+    setPromotionProductId(null);
     setManualCode('');
     setError(null);
   };
@@ -181,15 +201,21 @@ export function CheckoutPromotionSection() {
       await applyCheckoutPromotionCode({
         code: normalizedCode,
         subtotal,
+        lines: cartLines,
+        promotions: promotions as StorePromotion[],
         validatePromotion,
         setPromotion,
         setPromotionName,
         setPromotionDiscount,
+        setPromotionFreeUnits,
+        setPromotionProductId,
       });
     } catch (applyError) {
       setPromotion(null);
       setPromotionName(null);
       setPromotionDiscount(0);
+      setPromotionFreeUnits(null);
+      setPromotionProductId(null);
       setError(getPromotionApplyErrorMessage(applyError));
     }
   };
@@ -203,6 +229,8 @@ export function CheckoutPromotionSection() {
     setPromotion(promotion.code);
     setPromotionName(promotion.name);
     setPromotionDiscount(promotion.discountAmount);
+    setPromotionFreeUnits(promotion.freeUnits ?? null);
+    setPromotionProductId(promotion.productId ?? null);
     setManualCode(promotion.code);
     setError(null);
   };
@@ -291,6 +319,7 @@ export function CheckoutPromotionSection() {
       <CheckoutPlatformPromotionModal
         isOpen={isModalOpen}
         subtotal={subtotal}
+        cartLines={cartLines}
         appliedPromotion={appliedPromotion}
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleModalConfirm}

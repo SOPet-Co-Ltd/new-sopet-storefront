@@ -21,4 +21,11 @@ describe('formatThaiDatetime', () => {
     expect(formatted).toContain('10');
     expect(formatted).toContain('2569');
   });
+
+  it('formats date-only API values without producing Invalid Date', () => {
+    const formatted = formatThaiDate('1990-05-15');
+
+    expect(formatted).toContain('15');
+    expect(formatted).toContain('2533');
+  });
 });

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@apollo/client/react';
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Modal } from '@/components/atoms/Modal';
 import { PlatformAdsDocument } from '@/lib/graphql/generated/graphql';
 
@@ -48,7 +48,7 @@ export function PromotionalAdsModal() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [shouldFetchAds, setShouldFetchAds] = useState(false);
-  const cooldownMs = useMemo(getCooldownMs, []);
+  const cooldownMs = getCooldownMs();
 
   const { data, loading, error } = useQuery(PlatformAdsDocument, {
     skip: !shouldFetchAds,
@@ -62,6 +62,7 @@ export function PromotionalAdsModal() {
     const dismissState = parseDismissState(storedValue);
 
     if (dismissState && dismissState.expiresAt > now) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time client hydration from localStorage, unavailable during SSR
       setIsOpen(false);
       setShouldFetchAds(false);
       setIsHydrated(true);

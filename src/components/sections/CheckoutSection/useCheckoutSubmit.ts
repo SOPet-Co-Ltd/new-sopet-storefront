@@ -10,6 +10,7 @@ import {
 } from '@/lib/checkout/submitCheckout';
 import {
   PromotionValidationError,
+  SoftPromotionIneligibilityError,
   validateCheckoutPromotionCode,
 } from '@/lib/checkout/validateCheckoutPromotion';
 import {
@@ -19,8 +20,15 @@ import {
   type GuestCheckoutField,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import { parseStorePromotionConditions } from '@/lib/checkout/storePromotionUtils';
 import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
+import {
+  cleanCardNumber,
+  detectCardBrand,
+} from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { parseCardExpiry } from '@/lib/payment/omise';
+import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
@@ -54,6 +62,7 @@ export function useCheckoutSubmit(
     pruneDeselectedIds,
   } = useCart();
   const checkoutMutations = useCheckoutMutations();
+  const { addPaymentMethod } = usePaymentMethods();
   const {
     step,
     shippingByStoreId,
@@ -129,6 +138,30 @@ export function useCheckoutSubmit(
       try {
         const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
+        let finalOmiseToken = cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined;
+        let finalSavedPaymentMethodId =
+          cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined;
+
+        if (cardPayment?.type === 'token' && cardPayment.saveCardForNextTime) {
+          const digits = cleanCardNumber(cardPayment.cardForm.cardNumber);
+          const { month, year } = parseCardExpiry(cardPayment.cardForm.expiry);
+          const brand = detectCardBrand(digits);
+
+          const savedMethod = await addPaymentMethod({
+            omiseCardToken: cardPayment.omiseToken,
+            brand,
+            lastFour: digits.slice(-4),
+            expiryMonth: month,
+            expiryYear: year,
+            isDefault: true,
+          });
+
+          if (savedMethod) {
+            finalSavedPaymentMethodId = savedMethod.id;
+            finalOmiseToken = undefined;
+          }
+        }
+
         const result = await submitCheckout(
           {
             step,
@@ -140,9 +173,8 @@ export function useCheckoutSubmit(
             guestForm: isGuestCheckout ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
-            omiseToken: cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined,
-            savedPaymentMethodId:
-              cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined,
+            omiseToken: finalOmiseToken,
+            savedPaymentMethodId: finalSavedPaymentMethodId,
           },
           submitGuardRef.current,
         );
@@ -168,6 +200,7 @@ export function useCheckoutSubmit(
       }
     },
     [
+      addPaymentMethod,
       checkoutContext,
       checkoutMutations,
       guestForm,
@@ -282,30 +315,52 @@ export function useCheckoutSubmit(
 export async function applyCheckoutPromotionCode({
   code,
   subtotal,
+  lines,
+  promotions,
   validatePromotion,
   setPromotion,
   setPromotionName,
   setPromotionDiscount,
+  setPromotionFreeUnits,
+  setPromotionProductId,
 }: {
   code: string;
   subtotal: number;
+  lines?: import('@/lib/checkout/storePromotionUtils').PromotionEstimateCartLine[];
+  promotions?: Array<{ code: string; conditions?: string | null }>;
   validatePromotion: ReturnType<typeof useCheckoutMutations>['validatePromotion'];
   setPromotion: (code: string | null) => void;
   setPromotionName: (name: string | null) => void;
   setPromotionDiscount: (amount: number) => void;
+  setPromotionFreeUnits?: (freeUnits: number | null) => void;
+  setPromotionProductId?: (productId: string | null) => void;
 }): Promise<void> {
   const validation = await validateCheckoutPromotionCode({
     code,
     subtotal,
+    lines,
     validatePromotion,
   });
+
+  const matched = promotions?.find(
+    (promotion) => promotion.code.toUpperCase() === validation.code.toUpperCase(),
+  );
+  const productId = matched
+    ? (parseStorePromotionConditions(matched.conditions).productId ?? null)
+    : null;
 
   setPromotion(validation.code);
   setPromotionName(validation.name);
   setPromotionDiscount(validation.discountAmount);
+  setPromotionFreeUnits?.(validation.freeUnits ?? null);
+  setPromotionProductId?.(productId);
 }
 
 export function getPromotionApplyErrorMessage(error: unknown): string {
+  if (error instanceof SoftPromotionIneligibilityError) {
+    return error.message;
+  }
+
   if (error instanceof PromotionValidationError) {
     return error.message;
   }

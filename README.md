@@ -2,9 +2,11 @@
 
 Customer-facing Next.js web application for the SOPET multi-vendor pet e-commerce platform.
 
+**Port:** `3000` · **Stack:** Next.js 16, React 19, GraphQL · **Package manager:** Yarn only
+
 ## Overview
 
-Shoppers browse products, search, manage carts, checkout (including guest checkout), pay via Omise, and manage their account (orders, addresses, favorites, reviews).
+Shoppers browse products, search, manage carts, checkout (including guest checkout), pay via Omise, and manage their account (orders, addresses, favorites, reviews, notifications).
 
 ## Tech stack
 
@@ -20,16 +22,17 @@ Shoppers browse products, search, manage carts, checkout (including guest checko
 ## Architecture
 
 ```text
-app/(main)/page.tsx  →  components/pages/  →  lib/hooks/  →  Apollo  →  /graphql  →  Backend
+app/(main)/page.tsx  →  components/pages|sections/  →  lib/hooks/  →  Apollo  →  /graphql  →  Backend :3002
 ```
 
 Atomic design components. Apollo cache + React Context for state. See [docs/architecture.md](docs/architecture.md).
 
 ## Prerequisites
 
-- Node.js 20+
-- Yarn 1.22+
+- Node.js 22+ (CI uses Node 22)
+- Yarn 1.22+ (`packageManager: yarn@1.22.22`; `preinstall` enforces Yarn)
 - Running [backend](../sopet-backend/) at `http://localhost:3002`
+- Backend schema at `../sopet-backend/src/schema.gql` (for GraphQL codegen)
 
 ## Installation
 
@@ -40,11 +43,25 @@ cp .env.example .env.local
 
 ## Environment setup
 
-| Variable                       | Default                         | Purpose                               |
-| ------------------------------ | ------------------------------- | ------------------------------------- |
-| `NEXT_PUBLIC_GRAPHQL_URL`      | `/graphql`                      | Browser GraphQL (proxied)             |
-| `GRAPHQL_SSR_URL`              | `http://localhost:3002/graphql` | Server-side GraphQL                   |
-| `NEXT_PUBLIC_OMISE_PUBLIC_KEY` | —                               | Must match backend `OMISE_PUBLIC_KEY` |
+| Variable                               | Default                           | Purpose                                                             |
+| -------------------------------------- | --------------------------------- | ------------------------------------------------------------------- |
+| `NEXT_PUBLIC_GRAPHQL_URL`              | `/graphql`                        | Browser GraphQL (proxied)                                           |
+| `GRAPHQL_SSR_URL`                      | `http://localhost:3002/graphql`   | Server-side GraphQL                                                 |
+| `GRAPHQL_SSR_BYPASS_SECRET`            | —                                 | Server-only; Cloudflare SSR bypass (see docs/cloudflare-ssr-bypass) |
+| `NEXT_PUBLIC_OMISE_PUBLIC_KEY`         | —                                 | Must match backend `OMISE_PUBLIC_KEY`                               |
+| `NEXT_PUBLIC_FACEBOOK_APP_ID`          | —                                 | Optional; Messenger share on products                               |
+| `NEXT_PUBLIC_BASE_URL`                 | `http://localhost:3000`           | Canonical URLs, Open Graph, sitemap, robots                         |
+| `NEXT_PUBLIC_SITE_NAME`                | `Sopet`                           | Title template, Open Graph `siteName`                               |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | —                                 | Optional Google Search Console tag                                  |
+| `NEXT_PUBLIC_GTM_ID`                   | —                                 | Optional; Google Tag Manager container (`GTM-XXXX`)                 |
+| `NEXT_PUBLIC_GA4_MEASUREMENT_ID`       | —                                 | Optional; direct GA4 measurement ID (`G-XXXX`)                      |
+| `NEXT_PUBLIC_ANALYTICS_ENABLED`        | —                                 | Optional kill-switch (`false`/`0` disables all analytics)           |
+| `GRAPHQL_SCHEMA_PATH`                  | `../sopet-backend/src/schema.gql` | Codegen schema source (also accepts `sopet-backend/src/schema.gql`) |
+| `GRAPHQL_SCHEMA_GITHUB_OWNER/REPO/REF` | —                                 | Optional; fetch schema from GitHub when no local schema (CI/Vercel) |
+
+Optional WebSocket overrides (see `src/lib/config.ts`): `NEXT_PUBLIC_GRAPHQL_WS_URL`, `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN`, `GRAPHQL_WS_SSR_URL`.
+
+Analytics (GTM + GA4) setup: [docs/analytics.md](docs/analytics.md).
 
 ## Running locally
 
@@ -52,13 +69,13 @@ cp .env.example .env.local
 yarn dev    # http://localhost:3000
 ```
 
-Full stack: [workspace getting started](../new-sopet-workspace/docs/developer/getting-started.md).
+Customer auth uses phone OTP at `/login`. Requires backend at `http://localhost:3002` (sibling repo `../sopet-backend`).
 
 ## Build
 
 ```bash
-yarn build    # Runs graphql:codegen first
-yarn start
+yarn build    # Runs graphql:codegen first (prebuild)
+yarn start    # Port 3000
 ```
 
 ## Testing
@@ -70,24 +87,45 @@ yarn test:watch
 
 Uses Vitest + jsdom + MSW. Setup: `src/test/setup.ts`.
 
-## Linting
+| Pattern                    | Purpose                               |
+| -------------------------- | ------------------------------------- |
+| `*.test.tsx` / `*.test.ts` | Unit/component (co-located)           |
+| `*.int.test.tsx`           | Integration (multi-module flows)      |
+| `*.fixture.e2e.test.tsx`   | RTL+MSW user journeys from design ACs |
+
+## Linting & formatting
 
 ```bash
 yarn lint
+yarn format
+yarn format:check      # CI
 ```
 
 ## Project structure
 
 ```text
 src/
-├── app/                    # Routes (main, auth, checkout, payment)
-├── components/             # Atomic design UI
-└── lib/
-    ├── graphql/            # Client, operations, codegen output
-    ├── hooks/              # Data hooks
-    ├── providers/          # Auth, cart, checkout context
-    ├── checkout/           # Checkout business logic
-    └── payment/            # Omise integration
+├── app/
+│   ├── (main)/             # Catalog, search, account (header/footer)
+│   ├── (auth)/             # Login, OTP, signout
+│   ├── (checkout)/         # Checkout flow
+│   ├── (payment)/          # Payment status
+│   ├── robots.ts           # robots.txt
+│   ├── sitemap.ts          # sitemap.xml
+│   └── llms.txt/           # Plain-text LLM crawler route
+├── components/             # Atomic design + order-tracking/ + seo/
+├── hooks/                  # Cross-cutting UI hooks (e.g. useIsMobile)
+├── lib/
+│   ├── graphql/            # Client, operations, codegen output
+│   ├── hooks/              # Apollo data hooks
+│   ├── providers/          # Auth, cart, checkout context
+│   ├── checkout/           # Checkout business logic
+│   ├── payment/            # Omise integration
+│   ├── catalog/, search/   # Domain utilities
+│   ├── seo/                # Metadata, sitemap, JSON-LD helpers
+│   ├── session.ts          # Guest session cookie
+│   └── providers.tsx       # AppProviders composition
+└── test/                   # MSW handlers, fixtures, Apollo test wrapper
 ```
 
 ## Documentation
@@ -105,8 +143,7 @@ src/
 | [Development guide](docs/development-guide.md)     | Where to put new code                      |
 | [Feature development](docs/feature-development.md) | End-to-end feature guide                   |
 | [Coding conventions](docs/coding-conventions.md)   | Naming, testing                            |
-
-**Cross-repo:** [Workspace developer docs](../new-sopet-workspace/docs/developer/README.md)
+| [SEO](docs/seo.md)                                 | Metadata, sitemap, robots, JSON-LD         |
 
 ## Common commands
 
@@ -114,14 +151,30 @@ src/
 | ---------------------- | ------------------------------------ |
 | `yarn dev`             | Development server (:3000)           |
 | `yarn graphql:codegen` | Regenerate types from backend schema |
-| `yarn graphql:watch`   | Watch schema changes                 |
+| `yarn graphql:watch`   | Watch schema/document changes        |
 | `yarn test`            | Run Vitest                           |
 | `yarn lint`            | ESLint                               |
+| `yarn format`          | Prettier write                       |
+| `yarn build`           | Codegen + Next.js production build   |
+
+## Deployment
+
+Deployed to **Vercel** via GitHub Actions deploy hooks (`vercel.json` disables Vercel git auto-deploy).
+
+| Branch              | Environment |
+| ------------------- | ----------- |
+| `deploy/production` | production  |
+| `deploy/uat`        | uat         |
+
+Push to a deploy branch triggers `.github/workflows/deploy.yml`, which POSTs to `VERCEL_DEPLOY_HOOK_URL` (configured per GitHub Environment).
 
 ## Contributing
 
-1. Backend schema changes require `yarn graphql:codegen`
-2. Follow atomic design import rules (downward only)
-3. Co-locate tests with components/hooks
-4. CI: lint → test → build (sparse-checkouts backend schema from GitHub)
-5. See [feature development guide](docs/feature-development.md)
+1. Husky pre-commit runs Prettier via lint-staged; pre-push runs `yarn test`
+2. CI on PR (`main`, `uat`): lint → test → build → forbidden-import guard
+3. Backend schema changes require `yarn graphql:codegen`
+4. Follow atomic design import rules (downward only)
+5. Co-locate tests with components/hooks
+6. See [feature development guide](docs/feature-development.md)
+
+Schema changes land in `../sopet-backend` first (`src/schema.gql`), then run `yarn graphql:codegen` here (and in `../sopet-admin` if affected). Commit each repo separately.

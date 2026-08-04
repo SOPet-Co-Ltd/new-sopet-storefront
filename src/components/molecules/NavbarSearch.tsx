@@ -8,6 +8,7 @@ import { useNavbarSearchCombobox, type ComboboxOption } from '@/lib/hooks/useNav
 import { useRecentSearches } from '@/lib/hooks/useRecentSearches';
 import { useSearchSuggestions } from '@/lib/hooks/useSearchSuggestions';
 import { MIN_SEARCH_QUERY_LENGTH } from '@/lib/search/constants';
+import { queryGraphemeLength } from '@/lib/search/queryLength';
 import { cn } from '@/lib/utils';
 
 import { SearchIcon } from '../atoms/icons';
@@ -17,8 +18,9 @@ const SEARCH_PARAM = 'q';
 const SEARCH_INPUT_ID = 'navbar-search-input';
 const BLUR_CLOSE_DELAY_MS = 150;
 
-function shouldOpenSuggestions(trimmedLength: number): boolean {
-  return trimmedLength === 0 || trimmedLength >= MIN_SEARCH_QUERY_LENGTH;
+function shouldOpenSuggestions(query: string): boolean {
+  const graphemeLength = queryGraphemeLength(query);
+  return graphemeLength === 0 || graphemeLength >= MIN_SEARCH_QUERY_LENGTH;
 }
 
 function toProductOptions(
@@ -40,11 +42,11 @@ export function NavbarSearch() {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
-  const trimmedLength = query.trim().length;
+  const graphemeLength = queryGraphemeLength(query);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useRecentSearches();
   const { products, loading, error } = useSearchSuggestions(
     query,
-    isOpen && trimmedLength >= MIN_SEARCH_QUERY_LENGTH,
+    isOpen && graphemeLength >= MIN_SEARCH_QUERY_LENGTH,
   );
 
   const productOptions = useMemo(() => toProductOptions(products), [products]);
@@ -70,13 +72,13 @@ export function NavbarSearch() {
 
   const handleSelect = useCallback(
     (option: ComboboxOption) => {
-      if (trimmedLength > 0) {
+      if (graphemeLength > 0) {
         addRecentSearch(query.trim());
       }
       closeDropdown();
       router.push(option.href);
     },
-    [addRecentSearch, closeDropdown, query, router, trimmedLength],
+    [addRecentSearch, closeDropdown, graphemeLength, query, router],
   );
 
   const { options, activeIndex, activeOptionId, handleKeyDown, resetActiveIndex } =
@@ -135,10 +137,10 @@ export function NavbarSearch() {
             const nextQuery = event.target.value;
             setQuery(nextQuery);
             resetActiveIndex();
-            setIsOpen(shouldOpenSuggestions(nextQuery.trim().length));
+            setIsOpen(shouldOpenSuggestions(nextQuery));
           }}
           onFocus={() => {
-            if (shouldOpenSuggestions(trimmedLength)) {
+            if (shouldOpenSuggestions(query)) {
               setIsOpen(true);
             }
           }}

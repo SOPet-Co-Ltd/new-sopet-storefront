@@ -1,19 +1,21 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckoutErrorToast } from '@/components/atoms/CheckoutErrorToast/CheckoutErrorToast';
 import { CheckoutMobileBottomBar } from '@/components/molecules/CheckoutMobileBottomBar/CheckoutMobileBottomBar';
 import { CheckoutPaymentSelection } from '@/components/molecules/CheckoutPaymentSelection/CheckoutPaymentSelection';
 import { CheckoutSummarySection } from '@/components/molecules/CheckoutSummarySection/CheckoutSummarySection';
 import { CheckoutPromotionSection } from '@/components/sections/CheckoutPromotionSection/CheckoutPromotionSection';
+import { CheckoutAutoApplyController } from '@/components/sections/CheckoutSection/CheckoutAutoApplyController';
 import { CheckoutSection } from '@/components/sections/CheckoutSection/CheckoutSection';
 import type { AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
+import { cartLineToAnalyticsItem, trackBeginCheckout } from '@/lib/analytics';
 import type {
   GuestCheckoutField,
   GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
-import { consumeCheckoutEntryAllowed, getPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { useCart } from '@/lib/providers/CartProvider';
@@ -42,12 +44,23 @@ const FORM_FIELD_TO_ERROR_KEY: Partial<Record<keyof GuestCheckoutFormState, Gues
   email: 'email',
 };
 
+/** Bumps on each checkout mount so Strict Mode remount can cancel a deferred leave-reset. */
+let checkoutPageResetGeneration = 0;
+
 function CheckoutPageReset() {
   const { reset } = useCheckout();
 
   useEffect(() => {
+    const generation = ++checkoutPageResetGeneration;
     return () => {
-      reset();
+      // Defer so React Strict Mode remount (same generation bump) cancels this wipe.
+      // Without this, cleanup reset() clears auto-applied promos while the once-gate
+      // stays set — first checkout visit looks like auto-apply never ran.
+      queueMicrotask(() => {
+        if (generation === checkoutPageResetGeneration) {
+          reset();
+        }
+      });
     };
   }, [reset]);
 
@@ -56,7 +69,7 @@ function CheckoutPageReset() {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { selectedItemCount, loading } = useCart();
+  const { selectedItemCount, selectedItems, selectedSubtotal, loading } = useCart();
   const { setAddress } = useCheckout();
   const {
     addresses,
@@ -64,6 +77,18 @@ export default function CheckoutPage() {
     error: addressesError,
     createAddress,
   } = useAddresses();
+  const beginCheckoutTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (loading || beginCheckoutTrackedRef.current || selectedItems.length === 0) {
+      return;
+    }
+    beginCheckoutTrackedRef.current = true;
+    trackBeginCheckout({
+      value: selectedSubtotal,
+      items: selectedItems.map(cartLineToAnalyticsItem),
+    });
+  }, [loading, selectedItems, selectedSubtotal]);
 
   const [guestForm, setGuestForm] = useState<GuestCheckoutFormState>(EMPTY_GUEST_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<GuestCheckoutField, string>>>({});
@@ -107,20 +132,8 @@ export default function CheckoutPage() {
     }
   };
 
-  // Resume pending payment immediately for direct /checkout visits — do not wait
-  // for the cart query, because checked-out items are already removed from cart.
-  useLayoutEffect(() => {
-    const pendingCheckout = getPendingCheckout();
-    if (!pendingCheckout) {
-      return;
-    }
-
-    const allowedEntry = consumeCheckoutEntryAllowed();
-    if (!allowedEntry) {
-      router.replace(`/payment/${pendingCheckout.paymentId}`);
-    }
-  }, [router]);
-
+  // A pending payment only resumes when there is nothing selected to check out —
+  // customers with selected items can always start a new order.
   useEffect(() => {
     if (loading) {
       return;
@@ -145,6 +158,7 @@ export default function CheckoutPage() {
   return (
     <div data-testid="checkout-page">
       <CheckoutPageReset />
+      <CheckoutAutoApplyController />
       <CheckoutErrorToast />
       <div className="lg:px-sop-80px flex flex-col px-0 lg:pb-sop-80px lg:pt-sop-20px">
         <div className="flex w-full flex-col gap-sop-16px xl:flex-row xl:items-start xl:gap-sop-20px">

@@ -40,7 +40,7 @@ export function usePaymentCountdown(
 
   useEffect(() => {
     if (!expiresAt) {
-      setRemainingMs(null);
+      // No countdown running; effectiveRemainingMs below falls back to null directly.
       return;
     }
 
@@ -59,8 +59,10 @@ export function usePaymentCountdown(
     return () => window.clearInterval(intervalId);
   }, [expiresAt, onExpire]);
 
+  const effectiveRemainingMs = expiresAt ? remainingMs : null;
+
   return {
-    remainingMs,
-    isExpired: remainingMs === 0,
+    remainingMs: effectiveRemainingMs,
+    isExpired: effectiveRemainingMs === 0,
   };
 }

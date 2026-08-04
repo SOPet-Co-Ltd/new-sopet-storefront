@@ -47,6 +47,8 @@ const SAMPLE_PRODUCT_CARD = {
   averageRating: 4.5,
   reviewCount: 12,
   soldCount: 40,
+  variants: null,
+  store: null,
 };
 
 const SAMPLE_PRODUCT_DETAIL = {
@@ -76,7 +78,7 @@ const SAMPLE_PRODUCT_DETAIL = {
     description: null,
   },
   images: [],
-  variants: [],
+  variants: null,
 };
 
 const SAMPLE_STORE = {

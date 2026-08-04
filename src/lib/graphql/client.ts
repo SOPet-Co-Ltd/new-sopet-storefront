@@ -7,8 +7,9 @@ import { ApolloClient, InMemoryCache } from '@apollo/client-integration-nextjs';
 import { from } from '@apollo/client/link';
 import { createClient } from 'graphql-ws';
 import { getGraphqlWsUrl, GRAPHQL_URL } from '@/lib/config';
-import { createAuthLink, getAccessToken } from '@/lib/graphql/authLink';
+import { createAuthLink } from '@/lib/graphql/authLink';
 import { typePolicies } from '@/lib/graphql/cachePolicies';
+import { fragmentRegistry } from '@/lib/graphql/fragmentRegistry';
 
 let browserApolloClient: ApolloClient | null = null;
 
@@ -20,10 +21,8 @@ function createWsLink(): GraphQLWsLink | null {
   return new GraphQLWsLink(
     createClient({
       url: getGraphqlWsUrl(),
-      connectionParams: () => {
-        const token = getAccessToken();
-        return token ? { authorization: `Bearer ${token}` } : {};
-      },
+      // Auth-gated subscriptions are out of scope; paymentStatusUpdated is @Public.
+      connectionParams: () => ({}),
     }),
   );
 }
@@ -54,7 +53,7 @@ function createApolloLink() {
 export function makeApolloClient(): ApolloClient {
   return new ApolloClient({
     link: createApolloLink(),
-    cache: new InMemoryCache({ typePolicies }),
+    cache: new InMemoryCache({ typePolicies, fragments: fragmentRegistry }),
   });
 }
 

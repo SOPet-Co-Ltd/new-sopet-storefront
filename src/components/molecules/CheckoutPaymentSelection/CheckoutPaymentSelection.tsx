@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
-import { PlusIcon, QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/atoms/icons';
+import {
+  PlusIcon,
+  QrCodeIcon,
+  SubtractIcon,
+  WalletIcon,
+  LeftArrowIcon,
+} from '@/components/atoms/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
@@ -100,10 +106,23 @@ export function CheckoutPaymentSelection() {
   const cardEntryModeRef = useRef(cardEntryMode);
   const selectedSavedCardIdRef = useRef(selectedSavedCardId);
   const saveCardForNextTimeRef = useRef(saveCardForNextTime);
+  const [prevHasSavedCards, setPrevHasSavedCards] = useState<boolean | null>(null);
 
   const hasSavedCards = isAuthenticated && paymentMethods.length > 0;
   const showSavedCards = paymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
   const showNewCardForm = paymentMethod === 'card' && !showSavedCards;
+
+  // Adjust saved-card selection state when availability changes, following the
+  // "adjusting state when a prop changes" pattern (no effect needed for this).
+  if (hasSavedCards !== prevHasSavedCards) {
+    setPrevHasSavedCards(hasSavedCards);
+    if (!hasSavedCards) {
+      setCardEntryMode('new');
+      setSelectedSavedCardId(null);
+    } else {
+      setSelectedSavedCardId((current) => current ?? resolveDefaultSavedCardId(paymentMethods));
+    }
+  }
 
   useLayoutEffect(() => {
     cardFormRef.current = cardForm;
@@ -117,17 +136,6 @@ export function CheckoutPaymentSelection() {
       setPaymentMethod('promptpay');
     }
   }, [paymentMethod, setPaymentMethod]);
-
-  useEffect(() => {
-    if (!hasSavedCards) {
-      setCardEntryMode('new');
-      setSelectedSavedCardId(null);
-      return;
-    }
-
-    const defaultCardId = resolveDefaultSavedCardId(paymentMethods);
-    setSelectedSavedCardId((current) => current ?? defaultCardId);
-  }, [hasSavedCards, paymentMethods]);
 
   const clearCardForm = useCallback(() => {
     setCardForm(EMPTY_CHECKOUT_CARD_FORM);
@@ -176,6 +184,11 @@ export function CheckoutPaymentSelection() {
 
   const handleAddNewCard = useCallback(() => {
     setCardEntryMode('new');
+    clearCardForm();
+  }, [clearCardForm]);
+
+  const handleBackToSavedCards = useCallback(() => {
+    setCardEntryMode('saved');
     clearCardForm();
   }, [clearCardForm]);
 
@@ -244,7 +257,18 @@ export function CheckoutPaymentSelection() {
 
             {showNewCardForm ? (
               <div className="flex flex-col gap-sop-20px">
-                <p className="sop-body-md-regular text-sop-neutral-gray-300">ข้อมูลบัตรของคุณ</p>
+                {cardEntryMode === 'new' && hasSavedCards ? (
+                  <button
+                    type="button"
+                    onClick={handleBackToSavedCards}
+                    className="flex items-center gap-sop-8px text-sop-neutral-gray-300"
+                  >
+                    <LeftArrowIcon size={{ mobile: 16 }} color="currentColor" />
+                    <span className="sop-body-md-medium">เพิ่มบัตรใหม่</span>
+                  </button>
+                ) : (
+                  <p className="sop-body-md-regular text-sop-neutral-gray-300">ข้อมูลบัตรของคุณ</p>
+                )}{' '}
                 <CardPaymentForm
                   value={cardForm}
                   onChange={(next) => {

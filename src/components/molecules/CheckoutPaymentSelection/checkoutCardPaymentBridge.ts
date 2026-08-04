@@ -21,7 +21,13 @@ export const EMPTY_CHECKOUT_CARD_FORM: CheckoutCardFormState = {
 };
 
 export type CardPaymentPayload =
-  { type: 'token'; omiseToken: string } | { type: 'saved'; savedPaymentMethodId: string };
+  | {
+      type: 'token';
+      omiseToken: string;
+      saveCardForNextTime: boolean;
+      cardForm: CheckoutCardFormState;
+    }
+  | { type: 'saved'; savedPaymentMethodId: string };
 
 type CheckoutCardPaymentBridge = {
   getCardForm: () => CheckoutCardFormState;
@@ -104,8 +110,10 @@ export async function prepareCardPayment(): Promise<CardPaymentPayload> {
 
   try {
     const omiseToken = await bridge.tokenizeCardForCheckout();
+    const saveCardForNextTime = bridge.getSaveCardForNextTime();
+    const cardForm = bridge.getCardForm();
     bridge.clearCardForm();
-    return { type: 'token', omiseToken };
+    return { type: 'token', omiseToken, saveCardForNextTime, cardForm };
   } catch (error) {
     if (error instanceof OmiseConfigurationError) {
       throw error;

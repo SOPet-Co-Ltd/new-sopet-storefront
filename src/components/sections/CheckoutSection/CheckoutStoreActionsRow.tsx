@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CheckIcon, RightArrowIcon, TicketSaleIcon, TruckIcon } from '@/components/atoms/icons';
+import { toPromotionEstimateCartLines } from '@/lib/checkout/storePromotionUtils';
 import { useShippingOptions } from '@/lib/hooks/useShippingOptions';
+import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { formatCheckoutPrice } from './checkoutOrderItemUtils';
 import { CheckoutShippingMethodModal } from './CheckoutShippingMethodModal';
@@ -59,10 +61,16 @@ export function CheckoutStoreActionsRow({
   storeSubtotal,
 }: CheckoutStoreActionsRowProps) {
   const { options, loading, error } = useShippingOptions(storeId);
+  const { selectedItemsByStore } = useCart();
   const { shippingByStoreId, setShipping, storePromotionsByStoreId, setStorePromotion } =
     useCheckout();
   const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
+
+  const cartLines = useMemo(() => {
+    const storeGroup = selectedItemsByStore.find((group) => group.storeId === storeId);
+    return toPromotionEstimateCartLines(storeGroup?.items ?? []);
+  }, [selectedItemsByStore, storeId]);
 
   const appliedPromotion = storePromotionsByStoreId[storeId] ?? null;
   const appliedDiscountAmount = appliedPromotion?.discountAmount ?? 0;
@@ -141,6 +149,7 @@ export function CheckoutStoreActionsRow({
           storeId={storeId}
           storeName={storeName}
           storeSubtotal={storeSubtotal}
+          cartLines={cartLines}
           appliedPromotion={appliedPromotion}
           onClose={() => setIsPromotionModalOpen(false)}
           onConfirm={(promotion) => setStorePromotion(storeId, promotion)}

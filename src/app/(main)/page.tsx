@@ -1,17 +1,27 @@
+import type { Metadata } from 'next';
+
+import HomePage from '@/components/pages/HomePage';
+import { JsonLdScript } from '@/components/seo/JsonLdScript';
+import { getClient } from '@/lib/graphql/apollo-rsc';
 import {
   ApprovedCategoriesDocument,
   RecommendedProductsDocument,
   type ApprovedCategoriesQuery,
   type RecommendedProductsQuery,
 } from '@/lib/graphql/generated/graphql';
-import { getClient, PreloadQuery } from '@/lib/graphql/apollo-rsc';
 import {
   buildApprovedCategoriesVariables,
   buildRecommendedProductsVariables,
 } from '@/lib/graphql/query-variables';
-import HomePage from '@/components/pages/HomePage';
+import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
+import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/seo/json-ld';
+import { buildHomeMetadata, getSiteConfig } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildHomeMetadata();
+}
 
 const RECOMMENDED_LIMIT = 25;
 
@@ -24,7 +34,7 @@ export default async function Home() {
   let initialCategories: ApprovedCategoriesQuery['approvedCategories'] | undefined;
   let initialRecommendedProducts: RecommendedProductsQuery['recommendedProducts'] | undefined;
 
-  try {
+  const preload = await runSsrPreloadQueries('home', async () => {
     const [categoriesResult, recommendedResult] = await Promise.all([
       getClient().query({
         query: ApprovedCategoriesDocument,
@@ -36,20 +46,28 @@ export default async function Home() {
       }),
     ]);
 
-    initialCategories = categoriesResult.data?.approvedCategories;
-    initialRecommendedProducts = recommendedResult.data?.recommendedProducts;
-  } catch {
-    // Degrade to client-side fetch when SSR transport fails.
+    return {
+      categories: categoriesResult.data?.approvedCategories,
+      recommendedProducts: recommendedResult.data?.recommendedProducts,
+    };
+  });
+
+  if (preload.ok) {
+    initialCategories = preload.data.categories;
+    initialRecommendedProducts = preload.data.recommendedProducts;
   }
 
+  const siteConfig = getSiteConfig();
+  const organizationJsonLd = buildOrganizationJsonLd(siteConfig);
+  const webSiteJsonLd = buildWebSiteJsonLd(siteConfig);
+
   return (
-    <PreloadQuery query={ApprovedCategoriesDocument} variables={categoriesVariables}>
-      <PreloadQuery query={RecommendedProductsDocument} variables={recommendedVariables}>
-        <HomePage
-          initialCategories={initialCategories}
-          initialRecommendedProducts={initialRecommendedProducts}
-        />
-      </PreloadQuery>
-    </PreloadQuery>
+    <>
+      <JsonLdScript data={[organizationJsonLd, webSiteJsonLd]} />
+      <HomePage
+        initialCategories={initialCategories}
+        initialRecommendedProducts={initialRecommendedProducts}
+      />
+    </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { MIN_SEARCH_QUERY_LENGTH } from '@/lib/search/constants';
+import { queryGraphemeLength } from '@/lib/search/queryLength';
 
 export type ComboboxOption = {
   type: 'product';
@@ -29,7 +30,7 @@ export function useNavbarSearchCombobox({
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const options = useMemo(() => {
-    if (query.trim().length < MIN_SEARCH_QUERY_LENGTH) {
+    if (queryGraphemeLength(query) < MIN_SEARCH_QUERY_LENGTH) {
       return [];
     }
 

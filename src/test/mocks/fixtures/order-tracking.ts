@@ -33,6 +33,7 @@ export type OrderTrackingItemFixture = {
   trackingNumber: string | null;
   fulfillmentProvider: string | null;
   trackingUrl: string | null;
+  variantOptions: string | null;
 };
 
 export type OrderTrackingStoreShippingFixture = {
@@ -79,6 +80,7 @@ export const sampleOrderTracking: OrderTrackingFixture = {
       trackingNumber: 'TH123456789',
       fulfillmentProvider: 'kerry',
       trackingUrl: 'https://track.example.com/TH123456789',
+      variantOptions: null,
     },
   ],
   storeShippings: [

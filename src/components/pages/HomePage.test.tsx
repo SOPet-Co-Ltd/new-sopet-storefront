@@ -6,6 +6,10 @@ import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import type { AuthContextValue } from '@/lib/providers/AuthProvider';
 import { server } from '@/test/mocks/server';
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
+}));
+
 vi.mock('next/image', () => ({
   default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
     <img src={src} alt={alt} {...props} />
@@ -49,6 +53,7 @@ const SAMPLE_PRODUCT = {
   averageRating: 4.5,
   reviewCount: 12,
   soldCount: 48,
+  variants: null,
   store: {
     __typename: 'StoreType' as const,
     id: 'store-1',
@@ -109,6 +114,7 @@ function createAuthValue(isAuthenticated: boolean): AuthContextValue {
     pendingDeletion: false,
     sendOtp: vi.fn(),
     verifyOtp: vi.fn(),
+    changeCustomerPhone: vi.fn(),
     reactivateAccount: vi.fn(),
     logout: vi.fn(),
   };

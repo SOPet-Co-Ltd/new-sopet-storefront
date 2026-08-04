@@ -12,7 +12,9 @@ describe('dateOfBirth helpers', () => {
   });
 
   it('formats customer date of birth in Thai locale', () => {
-    expect(formatCustomerDateOfBirth('1990-05-15')).toMatch(/15/);
+    const formatted = formatCustomerDateOfBirth('1990-05-15');
+    expect(formatted).toContain('15');
+    expect(formatted).toContain('2533');
   });
 
   it('rejects empty and future dates', () => {

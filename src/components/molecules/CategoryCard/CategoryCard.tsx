@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { prefetchProductsListing } from '@/lib/catalog/prefetchProductsListing';
 import type { Category } from '@/lib/hooks/useCategories';
@@ -14,16 +15,19 @@ type CategoryCardProps = {
 };
 
 export function CategoryCard({ category }: CategoryCardProps) {
+  const router = useRouter();
   const [imageError, setImageError] = useState(false);
   const imageSrc = !imageError && category.imageUrl ? category.imageUrl : PLACEHOLDER_IMAGE;
+  const href = buildCategoryHref(category.slug);
 
   const handlePrefetch = () => {
+    router.prefetch(href);
     prefetchProductsListing({ category: category.name, page: 1 });
   };
 
   return (
     <Link
-      href={buildCategoryHref(category.slug)}
+      href={href}
       className="flex h-16 w-full flex-row items-center overflow-hidden rounded-sop-20 border border-sop-additionalblue-200 bg-sop-additionalblue-100 px-5 py-3 transition-opacity hover:opacity-90"
       aria-label={`ดูหมวดหมู่ ${category.name}`}
       onMouseEnter={handlePrefetch}

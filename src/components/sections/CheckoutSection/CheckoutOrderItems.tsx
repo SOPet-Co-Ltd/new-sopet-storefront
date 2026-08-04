@@ -1,24 +1,64 @@
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import { ClipboardListIcon, ShopIcon } from '@/components/atoms/icons';
 import type { StoreCartGroup } from '@/lib/cart/cartUtils';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
+import { allocateServerFreeUnitsToLines } from './allocateServerFreeUnits';
 import { CheckoutOrderItemRow } from './CheckoutOrderItemRow';
 import { CheckoutStoreActionsRow } from './CheckoutStoreActionsRow';
 import { formatCheckoutPrice } from './checkoutOrderItemUtils';
 
+function mergeFreeQuantityMaps(...maps: Array<Record<string, number>>): Record<string, number> {
+  const merged: Record<string, number> = {};
+  for (const map of maps) {
+    for (const [itemId, qty] of Object.entries(map)) {
+      if (qty <= 0) continue;
+      merged[itemId] = (merged[itemId] ?? 0) + qty;
+    }
+  }
+  return merged;
+}
+
 type CheckoutStoreCardProps = {
   group: StoreCartGroup;
+  platformFreeByItemId: Record<string, number>;
 };
 
-function CheckoutStoreCard({ group }: CheckoutStoreCardProps) {
+function CheckoutStoreCard({ group, platformFreeByItemId }: CheckoutStoreCardProps) {
   const { shippingByStoreId, storePromotionsByStoreId } = useCheckout();
 
   const itemCount = group.items.reduce((total, item) => total + item.quantity, 0);
   const selectedShippingFee = shippingByStoreId[group.storeId]?.shippingFee ?? 0;
-  const storeDiscount = storePromotionsByStoreId[group.storeId]?.discountAmount ?? 0;
+  const appliedStorePromo = storePromotionsByStoreId[group.storeId] ?? null;
+  const storeDiscount = appliedStorePromo?.discountAmount ?? 0;
   const storeTotal = group.subtotal + selectedShippingFee - storeDiscount;
+
+  const freeQuantityByItemId = useMemo(() => {
+    const freeUnits = appliedStorePromo?.freeUnits ?? 0;
+    // Gate A: only server freeUnits; local Rule B estimate must not drive badges.
+    const storeAlloc =
+      freeUnits && freeUnits > 0
+        ? allocateServerFreeUnitsToLines(
+            freeUnits,
+            group.items,
+            appliedStorePromo?.productId ?? null,
+          )
+        : {};
+
+    const platformAlloc: Record<string, number> = {};
+    for (const item of group.items) {
+      const qty = platformFreeByItemId[item.id];
+      if (qty && qty > 0) platformAlloc[item.id] = qty;
+    }
+
+    return mergeFreeQuantityMaps(storeAlloc, platformAlloc);
+  }, [
+    appliedStorePromo?.freeUnits,
+    appliedStorePromo?.productId,
+    group.items,
+    platformFreeByItemId,
+  ]);
 
   return (
     <section className="flex flex-col" data-testid={`checkout-store-${group.storeId}`}>
@@ -33,7 +73,7 @@ function CheckoutStoreCard({ group }: CheckoutStoreCardProps) {
       <div className="flex flex-col gap-sop-20px bg-sop-base-white px-sop-16px py-sop-20px lg:px-sop-24px lg:py-sop-28px">
         {group.items.map((item, index) => (
           <Fragment key={item.id}>
-            <CheckoutOrderItemRow item={item} />
+            <CheckoutOrderItemRow item={item} freeQuantity={freeQuantityByItemId[item.id] ?? 0} />
             {index < group.items.length - 1 ? (
               <div className="h-px w-full bg-sop-neutral-grayalpha-200" />
             ) : null}
@@ -64,6 +104,16 @@ type CheckoutOrderItemsProps = {
 };
 
 export function CheckoutOrderItems({ groups }: CheckoutOrderItemsProps) {
+  const { promotionFreeUnits, promotionProductId } = useCheckout();
+
+  // Platform BxGy is order-wide — allocate once across all cart lines (not per store).
+  const platformFreeByItemId = useMemo(() => {
+    const freeUnits = promotionFreeUnits ?? 0;
+    if (!freeUnits || freeUnits <= 0) return {};
+    const allItems = groups.flatMap((group) => group.items);
+    return allocateServerFreeUnitsToLines(freeUnits, allItems, promotionProductId);
+  }, [groups, promotionFreeUnits, promotionProductId]);
+
   return (
     <div
       className="flex flex-col gap-sop-12px px-sop-16px py-sop-20px"
@@ -78,7 +128,11 @@ export function CheckoutOrderItems({ groups }: CheckoutOrderItemsProps) {
 
       <div className="flex flex-col gap-sop-16px">
         {groups.map((group) => (
-          <CheckoutStoreCard key={group.storeId} group={group} />
+          <CheckoutStoreCard
+            key={group.storeId}
+            group={group}
+            platformFreeByItemId={platformFreeByItemId}
+          />
         ))}
       </div>
     </div>

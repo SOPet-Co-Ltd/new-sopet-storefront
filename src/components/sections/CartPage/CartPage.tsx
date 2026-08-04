@@ -1,12 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/atoms/Button';
 import { Checkbox } from '@/components/atoms/Checkbox';
 import { InfoIcon } from '@/components/atoms/icons/outline/InfoIcon';
+import { CartSuspendedLinesRemovedBanner } from '@/components/molecules/CartSuspendedLinesRemovedBanner/CartSuspendedLinesRemovedBanner';
 import { CartEmptyState } from '@/components/sections/CartPage/CartEmptyState';
 import { CartItemRow } from '@/components/organisms/CartItemRow/CartItemRow';
-import { markCheckoutEntryAllowed } from '@/lib/checkout/pendingCheckout';
 import { useCart } from '@/lib/providers/CartProvider';
 
 function formatPrice(amount: number): string {
@@ -37,11 +38,14 @@ export default function CartPage() {
     setAllSelected,
     loading,
     error,
+    hasSuspendedStoreItemRemovedWarning,
     updateItem,
     changeItemVariant,
     removeItem,
     refetch,
   } = useCart();
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const showSuspendedBanner = hasSuspendedStoreItemRemovedWarning && !bannerDismissed;
 
   if (loading) {
     return (
@@ -73,6 +77,9 @@ export default function CartPage() {
         className="container mx-auto flex min-h-[calc(100dvh-12rem)] flex-col px-4 py-8 lg:min-h-[calc(100dvh-10rem)] lg:px-20"
         data-testid="cart-empty"
       >
+        {showSuspendedBanner ? (
+          <CartSuspendedLinesRemovedBanner onDismiss={() => setBannerDismissed(true)} />
+        ) : null}
         <CartEmptyState />
       </main>
     );
@@ -89,6 +96,10 @@ export default function CartPage() {
       data-testid="cart-page"
     >
       <h1 className="mb-6 sop-headline-md-medium text-sop-neutral-gray-300">ตะกร้าสินค้า</h1>
+
+      {showSuspendedBanner ? (
+        <CartSuspendedLinesRemovedBanner onDismiss={() => setBannerDismissed(true)} />
+      ) : null}
 
       {isMultiStore ? (
         <div className="mb-6 flex items-start gap-3 rounded-sop-12px bg-sop-system-warning-100 px-4 py-3">
@@ -177,11 +188,6 @@ export default function CartPage() {
               aria-disabled={!hasSelection}
               className={`sm:max-w-xs sm:flex-1 ${hasSelection ? '' : 'pointer-events-none'}`}
               tabIndex={hasSelection ? undefined : -1}
-              onClick={() => {
-                if (hasSelection) {
-                  markCheckoutEntryAllowed();
-                }
-              }}
             >
               <Button
                 type="button"

@@ -9,7 +9,7 @@ type SuggestedQueryChipsProps = {
 export function SuggestedQueryChipsSkeleton() {
   return (
     <div
-      className="flex flex-wrap justify-center gap-2"
+      className="flex flex-wrap justify-start gap-2"
       data-testid="search-recovery-chips-skeleton"
     >
       {Array.from({ length: 3 }).map((_, index) => (
@@ -30,8 +30,8 @@ export function SuggestedQueryChips({ suggestions, className }: SuggestedQueryCh
 
   return (
     <div className={cn('w-full', className)} data-testid="search-recovery-chips">
-      <p className="mb-3 text-center sop-body-sm-medium text-sop-neutral-gray-300">ลองค้นหา</p>
-      <ul className="flex flex-wrap justify-center gap-2">
+      <p className="mb-3 sop-body-sm-medium text-sop-neutral-gray-300">ลองค้นหา</p>
+      <ul className="flex flex-wrap justify-start gap-2">
         {suggestions.map((suggestion) => (
           <li key={suggestion}>
             <Link

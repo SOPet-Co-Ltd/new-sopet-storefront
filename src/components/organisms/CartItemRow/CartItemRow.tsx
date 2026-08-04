@@ -47,7 +47,9 @@ export function CartItemRow({
   const product = item.productVariant?.product;
   const unitPrice = getCartItemUnitPrice(item);
   const variantLabel = parseVariantLabel(item.productVariant?.optionsJson);
+  const stockQuantity = item.productVariant?.stockQuantity ?? 0;
   const canDecrement = !disabled && item.quantity > 1;
+  const canIncrement = !disabled && item.quantity < stockQuantity;
   const productName = product?.name ?? 'สินค้า';
   const [variantModalOpen, setVariantModalOpen] = useState(false);
 
@@ -139,19 +141,19 @@ export function CartItemRow({
                 strokeWidth={1.5}
               />
             </button>
-            <span className="min-w-6 text-center sop-body-sm-regular text-sop-neutral-gray-300">
+            <span className="inline-block w-8 shrink-0 text-center sop-body-sm-regular text-sop-neutral-gray-300">
               {item.quantity}
             </span>
             <button
               type="button"
-              disabled={disabled}
+              disabled={!canIncrement}
               className="cursor-pointer disabled:cursor-not-allowed"
               aria-label="เพิ่มจำนวน"
               onClick={() => void onUpdateQuantity(item.id, item.quantity + 1)}
             >
               <PlusSquareIcon
                 size={{ mobile: 24 }}
-                color={disabled ? '#22222947' : '#211f23'}
+                color={!canIncrement ? '#22222947' : '#211f23'}
                 strokeWidth={1.5}
               />
             </button>
@@ -171,6 +173,9 @@ export function CartItemRow({
 
       {variantModalOpen ? (
         <CartVariantModal
+          // Remount when the underlying variant/quantity changes so the modal's
+          // local selection state always starts fresh from the latest cart item.
+          key={`${item.id}:${item.productVariant?.optionsJson ?? ''}:${item.quantity}`}
           item={item}
           onClose={() => setVariantModalOpen(false)}
           onConfirm={(variantId, quantity) => onChangeVariant(item.id, variantId, quantity)}

@@ -2,11 +2,27 @@
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm';
+import type { PaymentRetrySubmitInput } from '@/components/organisms/OrderPaymentForm/PaymentRetryPanel';
 import { clearPendingCheckout } from '@/lib/checkout/pendingCheckout';
-import { invalidateCustomerOrders } from '@/lib/orders/invalidateCustomerOrders';
+import { STORE_SUSPENSION_HOLD_COPY } from '@/lib/constants/storeSuspensionHoldCopy';
+import { useCheckout } from '@/lib/hooks/useCheckout';
+import { useOrderDetail } from '@/lib/hooks/useOrders';
 import { usePayment } from '@/lib/hooks/usePayment';
+import { invalidateCustomerOrders } from '@/lib/orders/invalidateCustomerOrders';
+import { hasHeldFulfillmentItems } from '@/lib/order-tracking/holdVisibility';
+import { isOrderNotPayableError } from '@/lib/payment/orderNotPayable';
+import {
+  buildPaymentRetryInput,
+  clearPriorPayment3dsAutoRedirect,
+  PaymentRetryError,
+  resolveNewPaymentId,
+} from '@/lib/payment/submitPaymentRetry';
+import {
+  isPaymentHeldPortionBlockedError,
+  mapPaymentHeldPortionBlockedError,
+} from '@/lib/store-suspension/mapSuspensionErrors';
 
 type LookupMode = 'paymentId' | 'orderId';
 
@@ -23,11 +39,29 @@ function isPaymentNotFoundError(error: Error | undefined): boolean {
   return false;
 }
 
+function retryErrorMessage(error: unknown): string {
+  const heldMessage = mapPaymentHeldPortionBlockedError(error);
+  if (heldMessage) {
+    return heldMessage;
+  }
+  if (error instanceof PaymentRetryError) {
+    return error.message;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return 'ไม่สามารถสร้างการชำระเงินได้';
+}
+
 export default function PaymentPage() {
   const params = useParams<{ id: string }>();
   const routeId = params.id;
   const router = useRouter();
+  const { createPayment, creatingPayment } = useCheckout();
   const [lookupMode, setLookupMode] = useState<LookupMode>('paymentId');
+  const [retrySubmitError, setRetrySubmitError] = useState<string | null>(null);
+  const [paymentRecoveryUnavailable, setPaymentRecoveryUnavailable] = useState(false);
+  const [heldUnpaidFromError, setHeldUnpaidFromError] = useState(false);
   const hasTriedFallback = useRef(false);
   const hasRedirected = useRef(false);
 
@@ -35,6 +69,16 @@ export default function PaymentPage() {
     id: lookupMode === 'paymentId' ? routeId : null,
     orderId: lookupMode === 'orderId' ? routeId : null,
   });
+
+  const orderIdForHold = payment?.orderId ?? (lookupMode === 'orderId' ? routeId : undefined);
+  const { order } = useOrderDetail(orderIdForHold);
+  const heldUnpaidFromOrder = useMemo(
+    () => Boolean(order?.items && hasHeldFulfillmentItems(order.items)),
+    [order],
+  );
+  const heldUnpaidBlocked = heldUnpaidFromOrder || heldUnpaidFromError;
+
+  const handleCheckStatus = useCallback(() => refetch(), [refetch]);
 
   useEffect(() => {
     if (lookupMode !== 'paymentId' || hasTriedFallback.current || loading) {
@@ -66,6 +110,47 @@ export default function PaymentPage() {
     clearPendingCheckout();
   }, [payment?.status]);
 
+  const handleRetryPayment = useCallback(
+    async (input: PaymentRetrySubmitInput) => {
+      if (!payment?.orderId || !payment.id) {
+        return;
+      }
+
+      setRetrySubmitError(null);
+
+      try {
+        const created = await createPayment(
+          buildPaymentRetryInput(
+            {
+              orderId: payment.orderId,
+              amount: payment.amount,
+              currency: payment.currency,
+              currentPaymentId: payment.id,
+            },
+            input,
+          ),
+        );
+
+        const newPaymentId = resolveNewPaymentId(payment.id, created?.id);
+        clearPriorPayment3dsAutoRedirect(payment.id);
+        router.push(`/payment/${newPaymentId}`);
+      } catch (retryError) {
+        if (isOrderNotPayableError(retryError)) {
+          setPaymentRecoveryUnavailable(true);
+          setRetrySubmitError(null);
+          return;
+        }
+        if (isPaymentHeldPortionBlockedError(retryError)) {
+          setHeldUnpaidFromError(true);
+          setRetrySubmitError(STORE_SUSPENSION_HOLD_COPY.paymentHeldBlocked);
+          return;
+        }
+        setRetrySubmitError(retryErrorMessage(retryError));
+      }
+    },
+    [createPayment, payment, router],
+  );
+
   return (
     <main className="flex min-h-dvh items-center justify-center bg-sop-primary-100 px-4 py-8">
       <OrderPaymentForm
@@ -75,9 +160,15 @@ export default function PaymentPage() {
         onRetry={() => {
           void refetch();
         }}
+        onCheckStatus={handleCheckStatus}
         onExpired={() => {
           void refetch();
         }}
+        onRetryPayment={handleRetryPayment}
+        retrySubmitError={retrySubmitError}
+        retrySubmitting={creatingPayment}
+        paymentRecoveryUnavailable={paymentRecoveryUnavailable}
+        heldUnpaidBlocked={heldUnpaidBlocked}
       />
     </main>
   );

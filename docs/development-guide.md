@@ -30,6 +30,9 @@ Follow atomic design import rules.
 | Payment/Omise                  | `src/lib/payment/`                   |
 | Search filters                 | `src/lib/search/`                    |
 | Address formatting             | `src/lib/address/`                   |
+| Order tracking progress/utils  | `src/lib/order-tracking/`            |
+| SEO metadata / sitemap helpers | `src/lib/seo/`                       |
+| Guest session cookie           | `src/lib/session.ts`                 |
 | Domain rules requiring backend | **Backend service** — not storefront |
 
 Storefront should not duplicate backend validation. Use backend error codes.

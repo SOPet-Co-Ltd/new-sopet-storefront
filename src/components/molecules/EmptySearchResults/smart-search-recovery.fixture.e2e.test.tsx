@@ -6,7 +6,7 @@ import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { sampleSearchRecoverySuggestions } from '@/test/mocks/fixtures/search';
 import { server } from '@/test/mocks/server';
 
-// AC-036: Zero-result search shows recovery chips above categories and navigates on chip click.
+// AC-036: Zero-result search shows recovery chips and navigates on chip click.
 // @category: fixture-e2e
 // @lane: fixture-e2e
 
@@ -16,16 +16,10 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams({ q: 'royal canun' }),
 }));
 
-vi.mock('next/image', () => ({
-  default: ({ alt, ...props }: { alt: string; [key: string]: unknown }) => (
-    <img alt={alt} {...props} />
-  ),
-}));
-
 const createWrapper = createApolloTestWrapper;
 
 describe('Smart search recovery fixture-e2e', () => {
-  it('shows recovery chips above categories with encoded search hrefs', async () => {
+  it('shows recovery chips with encoded search hrefs', async () => {
     server.use(
       graphql.query('Products', () =>
         HttpResponse.json({
@@ -42,9 +36,6 @@ describe('Smart search recovery fixture-e2e', () => {
           data: { searchRecoverySuggestions: sampleSearchRecoverySuggestions },
         }),
       ),
-      graphql.query('ApprovedCategories', () =>
-        HttpResponse.json({ data: { approvedCategories: [] } }),
-      ),
     );
 
     render(<ProductListing search="royal canun" variant="search" />, { wrapper: createWrapper() });
@@ -53,13 +44,8 @@ describe('Smart search recovery fixture-e2e', () => {
       expect(screen.getByTestId('empty-search-results')).toBeInTheDocument();
     });
 
-    const recoveryHeading = screen.getByText('ลองค้นหา');
-    const categoryHeading = screen.queryByText('ลองเลือกหมวดหมู่');
-    if (categoryHeading) {
-      expect(recoveryHeading.compareDocumentPosition(categoryHeading)).toBe(
-        Node.DOCUMENT_POSITION_FOLLOWING,
-      );
-    }
+    expect(screen.getByText('ลองค้นหา')).toBeInTheDocument();
+    expect(screen.queryByText('หมวดหมู่แนะนำ')).not.toBeInTheDocument();
 
     const chip = screen.getByRole('link', { name: 'อาหารแมว' });
     expect(chip).toHaveAttribute(
@@ -82,9 +68,6 @@ describe('Smart search recovery fixture-e2e', () => {
       ),
       graphql.query('SearchRecoverySuggestions', () =>
         HttpResponse.json({ errors: [{ message: 'recovery failed' }] }),
-      ),
-      graphql.query('ApprovedCategories', () =>
-        HttpResponse.json({ data: { approvedCategories: [] } }),
       ),
     );
 

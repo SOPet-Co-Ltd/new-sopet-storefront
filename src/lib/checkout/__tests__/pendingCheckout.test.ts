@@ -1,9 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   clearPendingCheckout,
-  consumeCheckoutEntryAllowed,
   getPendingCheckout,
-  markCheckoutEntryAllowed,
   setPendingCheckout,
 } from '@/lib/checkout/pendingCheckout';
 
@@ -18,11 +16,5 @@ describe('pendingCheckout', () => {
 
     clearPendingCheckout();
     expect(getPendingCheckout()).toBeNull();
-  });
-
-  it('allows checkout entry only once after marking', () => {
-    markCheckoutEntryAllowed();
-    expect(consumeCheckoutEntryAllowed()).toBe(true);
-    expect(consumeCheckoutEntryAllowed()).toBe(false);
   });
 });

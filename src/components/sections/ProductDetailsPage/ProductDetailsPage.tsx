@@ -2,22 +2,27 @@
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { notFound } from 'next/navigation';
-import { useMemo, useState } from 'react';
-import { Breadcrumbs } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Breadcrumbs, type BreadcrumbItem } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
 import { ProductDetails } from '@/components/organisms/ProductDetails/ProductDetails';
 import ProductDetailsSeller from '@/components/organisms/ProductDetailsSeller';
 import ProductDetailsSellerReviews from '@/components/organisms/ProductDetailsSellerReviews';
+import { getDefaultVariant } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 import { ProductGallery } from '@/components/organisms/ProductGallery/ProductGallery';
 import { ProductDetailDescription } from '@/components/sections/ProductDetailDescription/ProductDetailDescription';
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
+import { trackViewItem } from '@/lib/analytics';
 import type { ProductByIdQuery } from '@/lib/graphql/generated/graphql';
+import { useCategories } from '@/lib/hooks/useCategories';
 import { useProduct } from '@/lib/hooks/useProduct';
 import { useReviews } from '@/lib/hooks/useReviews';
+import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
 
 type ProductDetailsPageProps = {
   productId: string;
   initialProduct?: ProductByIdQuery['product'];
+  variantSearchParams?: Record<string, string | string[] | undefined>;
 };
 
 function computeReviewSummary(
@@ -56,7 +61,11 @@ function ProductDetailsSkeleton() {
   );
 }
 
-export default function ProductDetailsPage({ productId, initialProduct }: ProductDetailsPageProps) {
+export default function ProductDetailsPage({
+  productId,
+  initialProduct,
+  variantSearchParams,
+}: ProductDetailsPageProps) {
   const {
     product: fetchedProduct,
     loading,
@@ -83,6 +92,53 @@ export default function ProductDetailsPage({ productId, initialProduct }: Produc
   );
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const { categories } = useCategories();
+  const trackedViewItemIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!product || trackedViewItemIdRef.current === product.id) {
+      return;
+    }
+    trackedViewItemIdRef.current = product.id;
+
+    const defaultVariant = getDefaultVariant(product.variants);
+    const price = defaultVariant?.price ?? product.basePrice;
+
+    trackViewItem({
+      value: price,
+      items: [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.store?.name ?? undefined,
+          item_category: product.category ?? undefined,
+          item_variant: defaultVariant?.id,
+          price,
+          quantity: 1,
+        },
+      ],
+    });
+  }, [product]);
+
+  const breadcrumbItems = useMemo((): BreadcrumbItem[] => {
+    if (!product) {
+      return [];
+    }
+
+    const items: BreadcrumbItem[] = [{ label: 'หน้าแรก', path: '/' }];
+    const resolvedCategory =
+      product.category != null ? resolveCategoryBySlug(categories, product.category) : undefined;
+
+    if (resolvedCategory) {
+      items.push({
+        label: resolvedCategory.name,
+        path: buildCategoryHref(resolvedCategory.slug),
+      });
+    }
+
+    items.push({ label: product.name, path: `/product/${product.id}` });
+    return items;
+  }, [categories, product]);
 
   const isNotFound = Boolean(
     error &&
@@ -108,25 +164,25 @@ export default function ProductDetailsPage({ productId, initialProduct }: Produc
     );
   }
 
-  const breadcrumbs = [
-    { label: 'หน้าแรก', path: '/' },
-    { label: product.name, path: `/product/${product.id}` },
-  ];
+  const breadcrumbs = breadcrumbItems;
 
   return (
     <div data-testid="product-details-page" className="flex flex-col gap-2 md:gap-5">
-      <div className="hidden py-2 lg:block">
+      <div className="py-2">
         <Breadcrumbs items={breadcrumbs} />
       </div>
 
-      <div className="-mx-4 grid grid-cols-1 gap-4 rounded-none bg-sop-base-white px-0 pb-4 md:mx-0 md:px-0 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-[10px] lg:py-5">
-        <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
-        <ProductDetails
-          product={product}
-          shareModalOpen={shareModalOpen}
-          onShareModalOpenChange={setShareModalOpen}
-        />
-      </div>
+      <article aria-labelledby="product-title">
+        <div className="-mx-4 grid grid-cols-1 gap-4 rounded-none bg-sop-base-white px-4 pb-4 md:mx-0 md:px-4 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-6 lg:py-5">
+          <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
+          <ProductDetails
+            product={product}
+            variantSearchParams={variantSearchParams}
+            shareModalOpen={shareModalOpen}
+            onShareModalOpenChange={setShareModalOpen}
+          />
+        </div>
+      </article>
 
       <ProductDetailsSeller store={product.store} />
 

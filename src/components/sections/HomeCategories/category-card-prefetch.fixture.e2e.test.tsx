@@ -35,6 +35,7 @@ const SAMPLE_PRODUCT = {
   averageRating: 4.5,
   reviewCount: 12,
   soldCount: 48,
+  variants: null,
   store: {
     __typename: 'StoreType' as const,
     id: 'store-1',
@@ -43,8 +44,12 @@ const SAMPLE_PRODUCT = {
   },
 };
 
+const { prefetchMock } = vi.hoisted(() => ({
+  prefetchMock: vi.fn(),
+}));
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), prefetch: prefetchMock }),
   usePathname: () => '/categories/dog-food',
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -60,6 +65,7 @@ const createWrapper = createApolloTestWrapper;
 describe('Home to category prefetch journey', () => {
   it('prefetches the scoped category listing when a category card is hovered', async () => {
     let productsCallCount = 0;
+    prefetchMock.mockClear();
 
     server.use(
       graphql.query('Products', ({ variables }) => {
@@ -87,6 +93,8 @@ describe('Home to category prefetch journey', () => {
     await waitFor(() => {
       expect(productsCallCount).toBe(1);
     });
+
+    expect(prefetchMock).toHaveBeenCalledWith('/categories/dog-food');
 
     fireEvent.mouseEnter(categoryLink);
     expect(productsCallCount).toBe(1);

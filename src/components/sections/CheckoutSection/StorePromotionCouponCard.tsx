@@ -1,16 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { Bag5Icon, CheckIcon, CloseIcon, TicketSaleIcon, TimeIcon } from '@/components/atoms/icons';
+import {
+  Bag5Icon,
+  CheckIcon,
+  CloseIcon,
+  TicketSaleIcon,
+  TimeIcon,
+  UserIcon,
+} from '@/components/atoms/icons';
 import { cn } from '@/lib/utils';
-import type { StorePromotion } from '@/lib/checkout/storePromotionUtils';
+import type {
+  PromotionEstimateCartLine,
+  StorePromotion,
+  UnavailablePromotionReason,
+} from '@/lib/checkout/storePromotionUtils';
 import {
   formatPromotionConditionText,
   formatPromotionDiscountTitle,
   formatPromotionExpiry,
   formatUnavailablePromotionDiscountTitle,
+  getUnavailablePromotionCta,
+  getUnavailablePromotionReason,
+  getUnavailablePromotionWarning,
 } from '@/lib/checkout/storePromotionUtils';
-import { formatCheckoutPrice } from './checkoutOrderItemUtils';
 
 type CouponCardVariant = 'default' | 'selected' | 'unapply' | 'disabled';
 
@@ -279,19 +292,26 @@ export function NoStoreDiscountCard({ selected, onSelect }: NoStoreDiscountCardP
 type UnavailableStorePromotionCardProps = {
   promotion: StorePromotion;
   storeSubtotal: number;
+  /** When true, newCustomer-conditioned promos show GUEST_REQUIRED soft copy + login CTA. */
+  isGuest?: boolean;
+  /** Cart lines for BxGy soft BXGY_QTY reason when freeN=0. */
+  cartLines?: PromotionEstimateCartLine[];
+  /** Override reason from validatePromotion soft map (takes precedence). */
+  softReasonOverride?: UnavailablePromotionReason;
 };
 
 export function UnavailableStorePromotionCard({
   promotion,
   storeSubtotal,
+  isGuest = false,
+  cartLines,
+  softReasonOverride,
 }: UnavailableStorePromotionCardProps) {
-  const minPurchase = promotion.minPurchaseAmount ?? 0;
-  const remaining = Math.max(minPurchase - storeSubtotal, 0);
-  const fallbackConditionText = formatPromotionConditionText(promotion, storeSubtotal);
-  const warningText =
-    remaining > 0
-      ? `ซื้อเพิ่มอีก ${formatCheckoutPrice(remaining)} เพื่อใช้ส่วนลดนี้`
-      : fallbackConditionText;
+  const reason =
+    softReasonOverride ??
+    getUnavailablePromotionReason(promotion, storeSubtotal, { isGuest, cartLines });
+  const warningText = getUnavailablePromotionWarning(reason, promotion, storeSubtotal);
+  const cta = getUnavailablePromotionCta(reason);
 
   return (
     <CouponCardFrame
@@ -304,15 +324,26 @@ export function UnavailableStorePromotionCard({
         </CouponTicketStub>
       }
       footer={
-        <div className="flex justify-end pt-sop-8px">
-          <Link
-            href="/cart"
-            className="inline-flex h-sop-32px items-center gap-sop-8px rounded-full border border-sop-neutral-grayalpha-100 px-sop-12px shadow-xs sop-body-xs-medium text-sop-neutral-gray-200"
-          >
-            <Bag5Icon size={{ mobile: 16, desktop: 16 }} color="#211F23" />
-            ช้อปเพิ่ม
-          </Link>
-        </div>
+        cta ? (
+          <div className="flex justify-end pt-sop-8px">
+            <Link
+              href={cta.href}
+              className="inline-flex h-sop-32px items-center gap-sop-8px rounded-full border border-sop-neutral-grayalpha-100 px-sop-12px shadow-xs sop-body-xs-medium text-sop-neutral-gray-200"
+              data-testid={
+                reason === 'GUEST_REQUIRED'
+                  ? 'unavailable-promotion-login-cta'
+                  : 'unavailable-promotion-shop-cta'
+              }
+            >
+              {reason === 'GUEST_REQUIRED' ? (
+                <UserIcon size={{ mobile: 16, desktop: 16 }} color="#211F23" />
+              ) : (
+                <Bag5Icon size={{ mobile: 16, desktop: 16 }} color="#211F23" />
+              )}
+              {cta.label}
+            </Link>
+          </div>
+        ) : null
       }
     >
       <div className="flex min-w-0 flex-col gap-sop-4px">
@@ -320,7 +351,12 @@ export function UnavailableStorePromotionCard({
           {formatUnavailablePromotionDiscountTitle(promotion)}
         </p>
         {warningText ? (
-          <p className="sop-body-2xs-regular text-sop-system-warning-500">{warningText}</p>
+          <p
+            className="sop-body-2xs-regular text-sop-system-warning-500"
+            data-testid="unavailable-promotion-warning"
+          >
+            {warningText}
+          </p>
         ) : null}
       </div>
     </CouponCardFrame>
@@ -338,5 +374,21 @@ export function PromotionCouponsEmptyState() {
         ไม่พบคูปองที่สามารถใช้ได้ในขณะนี้
       </p>
     </div>
+  );
+}
+
+/** AC-051 / UI-D-005 — exact Thai copy; polite live region (non-interruptive). */
+export const SOFT_ELIGIBILITY_ERROR_MESSAGE = 'ไม่สามารถตรวจสอบสิทธิ์โปรโมชันบางรายการได้ในขณะนี้';
+
+export function SoftEligibilityErrorBanner() {
+  return (
+    <p
+      role="status"
+      aria-live="polite"
+      className="sop-body-sm-regular text-sop-system-warning-500"
+      data-testid="soft-eligibility-error-banner"
+    >
+      {SOFT_ELIGIBILITY_ERROR_MESSAGE}
+    </p>
   );
 }

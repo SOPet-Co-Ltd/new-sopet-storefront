@@ -127,10 +127,19 @@ describe('submitCheckout', () => {
     const result = await submitCheckout(params, createSubmitCheckoutGuard());
 
     expect(callOrder).toEqual(['validatePromotion', 'createOrder', 'createPayment']);
-    expect(validatePromotion).toHaveBeenCalledWith({
-      code: 'SAVE10',
-      subtotal: 890,
-    });
+    expect(validatePromotion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'SAVE10',
+        subtotal: 890,
+        lines: expect.arrayContaining([
+          expect.objectContaining({
+            productId: expect.any(String),
+            quantity: expect.any(Number),
+            unitPrice: expect.any(Number),
+          }),
+        ]),
+      }),
+    );
     expect(createOrder).toHaveBeenCalledTimes(1);
     expect(createPayment).toHaveBeenCalledWith({
       orderId: CHECKOUT_ORDER_ID,
@@ -262,6 +271,69 @@ describe('submitCheckout', () => {
     await expect(submitCheckout(createSubmitParams({ step: 'shipping' }))).rejects.toBeInstanceOf(
       SubmitCheckoutError,
     );
+  });
+
+  it('retries createOrder without promos when INSUFFICIENT_QTY is thrown (not order_failed)', async () => {
+    const createOrder = vi
+      .fn()
+      .mockRejectedValueOnce({
+        graphQLErrors: [{ extensions: { code: 'INSUFFICIENT_QTY' }, message: 'INSUFFICIENT_QTY' }],
+      })
+      .mockResolvedValueOnce(sampleOrder);
+    const createPayment = vi.fn().mockResolvedValue(samplePendingPayment);
+
+    const result = await submitCheckout(
+      createSubmitParams({
+        checkoutContext: {
+          isAuthenticated: false,
+          shippingByStoreId: {
+            [CATALOG_STORE_ID]: { shippingOptionId: SHIPPING_OPTION_ID },
+          },
+          selectedAddressId: null,
+          promotionCode: 'BXGY21',
+          storePromotionCodes: ['STOREBXGY'],
+          paymentMethod: 'promptpay',
+        },
+        checkoutHook: createCheckoutHook({ createOrder, createPayment }),
+      }),
+      createSubmitCheckoutGuard(),
+    );
+
+    expect(createOrder).toHaveBeenCalledTimes(2);
+    expect(createOrder.mock.calls[1][0]).toEqual(
+      expect.objectContaining({
+        platformPromotionCode: undefined,
+        storePromotionCodes: undefined,
+      }),
+    );
+    expect(createPayment).toHaveBeenCalledTimes(1);
+    expect(result.orderId).toBe(sampleOrder.id);
+  });
+
+  it('surfaces hard eligibility as order_failed without retry', async () => {
+    const createOrder = vi.fn().mockRejectedValue({
+      graphQLErrors: [{ extensions: { code: 'GUEST' }, message: 'Promotion not eligible: GUEST' }],
+    });
+
+    await expect(
+      submitCheckout(
+        createSubmitParams({
+          checkoutContext: {
+            isAuthenticated: false,
+            shippingByStoreId: {
+              [CATALOG_STORE_ID]: { shippingOptionId: SHIPPING_OPTION_ID },
+            },
+            selectedAddressId: null,
+            promotionCode: 'NEWCUST',
+            storePromotionCodes: [],
+            paymentMethod: 'promptpay',
+          },
+          checkoutHook: createCheckoutHook({ createOrder }),
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'order_failed' });
+
+    expect(createOrder).toHaveBeenCalledTimes(1);
   });
 });
 

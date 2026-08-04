@@ -29,4 +29,4 @@ Simple groups of atoms that work together as a single UI unit. Molecules add lig
 
 ## Current files
 
-*Empty — add molecule components here.*
+_Empty — add molecule components here._

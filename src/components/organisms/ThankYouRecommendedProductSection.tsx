@@ -18,7 +18,7 @@ export default function ThankYouRecommendedProductSection() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <p className="text-sop-neutral-gray-300">Loading recommendations...</p>
+        <p className="text-sop-neutral-gray-300">กำลังโหลดสินค้าแนะนำ...</p>
       </div>
     );
   }
@@ -35,7 +35,7 @@ export default function ThankYouRecommendedProductSection() {
 
   return (
     <div className="w-full">
-      <h2 className="sop-heading-lg-medium text-sop-neutral-gray-200 mb-6">Recommended for You</h2>
+      <h2 className="sop-heading-lg-medium text-sop-neutral-gray-200 mb-6">สินค้าแนะนำ</h2>
       <ul className={RECOMMENDED_GRID_CLASS}>
         {products.map((product: RecommendedProductsQuery['recommendedProducts'][number]) => (
           <li key={product.id}>

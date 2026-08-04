@@ -3,18 +3,16 @@ import { firstValueFrom } from 'rxjs';
 import { execute, ApolloLink } from '@apollo/client/link';
 import { Observable } from 'rxjs';
 import { gql, type ApolloClient } from '@apollo/client';
-import { SetContextLink } from '@apollo/client/link/context';
 import { ServerError } from '@apollo/client/errors';
+import { AUTH_COMPANION_COOKIE } from '@/lib/config';
 import {
-  ACCESS_TOKEN_KEY,
-  REFRESH_TOKEN_KEY,
   buildAuthHeaders,
   clearTokens,
   createAuthLink,
   getAccessToken,
+  hasClientSession,
   notifyAuthFailure,
   setOnAuthFailure,
-  setTokens,
 } from './authLink';
 
 const TEST_QUERY = gql`
@@ -56,66 +54,39 @@ function createTerminalLink(
   );
 }
 
-function createBearerOnlyLink(): SetContextLink {
-  return new SetContextLink((prevContext) => ({
-    headers: buildAuthHeaders((prevContext.headers as Record<string, string> | undefined) ?? {}),
-  }));
+function setCompanion(): void {
+  document.cookie = `${AUTH_COMPANION_COOKIE}=1; path=/`;
+}
+
+function clearCompanion(): void {
+  document.cookie = `${AUTH_COMPANION_COOKIE}=; max-age=0; path=/`;
 }
 
 describe('authLink bearer injection', () => {
   beforeEach(() => {
-    sessionStorage.clear();
+    clearCompanion();
   });
 
-  it('adds Bearer header when access token is present', () => {
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, 'test-jwt');
-    expect(buildAuthHeaders()).toEqual({ authorization: 'Bearer test-jwt' });
-  });
-
-  it('omits Bearer header when access token is absent', () => {
+  it('does not inject Bearer (BFF attaches Authorization)', () => {
+    setCompanion();
     expect(buildAuthHeaders()).toEqual({});
+    expect(getAccessToken()).toBeNull();
+  });
+
+  it('omits Bearer header when anonymous', () => {
     expect(buildAuthHeaders({ 'content-type': 'application/json' })).toEqual({
       'content-type': 'application/json',
     });
   });
-
-  it('injects Authorization on outbound GraphQL operations', async () => {
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, 'test-jwt');
-
-    let capturedHeaders: Record<string, string> | undefined;
-    const terminalLink = createTerminalLink((operation) => {
-      capturedHeaders = operation.getContext().headers as Record<string, string>;
-      return { data: { me: { customer: { id: '1' } } } };
-    });
-
-    const link = createBearerOnlyLink().concat(terminalLink);
-    const result = await runLink(link);
-
-    expect(capturedHeaders?.authorization).toBe('Bearer test-jwt');
-    expect(result.data).toEqual({ me: { customer: { id: '1' } } });
-  });
-
-  it('does not inject Authorization for anonymous requests', async () => {
-    let capturedHeaders: Record<string, string> | undefined;
-    const terminalLink = createTerminalLink((operation) => {
-      capturedHeaders = operation.getContext().headers as Record<string, string>;
-      return { data: { me: { customer: null } } };
-    });
-
-    const link = createBearerOnlyLink().concat(terminalLink);
-    await runLink(link);
-
-    expect(capturedHeaders?.authorization).toBeUndefined();
-  });
 });
 
-describe('authLink 401 refresh', () => {
+describe('authLink 401 refresh via BFF', () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
-    sessionStorage.clear();
+    clearCompanion();
     setOnAuthFailure(() => {
-      clearTokens();
+      clearCompanion();
     });
     vi.restoreAllMocks();
   });
@@ -124,20 +95,12 @@ describe('authLink 401 refresh', () => {
     global.fetch = originalFetch;
   });
 
-  it('retries once after refreshing tokens on 401', async () => {
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, 'expired-jwt');
-    sessionStorage.setItem(REFRESH_TOKEN_KEY, 'valid-refresh');
+  it('retries once after BFF refresh on 401', async () => {
+    setCompanion();
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        data: {
-          refreshToken: {
-            accessToken: 'new-access',
-            refreshToken: 'new-refresh',
-          },
-        },
-      }),
+      json: async () => ({ ok: true }),
     }) as typeof fetch;
 
     let attempt = 0;
@@ -155,23 +118,22 @@ describe('authLink 401 refresh', () => {
     const link = createAuthLink().concat(terminalLink);
     const result = await runLink(link);
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(getAccessToken()).toBe('new-access');
-    expect(sessionStorage.getItem(REFRESH_TOKEN_KEY)).toBe('new-refresh');
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/auth/refresh',
+      expect.objectContaining({ method: 'POST' }),
+    );
     expect(attempt).toBe(2);
     expect(result.data).toEqual({ me: { customer: { id: '1' } } });
   });
 
-  it('clears tokens and notifies auth failure when refresh fails', async () => {
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, 'expired-jwt');
-    sessionStorage.setItem(REFRESH_TOKEN_KEY, 'bad-refresh');
-
+  it('notifies auth failure when BFF refresh fails', async () => {
+    setCompanion();
     const authFailure = vi.fn();
     setOnAuthFailure(authFailure);
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
-      json: async () => ({ errors: [{ message: 'Invalid refresh token' }] }),
+      json: async () => ({ ok: false }),
     }) as typeof fetch;
 
     const terminalLink = createTerminalLink(() => {
@@ -184,66 +146,29 @@ describe('authLink 401 refresh', () => {
     const link = createAuthLink().concat(terminalLink);
 
     await expect(runLink(link)).rejects.toBeDefined();
-    expect(getAccessToken()).toBeNull();
-    expect(sessionStorage.getItem(REFRESH_TOKEN_KEY)).toBeNull();
-    expect(authFailure).toHaveBeenCalledTimes(1);
-  });
-
-  it('logs out after a single refresh retry still returns 401', async () => {
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, 'expired-jwt');
-    sessionStorage.setItem(REFRESH_TOKEN_KEY, 'valid-refresh');
-
-    const authFailure = vi.fn();
-    setOnAuthFailure(authFailure);
-
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data: {
-          refreshToken: {
-            accessToken: 'new-access',
-            refreshToken: 'new-refresh',
-          },
-        },
-      }),
-    }) as typeof fetch;
-
-    let attempt = 0;
-    const terminalLink = createTerminalLink(() => {
-      attempt += 1;
-      throw new ServerError('Unauthorized', {
-        response: new Response(null, { status: 401 }),
-        bodyText: 'Unauthorized',
-      });
-    });
-
-    const link = createAuthLink().concat(terminalLink);
-
-    await expect(runLink(link)).rejects.toBeDefined();
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(attempt).toBe(2);
-    expect(authFailure).toHaveBeenCalledTimes(1);
-    expect(getAccessToken()).toBeNull();
+    expect(authFailure).toHaveBeenCalled();
   });
 });
 
 describe('token storage helpers', () => {
   beforeEach(() => {
-    sessionStorage.clear();
+    clearCompanion();
     setOnAuthFailure(() => {
-      clearTokens();
+      clearCompanion();
     });
   });
 
-  it('roundtrips tokens through sessionStorage keys', () => {
-    setTokens('access-jwt', 'refresh-jwt');
-    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBe('access-jwt');
-    expect(sessionStorage.getItem(REFRESH_TOKEN_KEY)).toBe('refresh-jwt');
+  it('tracks session via companion cookie only', () => {
+    expect(hasClientSession()).toBe(false);
+    setCompanion();
+    expect(hasClientSession()).toBe(true);
   });
 
-  it('notifyAuthFailure clears stored tokens', () => {
-    setTokens('access-jwt', 'refresh-jwt');
+  it('notifyAuthFailure clears companion cookie', async () => {
+    setCompanion();
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
     notifyAuthFailure();
-    expect(getAccessToken()).toBeNull();
+    expect(hasClientSession()).toBe(false);
+    await clearTokens();
   });
 });

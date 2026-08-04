@@ -1,11 +1,46 @@
 const DEFAULT_SERVER_GRAPHQL_URL = 'http://localhost:3002/graphql';
 const DEFAULT_SERVER_GRAPHQL_WS_URL = 'ws://localhost:3002/graphql';
 
+/** HttpOnly JWT cookies set by the Next.js BFF (not readable by JS). */
+export const ACCESS_TOKEN_COOKIE = 'sopet_access_token';
+export const REFRESH_TOKEN_COOKIE = 'sopet_refresh_token';
+/** Non-secret companion flag so the client knows a session exists without reading JWTs. */
+export const AUTH_COMPANION_COOKIE = 'sopet_auth';
+
+/** Aligns with backend defaults: JWT_ACCESS_EXPIRES_IN=1h, JWT_REFRESH_EXPIRES_IN=7d. */
+export const ACCESS_TOKEN_MAX_AGE_DAYS = 1 / 24;
+export const REFRESH_TOKEN_MAX_AGE_DAYS = 7;
+
+/** Header Cloudflare WAF uses to skip Bot Fight / Browser Integrity for SSR. */
+export const GRAPHQL_SSR_BYPASS_HEADER = 'x-sopet-ssr-bypass';
+
 /** Browser: same-origin proxy (/graphql). SSR: direct backend URL. */
 export const GRAPHQL_URL =
   typeof window === 'undefined'
     ? (process.env.GRAPHQL_SSR_URL ?? DEFAULT_SERVER_GRAPHQL_URL)
     : (process.env.NEXT_PUBLIC_GRAPHQL_URL ?? '/graphql');
+
+/**
+ * Server-only secret for SSR → Cloudflare bypass. Never expose as NEXT_PUBLIC_*.
+ * Optional locally; required on UAT/prod behind Cloudflare Error 1010.
+ */
+export function getGraphqlSsrBypassSecret(): string | undefined {
+  if (typeof window !== 'undefined') {
+    return undefined;
+  }
+  const secret = process.env.GRAPHQL_SSR_BYPASS_SECRET?.trim();
+  return secret || undefined;
+}
+
+/** Headers for Apollo RSC HttpLink when `GRAPHQL_SSR_BYPASS_SECRET` is set. */
+export function buildGraphqlSsrBypassHeaders(
+  secret: string | undefined = getGraphqlSsrBypassSecret(),
+): Record<string, string> {
+  if (!secret) {
+    return {};
+  }
+  return { [GRAPHQL_SSR_BYPASS_HEADER]: secret };
+}
 
 /** WebSocket endpoint for GraphQL subscriptions (browser connects directly to API). */
 export function getGraphqlWsUrl(): string {

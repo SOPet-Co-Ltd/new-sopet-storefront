@@ -21,7 +21,7 @@ import {
   type CustomerProfile,
   type MessagePayload,
 } from '@/lib/graphql/generated/graphql';
-import { clearTokens, getAccessToken, setOnAuthFailure, setTokens } from '@/lib/graphql/authLink';
+import { clearTokens, hasClientSession, setOnAuthFailure } from '@/lib/graphql/authLink';
 import { clearAutoApplyAttempted } from '@/lib/checkout/autoApplyOnceGate';
 import { getSessionId } from '@/lib/session';
 
@@ -39,10 +39,6 @@ export type AuthContextValue = {
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
-function hasStoredAccessToken(): boolean {
-  return Boolean(getAccessToken());
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const apolloClient = useApolloClient();
   const [hasToken, setHasToken] = useState(false);
@@ -50,10 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingDeletion, setPendingDeletion] = useState(false);
 
   useLayoutEffect(() => {
-    // Client-only hydration: sessionStorage is unavailable during SSR, so hasToken
-    // must start false on the server render and sync once mounted in the browser.
+    // Client-only: companion cookie (sopet_auth) is readable; HttpOnly JWTs are not.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHasToken(hasStoredAccessToken());
+    setHasToken(hasClientSession());
     setIsAuthReady(true);
   }, []);
 
@@ -71,14 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isLoading = !isAuthReady || (hasToken && loading);
 
   const logout = useCallback(async () => {
-    clearTokens();
+    await clearTokens();
     setHasToken(false);
     setPendingDeletion(false);
     await apolloClient.clearStore();
   }, [apolloClient]);
 
   const handleAuthFailure = useCallback(() => {
-    clearTokens();
+    void clearTokens();
     setHasToken(false);
     setPendingDeletion(false);
   }, []);
@@ -88,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       setOnAuthFailure(() => {
-        clearTokens();
+        void clearTokens();
       });
     };
   }, [handleAuthFailure]);
@@ -126,11 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (payload.tokens) {
-        setTokens(payload.tokens.accessToken, payload.tokens.refreshToken);
+        // HttpOnly cookies set by BFF; companion flag marks the client session.
         setHasToken(true);
         setPendingDeletion(false);
-        // Guest checkout may have burned the once-gate on loggedInOnly soft-fails;
-        // allow one more auto-apply attempt after the shopper authenticates.
         clearAutoApplyAttempted();
         await refetch();
       }
@@ -151,7 +144,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('ไม่สามารถเปลี่ยนเบอร์โทรศัพท์ได้ กรุณาลองใหม่อีกครั้ง');
       }
 
-      setTokens(payload.tokens.accessToken, payload.tokens.refreshToken);
       setHasToken(true);
       setPendingDeletion(false);
       clearAutoApplyAttempted();
@@ -173,7 +165,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('ไม่สามารถเปิดใช้งานบัญชีได้ กรุณาลองใหม่อีกครั้ง');
       }
 
-      setTokens(payload.tokens.accessToken, payload.tokens.refreshToken);
       setHasToken(true);
       setPendingDeletion(false);
       clearAutoApplyAttempted();

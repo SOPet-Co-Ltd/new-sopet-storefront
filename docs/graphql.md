@@ -87,7 +87,7 @@ Used by `useProducts`, SSR pages, and search.
 
 `src/lib/graphql/authLink.ts`:
 
-- Attaches `Authorization: Bearer` from `sessionStorage` (`sopet_access_token`)
+- Attaches no client Bearer header — Next.js `/graphql` BFF reads HttpOnly cookies and forwards `Authorization` upstream; JWTs are harvested and redacted from responses
 - On 401 / `UNAUTHENTICATED`, refreshes with `RefreshTokenDocument`, retries once, then `notifyAuthFailure()`
 
 ## Related docs

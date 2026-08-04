@@ -6,6 +6,7 @@ fragment CartItemFields on CartItemType {
     id
     price
     sku
+    stockQuantity
     optionsJson
     product {
       id

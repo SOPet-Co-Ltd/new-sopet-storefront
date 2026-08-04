@@ -141,7 +141,7 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
         <div className="flex flex-col items-center gap-[18px]">
           <button
             type="button"
-            className="relative aspect-square w-full max-h-[500px] max-w-[500px] cursor-pointer overflow-hidden border-0 bg-transparent p-0"
+            className=" relative aspect-square w-[320px] sm:w-[380px] md:w-full max-w-[500px] cursor-pointer overflow-hidden border-0 bg-transparent p-0"
             onClick={() => handleImageClick(activeIndex)}
             aria-label="ดูรูปภาพขนาดใหญ่"
             data-testid="product-gallery-hero"

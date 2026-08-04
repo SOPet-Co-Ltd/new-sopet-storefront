@@ -29,7 +29,9 @@ export function computeCartItemCount(items: CartItem[]): number {
 export function groupCartItemsByStore(items: CartItem[]): StoreCartGroup[] {
   const groups = new Map<string, StoreCartGroup>();
 
-  for (const item of items) {
+  const sortedItems = [...items].sort((a, b) => a.id.localeCompare(b.id));
+
+  for (const item of sortedItems) {
     const storeId = getCartItemStoreId(item);
     const store = item.productVariant?.product?.store;
     const existing = groups.get(storeId);
@@ -49,5 +51,5 @@ export function groupCartItemsByStore(items: CartItem[]): StoreCartGroup[] {
     });
   }
 
-  return Array.from(groups.values());
+  return Array.from(groups.values()).sort((a, b) => a.storeId.localeCompare(b.storeId));
 }

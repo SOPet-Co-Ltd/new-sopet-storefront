@@ -43,8 +43,24 @@ export async function forwardGraphql(
     body,
   });
 
-  const json = (await response.json()) as GraphQLJson;
-  return { response, json };
+  const raw = await response.text();
+  try {
+    const json = JSON.parse(raw) as GraphQLJson;
+    return { response, json };
+  } catch {
+    // Cloudflare bot challenges return HTML; never let JSON.parse throw a 500.
+    return {
+      response,
+      json: {
+        errors: [
+          {
+            message: `Upstream GraphQL returned non-JSON (HTTP ${response.status}). Check Cloudflare WAF / GRAPHQL_SSR_BYPASS_SECRET.`,
+            extensions: { code: 'UPSTREAM_NON_JSON' },
+          },
+        ],
+      },
+    };
+  }
 }
 
 export async function refreshTokensUpstream(refreshToken: string): Promise<AuthTokenPair | null> {

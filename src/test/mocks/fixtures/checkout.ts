@@ -142,6 +142,7 @@ export const samplePendingPayment = {
   __typename: 'PaymentType' as const,
   id: CHECKOUT_PAYMENT_ID,
   orderId: CHECKOUT_ORDER_ID,
+  orderNumber: 'ORD-TEST-0001',
   amount: 540,
   currency: 'THB',
   status: 'pending',

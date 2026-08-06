@@ -13,6 +13,7 @@ export {
   trackBeginCheckout,
   trackPageView,
   trackPurchase,
+  trackShare,
   trackViewItem,
   type AnalyticsItem,
   type EcommercePayload,

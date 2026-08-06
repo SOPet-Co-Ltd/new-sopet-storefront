@@ -8,7 +8,7 @@ import { ThankYouAction } from '@/components/organisms/ThankYouAction';
 import ThankYouPageCopyId from '@/components/organisms/ThankYouPageCopyId';
 import ThankYouRecommendedProductSection from '@/components/organisms/ThankYouRecommendedProductSection';
 import { orderLineToAnalyticsItem, trackPurchase } from '@/lib/analytics';
-import { OrderDocument } from '@/lib/graphql/generated/graphql';
+import { OrderDocument, PaymentByOrderIdDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -27,6 +27,17 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
 
   const isGuest = !isAuthenticated;
   const order = data?.order;
+
+  // Guests cannot read the customer-scoped `order` query, so fall back to the
+  // public payment lookup (keyed by orderId) to obtain the canonical order
+  // number instead of showing the raw order UUID.
+  const { data: paymentData } = useQuery(PaymentByOrderIdDocument, {
+    variables: { orderId },
+    fetchPolicy: 'network-only',
+    skip: isAuthenticated,
+  });
+
+  const orderNumber = order?.orderNumber ?? paymentData?.paymentByOrderId?.orderNumber ?? orderId;
 
   useEffect(() => {
     if (!order?.id || purchaseTrackedRef.current === order.id) {
@@ -118,16 +129,14 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
               <span className="sop-body-lg-medium text-sop-neutral-gray-200">
                 รหัสคำสั่งซื้อ :{' '}
               </span>
-              <span className="sop-body-lg-medium text-sop-secondary-500">
-                {order?.orderNumber ?? orderId}
-              </span>
-              <ThankYouPageCopyId id={order?.orderNumber ?? orderId} />
+              <span className="sop-body-lg-medium text-sop-secondary-500">{orderNumber}</span>
+              <ThankYouPageCopyId id={orderNumber} />
             </div>
             <p className="sop-body-md-regular text-sop-neutral-gray-300">
               เราได้รับข้อมูลคำสั่งซื้อของคุณเรียบร้อยแล้ว
             </p>
           </div>
-          <ThankYouAction isGuest={isGuest} orderNumber={order?.orderNumber ?? orderId} />
+          <ThankYouAction isGuest={isGuest} orderNumber={orderNumber} />
         </div>
       </section>
 

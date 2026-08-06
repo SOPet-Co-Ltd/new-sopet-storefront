@@ -88,6 +88,35 @@ export function trackPageView(params: PageViewParams): boolean {
   return pushed;
 }
 
+/**
+ * GA4 `share` event. Not an ecommerce event, so it follows the page_view
+ * pattern (dataLayer push + optional direct gtag) instead of pushEcommerceEvent.
+ */
+export function trackShare(params: {
+  method: string;
+  item_id: string;
+  content_type?: string;
+}): boolean {
+  const { enabled, ga4MeasurementId } = getAnalyticsConfig();
+  if (!enabled) {
+    return false;
+  }
+
+  const payload = {
+    method: params.method,
+    content_type: params.content_type ?? 'product',
+    item_id: params.item_id,
+  };
+
+  const pushed = pushToDataLayer({ event: 'share', ...payload });
+
+  if (ga4MeasurementId) {
+    callGtag('event', 'share', { ...payload, send_to: ga4MeasurementId });
+  }
+
+  return pushed;
+}
+
 export function trackViewItem(params: {
   currency?: string;
   value?: number;

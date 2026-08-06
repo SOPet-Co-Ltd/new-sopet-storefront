@@ -7,6 +7,7 @@ import { STORE_SUSPENSION_HOLD_COPY } from '@/lib/constants/storeSuspensionHoldC
 const pendingPayment = {
   id: 'pay-1',
   orderId: 'order-1',
+  orderNumber: 'ORD-TEST-0001',
   amount: 100,
   currency: 'THB',
   status: 'pending' as const,

@@ -514,6 +514,7 @@ export type CreatePaymentMutation = {
   createPayment: {
     id: string;
     orderId: string;
+    orderNumber: string | null;
     amount: number;
     currency: string;
     status: string;
@@ -845,6 +846,7 @@ export type ConfirmOrderDeliveredMutation = {
 export type PaymentFieldsFragment = {
   id: string;
   orderId: string;
+  orderNumber: string | null;
   amount: number;
   currency: string;
   status: string;
@@ -862,6 +864,7 @@ export type PaymentQuery = {
   payment: {
     id: string;
     orderId: string;
+    orderNumber: string | null;
     amount: number;
     currency: string;
     status: string;
@@ -880,6 +883,7 @@ export type PaymentByOrderIdQuery = {
   paymentByOrderId: {
     id: string;
     orderId: string;
+    orderNumber: string | null;
     amount: number;
     currency: string;
     status: string;
@@ -899,6 +903,7 @@ export type PaymentStatusUpdatedSubscription = {
   paymentStatusUpdated: {
     id: string;
     orderId: string;
+    orderNumber: string | null;
     amount: number;
     currency: string;
     status: string;
@@ -1396,7 +1401,7 @@ export type MyReviewsQuery = {
     productName: string;
     productSlug: string | null;
     productImageUrl: string | null;
-    orderId: string;
+    orderId: string | null;
     rating: number;
     comment: string | null;
     status: string;
@@ -2118,6 +2123,7 @@ export const PaymentFieldsFragmentDoc = {
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'id' } },
           { kind: 'Field', name: { kind: 'Name', value: 'orderId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'orderNumber' } },
           { kind: 'Field', name: { kind: 'Name', value: 'amount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'currency' } },
           { kind: 'Field', name: { kind: 'Name', value: 'status' } },

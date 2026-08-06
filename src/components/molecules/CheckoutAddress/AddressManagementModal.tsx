@@ -292,6 +292,7 @@ export function AddressManagementModal({
                   setMutationLoading(true);
                   try {
                     await addressesApi.setDefaultAddress(address.id);
+                    setPendingSelectionId(address.id);
                   } finally {
                     setMutationLoading(false);
                   }

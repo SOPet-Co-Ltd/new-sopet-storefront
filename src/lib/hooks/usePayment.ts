@@ -168,10 +168,14 @@ export function usePayment({ id, orderId, skip = false }: UsePaymentParams = {})
     [apolloClient, id, orderId],
   );
 
+  // Subscription is best-effort live updates. On UAT/prod, WSS often fails (proxy,
+  // missing NEXT_PUBLIC_GRAPHQL_WS_URL, Cloudflare) — that must not surface as a
+  // "unable to load payment" page error while the HTTP query is still in flight
+  // or has already succeeded (card 3DS return → brief error flash → thank-you).
   return {
     payment,
     loading: shouldQuery && activeQuery.loading && !payment,
-    error: toHookError(activeQuery.error ?? paymentStatusUpdatedSubscription.error),
+    error: toHookError(activeQuery.error),
     refetch: () => activeQuery.refetch(),
     poll,
   };

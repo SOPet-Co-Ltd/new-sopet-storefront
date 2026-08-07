@@ -318,6 +318,21 @@ describe('OrderPaymentForm', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
+  it('prefers loading spinner over load-error while payment is still resolving', () => {
+    render(
+      <OrderPaymentForm
+        payment={null}
+        loading
+        error={new Error('Subscription socket failed')}
+      />,
+    );
+
+    expect(screen.getByLabelText('กำลังโหลดข้อมูลการชำระเงิน')).toBeInTheDocument();
+    expect(
+      screen.queryByText('ไม่สามารถโหลดข้อมูลการชำระเงินได้ กรุณาลองใหม่อีกครั้ง'),
+    ).not.toBeInTheDocument();
+  });
+
   it('paid → thank-you handoff copy once (PaymentPaidHandoff)', () => {
     render(
       <OrderPaymentForm

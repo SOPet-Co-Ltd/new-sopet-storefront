@@ -19,6 +19,7 @@ type CardPaymentFormProps = {
   saveCardChecked?: boolean;
   onSaveCardChange?: (checked: boolean) => void;
   showSaveCardCheckbox?: boolean;
+  disabled?: boolean;
 };
 
 export function CardPaymentForm({
@@ -28,6 +29,7 @@ export function CardPaymentForm({
   saveCardChecked = false,
   onSaveCardChange,
   showSaveCardCheckbox = false,
+  disabled = false,
 }: CardPaymentFormProps) {
   const updateField = <K extends keyof CheckoutCardFormState>(
     field: K,
@@ -48,6 +50,7 @@ export function CardPaymentForm({
           inputMode="numeric"
           autoComplete="cc-number"
           data-testid="card-number-input"
+          disabled={disabled}
           value={value.cardNumber}
           onChange={(event) => {
             const cardNumber = formatCardNumber(event.target.value);
@@ -67,6 +70,7 @@ export function CardPaymentForm({
           placeholder="จันจิรา เอสโอเพ็ท"
           autoComplete="cc-name"
           data-testid="card-name-input"
+          disabled={disabled}
           value={value.cardName}
           onChange={(event) => updateField('cardName', formatCardName(event.target.value))}
         />
@@ -82,6 +86,7 @@ export function CardPaymentForm({
           inputMode="numeric"
           autoComplete="cc-exp"
           data-testid="card-expiry-input"
+          disabled={disabled}
           value={value.expiry}
           onChange={(event) => updateField('expiry', formatExpiry(event.target.value))}
         />
@@ -95,6 +100,7 @@ export function CardPaymentForm({
           inputMode="numeric"
           autoComplete="cc-csc"
           data-testid="card-cvv-input"
+          disabled={disabled}
           value={value.cvv}
           maxLength={getCvvLength(value.cardNumber)}
           onChange={(event) => updateField('cvv', formatCvv(event.target.value, value.cardNumber))}
@@ -105,6 +111,7 @@ export function CardPaymentForm({
         <label className="flex items-center gap-sop-12px">
           <Checkbox
             checked={saveCardChecked}
+            disabled={disabled}
             onChange={(checked) => onSaveCardChange?.(checked)}
             aria-label="บันทึกไว้ใช้ครั้งถัดไป และตั้งเป็นค่าเริ่มต้น"
           />

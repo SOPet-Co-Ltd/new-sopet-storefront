@@ -8,6 +8,7 @@ type SavedAddressSummaryCardProps = {
   address: SavedAddress;
   onChangeClick: () => void;
   isModalOpen?: boolean;
+  disabled?: boolean;
 };
 
 function formatAddressLine(address: SavedAddress): string {
@@ -26,6 +27,7 @@ export function SavedAddressSummaryCard({
   address,
   onChangeClick,
   isModalOpen = false,
+  disabled = false,
 }: SavedAddressSummaryCardProps) {
   return (
     <div
@@ -66,6 +68,7 @@ export function SavedAddressSummaryCard({
         variant="outline"
         size="sm"
         type="button"
+        disabled={disabled}
         onClick={onChangeClick}
         aria-haspopup="dialog"
         aria-expanded={isModalOpen}

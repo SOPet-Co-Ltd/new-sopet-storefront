@@ -62,8 +62,13 @@ export function CheckoutStoreActionsRow({
 }: CheckoutStoreActionsRowProps) {
   const { options, loading, error } = useShippingOptions(storeId);
   const { selectedItemsByStore } = useCart();
-  const { shippingByStoreId, setShipping, storePromotionsByStoreId, setStorePromotion } =
-    useCheckout();
+  const {
+    shippingByStoreId,
+    setShipping,
+    storePromotionsByStoreId,
+    setStorePromotion,
+    isSubmitting,
+  } = useCheckout();
   const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
 
@@ -78,6 +83,12 @@ export function CheckoutStoreActionsRow({
   const selectedOptionId = shippingByStoreId[storeId]?.shippingOptionId ?? null;
   const selectedOption = options.find((option) => option.id === selectedOptionId) ?? null;
 
+  // Close modals when checkout submit locks the page (adjust state during render).
+  if (isSubmitting && (isShippingModalOpen || isPromotionModalOpen)) {
+    setIsShippingModalOpen(false);
+    setIsPromotionModalOpen(false);
+  }
+
   useEffect(() => {
     if (options.length === 0 || selectedOptionId) return;
 
@@ -87,7 +98,7 @@ export function CheckoutStoreActionsRow({
     }
   }, [options, selectedOptionId, setShipping, storeId]);
 
-  const shippingDisabled = loading || Boolean(error) || options.length === 0;
+  const shippingDisabled = isSubmitting || loading || Boolean(error) || options.length === 0;
 
   return (
     <>
@@ -98,6 +109,7 @@ export function CheckoutStoreActionsRow({
         <CheckoutStoreActionButton
           label="ส่วนลดร้านค้า"
           icon={<TicketSaleIcon size={{ mobile: 32 }} color="#9C6ADE" />}
+          disabled={isSubmitting}
           onClick={() => setIsPromotionModalOpen(true)}
           testId={`checkout-store-discount-${storeId}`}
         >

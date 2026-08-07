@@ -36,6 +36,7 @@ type PlatformPromotionBottomCardProps = {
   description?: string;
   onOpenModal: () => void;
   onRemove: () => void;
+  disabled?: boolean;
 };
 
 function PlatformPromotionBottomCard({
@@ -45,6 +46,7 @@ function PlatformPromotionBottomCard({
   description,
   onOpenModal,
   onRemove,
+  disabled = false,
 }: PlatformPromotionBottomCardProps) {
   const isMobile = useIsMobile(768);
 
@@ -54,6 +56,7 @@ function PlatformPromotionBottomCard({
         className={cn(
           'flex w-full items-center gap-sop-12px rounded-sop-16px border border-sop-neutral-grayalpha-300 py-sop-12px',
           isMobile ? 'p-sop-12px' : 'px-sop-16px',
+          disabled && 'opacity-60',
         )}
         data-testid="applied-platform-promotion"
         data-stage="active"
@@ -71,7 +74,8 @@ function PlatformPromotionBottomCard({
         <button
           type="button"
           onClick={onRemove}
-          className="flex h-sop-20px w-sop-20px shrink-0 cursor-pointer items-center justify-center"
+          disabled={disabled}
+          className="flex h-sop-20px w-sop-20px shrink-0 cursor-pointer items-center justify-center disabled:cursor-not-allowed"
           aria-label="ลบส่วนลดแพลตฟอร์ม"
           data-testid="remove-platform-promotion-button"
         >
@@ -85,6 +89,7 @@ function PlatformPromotionBottomCard({
     <button
       type="button"
       onClick={onOpenModal}
+      disabled={disabled}
       data-testid={
         stage === 'suggest'
           ? 'platform-promotion-suggest-button'
@@ -94,6 +99,7 @@ function PlatformPromotionBottomCard({
       className={cn(
         'flex w-full cursor-pointer items-center gap-sop-12px rounded-sop-16px border border-dashed border-sop-primary-300 text-left',
         isMobile ? 'p-sop-12px' : 'px-sop-16px py-sop-12px',
+        'disabled:cursor-not-allowed disabled:opacity-60',
       )}
     >
       <span
@@ -143,6 +149,7 @@ export function CheckoutPromotionSection() {
     setPromotionDiscount,
     setPromotionFreeUnits,
     setPromotionProductId,
+    isSubmitting,
   } = useCheckout();
   const [manualCode, setManualCode] = useState(promotionCode ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -177,7 +184,14 @@ export function CheckoutPromotionSection() {
 
   const showBottomCard = Boolean(appliedPromotion) || !loadingPromotions;
 
+  if (isSubmitting && isModalOpen) {
+    setIsModalOpen(false);
+  }
+
   const clearPromotion = () => {
+    if (isSubmitting) {
+      return;
+    }
     setPromotion(null);
     setPromotionName(null);
     setPromotionDiscount(0);
@@ -188,6 +202,10 @@ export function CheckoutPromotionSection() {
   };
 
   const handleApplyCode = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     const normalizedCode = manualCode.trim();
 
     if (!normalizedCode) {
@@ -221,6 +239,10 @@ export function CheckoutPromotionSection() {
   };
 
   const handleModalConfirm = (promotion: PlatformPromotionSelection) => {
+    if (isSubmitting) {
+      return;
+    }
+
     if (!promotion) {
       clearPromotion();
       return;
@@ -262,6 +284,7 @@ export function CheckoutPromotionSection() {
                   state={error ? 'error' : 'default'}
                   placeholder="กรอกโค้ดส่วนลด"
                   value={manualCode}
+                  disabled={isSubmitting}
                   onChange={(event) => {
                     setManualCode(event.target.value);
                     if (error) {
@@ -284,7 +307,7 @@ export function CheckoutPromotionSection() {
                 variant="outline"
                 size={isMobile ? 'md' : 'xl'}
                 rounded="rounded"
-                disabled={manualCode.trim().length === 0 || validatingPromotion}
+                disabled={isSubmitting || manualCode.trim().length === 0 || validatingPromotion}
                 onClick={() => {
                   void handleApplyCode();
                 }}
@@ -309,6 +332,7 @@ export function CheckoutPromotionSection() {
                   ? formatPlatformPromotionAppliedDescription(appliedPromotion.discountAmount)
                   : undefined
               }
+              disabled={isSubmitting}
               onOpenModal={() => setIsModalOpen(true)}
               onRemove={clearPromotion}
             />

@@ -45,6 +45,7 @@ export type SubmitCheckoutResult = {
   redirectPath: string;
   paymentId: string;
   orderId: string;
+  orderNumber: string | null;
 };
 
 export type SubmitCheckoutGuard = {
@@ -180,6 +181,7 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     redirectPath: `/payment/${redirectId}`,
     paymentId: payment.id,
     orderId: order.id,
+    orderNumber: order.orderNumber ?? payment.orderNumber ?? null,
   };
 }
 
@@ -187,12 +189,13 @@ export async function submitCheckout(
   params: SubmitCheckoutParams,
   guard: SubmitCheckoutGuard = createSubmitCheckoutGuard(),
 ): Promise<SubmitCheckoutResult> {
-  const submitKey = buildSubmitKey(params);
-
-  if (guard.inFlight && guard.lastKey === submitKey) {
+  // Reject any concurrent submit — including different payment/shipping keys —
+  // so mid-flight UI changes cannot spawn a second order.
+  if (guard.inFlight) {
     return guard.inFlight;
   }
 
+  const submitKey = buildSubmitKey(params);
   const submission = runSubmitCheckout(params);
   guard.inFlight = submission;
   guard.lastKey = submitKey;

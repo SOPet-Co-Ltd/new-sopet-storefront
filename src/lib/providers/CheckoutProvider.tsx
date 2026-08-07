@@ -46,6 +46,9 @@ function createInitialCheckoutState(): CheckoutState {
 }
 
 export type CheckoutContextValue = CheckoutState & {
+  /** True from pay-click until success navigation or failure unlock. Locks checkout UI. */
+  isSubmitting: boolean;
+  setIsSubmitting: (value: boolean) => void;
   setStep: (step: CheckoutStep) => void;
   setShipping: (storeId: string, selection: ShippingSelection) => void;
   setAddress: (addressId: string | null) => void;
@@ -77,9 +80,11 @@ function hasShippingForAllStores(
 
 export function CheckoutProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<CheckoutState>(createInitialCheckoutState);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reset = useCallback(() => {
     setState(createInitialCheckoutState());
+    setIsSubmitting(false);
   }, []);
 
   const canAdvanceToPayment = useCallback(() => {
@@ -169,6 +174,8 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CheckoutContextValue>(
     () => ({
       ...state,
+      isSubmitting,
+      setIsSubmitting,
       setStep,
       setShipping,
       setAddress,
@@ -186,6 +193,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     }),
     [
       state,
+      isSubmitting,
       setStep,
       setShipping,
       setAddress,

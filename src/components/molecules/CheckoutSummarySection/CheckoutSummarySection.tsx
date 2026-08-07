@@ -4,11 +4,6 @@ import { Button } from '@/components/atoms/Button';
 import { PiggyBankIcon } from '@/components/atoms/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckoutTotals } from '@/lib/hooks/useCheckoutTotals';
-import {
-  useCheckoutSubmit,
-  type AddressSubmitContext,
-} from '@/components/sections/CheckoutSection/useCheckoutSubmit';
-import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 
 function formatPrice(amount: number): string {
   return `฿${amount.toLocaleString('th-TH', {
@@ -41,19 +36,18 @@ function SummaryRow({ label, value, valueClassName = 'text-sop-base-black' }: Su
 }
 
 type CheckoutSummarySectionProps = {
-  guestForm: GuestCheckoutFormState | null;
-  addressSubmitContext?: AddressSubmitContext;
+  onSubmit: () => void | Promise<void>;
+  isSubmitting: boolean;
+  canSubmit: boolean;
 };
 
 export function CheckoutSummarySection({
-  guestForm,
-  addressSubmitContext,
+  onSubmit,
+  isSubmitting,
+  canSubmit,
 }: CheckoutSummarySectionProps) {
   const { isAuthenticated } = useAuth();
   const totals = useCheckoutTotals();
-  const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
-    addressSubmitContext,
-  });
 
   return (
     <div className="w-full rounded-sop-24px bg-sop-base-white px-sop-16px py-sop-20px lg:px-sop-24px lg:py-sop-20px">
@@ -126,7 +120,7 @@ export function CheckoutSummarySection({
         type="button"
         disabled={!canSubmit || isSubmitting}
         onClick={() => {
-          void handleSubmit();
+          void onSubmit();
         }}
         data-testid="checkout-submit-desktop"
       >

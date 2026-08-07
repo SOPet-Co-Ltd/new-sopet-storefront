@@ -3,6 +3,8 @@ const PENDING_PAYMENT_KEY = 'sopet.checkout.pendingPayment';
 export type PendingCheckout = {
   paymentId: string;
   orderId: string;
+  /** Customer-facing ORD-… code when known at checkout submit time. */
+  orderNumber?: string | null;
 };
 
 function readJson<T>(key: string): T | null {

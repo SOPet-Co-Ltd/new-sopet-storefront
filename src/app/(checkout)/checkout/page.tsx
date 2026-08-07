@@ -9,7 +9,10 @@ import { CheckoutSummarySection } from '@/components/molecules/CheckoutSummarySe
 import { CheckoutPromotionSection } from '@/components/sections/CheckoutPromotionSection/CheckoutPromotionSection';
 import { CheckoutAutoApplyController } from '@/components/sections/CheckoutSection/CheckoutAutoApplyController';
 import { CheckoutSection } from '@/components/sections/CheckoutSection/CheckoutSection';
-import type { AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
+import {
+  useCheckoutSubmit,
+  type AddressSubmitContext,
+} from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import { cartLineToAnalyticsItem, trackBeginCheckout } from '@/lib/analytics';
 import type {
   GuestCheckoutField,
@@ -116,6 +119,10 @@ export default function CheckoutPage() {
     ],
   );
 
+  const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
+    addressSubmitContext,
+  });
+
   const handleGuestFormChange = (field: keyof GuestCheckoutFormState, value: string) => {
     setGuestForm((prev) => ({ ...prev, [field]: value }));
 
@@ -177,13 +184,18 @@ export default function CheckoutPage() {
             <CheckoutPromotionSection />
             <CheckoutPaymentSelection />
             <CheckoutSummarySection
-              guestForm={guestForm}
-              addressSubmitContext={addressSubmitContext}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              canSubmit={canSubmit}
             />
           </div>
         </div>
       </div>
-      <CheckoutMobileBottomBar guestForm={guestForm} addressSubmitContext={addressSubmitContext} />
+      <CheckoutMobileBottomBar
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        canSubmit={canSubmit}
+      />
     </div>
   );
 }

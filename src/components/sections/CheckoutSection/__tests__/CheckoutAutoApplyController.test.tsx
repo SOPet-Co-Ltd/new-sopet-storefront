@@ -20,6 +20,12 @@ vi.mock('@/lib/checkout/runCheckoutAutoApply', () => ({
   runCheckoutAutoApply,
 }));
 
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/checkout',
+}));
+
 vi.mock('@apollo/client/react', () => ({
   useApolloClient: () => ({ query: vi.fn() }),
   useQuery: () => ({

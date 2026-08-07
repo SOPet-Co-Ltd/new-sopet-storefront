@@ -32,7 +32,7 @@ import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
-import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { ensureSessionId } from '@/lib/session';
 
@@ -60,7 +60,9 @@ export function useCheckoutSubmit(
     selectedSubtotal: subtotal,
     refetch,
     pruneDeselectedIds,
-  } = useCart();
+    isBuyNow,
+    clearBuyNow,
+  } = useCheckoutCartSelection();
   const checkoutMutations = useCheckoutMutations();
   const { addPaymentMethod } = usePaymentMethods();
   const {
@@ -169,7 +171,7 @@ export function useCheckoutSubmit(
               ...checkoutContext,
               selectedAddressId: overrideAddressId ?? checkoutContext.selectedAddressId,
             },
-            cart: { items },
+            cart: { items, includeCartItemIds: !isBuyNow },
             guestForm: isGuestCheckout ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
@@ -184,8 +186,12 @@ export function useCheckoutSubmit(
           paymentId: result.paymentId,
           orderId: result.orderId,
         });
-        pruneDeselectedIds(checkedOutItemIds);
-        await refetch();
+        if (isBuyNow) {
+          clearBuyNow();
+        } else {
+          pruneDeselectedIds(checkedOutItemIds);
+          await refetch();
+        }
 
         router.push(result.redirectPath);
       } catch (error) {
@@ -203,7 +209,9 @@ export function useCheckoutSubmit(
       addPaymentMethod,
       checkoutContext,
       checkoutMutations,
+      clearBuyNow,
       guestForm,
+      isBuyNow,
       isGuestCheckout,
       items,
       paymentMethod,

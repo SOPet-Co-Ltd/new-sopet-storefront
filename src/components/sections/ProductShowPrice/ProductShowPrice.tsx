@@ -1,4 +1,6 @@
 import { ProductFlashSaleStrip } from '@/components/molecules/ProductFlashSaleStrip/ProductFlashSaleStrip';
+import { pickCampaignItem, resolveCompareAtPrice } from '@/lib/catalog/resolve-compare-at-price';
+import { useActiveSaleCampaignItems } from '@/lib/hooks/useActiveSaleCampaignItems';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 import {
   findVariantByOptions,
@@ -20,7 +22,16 @@ function formatPrice(value: number): string {
 export function ProductShowPrice({ product, selectedOptions }: ProductShowPriceProps) {
   const selectedVariant = findVariantByOptions(product.variants, selectedOptions);
   const displayPrice = selectedVariant?.price ?? product.basePrice;
-  const compareAtPrice = product.compareAtPrice;
+
+  const { items: campaignItems } = useActiveSaleCampaignItems(product.storeId);
+  const campaignItem = pickCampaignItem(campaignItems, product.id, selectedVariant?.id ?? null);
+  const compareAtPrice = resolveCompareAtPrice({
+    sellPrice: displayPrice,
+    campaignItem,
+    variantCompareAt: selectedVariant?.compareAtPrice ?? null,
+    productCompareAt: product.compareAtPrice ?? null,
+  });
+
   const hasPrice = displayPrice > 0;
   const hasDiscount = compareAtPrice != null && compareAtPrice > displayPrice;
   const discountPercent = hasDiscount
@@ -48,9 +59,21 @@ export function ProductShowPrice({ product, selectedOptions }: ProductShowPriceP
           <span className="label-md text-secondary pt-2 pb-4">Not available in your region</span>
         )}
       </div>
-      {hasDiscount && discountPercent > 0 && (
-        <ProductFlashSaleStrip discountPercent={discountPercent} />
-      )}
+      {hasDiscount ? (
+        <p
+          className="mt-1.5 sop-body-xs-regular text-sop-neutral-grayalpha-500"
+          data-testid="payable-price-hint"
+        >
+          ราคาที่ไฮไลต์คือราคาที่ชำระ — ไม่ลดเพิ่มที่ตะกร้าจากแคมเปญนี้
+        </p>
+      ) : null}
+      {hasDiscount && discountPercent > 0 && campaignItem ? (
+        <ProductFlashSaleStrip
+          discountPercent={discountPercent}
+          expiresAt={campaignItem.expiresAt}
+          campaignName={campaignItem.campaignName}
+        />
+      ) : null}
     </div>
   );
 }

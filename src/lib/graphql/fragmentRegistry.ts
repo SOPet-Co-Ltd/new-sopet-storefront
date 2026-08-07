@@ -16,6 +16,7 @@ import {
   SavedPaymentMethodFieldsFragmentDoc,
   ProductDetailFieldsFragmentDoc,
   StorePromotionFieldsFragmentDoc,
+  ActiveSaleCampaignItemFieldsFragmentDoc,
   StoreShippingOptionFieldsFragmentDoc,
   StoreFieldsFragmentDoc,
 } from '@/lib/graphql/generated/graphql';
@@ -42,6 +43,7 @@ export const fragmentRegistry = createFragmentRegistry(
   SavedPaymentMethodFieldsFragmentDoc,
   ProductDetailFieldsFragmentDoc,
   StorePromotionFieldsFragmentDoc,
+  ActiveSaleCampaignItemFieldsFragmentDoc,
   StoreShippingOptionFieldsFragmentDoc,
   StoreFieldsFragmentDoc,
 );

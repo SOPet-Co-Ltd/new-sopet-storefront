@@ -40,11 +40,65 @@ export function getProductCardDisplayPrice(product: {
   return product.basePrice;
 }
 
+type CardVariant = {
+  id?: string | null;
+  price: number;
+  compareAtPrice?: number | null;
+};
+
+function getCheapestCardVariant(
+  variants?: Array<CardVariant | null | undefined> | null,
+): CardVariant | null {
+  const positivePriced = (variants ?? []).filter(
+    (variant): variant is CardVariant =>
+      !!variant && typeof variant.price === 'number' && variant.price > 0,
+  );
+  if (positivePriced.length === 0) return null;
+
+  const minPrice = Math.min(...positivePriced.map((variant) => variant.price));
+  return positivePriced.find((variant) => variant.price === minPrice) ?? null;
+}
+
+/** Id of the variant used to determine the card's displayed price, if any. */
+export function getProductCardCheapestVariantId(product: {
+  variants?: Array<CardVariant | null | undefined> | null;
+}): string | null {
+  return getCheapestCardVariant(product.variants)?.id ?? null;
+}
+
+/**
+ * Compare-at (strikethrough) price for the card, following the required chain:
+ * active sale campaign → cheapest variant's static compareAtPrice → product-level
+ * static compareAtPrice. `campaignCompareAt` is resolved by the caller (e.g. via
+ * `useCampaignCompareAtLookup`) since it depends on active campaign data that a
+ * single card should not fetch on its own.
+ */
+export function getProductCardCompareAtPrice(
+  product: {
+    compareAtPrice?: number | null;
+    variants?: Array<CardVariant | null | undefined> | null;
+  },
+  campaignCompareAt?: number | null,
+): number | null {
+  if (campaignCompareAt != null) {
+    return campaignCompareAt;
+  }
+
+  const cheapest = getCheapestCardVariant(product.variants);
+  if (cheapest?.compareAtPrice != null) {
+    return cheapest.compareAtPrice;
+  }
+
+  return product.compareAtPrice ?? null;
+}
+
 type ProductCardProps = {
   product: ProductCardProduct;
   compact?: boolean;
   className?: string;
   priority?: boolean;
+  /** Pre-resolved active sale campaign compare-at price, if any (see `useCampaignCompareAtLookup`). */
+  campaignCompareAt?: number | null;
 };
 
 function buildProductHref(productId: string): string {
@@ -124,12 +178,12 @@ function ProductCardImage({
 }
 
 function ProductCardPrice({
-  product,
   displayPrice,
+  compareAtPrice,
   compact = false,
 }: {
-  product: ProductCardProduct;
   displayPrice: number;
+  compareAtPrice: number | null;
   compact?: boolean;
 }) {
   const hasPrice = displayPrice > 0;
@@ -149,7 +203,7 @@ function ProductCardPrice({
       >
         {formatPrice(displayPrice)}
       </span>
-      {product.compareAtPrice != null && product.compareAtPrice > displayPrice && (
+      {compareAtPrice != null && compareAtPrice > displayPrice && (
         <span
           className={
             compact
@@ -157,7 +211,7 @@ function ProductCardPrice({
               : 'sop-strike-sm-regular text-sop-neutral-grayalpha-400'
           }
         >
-          {formatPrice(product.compareAtPrice)}
+          {formatPrice(compareAtPrice)}
         </span>
       )}
     </div>
@@ -187,10 +241,12 @@ export default function ProductCard({
   compact = false,
   className,
   priority = false,
+  campaignCompareAt = null,
 }: ProductCardProps) {
   const href = buildProductHref(product.id);
   const displayPrice = getProductCardDisplayPrice(product);
-  const discountPercent = getDiscountPercent(displayPrice, product.compareAtPrice);
+  const compareAtPrice = getProductCardCompareAtPrice(product, campaignCompareAt);
+  const discountPercent = getDiscountPercent(displayPrice, compareAtPrice);
   const cardRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -251,7 +307,11 @@ export default function ProductCard({
           >
             {product.name}
           </p>
-          <ProductCardPrice product={product} displayPrice={displayPrice} compact={compact} />
+          <ProductCardPrice
+            displayPrice={displayPrice}
+            compareAtPrice={compareAtPrice}
+            compact={compact}
+          />
           {!compact && <ProductCardReviewStars product={product} />}
         </div>
       </div>

@@ -16,7 +16,7 @@ import {
   type ValidatePromotionInput,
 } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 /**
@@ -35,7 +35,7 @@ export function CheckoutAutoApplyController() {
     selectedItems,
     selectedItemsByStore,
     selectedSubtotal,
-  } = useCart();
+  } = useCheckoutCartSelection();
   const {
     promotionCode,
     storePromotionsByStoreId,

@@ -5,7 +5,7 @@ import type {
   GuestCheckoutField,
   GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
-import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { CheckoutAddressSection } from './CheckoutAddressSection';
 import { CheckoutOrderItems } from './CheckoutOrderItems';
@@ -27,7 +27,7 @@ export function CheckoutSection({
   saveAddressChecked,
   onSaveAddressPreferenceChange,
 }: CheckoutSectionProps) {
-  const { selectedItemsByStore: itemsByStore, loading, error } = useCart();
+  const { selectedItemsByStore: itemsByStore, loading, error } = useCheckoutCartSelection();
   const { setRequiredStoreIds } = useCheckout();
 
   useEffect(() => {

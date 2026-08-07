@@ -5,9 +5,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EmptySearchResults } from '@/components/molecules/EmptySearchResults';
 import { Pagination } from '@/components/molecules/Pagination';
 import { SearchSortBar, type SearchSortValue } from '@/components/molecules/SearchSortBar';
-import ProductCard from '@/components/organisms/ProductCard';
+import ProductCard, {
+  getProductCardCheapestVariantId,
+  getProductCardDisplayPrice,
+} from '@/components/organisms/ProductCard';
 import { prefetchProductsListing } from '@/lib/catalog/prefetchProductsListing';
 import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
+import { useCampaignCompareAtLookup } from '@/lib/hooks/useCampaignCompareAtLookup';
 import { useProducts } from '@/lib/hooks/useProducts';
 import { useSearchContext } from '@/lib/hooks/useSearchContext';
 import { useSessionId } from '@/lib/hooks/useSessionId';
@@ -145,6 +149,9 @@ export function ProductListing({
     useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;
 
+  const productIds = useMemo(() => products.map((product) => product.id), [products]);
+  const { getCampaignCompareAt } = useCampaignCompareAtLookup(productIds);
+
   useEffect(() => {
     if (!listingPrefetch || totalPages <= 1 || currentPage >= totalPages) {
       return;
@@ -233,7 +240,15 @@ export function ProductListing({
           <ul className={cn('mt-6', PRODUCT_CARD_GRID_CLASS)}>
             {products.map((product, index) => (
               <li key={product.id} className="min-w-0 flex justify-center">
-                <ProductCard product={product} priority={index < 4} />
+                <ProductCard
+                  product={product}
+                  priority={index < 4}
+                  campaignCompareAt={getCampaignCompareAt(
+                    product.id,
+                    getProductCardCheapestVariantId(product),
+                    getProductCardDisplayPrice(product),
+                  )}
+                />
               </li>
             ))}
           </ul>
@@ -262,7 +277,15 @@ export function ProductListing({
       <ul className={PRODUCT_CARD_GRID_CLASS}>
         {products.map((product, index) => (
           <li key={product.id} className="min-w-0 flex justify-center">
-            <ProductCard product={product} priority={index < 4} />
+            <ProductCard
+              product={product}
+              priority={index < 4}
+              campaignCompareAt={getCampaignCompareAt(
+                product.id,
+                getProductCardCheapestVariantId(product),
+                getProductCardDisplayPrice(product),
+              )}
+            />
           </li>
         ))}
       </ul>

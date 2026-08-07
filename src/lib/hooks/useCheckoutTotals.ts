@@ -2,11 +2,11 @@
 
 import { useMemo } from 'react';
 import { calculateCheckoutTotals } from '@/lib/checkout/checkoutTotalsUtils';
-import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 export function useCheckoutTotals() {
-  const { selectedItemCount, selectedSubtotal, selectedItemsByStore } = useCart();
+  const { selectedItemCount, selectedSubtotal, selectedItemsByStore } = useCheckoutCartSelection();
   const { shippingByStoreId, promotionDiscount, storePromotionsByStoreId } = useCheckout();
 
   const storeIds = useMemo(

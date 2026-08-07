@@ -261,18 +261,20 @@ function mapStoreShipping(
 
 export function toCreateOrderInput(
   formState: GuestCheckoutFormState | null,
-  cart: { items: CartQuery['cart']['items'] },
+  cart: { items: CartQuery['cart']['items']; includeCartItemIds?: boolean },
   checkoutContext: CreateOrderCheckoutContext,
 ): CreateOrderInput {
   if (!checkoutContext.paymentMethod) {
     throw new Error('paymentMethod is required to create an order');
   }
 
+  const includeCartItemIds = cart.includeCartItemIds !== false;
+
   const input: CreateOrderInput = {
     items: mapCartItems(cart.items),
     paymentMethod: mapCheckoutPaymentMethodForApi(checkoutContext.paymentMethod),
     storeShipping: mapStoreShipping(checkoutContext.shippingByStoreId),
-    cartItemIds: cart.items.map((item) => item.id),
+    ...(includeCartItemIds ? { cartItemIds: cart.items.map((item) => item.id) } : {}),
   };
 
   if (checkoutContext.sessionId) {

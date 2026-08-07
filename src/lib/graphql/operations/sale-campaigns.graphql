@@ -1,0 +1,22 @@
+fragment ActiveSaleCampaignItemFields on ActiveSaleCampaignItemType {
+  campaignId
+  campaignName
+  productId
+  variantId
+  compareAtPrice
+  discountPercent
+  priority
+  expiresAt
+}
+
+query ActiveSaleCampaignItemsForProducts($productIds: [String!]!) {
+  activeSaleCampaignItemsForProducts(productIds: $productIds) {
+    ...ActiveSaleCampaignItemFields
+  }
+}
+
+query ActiveSaleCampaignItems($storeId: String!) {
+  activeSaleCampaignItems(storeId: $storeId) {
+    ...ActiveSaleCampaignItemFields
+  }
+}

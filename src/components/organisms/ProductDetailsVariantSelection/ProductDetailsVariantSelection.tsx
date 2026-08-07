@@ -10,6 +10,7 @@ import { ProductVariants } from '@/components/molecules/ProductVariants/ProductV
 import { ProductShareModal } from '@/components/organisms/ProductShareModal/ProductShareModal';
 import { trackAddToCart } from '@/lib/analytics';
 import { flyToCart, getProductFlyImageUrl } from '@/lib/cart/flyToCart';
+import { buildBuyNowCheckoutPayload, setBuyNowCheckout } from '@/lib/checkout/buyNowCheckout';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
@@ -134,14 +135,21 @@ export default function ProductDetailsVariantSelection({
     }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (!variantId || isOutOfStock || !hasAnyPrice || safeQuantity < 1) return;
+
+    const payload = buildBuyNowCheckoutPayload({
+      product,
+      variantId,
+      quantity: safeQuantity,
+    });
+    if (!payload) return;
 
     try {
       setIsBuyingNow(true);
-      await addItem(variantId, safeQuantity);
-      pushAddToCartEvent();
-      router.push('/checkout');
+      // Buy now is checkout-only: do not merge into the customer cart.
+      setBuyNowCheckout(payload);
+      router.push('/checkout?mode=buy-now');
     } finally {
       setIsBuyingNow(false);
     }

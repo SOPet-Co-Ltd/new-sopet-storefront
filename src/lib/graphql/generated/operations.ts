@@ -587,7 +587,7 @@ export type ProductCardFieldsFragment = {
   averageRating: number;
   reviewCount: number;
   soldCount: number;
-  variants: Array<{ id: string; price: number }> | null;
+  variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
 };
 
 export type HealthQueryVariables = Exact<{ [key: string]: never }>;
@@ -610,7 +610,7 @@ export type LatestPurchaseProductsQuery = {
     averageRating: number;
     reviewCount: number;
     soldCount: number;
-    variants: Array<{ id: string; price: number }> | null;
+    variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
   }>;
 };
 
@@ -1058,6 +1058,7 @@ export type ProductDetailFieldsFragment = {
     id: string;
     sku: string;
     price: number;
+    compareAtPrice: number | null;
     stockQuantity: number;
     optionsJson: string | null;
   }> | null;
@@ -1099,6 +1100,7 @@ export type ProductBySlugQuery = {
       id: string;
       sku: string;
       price: number;
+      compareAtPrice: number | null;
       stockQuantity: number;
       optionsJson: string | null;
     }> | null;
@@ -1140,6 +1142,7 @@ export type ProductByIdQuery = {
       id: string;
       sku: string;
       price: number;
+      compareAtPrice: number | null;
       stockQuantity: number;
       optionsJson: string | null;
     }> | null;
@@ -1177,7 +1180,7 @@ export type ProductsQuery = {
       reviewCount: number;
       soldCount: number;
       store: { id: string; name: string; slug: string } | null;
-      variants: Array<{ id: string; price: number }> | null;
+      variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
     }>;
     pagination: { page: number; limit: number; total: number; totalPages: number };
   };
@@ -1297,7 +1300,7 @@ export type RecommendedProductsQuery = {
     averageRating: number;
     reviewCount: number;
     soldCount: number;
-    variants: Array<{ id: string; price: number }> | null;
+    variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
   }>;
 };
 
@@ -1407,6 +1410,51 @@ export type MyReviewsQuery = {
     status: string;
     createdAt: string;
     images: Array<{ id: string; url: string }>;
+  }>;
+};
+
+export type ActiveSaleCampaignItemFieldsFragment = {
+  campaignId: string;
+  campaignName: string;
+  productId: string;
+  variantId: string | null;
+  compareAtPrice: number | null;
+  discountPercent: number | null;
+  priority: number;
+  expiresAt: string | null;
+};
+
+export type ActiveSaleCampaignItemsForProductsQueryVariables = Exact<{
+  productIds: Array<string> | string;
+}>;
+
+export type ActiveSaleCampaignItemsForProductsQuery = {
+  activeSaleCampaignItemsForProducts: Array<{
+    campaignId: string;
+    campaignName: string;
+    productId: string;
+    variantId: string | null;
+    compareAtPrice: number | null;
+    discountPercent: number | null;
+    priority: number;
+    expiresAt: string | null;
+  }>;
+};
+
+export type ActiveSaleCampaignItemsQueryVariables = Exact<{
+  storeId: string;
+}>;
+
+export type ActiveSaleCampaignItemsQuery = {
+  activeSaleCampaignItems: Array<{
+    campaignId: string;
+    campaignName: string;
+    productId: string;
+    variantId: string | null;
+    compareAtPrice: number | null;
+    discountPercent: number | null;
+    priority: number;
+    expiresAt: string | null;
   }>;
 };
 
@@ -1957,6 +2005,7 @@ export const ProductCardFieldsFragmentDoc = {
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'price' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'compareAtPrice' } },
               ],
             },
           },
@@ -2221,6 +2270,7 @@ export const ProductDetailFieldsFragmentDoc = {
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'sku' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'price' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'compareAtPrice' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'stockQuantity' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'optionsJson' } },
               ],
@@ -2260,6 +2310,32 @@ export const StorePromotionFieldsFragmentDoc = {
     },
   ],
 } as unknown as DocumentNode<StorePromotionFieldsFragment, unknown>;
+export const ActiveSaleCampaignItemFieldsFragmentDoc = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'ActiveSaleCampaignItemFields' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'ActiveSaleCampaignItemType' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'campaignId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'campaignName' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'productId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'variantId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'compareAtPrice' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'discountPercent' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'expiresAt' } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ActiveSaleCampaignItemFieldsFragment, unknown>;
 export const StoreShippingOptionFieldsFragmentDoc = {
   kind: 'Document',
   definitions: [
@@ -5077,6 +5153,105 @@ export const MyReviewsDocument = {
     },
   ],
 } as unknown as DocumentNode<MyReviewsQuery, MyReviewsQueryVariables>;
+export const ActiveSaleCampaignItemsForProductsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ActiveSaleCampaignItemsForProducts' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'productIds' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'activeSaleCampaignItemsForProducts' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'productIds' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'productIds' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'ActiveSaleCampaignItemFields' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  ActiveSaleCampaignItemsForProductsQuery,
+  ActiveSaleCampaignItemsForProductsQueryVariables
+>;
+export const ActiveSaleCampaignItemsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ActiveSaleCampaignItems' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'storeId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'activeSaleCampaignItems' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'storeId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'storeId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'ActiveSaleCampaignItemFields' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ActiveSaleCampaignItemsQuery, ActiveSaleCampaignItemsQueryVariables>;
 export const SearchSuggestionsDocument = {
   kind: 'Document',
   definitions: [

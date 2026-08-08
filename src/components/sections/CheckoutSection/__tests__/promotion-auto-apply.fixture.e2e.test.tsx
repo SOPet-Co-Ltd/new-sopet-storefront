@@ -225,7 +225,11 @@ function AutoApplyCheckoutHarness({ prefillPlatformCode }: { prefillPlatformCode
             storeName="ร้าน B"
             storeSubtotal={800}
           />
-          <CheckoutSummarySection guestForm={null} />
+          <CheckoutSummarySection
+            onSubmit={() => undefined}
+            isSubmitting={false}
+            canSubmit={false}
+          />
         </div>
       </CheckoutProvider>
     </ApolloTestWrapper>

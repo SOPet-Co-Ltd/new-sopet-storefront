@@ -144,6 +144,21 @@ export function OrderPaymentForm({
     );
   }
 
+  // Prefer loading over error so a transient failure (e.g. WS subscription) never
+  // flashes the load-error panel while the payment query is still resolving.
+  if (loading && !payment) {
+    return (
+      <section
+        className="flex w-full max-w-[500px] flex-col items-center gap-4 rounded-3xl bg-white p-8 shadow-xl"
+        aria-busy="true"
+        aria-label="กำลังโหลดข้อมูลการชำระเงิน"
+      >
+        <SpinnerIcon size={{ mobile: 32, desktop: 32 }} />
+        <p className="text-sm text-gray-500">กำลังโหลดข้อมูลการชำระเงิน...</p>
+      </section>
+    );
+  }
+
   if (error && !payment) {
     return (
       <section
@@ -167,19 +182,6 @@ export function OrderPaymentForm({
             ลองใหม่
           </Button>
         ) : null}
-      </section>
-    );
-  }
-
-  if (loading && !payment) {
-    return (
-      <section
-        className="flex w-full max-w-[500px] flex-col items-center gap-4 rounded-3xl bg-white p-8 shadow-xl"
-        aria-busy="true"
-        aria-label="กำลังโหลดข้อมูลการชำระเงิน"
-      >
-        <SpinnerIcon size={{ mobile: 32, desktop: 32 }} />
-        <p className="text-sm text-gray-500">กำลังโหลดข้อมูลการชำระเงิน...</p>
       </section>
     );
   }

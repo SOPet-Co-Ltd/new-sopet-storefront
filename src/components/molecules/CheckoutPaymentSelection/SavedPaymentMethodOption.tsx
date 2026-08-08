@@ -9,23 +9,27 @@ type SavedPaymentMethodOptionProps = {
   method: SavedPaymentMethod;
   selected: boolean;
   onSelect: () => void;
+  disabled?: boolean;
 };
 
 export function SavedPaymentMethodOption({
   method,
   selected,
   onSelect,
+  disabled = false,
 }: SavedPaymentMethodOptionProps) {
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
+      disabled={disabled}
       data-testid={`saved-payment-method-${method.id}`}
       onClick={onSelect}
       className={cn(
         'flex w-full items-center justify-between gap-sop-16px rounded-sop-16px border px-sop-24px py-sop-20px text-left transition-colors',
         'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-sop-neutral-grayalpha-100',
+        'disabled:cursor-not-allowed disabled:opacity-60',
         selected
           ? 'border-sop-primary-500 bg-sop-primary-100'
           : 'border-sop-neutral-grayalpha-200 bg-sop-base-white hover:bg-sop-primary-50',

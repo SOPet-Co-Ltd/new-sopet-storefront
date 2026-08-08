@@ -66,6 +66,25 @@ describe('CheckoutProvider', () => {
     expect(context!.promotionCode).toBeNull();
     expect(context!.paymentMethod).toBeNull();
     expect(context!.requiredStoreIds).toEqual([]);
+    expect(context!.isSubmitting).toBe(false);
+  });
+
+  it('toggles isSubmitting and clears it on reset', () => {
+    let context: CheckoutContextValue | null = null;
+    const { root } = renderCheckoutProbe((value) => {
+      context = value;
+    });
+    roots.push(root);
+
+    act(() => {
+      context!.setIsSubmitting(true);
+    });
+    expect(context!.isSubmitting).toBe(true);
+
+    act(() => {
+      context!.reset();
+    });
+    expect(context!.isSubmitting).toBe(false);
   });
 
   it('updates step via setStep when shipping is complete for all stores', () => {

@@ -12,5 +12,6 @@ fragment ProductCardFields on ProductType {
   variants {
     id
     price
+    compareAtPrice
   }
 }

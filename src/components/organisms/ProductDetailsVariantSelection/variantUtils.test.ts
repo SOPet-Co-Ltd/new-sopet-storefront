@@ -13,6 +13,7 @@ function variant(
   return {
     sku: overrides.sku ?? overrides.id,
     stockQuantity: overrides.stockQuantity ?? 10,
+    compareAtPrice: null,
     ...overrides,
   };
 }

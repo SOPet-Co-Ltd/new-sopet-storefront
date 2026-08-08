@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CheckIcon, RightArrowIcon, TicketSaleIcon, TruckIcon } from '@/components/atoms/icons';
 import { toPromotionEstimateCartLines } from '@/lib/checkout/storePromotionUtils';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useShippingOptions } from '@/lib/hooks/useShippingOptions';
-import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { formatCheckoutPrice } from './checkoutOrderItemUtils';
 import { CheckoutShippingMethodModal } from './CheckoutShippingMethodModal';
@@ -61,7 +61,7 @@ export function CheckoutStoreActionsRow({
   storeSubtotal,
 }: CheckoutStoreActionsRowProps) {
   const { options, loading, error } = useShippingOptions(storeId);
-  const { selectedItemsByStore } = useCart();
+  const { selectedItemsByStore } = useCheckoutCartSelection();
   const {
     shippingByStoreId,
     setShipping,

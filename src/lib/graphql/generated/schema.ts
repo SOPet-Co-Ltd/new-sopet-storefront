@@ -29,6 +29,18 @@ export type AcceptVendorInvitationInput = {
   token: Scalars['String']['input'];
 };
 
+export type ActiveSaleCampaignItemType = {
+  __typename?: 'ActiveSaleCampaignItemType';
+  campaignId: Scalars['String']['output'];
+  campaignName: Scalars['String']['output'];
+  compareAtPrice?: Maybe<Scalars['Float']['output']>;
+  discountPercent?: Maybe<Scalars['Float']['output']>;
+  expiresAt?: Maybe<Scalars['DateTime']['output']>;
+  priority: Scalars['Int']['output'];
+  productId: Scalars['String']['output'];
+  variantId?: Maybe<Scalars['String']['output']>;
+};
+
 export type AddPaymentMethodInput = {
   brand: Scalars['String']['input'];
   expiryMonth: Scalars['Int']['input'];
@@ -453,6 +465,7 @@ export type CreateProductInput = {
 export type CreateProductVariantInput = {
   /** JSON object of variant attributes (e.g. {"size":"M","color":"Red"}) */
   attributes?: InputMaybe<Scalars['String']['input']>;
+  compareAtPrice?: InputMaybe<Scalars['Float']['input']>;
   name: Scalars['String']['input'];
   priceModifier?: InputMaybe<Scalars['Float']['input']>;
   sku: Scalars['String']['input'];
@@ -489,6 +502,17 @@ export type CreateReviewInput = {
 export type CreateReviewReplyInput = {
   body: Scalars['String']['input'];
   reviewId: Scalars['String']['input'];
+};
+
+export type CreateSaleCampaignInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  expiresAt?: InputMaybe<Scalars['String']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  items: Array<SaleCampaignItemInput>;
+  name: Scalars['String']['input'];
+  priority?: InputMaybe<Scalars['Int']['input']>;
+  startsAt?: InputMaybe<Scalars['String']['input']>;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type CreateSearchSynonymInput = {
@@ -698,6 +722,7 @@ export type Mutation = {
   createPromotion: PromotionType;
   createReview: ReviewType;
   createReviewReply: ReviewReplyType;
+  createSaleCampaign: SaleCampaignType;
   createSearchSynonym: SearchSynonymType;
   createShippingOption: StoreShippingOptionType;
   createShippingProvider: ShippingProviderType;
@@ -717,6 +742,7 @@ export type Mutation = {
   deleteProductImage: Scalars['Boolean']['output'];
   deleteProductVariant: Scalars['Boolean']['output'];
   deletePromotion: Scalars['Boolean']['output'];
+  deleteSaleCampaign: Scalars['Boolean']['output'];
   deleteSearchSynonym: Scalars['Boolean']['output'];
   deleteShippingOption: Scalars['Boolean']['output'];
   deleteShippingProvider: Scalars['Boolean']['output'];
@@ -770,6 +796,7 @@ export type Mutation = {
   switchStore: VendorAuthPayload;
   syncProductVariants: Array<ProductVariantType>;
   togglePromotion: PromotionType;
+  toggleSaleCampaign: SaleCampaignType;
   triggerPayout: PayoutType;
   updateAddress: SavedAddressType;
   updateBrand: BrandType;
@@ -788,6 +815,7 @@ export type Mutation = {
   updateProfile: CustomerProfile;
   updatePromotion: PromotionType;
   updateReviewReply: ReviewReplyType;
+  updateSaleCampaign: SaleCampaignType;
   updateSearchRankingWeights: SearchRankingWeightsType;
   updateSearchSynonym: SearchSynonymType;
   updateShippingOption: StoreShippingOptionType;
@@ -985,6 +1013,10 @@ export type MutationCreateReviewReplyArgs = {
   input: CreateReviewReplyInput;
 };
 
+export type MutationCreateSaleCampaignArgs = {
+  input: CreateSaleCampaignInput;
+};
+
 export type MutationCreateSearchSynonymArgs = {
   input: CreateSearchSynonymInput;
 };
@@ -1059,6 +1091,10 @@ export type MutationDeleteProductVariantArgs = {
 };
 
 export type MutationDeletePromotionArgs = {
+  id: Scalars['String']['input'];
+};
+
+export type MutationDeleteSaleCampaignArgs = {
   id: Scalars['String']['input'];
 };
 
@@ -1261,6 +1297,11 @@ export type MutationTogglePromotionArgs = {
   isActive: Scalars['Boolean']['input'];
 };
 
+export type MutationToggleSaleCampaignArgs = {
+  id: Scalars['String']['input'];
+  isActive: Scalars['Boolean']['input'];
+};
+
 export type MutationTriggerPayoutArgs = {
   input: TriggerPayoutInput;
 };
@@ -1336,6 +1377,11 @@ export type MutationUpdatePromotionArgs = {
 
 export type MutationUpdateReviewReplyArgs = {
   input: UpdateReviewReplyInput;
+};
+
+export type MutationUpdateSaleCampaignArgs = {
+  id: Scalars['String']['input'];
+  input: UpdateSaleCampaignInput;
 };
 
 export type MutationUpdateSearchRankingWeightsArgs = {
@@ -1749,6 +1795,7 @@ export type ProductVariantSyncImpactType = {
 
 export type ProductVariantType = {
   __typename?: 'ProductVariantType';
+  compareAtPrice?: Maybe<Scalars['Float']['output']>;
   id: Scalars['String']['output'];
   optionsJson?: Maybe<Scalars['String']['output']>;
   price: Scalars['Float']['output'];
@@ -1805,6 +1852,8 @@ export type PromotionValidationResult = {
 export type Query = {
   __typename?: 'Query';
   activePlatformPromotions: Array<PromotionType>;
+  activeSaleCampaignItems: Array<ActiveSaleCampaignItemType>;
+  activeSaleCampaignItemsForProducts: Array<ActiveSaleCampaignItemType>;
   activeStorePromotions: Array<PromotionType>;
   addresses: Array<SavedAddressType>;
   adminAuditLogs: AdminAuditLogConnection;
@@ -1894,6 +1943,7 @@ export type Query = {
   rejectedCategories: Array<CategoryType>;
   rejectedPetTypes: Array<PetTypeType>;
   rejectedTags: Array<TagType>;
+  saleCampaign: SaleCampaignType;
   searchAnalyticsSuggestionCtr: Array<SearchSuggestionCtrRowType>;
   searchAnalyticsSummary: SearchAnalyticsSummaryType;
   searchAnalyticsTopQueries: Array<SearchAnalyticsQueryRowType>;
@@ -1916,6 +1966,7 @@ export type Query = {
   storeReactivationRequests: Array<StoreReactivationRequestType>;
   storeReviewSummary: StoreReviewSummaryType;
   storeReviews: Array<StoreProductReviewType>;
+  storeSaleCampaigns: Array<SaleCampaignType>;
   storeShippingOptions: Array<StoreShippingOptionType>;
   stores: Array<StoreType>;
   tagDeleteImpact: TaxonomyDeleteImpactType;
@@ -1929,6 +1980,14 @@ export type Query = {
   vendorOrders: Array<OrderType>;
   vendorProduct: ProductType;
   vendorProducts: ProductConnection;
+};
+
+export type QueryActiveSaleCampaignItemsArgs = {
+  storeId: Scalars['String']['input'];
+};
+
+export type QueryActiveSaleCampaignItemsForProductsArgs = {
+  productIds: Array<Scalars['String']['input']>;
 };
 
 export type QueryActiveStorePromotionsArgs = {
@@ -2140,6 +2199,10 @@ export type QueryRecommendedProductsArgs = {
   shuffleSeed?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type QuerySaleCampaignArgs = {
+  id: Scalars['String']['input'];
+};
+
 export type QuerySearchAnalyticsSuggestionCtrArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
@@ -2218,6 +2281,10 @@ export type QueryStoreReviewsArgs = {
   storeId: Scalars['String']['input'];
 };
 
+export type QueryStoreSaleCampaignsArgs = {
+  storeId: Scalars['String']['input'];
+};
+
 export type QueryStoreShippingOptionsArgs = {
   storeId: Scalars['String']['input'];
 };
@@ -2270,6 +2337,7 @@ export type QueryVendorProductsArgs = {
   page?: InputMaybe<Scalars['Int']['input']>;
   petTypeIds?: InputMaybe<Array<Scalars['String']['input']>>;
   search?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
   tag?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2356,6 +2424,40 @@ export type ReviewType = {
   reply?: Maybe<ReviewReplyType>;
   source: Scalars['String']['output'];
   status: Scalars['String']['output'];
+};
+
+export type SaleCampaignItemInput = {
+  compareAtPrice?: InputMaybe<Scalars['Float']['input']>;
+  discountPercent?: InputMaybe<Scalars['Float']['input']>;
+  productId: Scalars['String']['input'];
+  variantId?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SaleCampaignItemType = {
+  __typename?: 'SaleCampaignItemType';
+  campaignId: Scalars['String']['output'];
+  compareAtPrice?: Maybe<Scalars['Float']['output']>;
+  discountPercent?: Maybe<Scalars['Float']['output']>;
+  id: Scalars['String']['output'];
+  productId: Scalars['String']['output'];
+  productName?: Maybe<Scalars['String']['output']>;
+  variantId?: Maybe<Scalars['String']['output']>;
+  variantSku?: Maybe<Scalars['String']['output']>;
+};
+
+export type SaleCampaignType = {
+  __typename?: 'SaleCampaignType';
+  createdAt: Scalars['DateTime']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  expiresAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['String']['output'];
+  isActive: Scalars['Boolean']['output'];
+  items: Array<SaleCampaignItemType>;
+  name: Scalars['String']['output'];
+  priority: Scalars['Int']['output'];
+  startsAt?: Maybe<Scalars['DateTime']['output']>;
+  storeId: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
 };
 
 export type SalesBreakdownItemType = {
@@ -2694,6 +2796,7 @@ export type SwitchStoreInput = {
 export type SyncProductVariantItemInput = {
   /** JSON object of variant options (e.g. {"color":"red","size":"M"}) */
   attributes: Scalars['String']['input'];
+  compareAtPrice?: InputMaybe<Scalars['Float']['input']>;
   id?: InputMaybe<Scalars['String']['input']>;
   priceModifier?: InputMaybe<Scalars['Float']['input']>;
   sku: Scalars['String']['input'];
@@ -2860,6 +2963,7 @@ export type UpdateProductInput = {
 export type UpdateProductVariantInput = {
   /** JSON object of variant attributes (e.g. {"size":"M","color":"Red"}) */
   attributes?: InputMaybe<Scalars['String']['input']>;
+  compareAtPrice?: InputMaybe<Scalars['Float']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   priceModifier?: InputMaybe<Scalars['Float']['input']>;
   sku?: InputMaybe<Scalars['String']['input']>;
@@ -2894,6 +2998,16 @@ export type UpdatePromotionInput = {
 export type UpdateReviewReplyInput = {
   body: Scalars['String']['input'];
   replyId: Scalars['String']['input'];
+};
+
+export type UpdateSaleCampaignInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  expiresAt?: InputMaybe<Scalars['String']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  items?: InputMaybe<Array<SaleCampaignItemInput>>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  priority?: InputMaybe<Scalars['Int']['input']>;
+  startsAt?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateSearchRankingWeightsInput = {

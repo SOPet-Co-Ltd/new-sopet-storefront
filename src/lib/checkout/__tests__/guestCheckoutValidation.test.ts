@@ -143,6 +143,17 @@ describe('toCreateOrderInput', () => {
     ]);
   });
 
+  it('omits cartItemIds for buy-now checkout so the cart is not mutated', () => {
+    const input = toCreateOrderInput(
+      validGuestForm,
+      { items: sampleCart.items, includeCartItemIds: false },
+      guestCheckoutContext,
+    );
+
+    expect(input.cartItemIds).toBeUndefined();
+    expect(input.items).toHaveLength(1);
+  });
+
   it('maps storeShipping for every store in shippingByStoreId', () => {
     const secondStoreId = 'd3c4b5a6-7890-4abc-def1-234567890abc';
     const secondShippingOptionId = 'e4d5c6b7-8901-4bcd-ef12-345678901bcd';

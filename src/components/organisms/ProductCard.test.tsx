@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ProductCard, {
+  getProductCardCheapestVariantId,
+  getProductCardCompareAtPrice,
   getProductCardDisplayPrice,
   type ProductCardProduct,
 } from '@/components/organisms/ProductCard';
@@ -56,6 +58,55 @@ describe('getProductCardDisplayPrice', () => {
   });
 });
 
+describe('getProductCardCheapestVariantId', () => {
+  it('returns the id of the lowest positive-priced variant', () => {
+    expect(
+      getProductCardCheapestVariantId({
+        variants: [
+          { id: 'v1', price: 250 },
+          { id: 'v2', price: 180 },
+        ],
+      }),
+    ).toBe('v2');
+  });
+
+  it('returns null when there are no positive-priced variants', () => {
+    expect(getProductCardCheapestVariantId({ variants: [{ id: 'v1', price: 0 }] })).toBeNull();
+  });
+});
+
+describe('getProductCardCompareAtPrice', () => {
+  it('prefers the resolved campaign compare-at over static prices', () => {
+    expect(
+      getProductCardCompareAtPrice(
+        { compareAtPrice: 300, variants: [{ price: 100, compareAtPrice: 200 }] },
+        150,
+      ),
+    ).toBe(150);
+  });
+
+  it('falls back to the cheapest variant compareAtPrice when no campaign value is given', () => {
+    expect(
+      getProductCardCompareAtPrice({
+        compareAtPrice: 300,
+        variants: [
+          { id: 'v1', price: 100, compareAtPrice: 200 },
+          { id: 'v2', price: 50, compareAtPrice: 90 },
+        ],
+      }),
+    ).toBe(90);
+  });
+
+  it('falls back to the product-level compareAtPrice when no variants have one', () => {
+    expect(
+      getProductCardCompareAtPrice({
+        compareAtPrice: 300,
+        variants: [{ price: 100, compareAtPrice: null }],
+      }),
+    ).toBe(300);
+  });
+});
+
 describe('ProductCard', () => {
   it('shows the lowest variant price instead of the out-of-area message', () => {
     render(
@@ -64,8 +115,8 @@ describe('ProductCard', () => {
           name: 'test',
           basePrice: 0,
           variants: [
-            { id: 'v1', price: 299 },
-            { id: 'v2', price: 199 },
+            { id: 'v1', price: 299, compareAtPrice: null },
+            { id: 'v2', price: 199, compareAtPrice: null },
           ],
         })}
         compact
@@ -81,7 +132,7 @@ describe('ProductCard', () => {
       <ProductCard
         product={buildProduct({
           basePrice: 0,
-          variants: [{ id: 'v1', price: 0 }],
+          variants: [{ id: 'v1', price: 0, compareAtPrice: null }],
         })}
         compact
       />,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckoutErrorToast } from '@/components/atoms/CheckoutErrorToast/CheckoutErrorToast';
 import { CheckoutMobileBottomBar } from '@/components/molecules/CheckoutMobileBottomBar/CheckoutMobileBottomBar';
 import { CheckoutPaymentSelection } from '@/components/molecules/CheckoutPaymentSelection/CheckoutPaymentSelection';
@@ -18,10 +18,14 @@ import type {
   GuestCheckoutField,
   GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import { clearBuyNowCheckout } from '@/lib/checkout/buyNowCheckout';
 import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
+import {
+  BUY_NOW_CHECKOUT_MODE,
+  useCheckoutCartSelection,
+} from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
-import { useCart } from '@/lib/providers/CartProvider';
 
 const EMPTY_GUEST_FORM: GuestCheckoutFormState = {
   contactPhone: '',
@@ -62,6 +66,8 @@ function CheckoutPageReset() {
       queueMicrotask(() => {
         if (generation === checkoutPageResetGeneration) {
           reset();
+          // Leaving checkout abandons buy-now; the item was never added to cart.
+          clearBuyNowCheckout();
         }
       });
     };
@@ -72,7 +78,10 @@ function CheckoutPageReset() {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { selectedItemCount, selectedItems, selectedSubtotal, loading } = useCart();
+  const searchParams = useSearchParams();
+  const isBuyNowMode = searchParams.get('mode') === BUY_NOW_CHECKOUT_MODE;
+  const { selectedItemCount, selectedItems, selectedSubtotal, loading } =
+    useCheckoutCartSelection();
   const { setAddress } = useCheckout();
   const {
     addresses,
@@ -81,6 +90,13 @@ export default function CheckoutPage() {
     createAddress,
   } = useAddresses();
   const beginCheckoutTrackedRef = useRef(false);
+
+  // Cart checkout must not reuse a stale buy-now session from a closed tab.
+  useEffect(() => {
+    if (!isBuyNowMode) {
+      clearBuyNowCheckout();
+    }
+  }, [isBuyNowMode]);
 
   useEffect(() => {
     if (loading || beginCheckoutTrackedRef.current || selectedItems.length === 0) {

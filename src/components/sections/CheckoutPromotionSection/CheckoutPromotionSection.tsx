@@ -24,7 +24,7 @@ import {
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
 import { CheckoutPlatformPromotionModal } from './CheckoutPlatformPromotionModal';
@@ -135,7 +135,7 @@ export function CheckoutPromotionSection() {
   const isMobile = useIsMobile(768);
   const { isAuthenticated } = useAuth();
   const isGuest = !isAuthenticated;
-  const { selectedSubtotal: subtotal, selectedItems } = useCart();
+  const { selectedSubtotal: subtotal, selectedItems } = useCheckoutCartSelection();
   const { promotions, loading: loadingPromotions } = useActivePlatformPromotions(true);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
   const {

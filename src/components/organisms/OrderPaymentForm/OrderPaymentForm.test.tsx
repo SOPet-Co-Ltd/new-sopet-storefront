@@ -320,11 +320,7 @@ describe('OrderPaymentForm', () => {
 
   it('prefers loading spinner over load-error while payment is still resolving', () => {
     render(
-      <OrderPaymentForm
-        payment={null}
-        loading
-        error={new Error('Subscription socket failed')}
-      />,
+      <OrderPaymentForm payment={null} loading error={new Error('Subscription socket failed')} />,
     );
 
     expect(screen.getByLabelText('กำลังโหลดข้อมูลการชำระเงิน')).toBeInTheDocument();

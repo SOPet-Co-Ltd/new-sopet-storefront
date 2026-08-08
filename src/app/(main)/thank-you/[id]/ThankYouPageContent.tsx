@@ -72,8 +72,7 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
     paymentData?.paymentByOrderId?.orderNumber,
     pendingOrderNumber,
   );
-  const isOrderNumberLoading =
-    !orderNumber && (!authReady || orderLoading || paymentLoading);
+  const isOrderNumberLoading = !orderNumber && (!authReady || orderLoading || paymentLoading);
 
   useEffect(() => {
     if (!order?.id || purchaseTrackedRef.current === order.id) {

@@ -3,6 +3,7 @@ import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OrderConfirmedContent } from '@/app/(main)/order/[id]/confirmed/OrderConfirmedContent';
 import { ThankYouPageContent } from '@/app/(main)/thank-you/[id]/ThankYouPageContent';
+import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { CHECKOUT_ORDER_ID, sampleOrder } from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
@@ -38,6 +39,20 @@ vi.mock('@/lib/hooks/useAuth', () => ({
 
 const createWrapper = createApolloTestWrapper;
 
+const paidPaymentByOrderId = {
+  __typename: 'PaymentType' as const,
+  id: 'pay-1',
+  orderId: CHECKOUT_ORDER_ID,
+  orderNumber: 'ORD-1001',
+  amount: 540,
+  currency: 'THB',
+  status: 'paid',
+  paymentMethod: 'promptpay',
+  authorizeUri: null,
+  qrCodeUrl: null,
+  expiresAt: null,
+};
+
 describe('OrderConfirmedContent', () => {
   it('renders order number and line items from GraphQL', async () => {
     server.use(
@@ -63,6 +78,7 @@ describe('OrderConfirmedContent', () => {
 
 describe('ThankYouPageContent', () => {
   beforeEach(() => {
+    sessionStorage.clear();
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: vi.fn().mockImplementation((query: string) => ({
@@ -76,10 +92,119 @@ describe('ThankYouPageContent', () => {
     });
   });
 
-  it('shows recommended products section and uses order id route params only', async () => {
+  it('guest mode loads ORD- from PaymentByOrderId and never queries Order', async () => {
+    const orderQuery = vi.fn();
     server.use(
       graphql.query('Order', () => {
-        return HttpResponse.json({ data: { order: sampleOrder } });
+        orderQuery();
+        return HttpResponse.json({
+          errors: [{ message: 'Unauthorized' }],
+        });
+      }),
+      graphql.query('PaymentByOrderId', ({ variables }) => {
+        expect(variables).toEqual({ orderId: CHECKOUT_ORDER_ID });
+        return HttpResponse.json({
+          data: {
+            paymentByOrderId: {
+              ...paidPaymentByOrderId,
+              orderNumber: 'ORD-GUEST-1001',
+            },
+          },
+        });
+      }),
+      graphql.query('RecommendedProducts', () => {
+        return HttpResponse.json({ data: { recommendedProducts: [] } });
+      }),
+    );
+
+    render(<ThankYouPageContent orderId={CHECKOUT_ORDER_ID} />, {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('thank-you-order-number')).toHaveTextContent('ORD-GUEST-1001');
+    });
+    expect(orderQuery).not.toHaveBeenCalled();
+    expect(screen.queryByText(CHECKOUT_ORDER_ID)).not.toBeInTheDocument();
+  });
+
+  it('uses pending checkout ORD- immediately for guests while payment loads', async () => {
+    setPendingCheckout({
+      paymentId: 'pay-1',
+      orderId: CHECKOUT_ORDER_ID,
+      orderNumber: 'ORD-PENDING-1001',
+    });
+
+    let resolvePayment: ((value: unknown) => void) | undefined;
+    const paymentResponse = new Promise((resolve) => {
+      resolvePayment = resolve;
+    });
+
+    server.use(
+      graphql.query('PaymentByOrderId', async () => {
+        await paymentResponse;
+        return HttpResponse.json({
+          data: { paymentByOrderId: paidPaymentByOrderId },
+        });
+      }),
+      graphql.query('RecommendedProducts', () => {
+        return HttpResponse.json({ data: { recommendedProducts: [] } });
+      }),
+    );
+
+    render(<ThankYouPageContent orderId={CHECKOUT_ORDER_ID} />, {
+      wrapper: createWrapper(),
+    });
+
+    expect(screen.getByTestId('thank-you-order-number')).toHaveTextContent('ORD-PENDING-1001');
+    expect(screen.queryByText(CHECKOUT_ORDER_ID)).not.toBeInTheDocument();
+
+    resolvePayment?.(undefined);
+    await waitFor(() => {
+      expect(screen.getByTestId('thank-you-order-number')).toHaveTextContent('ORD-PENDING-1001');
+    });
+  });
+
+  it('never flashes the raw route order id — only ORD- customer codes', async () => {
+    let resolvePayment: ((value: unknown) => void) | undefined;
+    const paymentResponse = new Promise((resolve) => {
+      resolvePayment = resolve;
+    });
+
+    server.use(
+      graphql.query('PaymentByOrderId', async () => {
+        await paymentResponse;
+        return HttpResponse.json({
+          data: { paymentByOrderId: paidPaymentByOrderId },
+        });
+      }),
+      graphql.query('RecommendedProducts', () => {
+        return HttpResponse.json({ data: { recommendedProducts: [] } });
+      }),
+    );
+
+    render(<ThankYouPageContent orderId={CHECKOUT_ORDER_ID} />, {
+      wrapper: createWrapper(),
+    });
+
+    expect(screen.getByTestId('thank-you-order-number-pending')).toBeInTheDocument();
+    expect(screen.queryByText(CHECKOUT_ORDER_ID)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('thank-you-order-number')).not.toBeInTheDocument();
+
+    resolvePayment?.(undefined);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('thank-you-order-number')).toHaveTextContent('ORD-1001');
+    });
+    expect(screen.queryByText(CHECKOUT_ORDER_ID)).not.toBeInTheDocument();
+  });
+
+  it('shows recommended products section and uses order id route params only', async () => {
+    server.use(
+      graphql.query('PaymentByOrderId', () => {
+        return HttpResponse.json({
+          data: { paymentByOrderId: paidPaymentByOrderId },
+        });
       }),
       graphql.query('RecommendedProducts', () => {
         return HttpResponse.json({

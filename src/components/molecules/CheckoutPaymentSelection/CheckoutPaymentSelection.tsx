@@ -50,6 +50,7 @@ type PaymentMethodOptionProps = {
   label: string;
   icon: React.ReactNode;
   onChange: (method: PaymentMethod) => void;
+  disabled?: boolean;
 };
 
 function PaymentMethodOption({
@@ -58,6 +59,7 @@ function PaymentMethodOption({
   label,
   icon,
   onChange,
+  disabled = false,
 }: PaymentMethodOptionProps) {
   const isSelected = selectedValue === value;
 
@@ -66,12 +68,14 @@ function PaymentMethodOption({
       type="button"
       role="radio"
       aria-checked={isSelected}
+      aria-disabled={disabled}
+      disabled={disabled}
       data-testid={`payment-method-${value}`}
       onClick={() => onChange(value)}
       className={cn(
         'flex w-full items-center justify-between rounded-sop-16px border border-sop-neutral-grayalpha-200 bg-sop-base-white px-sop-24px py-sop-20px text-left transition-colors',
         'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-sop-neutral-grayalpha-100',
-        'hover:bg-sop-primary-50',
+        'hover:bg-sop-primary-50 disabled:cursor-not-allowed disabled:opacity-60',
       )}
     >
       <span className="flex items-center gap-sop-12px">
@@ -94,7 +98,7 @@ function resolveDefaultSavedCardId(
 }
 
 export function CheckoutPaymentSelection() {
-  const { paymentMethod, setPaymentMethod } = useCheckout();
+  const { paymentMethod, setPaymentMethod, isSubmitting } = useCheckout();
   const { isAuthenticated } = useAuth();
   const { paymentMethods } = usePaymentMethods();
   const [cardForm, setCardForm] = useState<CheckoutCardFormState>(EMPTY_CHECKOUT_CARD_FORM);
@@ -162,6 +166,10 @@ export function CheckoutPaymentSelection() {
 
   const handlePaymentMethodChange = useCallback(
     (method: PaymentMethod) => {
+      if (isSubmitting) {
+        return;
+      }
+
       setCardFormError(null);
 
       if (method === 'card') {
@@ -179,18 +187,24 @@ export function CheckoutPaymentSelection() {
 
       setPaymentMethod(method);
     },
-    [clearCardForm, hasSavedCards, paymentMethod, paymentMethods, setPaymentMethod],
+    [clearCardForm, hasSavedCards, isSubmitting, paymentMethod, paymentMethods, setPaymentMethod],
   );
 
   const handleAddNewCard = useCallback(() => {
+    if (isSubmitting) {
+      return;
+    }
     setCardEntryMode('new');
     clearCardForm();
-  }, [clearCardForm]);
+  }, [clearCardForm, isSubmitting]);
 
   const handleBackToSavedCards = useCallback(() => {
+    if (isSubmitting) {
+      return;
+    }
     setCardEntryMode('saved');
     clearCardForm();
-  }, [clearCardForm]);
+  }, [clearCardForm, isSubmitting]);
 
   return (
     <div
@@ -212,6 +226,7 @@ export function CheckoutPaymentSelection() {
               label={option.label}
               icon={option.icon}
               onChange={handlePaymentMethodChange}
+              disabled={isSubmitting}
             />
           ))}
         </div>
@@ -229,6 +244,7 @@ export function CheckoutPaymentSelection() {
                     variant="outline"
                     size="sm"
                     rounded="full"
+                    disabled={isSubmitting}
                     data-testid="checkout-add-new-card-button"
                     onClick={handleAddNewCard}
                     className="h-8 border-sop-secondary-500 px-sop-20px text-sop-secondary-500 hover:bg-sop-secondary-50"
@@ -248,7 +264,12 @@ export function CheckoutPaymentSelection() {
                       key={method.id}
                       method={method}
                       selected={selectedSavedCardId === method.id}
-                      onSelect={() => setSelectedSavedCardId(method.id)}
+                      disabled={isSubmitting}
+                      onSelect={() => {
+                        if (!isSubmitting) {
+                          setSelectedSavedCardId(method.id);
+                        }
+                      }}
                     />
                   ))}
                 </div>
@@ -260,8 +281,9 @@ export function CheckoutPaymentSelection() {
                 {cardEntryMode === 'new' && hasSavedCards ? (
                   <button
                     type="button"
+                    disabled={isSubmitting}
                     onClick={handleBackToSavedCards}
-                    className="flex items-center gap-sop-8px text-sop-neutral-gray-300"
+                    className="flex items-center gap-sop-8px text-sop-neutral-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <LeftArrowIcon size={{ mobile: 16 }} color="currentColor" />
                     <span className="sop-body-md-medium">เพิ่มบัตรใหม่</span>
@@ -271,7 +293,11 @@ export function CheckoutPaymentSelection() {
                 )}{' '}
                 <CardPaymentForm
                   value={cardForm}
+                  disabled={isSubmitting}
                   onChange={(next) => {
+                    if (isSubmitting) {
+                      return;
+                    }
                     setCardForm(next);
                     if (cardFormError) {
                       setCardFormError(null);
@@ -280,7 +306,11 @@ export function CheckoutPaymentSelection() {
                   error={cardFormError}
                   showSaveCardCheckbox={isAuthenticated}
                   saveCardChecked={saveCardForNextTime}
-                  onSaveCardChange={setSaveCardForNextTime}
+                  onSaveCardChange={(checked) => {
+                    if (!isSubmitting) {
+                      setSaveCardForNextTime(checked);
+                    }
+                  }}
                 />
               </div>
             ) : null}

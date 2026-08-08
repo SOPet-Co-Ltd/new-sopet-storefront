@@ -76,8 +76,12 @@ export function useCheckoutSubmit(
     canAdvanceToReview,
     setStep,
     setAddress,
+    isSubmitting,
+    setIsSubmitting,
   } = useCheckout();
   const submitGuardRef = useRef(createSubmitCheckoutGuard());
+  /** Sync lock so double-clicks before React re-renders are ignored. */
+  const submittingRef = useRef(false);
 
   const addressSubmitContext = options?.addressSubmitContext;
 
@@ -135,8 +139,22 @@ export function useCheckoutSubmit(
     items.length > 0 &&
     !(isAuthPath && (addressQueryLoading || addressQueryError));
 
+  const beginSubmitting = useCallback(() => {
+    if (submittingRef.current) {
+      return false;
+    }
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    return true;
+  }, [setIsSubmitting]);
+
+  const endSubmitting = useCallback(() => {
+    submittingRef.current = false;
+    setIsSubmitting(false);
+  }, [setIsSubmitting]);
+
   const executeSubmit = useCallback(
-    async (overrideAddressId?: string | null) => {
+    async (overrideAddressId?: string | null): Promise<boolean> => {
       try {
         const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
@@ -185,6 +203,7 @@ export function useCheckoutSubmit(
         setPendingCheckout({
           paymentId: result.paymentId,
           orderId: result.orderId,
+          orderNumber: result.orderNumber,
         });
         if (isBuyNow) {
           clearBuyNow();
@@ -194,6 +213,8 @@ export function useCheckoutSubmit(
         }
 
         router.push(result.redirectPath);
+        // Keep UI locked until unmount/reset so a slow navigation cannot double-submit.
+        return true;
       } catch (error) {
         const message =
           error instanceof SubmitCheckoutError
@@ -203,6 +224,7 @@ export function useCheckoutSubmit(
               : 'ไม่สามารถดำเนินการชำระเงินได้';
 
         toast.error(message);
+        return false;
       }
     },
     [
@@ -224,6 +246,10 @@ export function useCheckoutSubmit(
   );
 
   const handleSubmit = useCallback(async () => {
+    if (submittingRef.current || isSubmitting) {
+      return;
+    }
+
     if (!canSubmit) {
       if (isAuthErrorMode) {
         toast.error('ไม่สามารถโหลดที่อยู่ได้ กรุณาลองอีกครั้ง');
@@ -251,24 +277,32 @@ export function useCheckoutSubmit(
         return;
       }
 
-      const created = await createAddress(
-        mapGuestFormToCreateAddressInput(guestForm, {
-          isDefault: addressSubmitContext.saveAddressChecked,
-        }),
-      );
-
-      if (!created?.id) {
-        toast.error('ไม่สามารถบันทึกที่อยู่ได้');
+      if (!beginSubmitting()) {
         return;
       }
 
-      addressSubmitContext.setAddress(created.id);
-      setAddress(created.id);
-
       try {
-        await executeSubmit(created.id);
+        const created = await createAddress(
+          mapGuestFormToCreateAddressInput(guestForm, {
+            isDefault: addressSubmitContext.saveAddressChecked,
+          }),
+        );
+
+        if (!created?.id) {
+          toast.error('ไม่สามารถบันทึกที่อยู่ได้');
+          endSubmitting();
+          return;
+        }
+
+        addressSubmitContext.setAddress(created.id);
+        setAddress(created.id);
+
+        const ok = await executeSubmit(created.id);
+        if (!ok) {
+          endSubmitting();
+        }
       } catch {
-        // executeSubmit already surfaces toast errors
+        endSubmitting();
       }
       return;
     }
@@ -293,14 +327,23 @@ export function useCheckoutSubmit(
       }
     }
 
+    if (!beginSubmitting()) {
+      return;
+    }
+
     try {
-      await executeSubmit();
+      const ok = await executeSubmit();
+      if (!ok) {
+        endSubmitting();
+      }
     } catch {
-      // executeSubmit already surfaces toast errors
+      endSubmitting();
     }
   }, [
     addressSubmitContext,
+    beginSubmitting,
     canSubmit,
+    endSubmitting,
     executeSubmit,
     guestForm,
     isAuthenticated,
@@ -308,13 +351,14 @@ export function useCheckoutSubmit(
     isAuthInlineMode,
     isAuthSummaryMode,
     isGuestCheckout,
+    isSubmitting,
     selectedAddressId,
     setAddress,
   ]);
 
   return {
     handleSubmit,
-    isSubmitting: checkoutMutations.loading,
+    isSubmitting,
     canSubmit,
     step,
   };

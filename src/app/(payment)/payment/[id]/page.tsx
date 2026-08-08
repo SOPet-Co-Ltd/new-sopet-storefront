@@ -155,8 +155,8 @@ export default function PaymentPage() {
     <main className="flex min-h-dvh items-center justify-center bg-sop-primary-100 px-4 py-8">
       <OrderPaymentForm
         payment={payment}
-        loading={loading}
-        error={error}
+        loading={loading || (lookupMode === 'paymentId' && isPaymentNotFoundError(error))}
+        error={lookupMode === 'paymentId' && isPaymentNotFoundError(error) ? undefined : error}
         onRetry={() => {
           void refetch();
         }}

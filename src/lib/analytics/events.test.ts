@@ -6,6 +6,7 @@ import {
   trackPurchase,
   trackViewItem,
 } from './events';
+import { resetCookieConsentMemory, writeCookieConsent } from '@/lib/consent/cookie-consent';
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -14,6 +15,8 @@ beforeEach(() => {
   vi.unstubAllEnvs();
   delete window.dataLayer;
   delete window.gtag;
+  resetCookieConsentMemory();
+  writeCookieConsent('accepted');
 });
 
 afterEach(() => {
@@ -21,6 +24,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
   delete window.dataLayer;
   delete window.gtag;
+  resetCookieConsentMemory();
 });
 
 describe('trackPageView', () => {

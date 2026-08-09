@@ -97,8 +97,10 @@ type ProductCardProps = {
   compact?: boolean;
   className?: string;
   priority?: boolean;
-  /** Pre-resolved active sale campaign compare-at price, if any (see `useCampaignCompareAtLookup`). */
+  /** Pre-resolved active sale campaign compare-at (was) price. */
   campaignCompareAt?: number | null;
+  /** Pre-resolved campaign sale unit; when set, used as the highlighted payable price. */
+  campaignSalePrice?: number | null;
 };
 
 function buildProductHref(productId: string): string {
@@ -242,9 +244,12 @@ export default function ProductCard({
   className,
   priority = false,
   campaignCompareAt = null,
+  campaignSalePrice = null,
 }: ProductCardProps) {
   const href = buildProductHref(product.id);
-  const displayPrice = getProductCardDisplayPrice(product);
+  const catalogPrice = getProductCardDisplayPrice(product);
+  const displayPrice =
+    campaignSalePrice != null && campaignSalePrice > 0 ? campaignSalePrice : catalogPrice;
   const compareAtPrice = getProductCardCompareAtPrice(product, campaignCompareAt);
   const discountPercent = getDiscountPercent(displayPrice, compareAtPrice);
   const cardRef = useRef<HTMLAnchorElement>(null);

@@ -108,6 +108,24 @@ describe('getProductCardCompareAtPrice', () => {
 });
 
 describe('ProductCard', () => {
+  it('shows campaign sale unit and honest compare-at when provided', () => {
+    render(
+      <ProductCard
+        product={buildProduct({
+          name: 'sale item',
+          basePrice: 279,
+          variants: [{ id: 'v1', price: 279, compareAtPrice: null }],
+        })}
+        campaignSalePrice={223.2}
+        campaignCompareAt={279}
+        compact
+      />,
+    );
+
+    expect(screen.getByText('฿223.20')).toBeInTheDocument();
+    expect(screen.getByText('฿279.00')).toBeInTheDocument();
+  });
+
   it('shows the lowest variant price instead of the out-of-area message', () => {
     render(
       <ProductCard

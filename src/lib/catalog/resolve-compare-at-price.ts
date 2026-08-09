@@ -1,6 +1,6 @@
 /**
- * Resolution order (required by product spec):
- * campaign compare-at → variant static compareAtPrice → product static compareAtPrice
+ * Sale unit + honest compare-at (was) for active sale campaigns.
+ * Never invent compare-at from percent (no catalog / (1 − %/100)).
  */
 
 export type ActiveSaleCampaignItem = {
@@ -15,24 +15,27 @@ export type ActiveSaleCampaignItem = {
 };
 
 export type ResolveCompareAtPriceParams = {
+  /** Catalog sell price (basePrice + adjustment), not the sale unit. */
   sellPrice: number;
   campaignItem?: ActiveSaleCampaignItem | null;
   variantCompareAt?: number | null;
   productCompareAt?: number | null;
 };
 
+export function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 /**
- * `compareAt = sellPrice / (1 - percent/100)`, rounded to 2 decimals.
- * Only computable when percent is below 100 and sellPrice is positive.
+ * Payable sale unit: catalog × (1 − %/100), 2 dp.
+ * Null when percent is missing or not in 1–99, or catalog is not positive.
  */
-export function computeCompareAtFromDiscountPercent(
-  sellPrice: number,
+export function computeSaleUnitPrice(
+  catalogUnit: number,
   percent: number | null | undefined,
 ): number | null {
-  if (percent == null || percent >= 100 || sellPrice <= 0) return null;
-
-  const compareAt = sellPrice / (1 - percent / 100);
-  return Math.round(compareAt * 100) / 100;
+  if (percent == null || percent < 1 || percent > 99 || catalogUnit <= 0) return null;
+  return roundMoney(catalogUnit * (1 - percent / 100));
 }
 
 /**
@@ -61,10 +64,23 @@ export function pickCampaignItem<T extends ActiveSaleCampaignItem>(
   return allVariantsMatch ?? null;
 }
 
+function honestCampaignWas(
+  catalogUnit: number,
+  campaignItem: ActiveSaleCampaignItem,
+): number | null {
+  const explicit = campaignItem.compareAtPrice;
+  if (explicit != null && explicit > catalogUnit) return explicit;
+
+  const saleUnit = computeSaleUnitPrice(catalogUnit, campaignItem.discountPercent);
+  if (saleUnit != null) return catalogUnit;
+
+  return null;
+}
+
 /**
- * Resolves the compare-at (strikethrough) price using the required fallback chain.
- * Within the campaign item itself, an explicit `compareAtPrice` takes precedence
- * over a `discountPercent`-derived value.
+ * Resolves the compare-at (strikethrough) price.
+ * Campaign: explicit compare-at if > catalog, else catalog when a real % sale applies.
+ * Else static variant → product compare-at. Never invents was from %.
  */
 export function resolveCompareAtPrice({
   sellPrice,
@@ -73,17 +89,8 @@ export function resolveCompareAtPrice({
   productCompareAt,
 }: ResolveCompareAtPriceParams): number | null {
   if (campaignItem) {
-    if (campaignItem.compareAtPrice != null) {
-      return campaignItem.compareAtPrice;
-    }
-
-    const fromPercent = computeCompareAtFromDiscountPercent(
-      sellPrice,
-      campaignItem.discountPercent,
-    );
-    if (fromPercent != null) {
-      return fromPercent;
-    }
+    const fromCampaign = honestCampaignWas(sellPrice, campaignItem);
+    if (fromCampaign != null) return fromCampaign;
   }
 
   if (variantCompareAt != null) return variantCompareAt;

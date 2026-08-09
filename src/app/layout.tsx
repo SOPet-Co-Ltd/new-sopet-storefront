@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { Google_Sans } from 'next/font/google';
+import { ConsentGatedAnalytics } from '@/components/analytics/ConsentGatedAnalytics';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
-import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts';
+import { CookieConsentBanner } from '@/components/organisms/CookieConsentBanner';
 import { AppProviders } from '@/lib/providers';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
 import { getSiteConfig } from '@/lib/seo/metadata';
@@ -45,9 +46,10 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${googleSans.variable} ${googleSans.className} h-full antialiased`}>
       <body className="flex min-h-dvh flex-col bg-sop-primary-100">
-        <AnalyticsScripts />
+        <ConsentGatedAnalytics />
         <AppProviders>
           <AnalyticsProvider>{children}</AnalyticsProvider>
+          <CookieConsentBanner />
         </AppProviders>
       </body>
     </html>

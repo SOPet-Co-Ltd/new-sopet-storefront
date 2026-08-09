@@ -1,4 +1,5 @@
 import { getAnalyticsConfig } from './config';
+import { hasAnalyticsConsent } from '@/lib/consent/cookie-consent';
 
 export type DataLayerObject = Record<string, unknown>;
 
@@ -20,13 +21,11 @@ export function ensureDataLayer(): DataLayerObject[] | null {
 }
 
 /**
- * Pushes a payload to `window.dataLayer` when analytics is enabled.
- * No-ops on the server, when IDs/kill-switch disable analytics, or when
- * `window` is unavailable.
+ * Pushes a payload to `window.dataLayer` when analytics is enabled and consent is granted.
  */
 export function pushToDataLayer(payload: DataLayerObject): boolean {
   const { enabled } = getAnalyticsConfig();
-  if (!enabled) {
+  if (!enabled || !hasAnalyticsConsent()) {
     return false;
   }
 
@@ -41,11 +40,16 @@ export function pushToDataLayer(payload: DataLayerObject): boolean {
 
 /**
  * Calls `window.gtag` when the direct GA4 bootstrap has defined it.
- * Returns false when analytics is disabled or gtag is not yet available.
+ * Returns false when analytics is disabled, consent is missing, or gtag is unavailable.
  */
 export function callGtag(...args: unknown[]): boolean {
   const { enabled } = getAnalyticsConfig();
-  if (!enabled || typeof window === 'undefined' || typeof window.gtag !== 'function') {
+  if (
+    !enabled ||
+    !hasAnalyticsConsent() ||
+    typeof window === 'undefined' ||
+    typeof window.gtag !== 'function'
+  ) {
     return false;
   }
 

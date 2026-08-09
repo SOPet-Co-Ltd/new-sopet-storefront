@@ -109,7 +109,9 @@ export function useCheckoutSubmit(
         .map((promotion) => promotion?.code?.trim())
         .filter((code): code is string => Boolean(code)),
       paymentMethod,
-      sessionId: isGuestCheckout ? ensureSessionId() : null,
+      // Guest session cookie is resolved at submit time — ensureSessionId
+      // must not run during render (client components still SSR).
+      sessionId: null as string | null,
     }),
     [
       isAuthenticated,
@@ -188,6 +190,7 @@ export function useCheckoutSubmit(
             checkoutContext: {
               ...checkoutContext,
               selectedAddressId: overrideAddressId ?? checkoutContext.selectedAddressId,
+              sessionId: isGuestCheckout ? ensureSessionId() : null,
             },
             cart: { items, includeCartItemIds: !isBuyNow },
             guestForm: isGuestCheckout ? guestForm : null,

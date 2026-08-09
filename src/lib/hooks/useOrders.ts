@@ -14,10 +14,10 @@ import { getApolloClient } from '@/lib/graphql/client';
 import { ORDERS_PAGE_SIZE } from '@/lib/constants/orderListFilters';
 import { useAuth } from '@/lib/hooks/useAuth';
 
-const CONFIRM_ORDER_DELIVERED_MUTATION_OPTIONS = {
-  refetchQueries: [{ query: OrdersDocument }, { query: OrderDocument }],
-  awaitRefetchQueries: true,
-};
+/** Refetch list + detail after confirm. Order must include `id` — bare `{ query: OrderDocument }` sends `variables: {}` and fails `$id: String!`. */
+function confirmOrderDeliveredRefetchQueries(orderId: string) {
+  return [OrdersDocument, { query: OrderDocument, variables: { id: orderId } }];
+}
 
 export type OrderSummary = OrdersQuery['orders']['items'][number];
 export type OrderDetail = NonNullable<OrderQuery['order']>;
@@ -77,13 +77,14 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
 
   const [confirmDeliveryMutation, { loading: confirmingDelivery }] = useMutation(
     ConfirmOrderDeliveredDocument,
-    CONFIRM_ORDER_DELIVERED_MUTATION_OPTIONS,
+    { awaitRefetchQueries: true },
   );
 
   const confirmOrderDelivered = useCallback(
     async (orderId: string) => {
       const result = await confirmDeliveryMutation({
         variables: { input: { orderId } },
+        refetchQueries: confirmOrderDeliveredRefetchQueries(orderId),
       });
       return result.data?.confirmOrderDelivered;
     },
@@ -105,7 +106,7 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
 export function useOrderDetail(orderId: string | undefined): UseOrderDetailResult {
   const { isAuthenticated } = useAuth();
 
-  const { data, loading, error, refetch } = useQuery(OrderDocument, {
+  const { data, loading, error } = useQuery(OrderDocument, {
     variables: { id: orderId! },
     skip: !isAuthenticated || !orderId,
     fetchPolicy: 'cache-first',
@@ -113,21 +114,18 @@ export function useOrderDetail(orderId: string | undefined): UseOrderDetailResul
 
   const [confirmDeliveryMutation, { loading: confirmingDelivery }] = useMutation(
     ConfirmOrderDeliveredDocument,
-    CONFIRM_ORDER_DELIVERED_MUTATION_OPTIONS,
+    { awaitRefetchQueries: true },
   );
 
   const confirmOrderDelivered = useCallback(
     async (id: string) => {
       const result = await confirmDeliveryMutation({
         variables: { input: { orderId: id } },
+        refetchQueries: confirmOrderDeliveredRefetchQueries(id),
       });
-      const updated = result.data?.confirmOrderDelivered;
-      if (updated) {
-        await refetch();
-      }
-      return updated;
+      return result.data?.confirmOrderDelivered;
     },
-    [confirmDeliveryMutation, refetch],
+    [confirmDeliveryMutation],
   );
 
   return {

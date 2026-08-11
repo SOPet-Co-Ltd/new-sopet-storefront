@@ -20,6 +20,8 @@ export type CheckoutState = {
   promotionCode: string | null;
   promotionName: string | null;
   promotionDiscount: number;
+  /** Platform promotion type (e.g. free_shipping) for checkout totals stacking. */
+  promotionType: string | null;
   /** Platform BxGy Gate A — server freeUnits only. */
   promotionFreeUnits: number | null;
   /** Platform BxGy product P from conditions JSON. */
@@ -37,6 +39,7 @@ function createInitialCheckoutState(): CheckoutState {
     promotionCode: null,
     promotionName: null,
     promotionDiscount: 0,
+    promotionType: null,
     promotionFreeUnits: null,
     promotionProductId: null,
     storePromotionsByStoreId: {},
@@ -55,6 +58,7 @@ export type CheckoutContextValue = CheckoutState & {
   setPromotion: (code: string | null) => void;
   setPromotionName: (name: string | null) => void;
   setPromotionDiscount: (amount: number) => void;
+  setPromotionType: (type: string | null) => void;
   setPromotionFreeUnits: (freeUnits: number | null) => void;
   setPromotionProductId: (productId: string | null) => void;
   setStorePromotion: (storeId: string, promotion: StorePromotionSelection) => void;
@@ -132,6 +136,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       promotionCode: code,
       promotionDiscount: code ? prev.promotionDiscount : 0,
       promotionName: code ? prev.promotionName : null,
+      promotionType: code ? prev.promotionType : null,
       promotionFreeUnits: code ? prev.promotionFreeUnits : null,
       promotionProductId: code ? prev.promotionProductId : null,
     }));
@@ -143,6 +148,10 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
 
   const setPromotionDiscount = useCallback((amount: number) => {
     setState((prev) => ({ ...prev, promotionDiscount: amount }));
+  }, []);
+
+  const setPromotionType = useCallback((type: string | null) => {
+    setState((prev) => ({ ...prev, promotionType: type }));
   }, []);
 
   const setPromotionFreeUnits = useCallback((freeUnits: number | null) => {
@@ -182,6 +191,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setPromotion,
       setPromotionName,
       setPromotionDiscount,
+      setPromotionType,
       setPromotionFreeUnits,
       setPromotionProductId,
       setStorePromotion,
@@ -200,6 +210,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setPromotion,
       setPromotionName,
       setPromotionDiscount,
+      setPromotionType,
       setPromotionFreeUnits,
       setPromotionProductId,
       setStorePromotion,

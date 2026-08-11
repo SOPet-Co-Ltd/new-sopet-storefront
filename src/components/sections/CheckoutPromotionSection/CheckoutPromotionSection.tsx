@@ -68,8 +68,24 @@ function PlatformPromotionBottomCard({
           <TicketSaleIcon color="#9C6ADE" size={{ mobile: 28, desktop: 28 }} />
         </span>
         <div className="min-w-0 flex-1 text-sop-primary-500">
-          <p className={isMobile ? 'sop-body-sm-medium' : 'sop-body-lg-medium'}>{name}</p>
-          <p className={isMobile ? 'sop-body-xs-regular' : 'sop-body-md-regular'}>{description}</p>
+          <p
+            className={cn(
+              'line-clamp-2 break-words',
+              isMobile ? 'sop-body-sm-medium' : 'sop-body-lg-medium',
+            )}
+            title={name}
+          >
+            {name}
+          </p>
+          <p
+            className={cn(
+              'line-clamp-2 break-words',
+              isMobile ? 'sop-body-xs-regular' : 'sop-body-md-regular',
+            )}
+            title={description}
+          >
+            {description}
+          </p>
         </div>
         <button
           type="button"
@@ -142,11 +158,13 @@ export function CheckoutPromotionSection() {
     promotionCode,
     promotionName,
     promotionDiscount,
+    promotionType,
     promotionFreeUnits,
     promotionProductId,
     setPromotion,
     setPromotionName,
     setPromotionDiscount,
+    setPromotionType,
     setPromotionFreeUnits,
     setPromotionProductId,
     isSubmitting,
@@ -160,7 +178,10 @@ export function CheckoutPromotionSection() {
 
   const platformShippingFee = useMemo(
     () =>
-      Object.values(shippingByStoreId).reduce((sum, selection) => sum + (selection.shippingFee ?? 0), 0),
+      Object.values(shippingByStoreId).reduce(
+        (sum, selection) => sum + (selection.shippingFee ?? 0),
+        0,
+      ),
     [shippingByStoreId],
   );
 
@@ -171,10 +192,18 @@ export function CheckoutPromotionSection() {
       code: promotionCode,
       name: promotionName ?? promotionCode,
       discountAmount: promotionDiscount,
+      type: promotionType,
       freeUnits: promotionFreeUnits,
       productId: promotionProductId,
     };
-  }, [promotionCode, promotionDiscount, promotionFreeUnits, promotionName, promotionProductId]);
+  }, [
+    promotionCode,
+    promotionDiscount,
+    promotionFreeUnits,
+    promotionName,
+    promotionProductId,
+    promotionType,
+  ]);
 
   const availablePromotionCount = useMemo(() => {
     const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal, {
@@ -202,6 +231,7 @@ export function CheckoutPromotionSection() {
     setPromotion(null);
     setPromotionName(null);
     setPromotionDiscount(0);
+    setPromotionType(null);
     setPromotionFreeUnits(null);
     setPromotionProductId(null);
     setManualCode('');
@@ -233,6 +263,7 @@ export function CheckoutPromotionSection() {
         setPromotion,
         setPromotionName,
         setPromotionDiscount,
+        setPromotionType,
         setPromotionFreeUnits,
         setPromotionProductId,
       });
@@ -240,6 +271,7 @@ export function CheckoutPromotionSection() {
       setPromotion(null);
       setPromotionName(null);
       setPromotionDiscount(0);
+      setPromotionType(null);
       setPromotionFreeUnits(null);
       setPromotionProductId(null);
       setError(getPromotionApplyErrorMessage(applyError));
@@ -259,6 +291,7 @@ export function CheckoutPromotionSection() {
     setPromotion(promotion.code);
     setPromotionName(promotion.name);
     setPromotionDiscount(promotion.discountAmount);
+    setPromotionType(promotion.type ?? null);
     setPromotionFreeUnits(promotion.freeUnits ?? null);
     setPromotionProductId(promotion.productId ?? null);
     setManualCode(promotion.code);

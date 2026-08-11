@@ -381,6 +381,12 @@ export type CreateCategoryInput = {
   name: Scalars['String']['input'];
 };
 
+export type CreateEmailContainerInput = {
+  htmlShell: Scalars['String']['input'];
+  isDefault?: InputMaybe<Scalars['Boolean']['input']>;
+  name: Scalars['String']['input'];
+};
+
 export type CreateOrderInput = {
   cartItemIds?: InputMaybe<Array<Scalars['String']['input']>>;
   guestEmail?: InputMaybe<Scalars['String']['input']>;
@@ -625,6 +631,63 @@ export type DeleteTaxonomyResultType = {
   success: Scalars['Boolean']['output'];
 };
 
+export type EmailContainerType = {
+  __typename?: 'EmailContainerType';
+  createdAt: Scalars['DateTime']['output'];
+  htmlShell: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isDefault: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  warnings: Array<Scalars['String']['output']>;
+};
+
+export type EmailContentTemplateType = {
+  __typename?: 'EmailContentTemplateType';
+  allowedPlaceholders: Array<EmailPlaceholderInfoType>;
+  bodyHtml: Scalars['String']['output'];
+  container: EmailContainerType;
+  containerId: Scalars['ID']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  enabled: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  key: EmailTemplateKey;
+  name: Scalars['String']['output'];
+  subjectTemplate: Scalars['String']['output'];
+  textTemplate: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+  warnings: Array<Scalars['String']['output']>;
+};
+
+export type EmailPlaceholderInfoType = {
+  __typename?: 'EmailPlaceholderInfoType';
+  name: Scalars['String']['output'];
+  required: Scalars['Boolean']['output'];
+  sample: Scalars['String']['output'];
+  trustedHtml: Scalars['Boolean']['output'];
+};
+
+export type EmailPreviewResultType = {
+  __typename?: 'EmailPreviewResultType';
+  html: Scalars['String']['output'];
+  missingPlaceholders: Array<Scalars['String']['output']>;
+  subject: Scalars['String']['output'];
+  text: Scalars['String']['output'];
+  warnings: Array<Scalars['String']['output']>;
+};
+
+/** Route key for a transactional email content template */
+export enum EmailTemplateKey {
+  AdminInvite = 'ADMIN_INVITE',
+  EmailVerification = 'EMAIL_VERIFICATION',
+  OrderPaid = 'ORDER_PAID',
+  OrderStatusChanged = 'ORDER_STATUS_CHANGED',
+  PasswordReset = 'PASSWORD_RESET',
+  StoreMemberInvite = 'STORE_MEMBER_INVITE',
+  VendorAccountSuspended = 'VENDOR_ACCOUNT_SUSPENDED',
+  VendorInvite = 'VENDOR_INVITE',
+}
+
 export type FavoriteProductInput = {
   productId: Scalars['String']['input'];
 };
@@ -710,6 +773,7 @@ export type Mutation = {
   createAddress: SavedAddressType;
   createBrand: BrandType;
   createCategory: CategoryType;
+  createEmailContainer: EmailContainerType;
   createOrder: OrderType;
   createPayment: PaymentType;
   createPayout: PayoutType;
@@ -754,6 +818,7 @@ export type Mutation = {
   markNotificationRead: Scalars['Boolean']['output'];
   markVendorOrderPaid: OrderType;
   mergeCart: CartType;
+  previewEmailContentTemplate: EmailPreviewResultType;
   publishProduct: ProductType;
   reactivateAccount: CustomerAuthPayload;
   refreshToken: AuthTokens;
@@ -783,10 +848,12 @@ export type Mutation = {
   revokeStoreApiKey: Scalars['Boolean']['output'];
   revokeStoreInvitation: StoreMemberInvitationType;
   sendCustomerOtp: MessagePayload;
+  sendTestEmailContentTemplate: Scalars['Boolean']['output'];
   setAdminActive: AdminTeamMemberType;
   setCategoryImage: CategoryType;
   setCustomerActive: AdminCustomerType;
   setDefaultAddress: SavedAddressType;
+  setDefaultEmailContainer: EmailContainerType;
   setDefaultPaymentMethod: SavedPaymentMethodType;
   setPetTypeImage: PetTypeType;
   setProductThumbnail: ProductImageType;
@@ -803,6 +870,8 @@ export type Mutation = {
   updateCartItem: CartType;
   updateCategory: CategoryType;
   updateCustomerAsAdmin: AdminCustomerType;
+  updateEmailContainer: EmailContainerType;
+  updateEmailContentTemplate: EmailContentTemplateType;
   updateLoginPageImages: LoginPageImagesType;
   updateOrderStatus: OrderType;
   updatePetType: PetTypeType;
@@ -962,6 +1031,10 @@ export type MutationCreateBrandArgs = {
 
 export type MutationCreateCategoryArgs = {
   input: CreateCategoryInput;
+};
+
+export type MutationCreateEmailContainerArgs = {
+  input: CreateEmailContainerInput;
 };
 
 export type MutationCreateOrderArgs = {
@@ -1138,6 +1211,10 @@ export type MutationMergeCartArgs = {
   sessionId: Scalars['String']['input'];
 };
 
+export type MutationPreviewEmailContentTemplateArgs = {
+  input: PreviewEmailContentTemplateInput;
+};
+
 export type MutationPublishProductArgs = {
   id: Scalars['String']['input'];
 };
@@ -1240,6 +1317,10 @@ export type MutationSendCustomerOtpArgs = {
   input: SendCustomerOtpInput;
 };
 
+export type MutationSendTestEmailContentTemplateArgs = {
+  input: SendTestEmailContentTemplateInput;
+};
+
 export type MutationSetAdminActiveArgs = {
   isActive: Scalars['Boolean']['input'];
   userId: Scalars['String']['input'];
@@ -1256,6 +1337,10 @@ export type MutationSetCustomerActiveArgs = {
 
 export type MutationSetDefaultAddressArgs = {
   id: Scalars['String']['input'];
+};
+
+export type MutationSetDefaultEmailContainerArgs = {
+  id: Scalars['ID']['input'];
 };
 
 export type MutationSetDefaultPaymentMethodArgs = {
@@ -1325,6 +1410,16 @@ export type MutationUpdateCategoryArgs = {
 
 export type MutationUpdateCustomerAsAdminArgs = {
   input: UpdateCustomerAsAdminInput;
+};
+
+export type MutationUpdateEmailContainerArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateEmailContainerInput;
+};
+
+export type MutationUpdateEmailContentTemplateArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateEmailContentTemplateInput;
 };
 
 export type MutationUpdateLoginPageImagesArgs = {
@@ -1713,6 +1808,15 @@ export type PlatformSponsorType = {
   startsAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
+export type PreviewEmailContentTemplateInput = {
+  bodyHtml?: InputMaybe<Scalars['String']['input']>;
+  containerId?: InputMaybe<Scalars['ID']['input']>;
+  key: EmailTemplateKey;
+  subjectTemplate?: InputMaybe<Scalars['String']['input']>;
+  textTemplate?: InputMaybe<Scalars['String']['input']>;
+  variablesJson?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type ProductConnection = {
   __typename?: 'ProductConnection';
   items: Array<ProductType>;
@@ -1882,6 +1986,11 @@ export type Query = {
   cart: CartType;
   categoryDeleteImpact: TaxonomyDeleteImpactType;
   customerReviewableItems: Array<CustomerReviewableItemType>;
+  emailContainer?: Maybe<EmailContainerType>;
+  emailContainers: Array<EmailContainerType>;
+  emailContentTemplate?: Maybe<EmailContentTemplateType>;
+  emailContentTemplateByKey?: Maybe<EmailContentTemplateType>;
+  emailContentTemplates: Array<EmailContentTemplateType>;
   exportSearchAnalyticsCsv: Scalars['String']['output'];
   favorites: Array<FavoriteType>;
   getAdminInvitationByToken: AdminInvitationType;
@@ -2056,6 +2165,18 @@ export type QueryCartArgs = {
 
 export type QueryCategoryDeleteImpactArgs = {
   categoryId: Scalars['String']['input'];
+};
+
+export type QueryEmailContainerArgs = {
+  id: Scalars['ID']['input'];
+};
+
+export type QueryEmailContentTemplateArgs = {
+  id: Scalars['ID']['input'];
+};
+
+export type QueryEmailContentTemplateByKeyArgs = {
+  key: EmailTemplateKey;
 };
 
 export type QueryExportSearchAnalyticsCsvArgs = {
@@ -2574,6 +2695,16 @@ export type SendCustomerOtpInput = {
   phone: Scalars['String']['input'];
 };
 
+export type SendTestEmailContentTemplateInput = {
+  bodyHtml?: InputMaybe<Scalars['String']['input']>;
+  containerId?: InputMaybe<Scalars['ID']['input']>;
+  key: EmailTemplateKey;
+  subjectTemplate?: InputMaybe<Scalars['String']['input']>;
+  textTemplate?: InputMaybe<Scalars['String']['input']>;
+  toEmail?: InputMaybe<Scalars['String']['input']>;
+  variablesJson?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type SetCategoryImageInput = {
   categoryId: Scalars['String']['input'];
   imageUrl: Scalars['String']['input'];
@@ -2886,6 +3017,21 @@ export type UpdateCustomerAsAdminInput = {
   fullName?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
   phone?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateEmailContainerInput = {
+  htmlShell?: InputMaybe<Scalars['String']['input']>;
+  isDefault?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateEmailContentTemplateInput = {
+  bodyHtml?: InputMaybe<Scalars['String']['input']>;
+  containerId?: InputMaybe<Scalars['ID']['input']>;
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  subjectTemplate?: InputMaybe<Scalars['String']['input']>;
+  textTemplate?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateLoginPageImagesInput = {

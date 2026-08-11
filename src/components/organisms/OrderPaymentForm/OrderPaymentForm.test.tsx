@@ -279,9 +279,7 @@ describe('OrderPaymentForm', () => {
 
     expect(screen.getByTestId('payment-paid-handoff')).toBeInTheDocument();
     expect(screen.getByText('ชำระเงินสำเร็จ กำลังเปลี่ยนหน้า...')).toBeInTheDocument();
-    expect(
-      screen.queryByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')).not.toBeInTheDocument();
   });
 
   it('shows PaymentRetryPanel when failed PromptPay payment QR has expired', () => {

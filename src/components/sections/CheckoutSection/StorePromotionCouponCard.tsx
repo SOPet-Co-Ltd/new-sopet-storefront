@@ -42,8 +42,7 @@ type PromotionRadioProps = {
 };
 
 function PromotionRadio({ checked, tone = 'product' }: PromotionRadioProps) {
-  const checkedBorder =
-    tone === 'shipping' ? 'border-sop-secondary-500' : 'border-sop-primary-500';
+  const checkedBorder = tone === 'shipping' ? 'border-sop-secondary-500' : 'border-sop-primary-500';
   const checkedDot = tone === 'shipping' ? 'bg-sop-secondary-500' : 'bg-sop-primary-500';
 
   return (
@@ -187,7 +186,10 @@ function CouponTicketStub({
   );
 }
 
-function getCouponOuterBorderClass(variant: CouponCardVariant, tone: CouponTone = 'product'): string {
+function getCouponOuterBorderClass(
+  variant: CouponCardVariant,
+  tone: CouponTone = 'product',
+): string {
   switch (variant) {
     case 'selected':
       return tone === 'shipping'

@@ -7,7 +7,8 @@ import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 export function useCheckoutTotals() {
   const { selectedItemCount, selectedSubtotal, selectedItemsByStore } = useCheckoutCartSelection();
-  const { shippingByStoreId, promotionDiscount, storePromotionsByStoreId } = useCheckout();
+  const { shippingByStoreId, promotionDiscount, promotionType, storePromotionsByStoreId } =
+    useCheckout();
 
   const storeIds = useMemo(
     () => selectedItemsByStore.map((group) => group.storeId),
@@ -23,6 +24,7 @@ export function useCheckoutTotals() {
         shippingByStoreId,
         storePromotionsByStoreId,
         platformPromotionDiscount: promotionDiscount,
+        platformPromotionType: promotionType,
       }),
     [
       selectedSubtotal,
@@ -31,6 +33,7 @@ export function useCheckoutTotals() {
       shippingByStoreId,
       storePromotionsByStoreId,
       promotionDiscount,
+      promotionType,
     ],
   );
 }

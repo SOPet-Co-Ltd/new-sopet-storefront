@@ -75,6 +75,7 @@ const mockCheckout = {
   setPromotion: vi.fn(),
   setPromotionName: vi.fn(),
   setPromotionDiscount: vi.fn(),
+  setPromotionType: vi.fn(),
   setPromotionFreeUnits: vi.fn(),
   setPromotionProductId: vi.fn(),
   setStorePromotion: vi.fn(),

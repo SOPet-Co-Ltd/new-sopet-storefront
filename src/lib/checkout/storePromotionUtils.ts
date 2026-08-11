@@ -20,6 +20,8 @@ export type StorePromotionSelection = {
   code: string;
   name: string;
   discountAmount: number;
+  /** Promotion type from catalog — used to stack shipping discounts vs fee. */
+  type?: string | null;
   /** Server validatePromotion.freeUnits only — Gate A line badges (task-09). */
   freeUnits?: number | null;
   /** BxGy product P for Gate A free-unit line allocation (from conditions). */

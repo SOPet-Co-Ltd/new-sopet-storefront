@@ -88,6 +88,7 @@ export type RunCheckoutAutoApplyParams = {
   setPromotion: (code: string | null) => void;
   setPromotionName: (name: string | null) => void;
   setPromotionDiscount: (amount: number) => void;
+  setPromotionType: (type: string | null) => void;
   setPromotionFreeUnits: (freeUnits: number | null) => void;
   setPromotionProductId: (productId: string | null) => void;
   setStorePromotion: (storeId: string, promotion: StorePromotionSelection) => void;
@@ -163,6 +164,7 @@ function applyPlatformWinner(
     | 'setPromotion'
     | 'setPromotionName'
     | 'setPromotionDiscount'
+    | 'setPromotionType'
     | 'setPromotionFreeUnits'
     | 'setPromotionProductId'
   >,
@@ -171,6 +173,7 @@ function applyPlatformWinner(
   setters.setPromotion(winner.validation.code);
   setters.setPromotionName(winner.validation.name);
   setters.setPromotionDiscount(winner.validation.discountAmount);
+  setters.setPromotionType(winner.type ?? null);
   setters.setPromotionFreeUnits(winner.validation.freeUnits ?? null);
   setters.setPromotionProductId(productId);
 }
@@ -185,6 +188,7 @@ function applyStoreWinner(
     code: winner.validation.code,
     name: winner.validation.name,
     discountAmount: winner.validation.discountAmount,
+    type: winner.type ?? null,
     freeUnits: winner.validation.freeUnits ?? null,
     productId,
   });

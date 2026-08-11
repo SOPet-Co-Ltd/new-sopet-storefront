@@ -83,7 +83,7 @@ export function CheckoutStorePromotionModal({
   onConfirm,
 }: CheckoutStorePromotionModalProps) {
   const isMobile = useIsMobile(768);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const isGuest = !isAuthenticated;
   const { promotions, loading, error } = useActiveStorePromotions(isOpen ? storeId : null);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
@@ -143,6 +143,8 @@ export function CheckoutStorePromotionModal({
 
   const listTimePending =
     promotions.length > 0 && (batchStatus === 'idle' || batchStatus === 'loading');
+  // Hold skeleton until auth + catalog + list-time batch settle — avoids available/unavailable flash.
+  const showListSkeleton = authLoading || loading || listTimePending;
   const showApplyFooter = available.length > 0 || Boolean(appliedPromotion);
 
   // Reset modal state when it opens/closes, adjusting state during render
@@ -308,6 +310,7 @@ export function CheckoutStorePromotionModal({
         code: result.code,
         name: result.name,
         discountAmount: result.discountAmount,
+        type: matched?.type ?? null,
         freeUnits: result.freeUnits ?? null,
         productId,
       });
@@ -415,20 +418,20 @@ export function CheckoutStorePromotionModal({
       }
     >
       <div className="flex flex-col gap-sop-20px px-sop-16px pb-sop-16px">
-        {loading ? (
+        {showListSkeleton ? (
           <div className="animate-pulse space-y-3 py-sop-20px">
             <div className="h-27.5 rounded-sop-20px bg-sop-neutral-gray-500" />
             <div className="h-27.5 rounded-sop-20px bg-sop-neutral-gray-500" />
           </div>
         ) : null}
 
-        {error ? (
+        {error && !showListSkeleton ? (
           <p className="sop-body-sm-regular text-sop-system-error-500">
             ไม่สามารถโหลดส่วนลดร้านค้าได้
           </p>
         ) : null}
 
-        {!loading ? (
+        {!showListSkeleton ? (
           <>
             {softEligibilityError ? <SoftEligibilityErrorBanner /> : null}
 

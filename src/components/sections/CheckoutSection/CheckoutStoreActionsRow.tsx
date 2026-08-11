@@ -161,6 +161,7 @@ export function CheckoutStoreActionsRow({
           storeId={storeId}
           storeName={storeName}
           storeSubtotal={storeSubtotal}
+          shippingFee={shippingByStoreId[storeId]?.shippingFee ?? 0}
           cartLines={cartLines}
           appliedPromotion={appliedPromotion}
           onClose={() => setIsPromotionModalOpen(false)}

@@ -67,6 +67,10 @@ export type RunCheckoutAutoApplyParams = {
   storeIds: string[];
   platformSubtotal: number;
   storeSubtotals: Record<string, number>;
+  /** Order-wide shipping fee for platform-lane shipping promos. */
+  platformShippingFee?: number;
+  /** Per-store shipping fee for store-lane shipping promos. */
+  storeShippingFees?: Record<string, number>;
   platformLines?: PromotionEstimateCartLine[];
   storeLinesByStoreId?: Record<string, PromotionEstimateCartLine[]>;
   /**
@@ -116,6 +120,7 @@ async function scoreLaneCandidates(
   options: {
     subtotal: number;
     storeId?: string;
+    shippingFee?: number;
     lines?: PromotionEstimateCartLine[];
     validatePromotion: RunCheckoutAutoApplyParams['validatePromotion'];
   },
@@ -129,6 +134,7 @@ async function scoreLaneCandidates(
           code: promo.code,
           subtotal: options.subtotal,
           storeId: options.storeId,
+          shippingFee: options.shippingFee,
           lines: options.lines,
           validatePromotion: options.validatePromotion,
         });
@@ -272,6 +278,7 @@ export async function runCheckoutAutoApply(
     try {
       const scored = await scoreLaneCandidates(platformList, {
         subtotal: params.platformSubtotal,
+        shippingFee: params.platformShippingFee ?? 0,
         lines: params.platformLines,
         validatePromotion: params.validatePromotion,
       });
@@ -297,6 +304,7 @@ export async function runCheckoutAutoApply(
       const scored = await scoreLaneCandidates(list, {
         subtotal: params.storeSubtotals[storeId] ?? 0,
         storeId,
+        shippingFee: params.storeShippingFees?.[storeId] ?? 0,
         lines: params.storeLinesByStoreId?.[storeId],
         validatePromotion: params.validatePromotion,
       });

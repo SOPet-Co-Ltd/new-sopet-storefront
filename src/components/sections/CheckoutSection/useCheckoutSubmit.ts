@@ -367,6 +367,7 @@ export function useCheckoutSubmit(
 export async function applyCheckoutPromotionCode({
   code,
   subtotal,
+  shippingFee,
   lines,
   promotions,
   validatePromotion,
@@ -378,6 +379,7 @@ export async function applyCheckoutPromotionCode({
 }: {
   code: string;
   subtotal: number;
+  shippingFee?: number | null;
   lines?: import('@/lib/checkout/storePromotionUtils').PromotionEstimateCartLine[];
   promotions?: Array<{ code: string; conditions?: string | null }>;
   validatePromotion: ReturnType<typeof useCheckoutMutations>['validatePromotion'];
@@ -390,6 +392,7 @@ export async function applyCheckoutPromotionCode({
   const validation = await validateCheckoutPromotionCode({
     code,
     subtotal,
+    shippingFee,
     lines,
     validatePromotion,
   });

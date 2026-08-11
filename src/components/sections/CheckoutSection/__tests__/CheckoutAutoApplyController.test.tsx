@@ -71,6 +71,7 @@ vi.mock('@/lib/providers/CartProvider', () => ({
 const mockCheckout = {
   promotionCode: null as string | null,
   storePromotionsByStoreId: {} as Record<string, unknown>,
+  shippingByStoreId: {} as Record<string, { shippingOptionId: string; shippingFee: number }>,
   setPromotion: vi.fn(),
   setPromotionName: vi.fn(),
   setPromotionDiscount: vi.fn(),

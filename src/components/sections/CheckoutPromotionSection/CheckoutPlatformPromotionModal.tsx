@@ -63,6 +63,8 @@ function PromoSection({ title, count, children }: PromoSectionProps) {
 type CheckoutPlatformPromotionModalProps = {
   isOpen: boolean;
   subtotal: number;
+  /** Order-wide shipping fee for shipping-type promo preview/batch. */
+  shippingFee?: number;
   /** Cart lines for BxGy Rule A/B preview (optional; omit → BxGy estimate ฿0). */
   cartLines?: PromotionEstimateCartLine[];
   appliedPromotion: PlatformPromotionSelection;
@@ -73,6 +75,7 @@ type CheckoutPlatformPromotionModalProps = {
 export function CheckoutPlatformPromotionModal({
   isOpen,
   subtotal,
+  shippingFee = 0,
   cartLines,
   appliedPromotion,
   onClose,
@@ -136,9 +139,16 @@ export function CheckoutPlatformPromotionModal({
 
   const footerDiscountAmount = useMemo(() => {
     if (selection.type === 'none' || !selectedPromotion) return 0;
-    return estimatePromotionDiscount(selectedPromotion as StorePromotion, subtotal, cartLines);
-  }, [cartLines, selectedPromotion, selection, subtotal]);
+    return estimatePromotionDiscount(
+      selectedPromotion as StorePromotion,
+      subtotal,
+      cartLines,
+      shippingFee,
+    );
+  }, [cartLines, selectedPromotion, selection, shippingFee, subtotal]);
 
+  const listTimePending =
+    promotions.length > 0 && (batchStatus === 'idle' || batchStatus === 'loading');
   const showApplyFooter = available.length > 0 || Boolean(appliedPromotion);
 
   // Reset modal state when it opens/closes, adjusting state during render
@@ -187,6 +197,7 @@ export function CheckoutPlatformPromotionModal({
       promotions,
       subtotal,
       storeId: null,
+      shippingFee,
       lines: cartLines,
     });
 
@@ -204,7 +215,7 @@ export function CheckoutPlatformPromotionModal({
     return () => {
       cancelled = true;
     };
-  }, [cartLines, error, isOpen, loading, promotions, subtotal, validatePromotions]);
+  }, [cartLines, error, isOpen, loading, promotions, shippingFee, subtotal, validatePromotions]);
 
   const handleApplyManualCode = async () => {
     const normalizedCode = manualCode.trim();
@@ -219,6 +230,7 @@ export function CheckoutPlatformPromotionModal({
       const result = await validateCheckoutPromotionCode({
         code: normalizedCode,
         subtotal,
+        shippingFee,
         lines: cartLines,
         validatePromotion,
       });
@@ -274,6 +286,7 @@ export function CheckoutPlatformPromotionModal({
       const result = await validateCheckoutPromotionCode({
         code: selection.code,
         subtotal,
+        shippingFee,
         lines: cartLines,
         validatePromotion,
       });
@@ -375,7 +388,7 @@ export function CheckoutPlatformPromotionModal({
                 size="lg"
                 rounded="full"
                 className="shrink-0 px-sop-24px"
-                disabled={isConfirming}
+                disabled={isConfirming || listTimePending}
                 loading={isConfirming}
                 onClick={() => {
                   void handleConfirm();
@@ -393,7 +406,7 @@ export function CheckoutPlatformPromotionModal({
         </div>
       }
     >
-      <div className="flex max-h-95 flex-col gap-sop-20px overflow-y-auto px-sop-16px pb-sop-16px">
+      <div className="flex flex-col gap-sop-20px px-sop-16px pb-sop-16px">
         {loading ? (
           <div className="animate-pulse space-y-3 py-sop-20px">
             <div className="h-27.5 rounded-sop-20px bg-sop-neutral-gray-500" />
@@ -424,6 +437,7 @@ export function CheckoutPlatformPromotionModal({
                       promotion={promotion}
                       storeSubtotal={subtotal}
                       selected={isSelected}
+                      disabled={listTimePending}
                       onSelect={() => setSelection({ type: 'promo', code: promotion.code })}
                     />
                   );

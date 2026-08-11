@@ -33,6 +33,8 @@ export type ValidateCheckoutPromotionParams = {
   code: string;
   subtotal: number;
   storeId?: string | null;
+  /** Shipping fee base for shipping-type promo preview/confirm. */
+  shippingFee?: number | null;
   /** Cart lines for accurate BxGy preview (Design Doc validatePromotion contract). */
   lines?: PromotionEstimateCartLine[] | ValidatePromotionLineInput[];
   validatePromotion: (input: ValidatePromotionInput) => Promise<PromotionValidation | undefined>;
@@ -50,6 +52,7 @@ export const CREATE_ORDER_HARD_ELIGIBILITY_CODES = [
   'PROMOTION_LIMIT',
   'PROMOTION_CUSTOMER_LIMIT',
   'PROMOTION_STORE',
+  'PROMOTION_SCOPE',
   'PROMOTION_MIN_PURCHASE',
 ] as const;
 
@@ -105,6 +108,7 @@ export async function validateCheckoutPromotionCode({
   code,
   subtotal,
   storeId,
+  shippingFee,
   lines,
   validatePromotion,
 }: ValidateCheckoutPromotionParams): Promise<PromotionValidation> {
@@ -115,11 +119,14 @@ export async function validateCheckoutPromotionCode({
   }
 
   const mappedLines = toValidatePromotionLines(lines, storeId);
+  const resolvedShippingFee =
+    shippingFee != null && Number.isFinite(shippingFee) ? shippingFee : undefined;
 
   const result = await validatePromotion({
     code: trimmedCode,
     subtotal,
     ...(storeId ? { storeId } : {}),
+    ...(resolvedShippingFee != null ? { shippingFee: resolvedShippingFee } : {}),
     ...(mappedLines ? { lines: mappedLines } : {}),
   });
 

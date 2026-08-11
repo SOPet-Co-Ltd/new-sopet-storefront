@@ -150,12 +150,19 @@ export function CheckoutPromotionSection() {
     setPromotionFreeUnits,
     setPromotionProductId,
     isSubmitting,
+    shippingByStoreId,
   } = useCheckout();
   const [manualCode, setManualCode] = useState(promotionCode ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const cartLines = useMemo(() => toPromotionEstimateCartLines(selectedItems), [selectedItems]);
+
+  const platformShippingFee = useMemo(
+    () =>
+      Object.values(shippingByStoreId).reduce((sum, selection) => sum + (selection.shippingFee ?? 0), 0),
+    [shippingByStoreId],
+  );
 
   const appliedPromotion = useMemo<PlatformPromotionSelection>(() => {
     if (!promotionCode) return null;
@@ -219,6 +226,7 @@ export function CheckoutPromotionSection() {
       await applyCheckoutPromotionCode({
         code: normalizedCode,
         subtotal,
+        shippingFee: platformShippingFee,
         lines: cartLines,
         promotions: promotions as StorePromotion[],
         validatePromotion,
@@ -343,6 +351,7 @@ export function CheckoutPromotionSection() {
       <CheckoutPlatformPromotionModal
         isOpen={isModalOpen}
         subtotal={subtotal}
+        shippingFee={platformShippingFee}
         cartLines={cartLines}
         appliedPromotion={appliedPromotion}
         onClose={() => setIsModalOpen(false)}

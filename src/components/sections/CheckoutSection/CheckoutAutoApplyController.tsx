@@ -39,6 +39,7 @@ export function CheckoutAutoApplyController() {
   const {
     promotionCode,
     storePromotionsByStoreId,
+    shippingByStoreId,
     setPromotion,
     setPromotionName,
     setPromotionDiscount,
@@ -152,6 +153,13 @@ export function CheckoutAutoApplyController() {
         toPromotionEstimateCartLines(group.items),
       ]),
     );
+    const storeShippingFees = Object.fromEntries(
+      storeIds.map((storeId) => [storeId, shippingByStoreId[storeId]?.shippingFee ?? 0]),
+    );
+    const platformShippingFee = Object.values(storeShippingFees).reduce(
+      (sum, fee) => sum + fee,
+      0,
+    );
 
     // Pass empty lane snapshot when cart changed — React state setters are async.
     const snapshotPromotionCode = cartChangedSincePrior ? null : promotionCode;
@@ -165,6 +173,8 @@ export function CheckoutAutoApplyController() {
           storeIds,
           platformSubtotal: selectedSubtotal,
           storeSubtotals,
+          platformShippingFee,
+          storeShippingFees,
           platformLines: toPromotionEstimateCartLines(selectedItems),
           storeLinesByStoreId,
           platformPromotions,
@@ -201,6 +211,7 @@ export function CheckoutAutoApplyController() {
     setPromotionFreeUnits,
     setPromotionProductId,
     setStorePromotion,
+    shippingByStoreId,
   ]);
 
   return null;

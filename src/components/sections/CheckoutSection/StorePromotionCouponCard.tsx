@@ -7,6 +7,7 @@ import {
   CloseIcon,
   TicketSaleIcon,
   TimeIcon,
+  TruckIcon,
   UserIcon,
 } from '@/components/atoms/icons';
 import { cn } from '@/lib/utils';
@@ -23,34 +24,57 @@ import {
   getUnavailablePromotionCta,
   getUnavailablePromotionReason,
   getUnavailablePromotionWarning,
+  isShippingPromotionType,
 } from '@/lib/checkout/storePromotionUtils';
 
 type CouponCardVariant = 'default' | 'selected' | 'unapply' | 'disabled';
+/** Product/merchandise discount vs shipping-fee discount visual tone. */
+type CouponTone = 'product' | 'shipping';
+
+const PRODUCT_ICON_COLOR = '#9C6ADE';
+const SHIPPING_ICON_COLOR = '#FF6F61';
+const PRODUCT_LOCK_SOFT = '#F2EBFC';
+const SHIPPING_LOCK_SOFT = '#FFF2F1';
 
 type PromotionRadioProps = {
   checked: boolean;
+  tone?: CouponTone;
 };
 
-function PromotionRadio({ checked }: PromotionRadioProps) {
+function PromotionRadio({ checked, tone = 'product' }: PromotionRadioProps) {
+  const checkedBorder =
+    tone === 'shipping' ? 'border-sop-secondary-500' : 'border-sop-primary-500';
+  const checkedDot = tone === 'shipping' ? 'bg-sop-secondary-500' : 'bg-sop-primary-500';
+
   return (
     <span
       className={cn(
         'flex h-sop-20px w-sop-20px shrink-0 items-center justify-center rounded-full border bg-sop-base-white',
-        checked ? 'border-sop-primary-500' : 'border-sop-neutral-grayalpha-200',
+        checked ? checkedBorder : 'border-sop-neutral-grayalpha-200',
       )}
       aria-hidden
     >
-      {checked ? <span className="h-[10px] w-[10px] rounded-full bg-sop-primary-500" /> : null}
+      {checked ? <span className={cn('h-[10px] w-[10px] rounded-full', checkedDot)} /> : null}
     </span>
   );
 }
 
-function CouponStatusBadge({ type }: { type: 'check' | 'close' }) {
+function CouponStatusBadge({
+  type,
+  tone = 'product',
+}: {
+  type: 'check' | 'close';
+  tone?: CouponTone;
+}) {
   return (
     <span
       className={cn(
         'absolute bottom-sop-8px right-sop-8px flex h-[22px] w-[22px] items-center justify-center rounded-full',
-        type === 'check' ? 'bg-sop-primary-500' : 'bg-sop-neutral-gray-400',
+        type === 'check'
+          ? tone === 'shipping'
+            ? 'bg-sop-secondary-500'
+            : 'bg-sop-primary-500'
+          : 'bg-sop-neutral-gray-400',
       )}
       aria-hidden
     >
@@ -63,7 +87,13 @@ function CouponStatusBadge({ type }: { type: 'check' | 'close' }) {
   );
 }
 
-function LockKeyholeIcon() {
+function LockKeyholeIcon({
+  color = PRODUCT_ICON_COLOR,
+  soft = PRODUCT_LOCK_SOFT,
+}: {
+  color?: string;
+  soft?: string;
+}) {
   return (
     <svg
       aria-hidden
@@ -74,24 +104,34 @@ function LockKeyholeIcon() {
     >
       <path
         d="M16 20V18C16 13.5817 19.5817 10 24 10C28.4183 10 32 13.5817 32 18V20"
-        stroke="#9C6ADE"
+        stroke={color}
         strokeWidth="2.5"
         strokeLinecap="round"
       />
-      <rect x="14" y="20" width="20" height="18" rx="4" fill="#9C6ADE" />
-      <circle cx="24" cy="29" r="2.5" fill="#F2EBFC" />
-      <path d="M24 31.5V34" stroke="#F2EBFC" strokeWidth="2" strokeLinecap="round" />
+      <rect x="14" y="20" width="20" height="18" rx="4" fill={color} />
+      <circle cx="24" cy="29" r="2.5" fill={soft} />
+      <path d="M24 31.5V34" stroke={soft} strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
 
-function TicketPerforation({ variant }: { variant: CouponCardVariant }) {
+function TicketPerforation({
+  variant,
+  tone = 'product',
+}: {
+  variant: CouponCardVariant;
+  tone?: CouponTone;
+}) {
   const lineClass =
     variant === 'selected'
-      ? 'border-sop-primary-500'
+      ? tone === 'shipping'
+        ? 'border-sop-secondary-500'
+        : 'border-sop-primary-500'
       : variant === 'unapply'
         ? 'border-[#EEEEEE]'
-        : 'border-sop-primary-300';
+        : tone === 'shipping'
+          ? 'border-sop-secondary-300'
+          : 'border-sop-primary-300';
 
   return (
     <div
@@ -115,6 +155,7 @@ type CouponTicketStubProps = {
   badge?: 'check' | 'close';
   muted?: boolean;
   variant?: CouponCardVariant;
+  tone?: CouponTone;
 };
 
 function CouponTicketStub({
@@ -122,35 +163,44 @@ function CouponTicketStub({
   badge,
   muted = false,
   variant = 'default',
+  tone = 'product',
 }: CouponTicketStubProps) {
   return (
     <div
       className={cn(
         'relative flex h-[100px] w-[100px] shrink-0 items-center justify-center',
-        muted ? 'bg-sop-neutral-gray-500' : 'bg-sop-primary-200',
+        muted
+          ? 'bg-sop-neutral-gray-500'
+          : tone === 'shipping'
+            ? 'bg-sop-secondary-100'
+            : 'bg-sop-primary-200',
       )}
     >
       <span
         aria-hidden
         className="pointer-events-none absolute top-1/2 left-0 z-10 h-sop-16px w-sop-8px -translate-x-1/2 -translate-y-1/2 rounded-full bg-sop-base-white"
       />
-      <TicketPerforation variant={variant} />
+      <TicketPerforation variant={variant} tone={tone} />
       {children}
-      {badge ? <CouponStatusBadge type={badge} /> : null}
+      {badge ? <CouponStatusBadge type={badge} tone={tone} /> : null}
     </div>
   );
 }
 
-function getCouponOuterBorderClass(variant: CouponCardVariant): string {
+function getCouponOuterBorderClass(variant: CouponCardVariant, tone: CouponTone = 'product'): string {
   switch (variant) {
     case 'selected':
-      return 'border-2 border-sop-primary-500';
+      return tone === 'shipping'
+        ? 'border-2 border-sop-secondary-500'
+        : 'border-2 border-sop-primary-500';
     case 'unapply':
       return 'border border-dashed border-[#EEEEEE]';
     case 'disabled':
     case 'default':
     default:
-      return 'border border-sop-primary-300';
+      return tone === 'shipping'
+        ? 'border border-sop-secondary-300'
+        : 'border border-sop-primary-300';
   }
 }
 
@@ -160,6 +210,7 @@ type CouponCardFrameProps = {
   disabled?: boolean;
   onClick?: () => void;
   showRadio?: boolean;
+  tone?: CouponTone;
   left: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -171,20 +222,23 @@ function CouponCardFrame({
   disabled = false,
   onClick,
   showRadio = true,
+  tone = 'product',
   left,
   children,
   footer,
 }: CouponCardFrameProps) {
-  const Component = onClick && !disabled ? 'button' : 'div';
+  // Keep a real <button> when clickable so disabled pending states stay role=button
+  // (list-time batch gate) and RTL getByRole('button') keeps working.
+  const Component = onClick ? 'button' : 'div';
 
   return (
     <Component
-      type={onClick && !disabled ? 'button' : undefined}
+      type={onClick ? 'button' : undefined}
       onClick={disabled ? undefined : onClick}
-      disabled={disabled}
+      disabled={onClick ? disabled : undefined}
       className={cn(
         'relative flex w-full min-w-68 overflow-hidden rounded-sop-20px bg-sop-base-white text-left',
-        getCouponOuterBorderClass(variant),
+        getCouponOuterBorderClass(variant, tone),
         disabled && 'cursor-not-allowed opacity-50',
         onClick && !disabled && 'cursor-pointer',
       )}
@@ -206,7 +260,7 @@ function CouponCardFrame({
         />
         <div className="flex items-start gap-sop-8px">
           <div className="min-w-0 flex-1">{children}</div>
-          {showRadio ? <PromotionRadio checked={selected} /> : null}
+          {showRadio ? <PromotionRadio checked={selected} tone={tone} /> : null}
         </div>
         {footer}
       </div>
@@ -219,6 +273,8 @@ type SelectableStorePromotionCardProps = {
   storeSubtotal: number;
   selected: boolean;
   onSelect: () => void;
+  /** When true, card is not clickable (e.g. list-time batch still loading). */
+  disabled?: boolean;
 };
 
 export function SelectableStorePromotionCard({
@@ -226,21 +282,31 @@ export function SelectableStorePromotionCard({
   storeSubtotal,
   selected,
   onSelect,
+  disabled = false,
 }: SelectableStorePromotionCardProps) {
   const expiryLabel = formatPromotionExpiry(promotion.expiresAt);
   const conditionText = formatPromotionConditionText(promotion, storeSubtotal);
+  const tone: CouponTone = isShippingPromotionType(promotion.type) ? 'shipping' : 'product';
+  const iconColor = tone === 'shipping' ? SHIPPING_ICON_COLOR : PRODUCT_ICON_COLOR;
 
   return (
     <CouponCardFrame
       variant={selected ? 'selected' : 'default'}
       selected={selected}
+      disabled={disabled}
       onClick={onSelect}
+      tone={tone}
       left={
         <CouponTicketStub
           badge={selected ? 'check' : undefined}
           variant={selected ? 'selected' : 'default'}
+          tone={tone}
         >
-          <TicketSaleIcon size={{ mobile: 48, desktop: 48 }} color="#9C6ADE" />
+          {tone === 'shipping' ? (
+            <TruckIcon size={{ mobile: 48, desktop: 48 }} color={iconColor} />
+          ) : (
+            <TicketSaleIcon size={{ mobile: 48, desktop: 48 }} color={iconColor} />
+          )}
         </CouponTicketStub>
       }
     >
@@ -312,15 +378,19 @@ export function UnavailableStorePromotionCard({
     getUnavailablePromotionReason(promotion, storeSubtotal, { isGuest, cartLines });
   const warningText = getUnavailablePromotionWarning(reason, promotion, storeSubtotal);
   const cta = getUnavailablePromotionCta(reason);
+  const tone: CouponTone = isShippingPromotionType(promotion.type) ? 'shipping' : 'product';
+  const lockColor = tone === 'shipping' ? SHIPPING_ICON_COLOR : PRODUCT_ICON_COLOR;
+  const lockSoft = tone === 'shipping' ? SHIPPING_LOCK_SOFT : PRODUCT_LOCK_SOFT;
 
   return (
     <CouponCardFrame
       variant="disabled"
       disabled
       showRadio={false}
+      tone={tone}
       left={
-        <CouponTicketStub variant="disabled">
-          <LockKeyholeIcon />
+        <CouponTicketStub variant="disabled" tone={tone}>
+          <LockKeyholeIcon color={lockColor} soft={lockSoft} />
         </CouponTicketStub>
       }
       footer={

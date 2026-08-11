@@ -310,6 +310,13 @@ export const handlers = [
     });
   }),
 
+  graphql.query('BankTransferDetails', () => {
+    // Off by default until admin configures SOPET bank account.
+    return HttpResponse.json({
+      data: { bankTransferDetails: null },
+    });
+  }),
+
   graphql.query('Order', ({ variables }) => {
     return HttpResponse.json({
       data: {

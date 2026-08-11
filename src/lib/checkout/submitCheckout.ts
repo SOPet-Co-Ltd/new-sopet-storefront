@@ -3,7 +3,10 @@ import {
   type CreateOrderCheckoutContext,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
-import { mapCheckoutPaymentMethodForApi } from '@/lib/checkout/checkoutPaymentMethod';
+import {
+  mapCheckoutPaymentMethodForApi,
+  isNonOmiseApiPaymentMethod,
+} from '@/lib/checkout/checkoutPaymentMethod';
 import {
   extractPromotionErrorCode,
   isCreateOrderHardEligibilityCode,
@@ -161,7 +164,7 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     amount: order.total,
     paymentMethod: apiPaymentMethod,
     currency: 'THB' as const,
-    ...(apiPaymentMethod === 'cod'
+    ...(isNonOmiseApiPaymentMethod(apiPaymentMethod)
       ? {}
       : params.savedPaymentMethodId
         ? { savedPaymentMethodId: params.savedPaymentMethodId }

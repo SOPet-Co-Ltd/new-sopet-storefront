@@ -133,5 +133,6 @@ export {
 } from './UserManagementShoppingBagIcon';
 export { UserManagementUserIcon, type UserManagementUserIconProps } from './UserManagementUserIcon';
 export { WarningIcon, type WarningIconProps } from './WarningIcon';
+export { WalletIcon, type WalletIconProps } from './WalletIcon';
 export { WishListHeartIcon, type WishListHeartIconProps } from './WishListHeartIcon';
 export { YouTubeIcon, type YouTubeIconProps } from './YouTubeIcon';

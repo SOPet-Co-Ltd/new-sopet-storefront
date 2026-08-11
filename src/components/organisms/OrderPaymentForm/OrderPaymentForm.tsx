@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { Button } from '@/components/atoms/Button';
+import { ArrowLeftIcon } from '@/components/atoms/icons';
 import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { formatCountdown, usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
@@ -13,9 +15,11 @@ import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
 import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
 import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
+import { BankTransferWaitingState } from './BankTransferWaitingState';
 import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
 import { PaymentRetryProcessingState } from './PaymentRetryProcessingState';
 import { HeldUnpaidPaymentBlock } from './HeldUnpaidPaymentBlock';
+import { cn } from '@/lib/utils';
 
 export type OrderPaymentFormProps = {
   payment: PaymentRecord | null;
@@ -35,6 +39,8 @@ export type OrderPaymentFormProps = {
   paymentRecoveryUnavailable?: boolean;
   /** Decision #15: any item on_hold while pending payment — block pay / Mid-QR / retry */
   heldUnpaidBlocked?: boolean;
+  /** Order createdAt for bank-transfer payment details (Figma). */
+  orderCreatedAt?: string | null;
 };
 
 function formatAmount(amount: number, currency: string): string {
@@ -60,25 +66,114 @@ function PaymentBusyShell({
   titleId,
   title,
   busy,
+  backHref,
+  backLabel,
+  hideTitle,
   children,
 }: {
   titleId: string;
   title: string;
   busy: boolean;
+  backHref?: string;
+  backLabel?: string;
+  /** When title is rendered by children (e.g. Figma bank-transfer layout). */
+  hideTitle?: boolean;
   children: ReactNode;
 }) {
   return (
     <section
-      className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
+      className="w-full max-w-[500px] rounded-[20px] bg-white px-6 py-6 shadow-xl md:px-10 md:py-6"
       aria-labelledby={titleId}
       aria-busy={busy || undefined}
     >
-      <h1 id={titleId} className="text-xl font-bold text-gray-900">
-        {title}
-      </h1>
+      {backHref && backLabel ? (
+        <Link
+          href={backHref}
+          data-testid="payment-busy-back"
+          className={cn(
+            'mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-sop-secondary-500',
+            'transition-colors hover:text-sop-secondary-600',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sop-primary-300 focus-visible:ring-offset-2',
+          )}
+        >
+          <ArrowLeftIcon size={{ mobile: 16, desktop: 16 }} color="currentColor" />
+          {backLabel}
+        </Link>
+      ) : null}
+      {hideTitle ? null : (
+        <h1 id={titleId} className="text-xl font-bold text-gray-900">
+          {title}
+        </h1>
+      )}
       {busy ? <PaymentRetryProcessingState /> : null}
       <div hidden={busy}>{children}</div>
     </section>
+  );
+}
+
+/** Bank transfer wait: Figma primary CTA = check status; change method collapsed. */
+function BankTransferActionsChrome({
+  onRetrySubmit,
+  submitError,
+  isSubmitting,
+  onSubmittingChange,
+  onCheckStatus,
+}: {
+  onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
+  submitError?: PaymentRetryPanelProps['submitError'];
+  isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  onSubmittingChange?: PaymentRetryPanelProps['onSubmittingChange'];
+  onCheckStatus?: () => void | Promise<unknown>;
+}) {
+  const [recoveryExpanded, setRecoveryExpanded] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  return (
+    <div className="mt-5 flex flex-col items-center gap-2">
+      {onCheckStatus ? (
+        <Button
+          type="button"
+          variant="primary"
+          size="xl"
+          fill
+          className="w-full"
+          loading={checking}
+          disabled={checking}
+          data-testid="payment-status-check"
+          onClick={() => {
+            setChecking(true);
+            void Promise.resolve(onCheckStatus()).finally(() => {
+              setChecking(false);
+            });
+          }}
+        >
+          ยืนยันชำระเงินแล้ว
+        </Button>
+      ) : null}
+      {onRetrySubmit ? (
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full text-sop-neutral-gray-300"
+            onClick={() => setRecoveryExpanded((open) => !open)}
+            aria-expanded={recoveryExpanded}
+          >
+            {recoveryExpanded ? 'ปิดวิธีชำระเงินอื่น' : 'เปลี่ยนวิธีชำระเงิน'}
+          </Button>
+          {recoveryExpanded ? (
+            <PaymentRetryPanel
+              initialPaymentMethod={null}
+              hideBankTransfer
+              onSubmit={onRetrySubmit}
+              submitError={submitError}
+              isSubmitting={isSubmitting}
+              onSubmittingChange={onSubmittingChange}
+            />
+          ) : null}
+        </>
+      ) : null}
+    </div>
   );
 }
 
@@ -136,6 +231,7 @@ export function OrderPaymentForm({
   retrySubmitting,
   paymentRecoveryUnavailable = false,
   heldUnpaidBlocked = false,
+  orderCreatedAt = null,
 }: OrderPaymentFormProps) {
   const [panelSubmitting, setPanelSubmitting] = useState(false);
   const isRetryBusy = Boolean(retrySubmitting || panelSubmitting);
@@ -313,6 +409,38 @@ export function OrderPaymentForm({
             </div>
           </>
         )}
+      </PaymentBusyShell>
+    );
+  }
+
+  if (payment.paymentMethod === 'bank_transfer' && payment.status === 'pending') {
+    const amountLabel = formatAmount(payment.amount, payment.currency);
+    const leaveHref = payment.orderId ? `/user/orders/${payment.orderId}` : '/';
+    const leaveLabel = payment.orderId ? 'กลับไปที่คำสั่งซื้อ' : 'กลับหน้าแรก';
+    return (
+      <PaymentBusyShell
+        titleId="payment-bank-transfer-title"
+        title="คัดลอกบัญชีธนาคาร เพื่อชำระเงิน"
+        busy={isRetryBusy}
+        backHref={leaveHref}
+        backLabel={leaveLabel}
+        hideTitle
+      >
+        <BankTransferWaitingState
+          amountLabel={amountLabel}
+          orderNumber={payment.orderNumber}
+          orderCreatedAt={orderCreatedAt}
+        />
+        <BankTransferActionsChrome
+          onCheckStatus={onCheckStatus}
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+          onSubmittingChange={setPanelSubmitting}
+        />
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          รอการยืนยันการโอนเงินจากเจ้าหน้าที่
+        </div>
       </PaymentBusyShell>
     );
   }

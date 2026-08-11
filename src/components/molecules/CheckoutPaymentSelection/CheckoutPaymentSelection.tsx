@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/atoms/Button';
 import {
   PlusIcon,
@@ -12,6 +13,7 @@ import {
 import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
+import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
 import { cn } from '@/lib/utils';
 import { CardPaymentForm } from './CardPaymentForm';
 import {
@@ -29,7 +31,7 @@ type PaymentOption = {
   icon: React.ReactNode;
 };
 
-const PAYMENT_OPTIONS: PaymentOption[] = [
+const BASE_PAYMENT_OPTIONS: PaymentOption[] = [
   {
     value: 'promptpay',
     label: 'QR Code / PromptPay',
@@ -41,6 +43,12 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     icon: <SubtractIcon size={{ mobile: 28 }} color="#9C6ADE" />,
   },
 ];
+
+const BANK_TRANSFER_OPTION: PaymentOption = {
+  value: 'bank_transfer',
+  label: 'Bank Account (บัญชีธนาคาร)',
+  icon: <WalletIcon size={{ mobile: 28 }} color="#9C6ADE" />,
+};
 
 type CardEntryMode = 'saved' | 'new';
 
@@ -101,6 +109,18 @@ export function CheckoutPaymentSelection() {
   const { paymentMethod, setPaymentMethod, isSubmitting } = useCheckout();
   const { isAuthenticated } = useAuth();
   const { paymentMethods } = usePaymentMethods();
+  const { data: bankTransferData, loading: bankTransferLoading } = useQuery(
+    BankTransferDetailsDocument,
+    { fetchPolicy: 'cache-first' },
+  );
+  const bankTransferAvailable = Boolean(bankTransferData?.bankTransferDetails);
+  const paymentOptions = useMemo(
+    () =>
+      bankTransferAvailable
+        ? [...BASE_PAYMENT_OPTIONS, BANK_TRANSFER_OPTION]
+        : BASE_PAYMENT_OPTIONS,
+    [bankTransferAvailable],
+  );
   const [cardForm, setCardForm] = useState<CheckoutCardFormState>(EMPTY_CHECKOUT_CARD_FORM);
   const [cardFormError, setCardFormError] = useState<string | null>(null);
   const [cardEntryMode, setCardEntryMode] = useState<CardEntryMode>('new');
@@ -138,9 +158,13 @@ export function CheckoutPaymentSelection() {
   useEffect(() => {
     if (paymentMethod === null) {
       setPaymentMethod('promptpay');
+      return;
     }
-  }, [paymentMethod, setPaymentMethod]);
-
+    // Bank transfer is off until admin configures account details.
+    if (paymentMethod === 'bank_transfer' && !bankTransferLoading && !bankTransferAvailable) {
+      setPaymentMethod('promptpay');
+    }
+  }, [bankTransferAvailable, bankTransferLoading, paymentMethod, setPaymentMethod]);
   const clearCardForm = useCallback(() => {
     setCardForm(EMPTY_CHECKOUT_CARD_FORM);
     setCardFormError(null);
@@ -218,7 +242,7 @@ export function CheckoutPaymentSelection() {
 
       <div className="mt-sop-16px flex flex-col gap-sop-20px">
         <div role="radiogroup" aria-label="วิธีการชำระเงิน" className="flex flex-col gap-sop-12px">
-          {PAYMENT_OPTIONS.map((option) => (
+          {paymentOptions.map((option) => (
             <PaymentMethodOption
               key={option.value}
               value={option.value}

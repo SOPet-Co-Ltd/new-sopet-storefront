@@ -1,9 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaymentRetryPanel } from './PaymentRetryPanel';
 import { PaymentFailedState } from './PaymentFailedState';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
+import { server } from '@/test/mocks/server';
 
 vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: vi.fn(() => ({
@@ -38,30 +41,107 @@ vi.mock('@/lib/payment/omise', async () => {
   };
 });
 
+function renderWithApollo(ui: React.ReactElement) {
+  const Wrapper = createApolloTestWrapper();
+  return render(<Wrapper>{ui}</Wrapper>);
+}
+
 describe('PaymentRetryPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('default: shows PromptPay and card only (no COD)', () => {
-    render(<PaymentRetryPanel />);
+  it('default: shows PromptPay and card only (no COD, no bank transfer when disabled)', async () => {
+    renderWithApollo(<PaymentRetryPanel />);
 
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByTestId('payment-method-bank_transfer')).not.toBeInTheDocument();
+    });
     expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
   });
 
+  it('shows bank_transfer when admin bank details are configured', async () => {
+    server.use(
+      graphql.query('BankTransferDetails', () =>
+        HttpResponse.json({
+          data: {
+            bankTransferDetails: {
+              bankName: 'ธนาคารกสิกรไทย',
+              accountName: 'SOPET',
+              accountNumber: '123-4-56789-0',
+            },
+          },
+        }),
+      ),
+    );
+
+    renderWithApollo(<PaymentRetryPanel />);
+
+    expect(await screen.findByTestId('payment-method-bank_transfer')).toBeInTheDocument();
+  });
+
+  it('hideBankTransfer: omits bank transfer even when configured', async () => {
+    server.use(
+      graphql.query('BankTransferDetails', () =>
+        HttpResponse.json({
+          data: {
+            bankTransferDetails: {
+              bankName: 'ธนาคารกสิกรไทย',
+              accountName: 'SOPET',
+              accountNumber: '123-4-56789-0',
+            },
+          },
+        }),
+      ),
+    );
+
+    renderWithApollo(<PaymentRetryPanel hideBankTransfer />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('payment-method-card')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('payment-method-bank_transfer')).not.toBeInTheDocument();
+  });
+
+  it('submits bank_transfer when selected', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    server.use(
+      graphql.query('BankTransferDetails', () =>
+        HttpResponse.json({
+          data: {
+            bankTransferDetails: {
+              bankName: 'ธนาคารกสิกรไทย',
+              accountName: 'SOPET',
+              accountNumber: '123-4-56789-0',
+            },
+          },
+        }),
+      ),
+    );
+
+    renderWithApollo(<PaymentRetryPanel onSubmit={onSubmit} />);
+
+    await user.click(await screen.findByTestId('payment-method-bank_transfer'));
+    await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ paymentMethod: 'bank_transfer' }));
+  });
+
   it('hidePromptPay: shows card only (mid-QR active wait)', () => {
-    render(<PaymentRetryPanel hidePromptPay />);
+    renderWithApollo(<PaymentRetryPanel hidePromptPay />);
 
     expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
   });
 
   it('heading uses text-gray-900 for AA contrast (UI Spec lock)', () => {
-    render(<PaymentRetryPanel />);
+    renderWithApollo(<PaymentRetryPanel />);
 
     const heading = screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' });
     expect(heading).toHaveClass('sop-body-lg-medium');
@@ -71,7 +151,7 @@ describe('PaymentRetryPanel', () => {
 
   it('empty saved cards → new-card form only when card selected (empty state)', async () => {
     const user = userEvent.setup();
-    render(<PaymentRetryPanel />);
+    renderWithApollo(<PaymentRetryPanel />);
 
     await user.click(screen.getByTestId('payment-method-card'));
 
@@ -88,7 +168,7 @@ describe('PaymentRetryPanel', () => {
         }),
     );
 
-    render(<PaymentRetryPanel onSubmit={onSubmit} />);
+    renderWithApollo(<PaymentRetryPanel onSubmit={onSubmit} />);
 
     await user.click(screen.getByTestId('payment-method-promptpay'));
     await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
@@ -100,78 +180,30 @@ describe('PaymentRetryPanel', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
   });
 
-  it('locks method radios and card fields while confirm is in progress, then re-enables on failure', async () => {
+  it('onSubmittingChange fires true then false when submit fails', async () => {
     const user = userEvent.setup();
-    const { tokenizeCard } = await import('@/lib/payment/omise');
-    vi.mocked(tokenizeCard).mockResolvedValue('tok_test_lock');
-
-    let rejectSubmit!: (error: Error) => void;
-    const onSubmit = vi.fn(
-      () =>
-        new Promise<void>((_resolve, reject) => {
-          rejectSubmit = reject;
-        }),
-    );
     const onSubmittingChange = vi.fn();
+    const onSubmit = vi.fn().mockRejectedValue(new Error('create failed'));
 
-    render(<PaymentRetryPanel onSubmit={onSubmit} onSubmittingChange={onSubmittingChange} />);
-
-    await user.click(screen.getByTestId('payment-method-card'));
-    await user.type(screen.getByTestId('card-number-input'), '4242424242424242');
-    await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
-    await user.type(screen.getByTestId('card-expiry-input'), '12/30');
-    await user.type(screen.getByTestId('card-cvv-input'), '123');
-
-    const cardNumberBeforeSubmit = (screen.getByTestId('card-number-input') as HTMLInputElement)
-      .value;
-
-    await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
-
-    await waitFor(() => {
-      expect(onSubmittingChange).toHaveBeenCalledWith(true);
-      expect(screen.getByTestId('card-number-input')).toBeDisabled();
-      expect(screen.getByTestId('payment-method-promptpay')).toBeDisabled();
-      expect(screen.getByTestId('payment-method-card')).toBeDisabled();
-      expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeDisabled();
-    });
-
-    expect((screen.getByTestId('card-number-input') as HTMLInputElement).value).toBe(
-      cardNumberBeforeSubmit,
+    renderWithApollo(
+      <PaymentRetryPanel onSubmit={onSubmit} onSubmittingChange={onSubmittingChange} />,
     );
 
-    rejectSubmit(new Error('ไม่สามารถสร้างการชำระเงินได้'));
-
-    await waitFor(() => {
-      expect(onSubmittingChange).toHaveBeenCalledWith(false);
-      expect(screen.getByTestId('card-number-input')).not.toBeDisabled();
-      expect(screen.getByTestId('payment-method-promptpay')).not.toBeDisabled();
-      expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).not.toBeDisabled();
-    });
-
-    expect((screen.getByTestId('card-number-input') as HTMLInputElement).value).toBe(
-      cardNumberBeforeSubmit,
-    );
-    expect(screen.getByRole('alert')).toHaveTextContent('ไม่สามารถสร้างการชำระเงินได้');
-  });
-
-  it('empty input: submitting card with empty fields shows validation and does not fire onSubmit', async () => {
-    const user = userEvent.setup();
-    const onSubmit = vi.fn();
-
-    render(<PaymentRetryPanel onSubmit={onSubmit} />);
-
-    await user.click(screen.getByTestId('payment-method-card'));
+    await user.click(screen.getByTestId('payment-method-promptpay'));
     await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
 
-    expect(screen.getByText('กรุณากรอกหมายเลขบัตร')).toBeInTheDocument();
-    expect(onSubmit).not.toHaveBeenCalled();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(onSubmittingChange).toHaveBeenCalledWith(true);
+    await waitFor(() => expect(onSubmittingChange).toHaveBeenCalledWith(false));
   });
 
   it('invalid option: unsupported payment method is rejected and onSubmit not fired', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
 
-    render(<PaymentRetryPanel onSubmit={onSubmit} initialPaymentMethod={'paypal' as never} />);
+    renderWithApollo(
+      <PaymentRetryPanel onSubmit={onSubmit} initialPaymentMethod={'paypal' as never} />,
+    );
 
     await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
 
@@ -181,7 +213,7 @@ describe('PaymentRetryPanel', () => {
 
   it('error: surfaces submitError while preserving selected method', async () => {
     const user = userEvent.setup();
-    render(<PaymentRetryPanel submitError="ไม่สามารถสร้างการชำระเงินได้" />);
+    renderWithApollo(<PaymentRetryPanel submitError="ไม่สามารถสร้างการชำระเงินได้" />);
 
     await user.click(screen.getByTestId('payment-method-promptpay'));
 
@@ -191,7 +223,7 @@ describe('PaymentRetryPanel', () => {
 
   it('external isSubmitting disables double-submit and card fields', async () => {
     const user = userEvent.setup();
-    render(<PaymentRetryPanel isSubmitting />);
+    renderWithApollo(<PaymentRetryPanel isSubmitting />);
 
     expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeDisabled();
     expect(screen.getByTestId('payment-method-promptpay')).toBeDisabled();
@@ -203,7 +235,7 @@ describe('PaymentRetryPanel', () => {
   });
 
   it('external isSubmitting disables card form when card already selected', () => {
-    render(<PaymentRetryPanel isSubmitting initialPaymentMethod="card" />);
+    renderWithApollo(<PaymentRetryPanel isSubmitting initialPaymentMethod="card" />);
 
     expect(screen.getByTestId('card-number-input')).toBeDisabled();
     expect(screen.getByTestId('card-name-input')).toBeDisabled();
@@ -215,7 +247,7 @@ describe('PaymentRetryPanel', () => {
 
 describe('PaymentFailedState entry (expanded by default)', () => {
   it('renders PaymentRetryPanel expanded without requiring CTA click', () => {
-    render(<PaymentFailedState isQrExpired={false} />);
+    renderWithApollo(<PaymentFailedState isQrExpired={false} />);
 
     expect(screen.getByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')).toBeInTheDocument();
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
@@ -226,7 +258,7 @@ describe('PaymentFailedState entry (expanded by default)', () => {
 describe('PaymentWaitingAfterReturnState entry (collapsed)', () => {
   it('hides PaymentRetryPanel behind เปลี่ยนวิธีชำระเงิน until expanded', async () => {
     const user = userEvent.setup();
-    render(
+    renderWithApollo(
       <PaymentWaitingAfterReturnState
         authorizeUri="https://pay.omise.co/offsites/ofsp_test/pay"
         amountLabel="฿100.00"

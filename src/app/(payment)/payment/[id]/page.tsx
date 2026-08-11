@@ -176,6 +176,7 @@ export default function PaymentPage() {
         retrySubmitting={creatingPayment || retryNavigating}
         paymentRecoveryUnavailable={paymentRecoveryUnavailable}
         heldUnpaidBlocked={heldUnpaidBlocked}
+        orderCreatedAt={order?.createdAt ?? null}
       />
     </main>
   );

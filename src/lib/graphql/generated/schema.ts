@@ -2,13 +2,13 @@ export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string };
-  String: { input: string; output: string };
-  Boolean: { input: boolean; output: boolean };
-  Int: { input: number; output: number };
-  Float: { input: number; output: number };
+  ID: { input: string; output: string; }
+  String: { input: string; output: string; }
+  Boolean: { input: boolean; output: boolean; }
+  Int: { input: number; output: number; }
+  Float: { input: number; output: number; }
   /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
-  DateTime: { input: string; output: string };
+  DateTime: { input: string; output: string; }
 };
 
 export type AcceptAdminInvitationInput = {
@@ -296,6 +296,23 @@ export type AuthTokens = {
   refreshToken: Scalars['String']['output'];
 };
 
+export type BankTransferDetailsType = {
+  __typename?: 'BankTransferDetailsType';
+  accountName: Scalars['String']['output'];
+  accountNumber: Scalars['String']['output'];
+  bankName: Scalars['String']['output'];
+  branchName?: Maybe<Scalars['String']['output']>;
+};
+
+export type BankTransferSettingsType = {
+  __typename?: 'BankTransferSettingsType';
+  accountName: Scalars['String']['output'];
+  accountNumber: Scalars['String']['output'];
+  bankName: Scalars['String']['output'];
+  branchName?: Maybe<Scalars['String']['output']>;
+  enabled: Scalars['Boolean']['output'];
+};
+
 export type BrandType = {
   __typename?: 'BrandType';
   approvalStatus: Scalars['String']['output'];
@@ -574,7 +591,7 @@ export enum CustomerOrderListFilter {
   Cancelled = 'CANCELLED',
   Delivered = 'DELIVERED',
   InProgress = 'IN_PROGRESS',
-  PendingPayment = 'PENDING_PAYMENT',
+  PendingPayment = 'PENDING_PAYMENT'
 }
 
 export type CustomerProfile = {
@@ -685,7 +702,7 @@ export enum EmailTemplateKey {
   PasswordReset = 'PASSWORD_RESET',
   StoreMemberInvite = 'STORE_MEMBER_INVITE',
   VendorAccountSuspended = 'VENDOR_ACCOUNT_SUSPENDED',
-  VendorInvite = 'VENDOR_INVITE',
+  VendorInvite = 'VENDOR_INVITE'
 }
 
 export type FavoriteProductInput = {
@@ -768,6 +785,7 @@ export type Mutation = {
   changePassword: MessagePayload;
   clearLoginPageDesktopImage: LoginPageImagesType;
   clearLoginPageMobileImage: LoginPageImagesType;
+  confirmBankTransferPaid: OrderType;
   confirmGuestOrderDelivered: OrderType;
   confirmOrderDelivered: OrderType;
   createAddress: SavedAddressType;
@@ -866,6 +884,7 @@ export type Mutation = {
   toggleSaleCampaign: SaleCampaignType;
   triggerPayout: PayoutType;
   updateAddress: SavedAddressType;
+  updateBankTransferDetails: BankTransferSettingsType;
   updateBrand: BrandType;
   updateCartItem: CartType;
   updateCategory: CategoryType;
@@ -902,642 +921,807 @@ export type Mutation = {
   verifyEmail: MessagePayload;
 };
 
+
 export type MutationAcceptAdminInvitationArgs = {
   input: AcceptAdminInvitationInput;
 };
+
 
 export type MutationAcceptStoreInvitationArgs = {
   token: Scalars['String']['input'];
 };
 
+
 export type MutationAcceptStoreMemberInvitationArgs = {
   input: AcceptStoreMemberInvitationInput;
 };
+
 
 export type MutationAcceptVendorInvitationArgs = {
   input: AcceptVendorInvitationInput;
 };
 
+
 export type MutationAcknowledgeVendorOrderArgs = {
   orderId: Scalars['String']['input'];
 };
+
 
 export type MutationAddFavoriteArgs = {
   input: FavoriteProductInput;
 };
 
+
 export type MutationAddPaymentMethodArgs = {
   input: AddPaymentMethodInput;
 };
+
 
 export type MutationAddProductImageArgs = {
   input: AddProductImageInput;
   productId: Scalars['String']['input'];
 };
 
+
 export type MutationAddToCartArgs = {
   input: AddToCartInput;
 };
+
 
 export type MutationAdminCreateStoreShippingOptionArgs = {
   input: CreateShippingOptionInput;
   storeId: Scalars['String']['input'];
 };
 
+
 export type MutationAdminDeleteStoreShippingOptionArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationAdminLoginArgs = {
   input: VendorLoginInput;
 };
 
+
 export type MutationAdminResendVendorEmailVerificationArgs = {
   vendorId: Scalars['String']['input'];
 };
 
+
 export type MutationAdminTriggerVendorPasswordResetArgs = {
   vendorId: Scalars['String']['input'];
 };
+
 
 export type MutationAdminUpdateStoreShippingOptionArgs = {
   id: Scalars['String']['input'];
   input: UpdateShippingOptionInput;
 };
 
+
 export type MutationAdminVerifyVendorEmailArgs = {
   vendorId: Scalars['String']['input'];
 };
+
 
 export type MutationApproveBrandArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationApproveCategoryArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationApprovePetTypeArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationApproveReviewArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationApproveStoreArgs = {
   input: ApproveStoreInput;
 };
 
+
 export type MutationApproveStoreReactivationRequestArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationApproveStoreRequestArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationApproveTagArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationCancelVendorOrderArgs = {
   orderId: Scalars['String']['input'];
 };
 
+
 export type MutationChangeCustomerPhoneArgs = {
   input: ChangeCustomerPhoneInput;
 };
+
 
 export type MutationChangePasswordArgs = {
   input: ChangePasswordInput;
 };
 
+
+export type MutationConfirmBankTransferPaidArgs = {
+  note?: InputMaybe<Scalars['String']['input']>;
+  orderId: Scalars['String']['input'];
+};
+
+
 export type MutationConfirmGuestOrderDeliveredArgs = {
   input: ConfirmOrderDeliveredInput;
 };
+
 
 export type MutationConfirmOrderDeliveredArgs = {
   input: ConfirmOrderDeliveredInput;
 };
 
+
 export type MutationCreateAddressArgs = {
   input: CreateAddressInput;
 };
+
 
 export type MutationCreateBrandArgs = {
   input: CreateBrandInput;
 };
 
+
 export type MutationCreateCategoryArgs = {
   input: CreateCategoryInput;
 };
+
 
 export type MutationCreateEmailContainerArgs = {
   input: CreateEmailContainerInput;
 };
 
+
 export type MutationCreateOrderArgs = {
   input: CreateOrderInput;
 };
+
 
 export type MutationCreatePaymentArgs = {
   input: CreatePaymentInput;
 };
 
+
 export type MutationCreatePayoutArgs = {
   input: CreatePayoutInput;
 };
+
 
 export type MutationCreatePetTypeArgs = {
   input: CreatePetTypeInput;
 };
 
+
 export type MutationCreatePlatformAdArgs = {
   input: CreatePlatformAdInput;
 };
+
 
 export type MutationCreatePlatformBannerArgs = {
   input: CreatePlatformBannerInput;
 };
 
+
 export type MutationCreatePlatformSponsorArgs = {
   input: CreatePlatformSponsorInput;
 };
 
+
 export type MutationCreateProductArgs = {
   input: CreateProductInput;
 };
+
 
 export type MutationCreateProductVariantArgs = {
   input: CreateProductVariantInput;
   productId: Scalars['String']['input'];
 };
 
+
 export type MutationCreatePromotionArgs = {
   input: CreatePromotionInput;
 };
+
 
 export type MutationCreateReviewArgs = {
   input: CreateReviewInput;
 };
 
+
 export type MutationCreateReviewReplyArgs = {
   input: CreateReviewReplyInput;
 };
+
 
 export type MutationCreateSaleCampaignArgs = {
   input: CreateSaleCampaignInput;
 };
 
+
 export type MutationCreateSearchSynonymArgs = {
   input: CreateSearchSynonymInput;
 };
+
 
 export type MutationCreateShippingOptionArgs = {
   input: CreateShippingOptionInput;
 };
 
+
 export type MutationCreateShippingProviderArgs = {
   input: CreateShippingProviderInput;
 };
+
 
 export type MutationCreateStoreApiKeyArgs = {
   name: Scalars['String']['input'];
   storeId: Scalars['String']['input'];
 };
 
+
 export type MutationCreateStoreAsAdminArgs = {
   input: CreateStoreAsAdminInput;
 };
+
 
 export type MutationCreateTagArgs = {
   input: CreateTagInput;
 };
 
+
 export type MutationDeclineStoreInvitationArgs = {
   token: Scalars['String']['input'];
 };
+
 
 export type MutationDeleteAddressArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationDeleteBrandArgs = {
   input: DeleteTaxonomyInput;
 };
+
 
 export type MutationDeleteCategoryArgs = {
   input: DeleteTaxonomyInput;
 };
 
+
 export type MutationDeletePaymentMethodArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationDeletePetTypeArgs = {
   input: DeleteTaxonomyInput;
 };
 
+
 export type MutationDeletePlatformAdArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationDeletePlatformBannerArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationDeletePlatformSponsorArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationDeleteProductArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationDeleteProductImageArgs = {
   imageId: Scalars['String']['input'];
 };
+
 
 export type MutationDeleteProductVariantArgs = {
   variantId: Scalars['String']['input'];
 };
 
+
 export type MutationDeletePromotionArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationDeleteSaleCampaignArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationDeleteSearchSynonymArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationDeleteShippingOptionArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationDeleteShippingProviderArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationDeleteTagArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationInviteAdminArgs = {
   input: InviteAdminInput;
 };
+
 
 export type MutationInviteStoreMemberArgs = {
   input: InviteStoreMemberInput;
 };
 
+
 export type MutationInviteVendorArgs = {
   input: InviteVendorInput;
 };
+
 
 export type MutationMarkNotificationReadArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationMarkVendorOrderPaidArgs = {
   orderId: Scalars['String']['input'];
 };
+
 
 export type MutationMergeCartArgs = {
   sessionId: Scalars['String']['input'];
 };
 
+
 export type MutationPreviewEmailContentTemplateArgs = {
   input: PreviewEmailContentTemplateInput;
 };
+
 
 export type MutationPublishProductArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationReactivateAccountArgs = {
   input: ReactivateAccountInput;
 };
+
 
 export type MutationRefreshTokenArgs = {
   input: RefreshTokenInput;
 };
 
+
 export type MutationRegisterStoreArgs = {
   input: RegisterStoreInput;
 };
+
 
 export type MutationRegisterVendorArgs = {
   input: RegisterVendorInput;
 };
 
+
 export type MutationRejectBrandArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationRejectCategoryArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationRejectPetTypeArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationRejectReviewArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationRejectStoreArgs = {
   input: RejectStoreInput;
 };
+
 
 export type MutationRejectStoreReactivationRequestArgs = {
   input: RejectStoreReactivationRequestInput;
 };
 
+
 export type MutationRejectStoreRequestArgs = {
   input: RejectStoreRequestInput;
 };
+
 
 export type MutationRejectTagArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationRemoveCartItemArgs = {
   input: RemoveCartItemInput;
 };
+
 
 export type MutationRemoveFavoriteArgs = {
   input: FavoriteProductInput;
 };
 
+
 export type MutationRemoveStoreMemberArgs = {
   memberId: Scalars['String']['input'];
 };
+
 
 export type MutationReorderPlatformBannersArgs = {
   ids: Array<Scalars['ID']['input']>;
 };
 
+
 export type MutationReorderPlatformSponsorsArgs = {
   ids: Array<Scalars['ID']['input']>;
 };
+
 
 export type MutationReorderProductImagesArgs = {
   imageIds: Array<Scalars['ID']['input']>;
   productId: Scalars['String']['input'];
 };
 
+
 export type MutationRequestPasswordResetArgs = {
   input: RequestPasswordResetInput;
 };
+
 
 export type MutationResetPasswordArgs = {
   input: ResetPasswordInput;
 };
 
+
 export type MutationRevokeAdminInvitationArgs = {
   invitationId: Scalars['String']['input'];
 };
+
 
 export type MutationRevokeStoreApiKeyArgs = {
   id: Scalars['String']['input'];
   storeId: Scalars['String']['input'];
 };
 
+
 export type MutationRevokeStoreInvitationArgs = {
   invitationId: Scalars['String']['input'];
 };
+
 
 export type MutationSendCustomerOtpArgs = {
   input: SendCustomerOtpInput;
 };
 
+
 export type MutationSendTestEmailContentTemplateArgs = {
   input: SendTestEmailContentTemplateInput;
 };
+
 
 export type MutationSetAdminActiveArgs = {
   isActive: Scalars['Boolean']['input'];
   userId: Scalars['String']['input'];
 };
 
+
 export type MutationSetCategoryImageArgs = {
   input: SetCategoryImageInput;
 };
+
 
 export type MutationSetCustomerActiveArgs = {
   id: Scalars['String']['input'];
   isActive: Scalars['Boolean']['input'];
 };
 
+
 export type MutationSetDefaultAddressArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type MutationSetDefaultEmailContainerArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationSetDefaultPaymentMethodArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type MutationSetPetTypeImageArgs = {
   input: SetPetTypeImageInput;
 };
+
 
 export type MutationSetProductThumbnailArgs = {
   imageId: Scalars['String']['input'];
   productId: Scalars['String']['input'];
 };
 
+
 export type MutationShipVendorOrderArgs = {
   input: ShipVendorOrderInput;
 };
+
 
 export type MutationSubmitStoreReactivationRequestArgs = {
   input: SubmitStoreReactivationRequestInput;
 };
 
+
 export type MutationSubmitStoreRequestArgs = {
   input: SubmitStoreRequestInput;
 };
 
+
 export type MutationSwitchStoreArgs = {
   input: SwitchStoreInput;
 };
+
 
 export type MutationSyncProductVariantsArgs = {
   productId: Scalars['String']['input'];
   variants: Array<SyncProductVariantItemInput>;
 };
 
+
 export type MutationTogglePromotionArgs = {
   id: Scalars['String']['input'];
   isActive: Scalars['Boolean']['input'];
 };
+
 
 export type MutationToggleSaleCampaignArgs = {
   id: Scalars['String']['input'];
   isActive: Scalars['Boolean']['input'];
 };
 
+
 export type MutationTriggerPayoutArgs = {
   input: TriggerPayoutInput;
 };
+
 
 export type MutationUpdateAddressArgs = {
   id: Scalars['String']['input'];
   input: UpdateAddressInput;
 };
 
+
+export type MutationUpdateBankTransferDetailsArgs = {
+  input: UpdateBankTransferDetailsInput;
+};
+
+
 export type MutationUpdateBrandArgs = {
   input: UpdateBrandInput;
 };
+
 
 export type MutationUpdateCartItemArgs = {
   input: UpdateCartItemInput;
 };
 
+
 export type MutationUpdateCategoryArgs = {
   input: UpdateCategoryInput;
 };
 
+
 export type MutationUpdateCustomerAsAdminArgs = {
   input: UpdateCustomerAsAdminInput;
 };
+
 
 export type MutationUpdateEmailContainerArgs = {
   id: Scalars['ID']['input'];
   input: UpdateEmailContainerInput;
 };
 
+
 export type MutationUpdateEmailContentTemplateArgs = {
   id: Scalars['ID']['input'];
   input: UpdateEmailContentTemplateInput;
 };
 
+
 export type MutationUpdateLoginPageImagesArgs = {
   input: UpdateLoginPageImagesInput;
 };
+
 
 export type MutationUpdateOrderStatusArgs = {
   input: UpdateOrderStatusInput;
 };
 
+
 export type MutationUpdatePetTypeArgs = {
   input: UpdatePetTypeInput;
 };
+
 
 export type MutationUpdatePlatformAdArgs = {
   input: UpdatePlatformAdInput;
 };
 
+
 export type MutationUpdatePlatformBannerArgs = {
   input: UpdatePlatformBannerInput;
 };
 
+
 export type MutationUpdatePlatformSponsorArgs = {
   input: UpdatePlatformSponsorInput;
 };
+
 
 export type MutationUpdateProductArgs = {
   id: Scalars['String']['input'];
   input: UpdateProductInput;
 };
 
+
 export type MutationUpdateProductImageArgs = {
   imageId: Scalars['String']['input'];
   input: UpdateProductImageInput;
 };
+
 
 export type MutationUpdateProductVariantArgs = {
   input: UpdateProductVariantInput;
   variantId: Scalars['String']['input'];
 };
 
+
 export type MutationUpdateProfileArgs = {
   input: UpdateProfileInput;
 };
+
 
 export type MutationUpdatePromotionArgs = {
   id: Scalars['String']['input'];
   input: UpdatePromotionInput;
 };
 
+
 export type MutationUpdateReviewReplyArgs = {
   input: UpdateReviewReplyInput;
 };
+
 
 export type MutationUpdateSaleCampaignArgs = {
   id: Scalars['String']['input'];
   input: UpdateSaleCampaignInput;
 };
 
+
 export type MutationUpdateSearchRankingWeightsArgs = {
   input: UpdateSearchRankingWeightsInput;
 };
+
 
 export type MutationUpdateSearchSynonymArgs = {
   id: Scalars['String']['input'];
   input: UpdateSearchSynonymInput;
 };
 
+
 export type MutationUpdateShippingOptionArgs = {
   id: Scalars['String']['input'];
   input: UpdateShippingOptionInput;
 };
+
 
 export type MutationUpdateShippingProviderArgs = {
   id: Scalars['String']['input'];
   input: UpdateShippingProviderInput;
 };
 
+
 export type MutationUpdateStoreArgs = {
   input: UpdateStoreSettingsInput;
 };
+
 
 export type MutationUpdateStoreAsAdminArgs = {
   input: UpdateStoreAsAdminInput;
 };
 
+
 export type MutationUpdateStoreMemberRoleArgs = {
   input: UpdateStoreMemberRoleInput;
 };
+
 
 export type MutationUpdateStorePayoutArgs = {
   input: UpdateStorePayoutInput;
 };
 
+
 export type MutationUpdateTagArgs = {
   input: UpdateTagInput;
 };
+
 
 export type MutationUpdateUserProfileArgs = {
   input: UpdateUserProfileInput;
 };
 
+
 export type MutationUpdateVendorAsAdminArgs = {
   input: UpdateVendorAsAdminInput;
 };
+
 
 export type MutationUploadImageArgs = {
   base64: Scalars['String']['input'];
   folder?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type MutationVendorLoginArgs = {
   input: VendorLoginInput;
 };
 
+
 export type MutationVerifyCustomerOtpArgs = {
   input: VerifyCustomerOtpInput;
 };
+
 
 export type MutationVerifyEmailArgs = {
   input: VerifyEmailInput;
@@ -1982,6 +2166,8 @@ export type Query = {
   approvedCategories: Array<CategoryType>;
   approvedPetTypes: Array<PetTypeType>;
   approvedTags: Array<TagType>;
+  bankTransferDetails?: Maybe<BankTransferDetailsType>;
+  bankTransferSettings: BankTransferSettingsType;
   brandDeleteImpact: TaxonomyDeleteImpactType;
   cart: CartType;
   categoryDeleteImpact: TaxonomyDeleteImpactType;
@@ -2021,6 +2207,7 @@ export type Query = {
   paymentByOrderId: PaymentType;
   paymentMethods: Array<SavedPaymentMethodType>;
   pendingAdminInvitations: Array<AdminInvitationType>;
+  pendingBankTransferOrders: OrderConnection;
   pendingBrands: Array<BrandType>;
   pendingCategories: Array<CategoryType>;
   pendingImportedReviews: AdminImportedReviewConnection;
@@ -2091,17 +2278,21 @@ export type Query = {
   vendorProducts: ProductConnection;
 };
 
+
 export type QueryActiveSaleCampaignItemsArgs = {
   storeId: Scalars['String']['input'];
 };
+
 
 export type QueryActiveSaleCampaignItemsForProductsArgs = {
   productIds: Array<Scalars['String']['input']>;
 };
 
+
 export type QueryActiveStorePromotionsArgs = {
   storeId: Scalars['String']['input'];
 };
+
 
 export type QueryAdminAuditLogsArgs = {
   filter?: InputMaybe<AdminAuditLogFilterInput>;
@@ -2109,13 +2300,16 @@ export type QueryAdminAuditLogsArgs = {
   page?: Scalars['Int']['input'];
 };
 
+
 export type QueryAdminCustomerArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type QueryAdminCustomerDetailArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type QueryAdminCustomersArgs = {
   limit?: Scalars['Int']['input'];
@@ -2123,103 +2317,128 @@ export type QueryAdminCustomersArgs = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryAdminStoreArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type QueryAdminStorePayoutSummaryArgs = {
   storeId: Scalars['String']['input'];
 };
 
+
 export type QueryAdminStorePayoutsArgs = {
   storeId: Scalars['String']['input'];
 };
+
 
 export type QueryAdminStoreReactivationRequestsArgs = {
   status?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryAdminStoreShippingOptionsArgs = {
   storeId: Scalars['String']['input'];
 };
+
 
 export type QueryAdminVendorArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type QueryAdminVendorDetailArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type QueryAdminVendorsArgs = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryBrandDeleteImpactArgs = {
   brandId: Scalars['String']['input'];
 };
+
 
 export type QueryCartArgs = {
   sessionId?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryCategoryDeleteImpactArgs = {
   categoryId: Scalars['String']['input'];
 };
+
 
 export type QueryEmailContainerArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type QueryEmailContentTemplateArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type QueryEmailContentTemplateByKeyArgs = {
   key: EmailTemplateKey;
 };
+
 
 export type QueryExportSearchAnalyticsCsvArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
+
 export type QueryGetAdminInvitationByTokenArgs = {
   token: Scalars['String']['input'];
 };
+
 
 export type QueryGetPasswordResetTokenStatusArgs = {
   token: Scalars['String']['input'];
 };
 
+
 export type QueryGetStoreInvitationByTokenArgs = {
   token: Scalars['String']['input'];
 };
+
 
 export type QueryGuestOrdersArgs = {
   guestPhone: Scalars['String']['input'];
 };
 
+
 export type QueryLatestPurchaseProductsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
+
 
 export type QueryMyReviewsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
+
 export type QueryNotificationsArgs = {
   unreadOnly?: InputMaybe<Scalars['Boolean']['input']>;
 };
+
 
 export type QueryOrderArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type QueryOrderTrackingArgs = {
   orderNumber: Scalars['String']['input'];
 };
+
 
 export type QueryOrdersArgs = {
   filter?: InputMaybe<CustomerOrderListFilter>;
@@ -2227,27 +2446,39 @@ export type QueryOrdersArgs = {
   page?: InputMaybe<Scalars['Int']['input']>;
 };
 
+
 export type QueryPaymentArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type QueryPaymentByOrderIdArgs = {
   orderId: Scalars['String']['input'];
 };
+
+
+export type QueryPendingBankTransferOrdersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+};
+
 
 export type QueryPendingImportedReviewsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
 };
 
+
 export type QueryPetTypeDeleteImpactArgs = {
   petTypeId: Scalars['String']['input'];
 };
+
 
 export type QueryPlatformAnalyticsArgs = {
   fromDate?: InputMaybe<Scalars['String']['input']>;
   toDate?: InputMaybe<Scalars['String']['input']>;
 };
+
 
 export type QueryPlatformSalesByCategoryArgs = {
   fromDate?: InputMaybe<Scalars['String']['input']>;
@@ -2255,45 +2486,55 @@ export type QueryPlatformSalesByCategoryArgs = {
   toDate?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryPlatformSalesByPaymentMethodArgs = {
   fromDate?: InputMaybe<Scalars['String']['input']>;
   toDate?: InputMaybe<Scalars['String']['input']>;
 };
+
 
 export type QueryPlatformSalesOverTimeArgs = {
   fromDate?: InputMaybe<Scalars['String']['input']>;
   toDate?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryPlatformTopProductsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
+
 
 export type QueryPlatformTopStoresArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
+
 export type QueryProductArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type QueryProductBySlugArgs = {
   slug: Scalars['String']['input'];
   storeId: Scalars['String']['input'];
 };
 
+
 export type QueryProductPublishChecklistArgs = {
   productId: Scalars['String']['input'];
 };
+
 
 export type QueryProductReviewsArgs = {
   productId: Scalars['String']['input'];
 };
 
+
 export type QueryProductVariantSyncImpactArgs = {
   productId: Scalars['String']['input'];
   variants: Array<SyncProductVariantItemInput>;
 };
+
 
 export type QueryProductsArgs = {
   brandIds?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -2312,6 +2553,7 @@ export type QueryProductsArgs = {
   tag?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryRecommendedProductsArgs = {
   excludeProductIds?: InputMaybe<Array<Scalars['String']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -2320,19 +2562,23 @@ export type QueryRecommendedProductsArgs = {
   shuffleSeed?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QuerySaleCampaignArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type QuerySearchAnalyticsSuggestionCtrArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
+
 export type QuerySearchAnalyticsSummaryArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
+
 
 export type QuerySearchAnalyticsTopQueriesArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
@@ -2340,15 +2586,18 @@ export type QuerySearchAnalyticsTopQueriesArgs = {
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
+
 export type QuerySearchAnalyticsZeroResultQueriesArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
+
 export type QuerySearchRecoverySuggestionsArgs = {
   query: Scalars['String']['input'];
 };
+
 
 export type QuerySearchSuggestionsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -2356,13 +2605,16 @@ export type QuerySearchSuggestionsArgs = {
   sessionId?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryShippingProvidersArgs = {
   includeInactive?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+
 export type QueryStoreArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type QueryStoreAnalyticsArgs = {
   fromDate?: InputMaybe<Scalars['String']['input']>;
@@ -2370,13 +2622,16 @@ export type QueryStoreAnalyticsArgs = {
   toDate?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryStoreApiKeysArgs = {
   storeId: Scalars['String']['input'];
 };
 
+
 export type QueryStoreBySlugArgs = {
   slug: Scalars['String']['input'];
 };
+
 
 export type QueryStoreProductReviewsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -2386,54 +2641,67 @@ export type QueryStoreProductReviewsArgs = {
   storeId: Scalars['String']['input'];
 };
 
+
 export type QueryStorePromotionsArgs = {
   storeId: Scalars['String']['input'];
 };
+
 
 export type QueryStoreReactivationRequestsArgs = {
   storeId: Scalars['String']['input'];
 };
 
+
 export type QueryStoreReviewSummaryArgs = {
   storeId: Scalars['String']['input'];
 };
+
 
 export type QueryStoreReviewsArgs = {
   storeId: Scalars['String']['input'];
 };
 
+
 export type QueryStoreSaleCampaignsArgs = {
   storeId: Scalars['String']['input'];
 };
+
 
 export type QueryStoreShippingOptionsArgs = {
   storeId: Scalars['String']['input'];
 };
 
+
 export type QueryTagDeleteImpactArgs = {
   tagId: Scalars['String']['input'];
 };
+
 
 export type QueryTopProductsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   storeId: Scalars['String']['input'];
 };
 
+
 export type QueryValidatePromotionArgs = {
   input: ValidatePromotionInput;
 };
+
 
 export type QueryValidatePromotionsArgs = {
   input: ValidatePromotionsInput;
 };
 
+
 export type QueryVendorCustomerArgs = {
   id: Scalars['String']['input'];
 };
 
+
 export type QueryVendorCustomerDetailArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type QueryVendorCustomersArgs = {
   limit?: Scalars['Int']['input'];
@@ -2441,13 +2709,16 @@ export type QueryVendorCustomersArgs = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
+
 export type QueryVendorOrdersArgs = {
   storeId: Scalars['String']['input'];
 };
 
+
 export type QueryVendorProductArgs = {
   id: Scalars['String']['input'];
 };
+
 
 export type QueryVendorProductsArgs = {
   brandIds?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -2915,6 +3186,7 @@ export type Subscription = {
   paymentStatusUpdated: PaymentType;
 };
 
+
 export type SubscriptionPaymentStatusUpdatedArgs = {
   orderId?: InputMaybe<Scalars['String']['input']>;
   paymentId?: InputMaybe<Scalars['String']['input']>;
@@ -2991,6 +3263,14 @@ export type UpdateAddressInput = {
   recipientName?: InputMaybe<Scalars['String']['input']>;
   recipientPhone?: InputMaybe<Scalars['String']['input']>;
   tumbon?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateBankTransferDetailsInput = {
+  accountName: Scalars['String']['input'];
+  accountNumber: Scalars['String']['input'];
+  bankName: Scalars['String']['input'];
+  branchName?: InputMaybe<Scalars['String']['input']>;
+  enabled: Scalars['Boolean']['input'];
 };
 
 export type UpdateBrandInput = {
@@ -3295,7 +3575,7 @@ export type ValidatePromotionsTargetInput = {
 
 export enum VariantRemovalBlockReason {
   HasOpenCarts = 'HAS_OPEN_CARTS',
-  HasOrders = 'HAS_ORDERS',
+  HasOrders = 'HAS_ORDERS'
 }
 
 export type VendorAuthPayload = {

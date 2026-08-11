@@ -28,4 +28,3 @@ export {
   type TrashBinMinimalisticIconProps,
 } from './TrashBinMinimalisticIcon';
 export { UserIcon, type UserIconProps } from './UserIcon';
-export { WalletIcon, type WalletIconProps } from './WalletIcon';

@@ -246,6 +246,8 @@ export {
   type UserManagementUserIconProps,
   WarningIcon,
   type WarningIconProps,
+  WalletIcon,
+  type WalletIconProps,
   WishListHeartIcon,
   type WishListHeartIconProps,
   YouTubeIcon,
@@ -344,8 +346,6 @@ export {
   type TrashBinMinimalisticIconProps,
   UserIcon,
   type UserIconProps,
-  WalletIcon,
-  type WalletIconProps,
 } from './outline';
 export { OutlineIcon, type OutlineIconProps } from './OutlineIcon';
 export { DEFAULT_ICON_SIZE, getIconSizeStyle, toCssSize } from './iconStyles';

@@ -30,7 +30,7 @@
 // ---------------------------------------------------------------------------
 //
 // Journey AC: "When the payment page shows pending PromptPay with live qrCodeUrl, customer
-// opens เปลี่ยนวิธีชำระเงิน, submits PaymentRetryPanel (PromptPay restart / card / COD), and
+// opens เปลี่ยนวิธีชำระเงิน, submits PaymentRetryPanel (PromptPay restart / card / bank_transfer when enabled), and
 // createPayment returns a NEW paymentId (including backend fail-open cancel), then storefront
 // clears prior 3DS one-shot key and router.push(/payment/{newId}) — never soft-succeed on same id;
 // never thank-you from switch alone" (prd AC-005, AC-011, AC-016, AC-017; UI Spec golden 1–5, 8–9)
@@ -38,7 +38,7 @@
 // ROI: 100 (BV:10 × Freq:9 + Legal:0 + Defect:10) — reserved slot (user-facing multi-step)
 // Behavior: Render PaymentPage with MSW pending+qrCodeUrl; assert CTA below QR collapsed
 // (aria-expanded=false, panel absent); click CTA → PaymentRetryPanel mounts, QR still visible;
-// submit PromptPay (and at least one of card/COD) with MSW createPayment returning distinct id
+// submit PromptPay (and at least one of card/bank_transfer when enabled) with MSW createPayment returning distinct id
 // (incl. a fail-open success response — no cancel-only modal); assert createPayment called with
 // same orderId; mockPush(`/payment/${newId}`); prior 3DS session key cleared; thank-you not shown
 // @category: fixture-e2e

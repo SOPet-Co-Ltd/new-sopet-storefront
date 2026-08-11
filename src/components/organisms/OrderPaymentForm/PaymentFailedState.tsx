@@ -7,6 +7,7 @@ export type PaymentFailedStateProps = {
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  onSubmittingChange?: PaymentRetryPanelProps['onSubmittingChange'];
 };
 
 export function PaymentFailedState({
@@ -14,6 +15,7 @@ export function PaymentFailedState({
   onRetrySubmit,
   submitError,
   isSubmitting,
+  onSubmittingChange,
 }: PaymentFailedStateProps) {
   return (
     <div data-testid="payment-failed-state">
@@ -33,6 +35,7 @@ export function PaymentFailedState({
         onSubmit={onRetrySubmit}
         submitError={submitError}
         isSubmitting={isSubmitting}
+        onSubmittingChange={onSubmittingChange}
       />
     </div>
   );

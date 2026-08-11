@@ -442,7 +442,10 @@ describe('PaymentPage', () => {
     checkoutState.creatingPayment = true;
     rerender(<PaymentPage />);
 
-    expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeDisabled();
+    // Checkout-like processing stage replaces recovery chrome while createPayment is in flight.
+    expect(screen.getByTestId('payment-retry-processing')).toBeInTheDocument();
+    expect(screen.getByText('กำลังดำเนินการ...')).toBeInTheDocument();
+    expect(screen.getByTestId('payment-retry-panel')).not.toBeVisible();
   });
 
   // Mid-QR BC-1: same payment id stays expanded with error (no soft-success navigate)

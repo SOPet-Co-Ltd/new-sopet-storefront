@@ -251,6 +251,39 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
   });
 
+  it('retrySubmitting swaps failed chrome for processing stage (no unsuccessful banner)', () => {
+    render(
+      <OrderPaymentForm
+        payment={{ ...basePayment, status: 'failed', expiresAt: null }}
+        loading={false}
+        error={undefined}
+        retrySubmitting
+      />,
+    );
+
+    expect(screen.getByTestId('payment-retry-processing')).toBeInTheDocument();
+    expect(screen.getByText('กำลังดำเนินการ...')).toBeInTheDocument();
+    expect(screen.getByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')).not.toBeVisible();
+    // Panel stays mounted (hidden) so in-flight submit can unlock on failure.
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+  });
+
+  it('paid status shows success handoff, never failed banner', () => {
+    render(
+      <OrderPaymentForm
+        payment={{ ...basePayment, status: 'paid', expiresAt: null }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByTestId('payment-paid-handoff')).toBeInTheDocument();
+    expect(screen.getByText('ชำระเงินสำเร็จ กำลังเปลี่ยนหน้า...')).toBeInTheDocument();
+    expect(
+      screen.queryByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'),
+    ).not.toBeInTheDocument();
+  });
+
   it('shows PaymentRetryPanel when failed PromptPay payment QR has expired', () => {
     render(
       <OrderPaymentForm

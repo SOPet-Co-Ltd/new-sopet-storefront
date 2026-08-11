@@ -100,6 +100,60 @@ describe('PaymentRetryPanel', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
   });
 
+  it('locks method radios and card fields while confirm is in progress, then re-enables on failure', async () => {
+    const user = userEvent.setup();
+    const { tokenizeCard } = await import('@/lib/payment/omise');
+    vi.mocked(tokenizeCard).mockResolvedValue('tok_test_lock');
+
+    let rejectSubmit!: (error: Error) => void;
+    const onSubmit = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectSubmit = reject;
+        }),
+    );
+    const onSubmittingChange = vi.fn();
+
+    render(<PaymentRetryPanel onSubmit={onSubmit} onSubmittingChange={onSubmittingChange} />);
+
+    await user.click(screen.getByTestId('payment-method-card'));
+    await user.type(screen.getByTestId('card-number-input'), '4242424242424242');
+    await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
+    await user.type(screen.getByTestId('card-expiry-input'), '12/30');
+    await user.type(screen.getByTestId('card-cvv-input'), '123');
+
+    const cardNumberBeforeSubmit = (screen.getByTestId('card-number-input') as HTMLInputElement)
+      .value;
+
+    await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
+
+    await waitFor(() => {
+      expect(onSubmittingChange).toHaveBeenCalledWith(true);
+      expect(screen.getByTestId('card-number-input')).toBeDisabled();
+      expect(screen.getByTestId('payment-method-promptpay')).toBeDisabled();
+      expect(screen.getByTestId('payment-method-card')).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeDisabled();
+    });
+
+    expect((screen.getByTestId('card-number-input') as HTMLInputElement).value).toBe(
+      cardNumberBeforeSubmit,
+    );
+
+    rejectSubmit(new Error('ไม่สามารถสร้างการชำระเงินได้'));
+
+    await waitFor(() => {
+      expect(onSubmittingChange).toHaveBeenCalledWith(false);
+      expect(screen.getByTestId('card-number-input')).not.toBeDisabled();
+      expect(screen.getByTestId('payment-method-promptpay')).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).not.toBeDisabled();
+    });
+
+    expect((screen.getByTestId('card-number-input') as HTMLInputElement).value).toBe(
+      cardNumberBeforeSubmit,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('ไม่สามารถสร้างการชำระเงินได้');
+  });
+
   it('empty input: submitting card with empty fields shows validation and does not fire onSubmit', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
@@ -135,9 +189,26 @@ describe('PaymentRetryPanel', () => {
     expect(screen.getByTestId('payment-method-promptpay')).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('external isSubmitting disables double-submit', () => {
+  it('external isSubmitting disables double-submit and card fields', async () => {
+    const user = userEvent.setup();
     render(<PaymentRetryPanel isSubmitting />);
 
+    expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeDisabled();
+    expect(screen.getByTestId('payment-method-promptpay')).toBeDisabled();
+    expect(screen.getByTestId('payment-method-card')).toBeDisabled();
+
+    // Card form mounts only after selection; external lock must still block method switch.
+    await user.click(screen.getByTestId('payment-method-card'));
+    expect(screen.queryByTestId('checkout-card-payment-form')).not.toBeInTheDocument();
+  });
+
+  it('external isSubmitting disables card form when card already selected', () => {
+    render(<PaymentRetryPanel isSubmitting initialPaymentMethod="card" />);
+
+    expect(screen.getByTestId('card-number-input')).toBeDisabled();
+    expect(screen.getByTestId('card-name-input')).toBeDisabled();
+    expect(screen.getByTestId('card-expiry-input')).toBeDisabled();
+    expect(screen.getByTestId('card-cvv-input')).toBeDisabled();
     expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeDisabled();
   });
 });

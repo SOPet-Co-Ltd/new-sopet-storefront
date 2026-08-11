@@ -4,7 +4,7 @@ import { Button } from '@/components/atoms/Button';
 import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { formatCountdown, usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { hasQrExpiredAt } from '@/lib/payment/orderNotPayable';
 import { Payment3dsAutoRedirect, threeDSAutoRedirectStorageKey } from './Payment3dsAutoRedirect';
 import { Payment3dsRedirectingState } from './Payment3dsRedirectingState';
@@ -14,6 +14,7 @@ import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
 import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
 import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
+import { PaymentRetryProcessingState } from './PaymentRetryProcessingState';
 import { HeldUnpaidPaymentBlock } from './HeldUnpaidPaymentBlock';
 
 export type OrderPaymentFormProps = {
@@ -51,16 +52,48 @@ function hasCompleted3dsAutoRedirect(paymentId: string, authorizeUri: string): b
   }
 }
 
+/**
+ * Keep recovery children mounted while busy so in-flight PaymentRetryPanel can unlock on failure.
+ * Visually swap to checkout-like processing (no failed / prior-stage chrome).
+ */
+function PaymentBusyShell({
+  titleId,
+  title,
+  busy,
+  children,
+}: {
+  titleId: string;
+  title: string;
+  busy: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
+      aria-labelledby={titleId}
+      aria-busy={busy || undefined}
+    >
+      <h1 id={titleId} className="text-xl font-bold text-gray-900">
+        {title}
+      </h1>
+      {busy ? <PaymentRetryProcessingState /> : null}
+      <div hidden={busy}>{children}</div>
+    </section>
+  );
+}
+
 /** Inline Mid-QR chrome (UI-LOCK-01 B) — local state resets when branch unmounts. */
 function MidQrChangeMethodChrome({
   onRetrySubmit,
   submitError,
   isSubmitting,
+  onSubmittingChange,
   onCheckStatus,
 }: {
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  onSubmittingChange?: PaymentRetryPanelProps['onSubmittingChange'];
   onCheckStatus?: () => void | Promise<unknown>;
 }) {
   const [recoveryExpanded, setRecoveryExpanded] = useState(false);
@@ -83,6 +116,7 @@ function MidQrChangeMethodChrome({
           onSubmit={onRetrySubmit}
           submitError={submitError}
           isSubmitting={isSubmitting}
+          onSubmittingChange={onSubmittingChange}
         />
       ) : null}
     </div>
@@ -103,6 +137,9 @@ export function OrderPaymentForm({
   paymentRecoveryUnavailable = false,
   heldUnpaidBlocked = false,
 }: OrderPaymentFormProps) {
+  const [panelSubmitting, setPanelSubmitting] = useState(false);
+  const isRetryBusy = Boolean(retrySubmitting || panelSubmitting);
+
   const hasQrCode = Boolean(payment?.qrCodeUrl);
   const handleExpire = useCallback(() => {
     onExpired?.();
@@ -194,27 +231,7 @@ export function OrderPaymentForm({
     );
   }
 
-  if (payment.status === 'failed') {
-    const isQrExpired = hasQrExpiredAt(payment.expiresAt);
-
-    return (
-      <section
-        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
-        aria-labelledby="payment-failed-title"
-      >
-        <h1 id="payment-failed-title" className="text-xl font-bold text-gray-900">
-          ชำระเงิน
-        </h1>
-        <PaymentFailedState
-          isQrExpired={isQrExpired}
-          onRetrySubmit={onRetryPayment}
-          submitError={retrySubmitError}
-          isSubmitting={retrySubmitting}
-        />
-      </section>
-    );
-  }
-
+  // Paid handoff takes priority so a successful charge never paints the failed banner.
   if (payment.status === 'paid') {
     return (
       <section
@@ -228,25 +245,36 @@ export function OrderPaymentForm({
     );
   }
 
+  if (payment.status === 'failed') {
+    const isQrExpired = hasQrExpiredAt(payment.expiresAt);
+
+    return (
+      <PaymentBusyShell titleId="payment-failed-title" title="ชำระเงิน" busy={isRetryBusy}>
+        <PaymentFailedState
+          isQrExpired={isQrExpired}
+          onRetrySubmit={onRetryPayment}
+          submitError={retrySubmitError}
+          isSubmitting={retrySubmitting}
+          onSubmittingChange={setPanelSubmitting}
+        />
+      </PaymentBusyShell>
+    );
+  }
+
   const authorizeUri = payment.authorizeUri?.trim() ? payment.authorizeUri : null;
   const hasRedirectUri = Boolean(authorizeUri);
 
   if (hasQrCode && isExpired && payment.status === 'pending') {
     return (
-      <section
-        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
-        aria-labelledby="payment-expired-title"
-      >
-        <h1 id="payment-expired-title" className="text-xl font-bold text-gray-900">
-          ชำระเงิน
-        </h1>
+      <PaymentBusyShell titleId="payment-expired-title" title="ชำระเงิน" busy={isRetryBusy}>
         <PaymentFailedState
           isQrExpired
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
           isSubmitting={retrySubmitting}
+          onSubmittingChange={setPanelSubmitting}
         />
-      </section>
+      </PaymentBusyShell>
     );
   }
 
@@ -256,14 +284,7 @@ export function OrderPaymentForm({
     const amountLabel = formatAmount(payment.amount, payment.currency);
 
     return (
-      <section
-        className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
-        aria-labelledby="payment-waiting-title"
-      >
-        <h1 id="payment-waiting-title" className="text-xl font-bold text-gray-900">
-          ชำระเงิน
-        </h1>
-
+      <PaymentBusyShell titleId="payment-waiting-title" title="ชำระเงิน" busy={isRetryBusy}>
         <Payment3dsAutoRedirect
           paymentId={payment.id}
           status={payment.status}
@@ -279,6 +300,7 @@ export function OrderPaymentForm({
             onRetrySubmit={onRetryPayment}
             submitError={retrySubmitError}
             isSubmitting={retrySubmitting}
+            onSubmittingChange={setPanelSubmitting}
           />
         ) : (
           <>
@@ -291,19 +313,12 @@ export function OrderPaymentForm({
             </div>
           </>
         )}
-      </section>
+      </PaymentBusyShell>
     );
   }
 
   return (
-    <section
-      className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-xl md:p-8"
-      aria-labelledby="payment-waiting-title"
-    >
-      <h1 id="payment-waiting-title" className="text-xl font-bold text-gray-900">
-        ชำระเงิน
-      </h1>
-
+    <PaymentBusyShell titleId="payment-waiting-title" title="ชำระเงิน" busy={isRetryBusy}>
       <div className="mt-4 rounded-lg bg-sop-primary-200 px-4 py-2">
         <p className="text-sm text-gray-800">
           {hasQrCode
@@ -347,6 +362,7 @@ export function OrderPaymentForm({
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
           isSubmitting={retrySubmitting}
+          onSubmittingChange={setPanelSubmitting}
         />
       ) : (
         <div className="mt-4 flex flex-col items-center gap-2">
@@ -357,6 +373,6 @@ export function OrderPaymentForm({
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         กำลังรอการชำระเงิน
       </div>
-    </section>
+    </PaymentBusyShell>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { PlusIcon, QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/atoms/icons';
 import { CardPaymentForm } from '@/components/molecules/CheckoutPaymentSelection/CardPaymentForm';
@@ -33,6 +33,8 @@ export type PaymentRetryPanelProps = {
   submitError?: string | null;
   /** Parent mutation in-flight (task-04 createPayment) */
   isSubmitting?: boolean;
+  /** Notify parent so failed/recovery chrome can swap to the processing stage. */
+  onSubmittingChange?: (submitting: boolean) => void;
   /**
    * Mid-QR wait: hide PromptPay so customers switch away from the active QR
    * (card / new card remain available). Failed and after-return keep PromptPay.
@@ -76,6 +78,7 @@ export function PaymentRetryPanel({
   onSubmit,
   submitError = null,
   isSubmitting: externalSubmitting = false,
+  onSubmittingChange,
   hidePromptPay = false,
 }: PaymentRetryPanelProps) {
   const { isAuthenticated } = useAuth();
@@ -105,6 +108,10 @@ export function PaymentRetryPanel({
   const showNewCardForm = paymentMethod === 'card' && !showSavedCards;
   const displayError = localError ?? submitError;
 
+  useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
+
   // Plain functions: React Compiler memoizes; manual useCallback deps fought preserve-manual-memoization.
   const clearCardForm = () => {
     setCardForm(EMPTY_CHECKOUT_CARD_FORM);
@@ -113,6 +120,10 @@ export function PaymentRetryPanel({
   };
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
+    if (isSubmitting) {
+      return;
+    }
+
     setLocalError(null);
     setCardFormError(null);
 
@@ -159,6 +170,8 @@ export function PaymentRetryPanel({
     }
 
     const payload: PaymentRetrySubmitInput = { paymentMethod: apiPaymentMethod };
+    const usesNewCardForm =
+      paymentMethod === 'card' && !(cardEntryMode === 'saved' && selectedSavedCardId);
 
     if (paymentMethod === 'card') {
       if (cardEntryMode === 'saved' && selectedSavedCardId) {
@@ -169,7 +182,14 @@ export function PaymentRetryPanel({
           setCardFormError(validationError);
           return;
         }
+      }
+    }
 
+    // Lock the panel before any async work (tokenize + createPayment) so values cannot change.
+    // On success, stay locked until unmount/navigation (same as checkout isSubmitting).
+    setLocalSubmitting(true);
+    try {
+      if (usesNewCardForm) {
         try {
           const { month, year } = parseCardExpiry(cardForm.expiry);
           payload.omiseToken = await tokenizeCard({
@@ -179,7 +199,6 @@ export function PaymentRetryPanel({
             securityCode: cardForm.cvv,
             name: cardForm.cardName.trim(),
           });
-          clearCardForm();
         } catch (error) {
           const message =
             error instanceof OmiseConfigurationError
@@ -188,17 +207,18 @@ export function PaymentRetryPanel({
                 ? error.message
                 : 'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร';
           setCardFormError(message);
+          setLocalSubmitting(false);
           return;
         }
       }
-    }
 
-    setLocalSubmitting(true);
-    try {
       await onSubmit?.(payload);
+      // Clear sensitive card fields only after a successful submit.
+      if (usesNewCardForm) {
+        clearCardForm();
+      }
     } catch (error) {
       setLocalError(error instanceof Error ? error.message : 'ไม่สามารถสร้างการชำระเงินได้');
-    } finally {
       setLocalSubmitting(false);
     }
   };
@@ -263,6 +283,9 @@ export function PaymentRetryPanel({
                     disabled={isSubmitting}
                     data-testid="retry-add-new-card-button"
                     onClick={() => {
+                      if (isSubmitting) {
+                        return;
+                      }
                       setCardEntryMode('new');
                       clearCardForm();
                     }}
@@ -283,7 +306,12 @@ export function PaymentRetryPanel({
                       key={method.id}
                       method={method}
                       selected={selectedSavedCardId === method.id}
-                      onSelect={() => setSelectedSavedCardId(method.id)}
+                      disabled={isSubmitting}
+                      onSelect={() => {
+                        if (!isSubmitting) {
+                          setSelectedSavedCardId(method.id);
+                        }
+                      }}
                     />
                   ))}
                 </div>
@@ -295,7 +323,11 @@ export function PaymentRetryPanel({
                 <p className="sop-body-md-regular text-sop-neutral-gray-300">ข้อมูลบัตรของคุณ</p>
                 <CardPaymentForm
                   value={cardForm}
+                  disabled={isSubmitting}
                   onChange={(next) => {
+                    if (isSubmitting) {
+                      return;
+                    }
                     setCardForm(next);
                     if (cardFormError) {
                       setCardFormError(null);
@@ -304,7 +336,11 @@ export function PaymentRetryPanel({
                   error={cardFormError}
                   showSaveCardCheckbox={isAuthenticated}
                   saveCardChecked={saveCardForNextTime}
-                  onSaveCardChange={setSaveCardForNextTime}
+                  onSaveCardChange={(checked) => {
+                    if (!isSubmitting) {
+                      setSaveCardForNextTime(checked);
+                    }
+                  }}
                 />
               </div>
             ) : null}

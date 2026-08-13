@@ -60,21 +60,19 @@ export function ThaiAddressCascadingFields({
     <>
       <div className="grid grid-cols-2 gap-sop-12px">
         <AddressDropdown
-          title="ตำบล/แขวง"
-          placeholder="เลือกตำบล/แขวง"
-          value={values.subDistrict}
-          options={subdistrictOptions}
-          disabled={!ready || !values.district}
-          error={subDistrictError ? { message: subDistrictError } : undefined}
+          title="จังหวัด"
+          placeholder="เลือกจังหวัด"
+          value={values.province}
+          options={provinceOptions}
+          disabled={!ready}
+          error={provinceError ? { message: provinceError } : undefined}
           variant={inputVariant}
-          onChange={(value) => onChange('subDistrict', value)}
-          onSelect={(option) => {
-            onChange('subDistrict', option.label);
-            onChange('postalCode', String(option.postalCode ?? ''));
+          onChange={(value) => {
+            onChange('province', value);
+            onCascadeReset(['district', 'subDistrict', 'postalCode']);
           }}
-          data-testid="thai-dropdown-subdistrict"
+          data-testid="thai-dropdown-province"
         />
-
         <AddressDropdown
           title="เขต/อำเภอ"
           placeholder="เลือกเขต/อำเภอ"
@@ -93,18 +91,19 @@ export function ThaiAddressCascadingFields({
 
       <div className="grid grid-cols-2 gap-sop-12px">
         <AddressDropdown
-          title="จังหวัด"
-          placeholder="เลือกจังหวัด"
-          value={values.province}
-          options={provinceOptions}
-          disabled={!ready}
-          error={provinceError ? { message: provinceError } : undefined}
+          title="ตำบล/แขวง"
+          placeholder="เลือกตำบล/แขวง"
+          value={values.subDistrict}
+          options={subdistrictOptions}
+          disabled={!ready || !values.district}
+          error={subDistrictError ? { message: subDistrictError } : undefined}
           variant={inputVariant}
-          onChange={(value) => {
-            onChange('province', value);
-            onCascadeReset(['district', 'subDistrict', 'postalCode']);
+          onChange={(value) => onChange('subDistrict', value)}
+          onSelect={(option) => {
+            onChange('subDistrict', option.label);
+            onChange('postalCode', String(option.postalCode ?? ''));
           }}
-          data-testid="thai-dropdown-province"
+          data-testid="thai-dropdown-subdistrict"
         />
 
         <Input

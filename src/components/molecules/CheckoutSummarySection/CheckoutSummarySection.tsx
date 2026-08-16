@@ -115,7 +115,7 @@ export function CheckoutSummarySection({
 
       <Button
         className="mt-sop-16px hidden w-full md:block"
-        variant="destructive"
+        variant="primary"
         size="xl"
         type="button"
         disabled={!canSubmit || isSubmitting}

@@ -34,8 +34,8 @@ export function CheckoutMobileBottomBar({
         </div>
         <div className="flex flex-col items-end">
           <Button
-            className="w-fit"
-            variant="destructive"
+            className="w-sop-192px"
+            variant="primary"
             size="xl"
             type="button"
             disabled={!canSubmit || isSubmitting}

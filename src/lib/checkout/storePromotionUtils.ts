@@ -3,10 +3,25 @@ import { formatCheckoutPrice } from '@/components/sections/CheckoutSection/check
 
 export type StorePromotion = ActiveStorePromotionsQuery['activeStorePromotions'][number];
 
+const SHIPPING_PROMOTION_TYPES = new Set([
+  'free_shipping',
+  'fixed_shipping_discount',
+  'percentage_shipping_discount',
+]);
+
+/** True when the promo discounts shipping fees (not merchandise). */
+export function isShippingPromotionType(
+  type: StorePromotion['type'] | string | null | undefined,
+): boolean {
+  return type != null && SHIPPING_PROMOTION_TYPES.has(type);
+}
+
 export type StorePromotionSelection = {
   code: string;
   name: string;
   discountAmount: number;
+  /** Promotion type from catalog — used to stack shipping discounts vs fee. */
+  type?: string | null;
   /** Server validatePromotion.freeUnits only — Gate A line badges (task-09). */
   freeUnits?: number | null;
   /** BxGy product P for Gate A free-unit line allocation (from conditions). */
@@ -206,6 +221,18 @@ export function formatPromotionDiscountTitle(promotion: StorePromotion): string 
     return `ส่วนลด ${promotion.discountValue}%`;
   }
 
+  if (promotion.type === 'free_shipping') {
+    return 'ส่งฟรี';
+  }
+
+  if (promotion.type === 'fixed_shipping_discount') {
+    return `ลดค่าส่ง ${formatCheckoutPrice(promotion.discountValue)}`;
+  }
+
+  if (promotion.type === 'percentage_shipping_discount') {
+    return `ลดค่าส่ง ${promotion.discountValue}%`;
+  }
+
   return `ส่วนลด ${formatCheckoutPrice(promotion.discountValue)}`;
 }
 
@@ -217,29 +244,31 @@ export function formatPromotionConditionText(
   const maxDiscount = promotion.maxDiscountAmount;
   const hasMinPurchase = minPurchase != null && minPurchase > 0;
   const hasMaxDiscount = maxDiscount != null && promotion.type === 'percentage';
+  const parsed = parseStorePromotionConditions(promotion.conditions);
+  const audienceParts: string[] = [];
 
-  if (!hasMinPurchase && !hasMaxDiscount) {
-    return null;
+  if (parsed.loggedInOnly?.enabled) {
+    audienceParts.push('สมาชิกเท่านั้น');
   }
+  if (parsed.newCustomer?.enabled) {
+    audienceParts.push(`ลูกค้าใหม่ ≤ ${parsed.newCustomer.nDays} วัน`);
+  }
+
+  let purchaseText: string | null = null;
 
   if (hasMinPurchase && storeSubtotal < minPurchase) {
     const remaining = minPurchase - storeSubtotal;
-    return `ซื้อเพิ่มอีก ${formatCheckoutPrice(remaining)} เพื่อใช้ส่วนลดนี้`;
+    purchaseText = `ซื้อเพิ่มอีก ${formatCheckoutPrice(remaining)} เพื่อใช้ส่วนลดนี้`;
+  } else if (hasMaxDiscount && hasMinPurchase) {
+    purchaseText = `เมื่อซื้อครบ ${formatCheckoutPrice(minPurchase)} ลดสูงสุด ${formatCheckoutPrice(maxDiscount)}`;
+  } else if (hasMaxDiscount) {
+    purchaseText = `ลดสูงสุด ${formatCheckoutPrice(maxDiscount)}`;
+  } else if (hasMinPurchase) {
+    purchaseText = `เมื่อซื้อครบ ${formatCheckoutPrice(minPurchase)}`;
   }
 
-  if (hasMaxDiscount && hasMinPurchase) {
-    return `เมื่อซื้อครบ ${formatCheckoutPrice(minPurchase)} ลดสูงสุด ${formatCheckoutPrice(maxDiscount)}`;
-  }
-
-  if (hasMaxDiscount) {
-    return `ลดสูงสุด ${formatCheckoutPrice(maxDiscount)}`;
-  }
-
-  if (hasMinPurchase) {
-    return `เมื่อซื้อครบ ${formatCheckoutPrice(minPurchase)}`;
-  }
-
-  return null;
+  const parts = [...audienceParts, ...(purchaseText ? [purchaseText] : [])];
+  return parts.length > 0 ? parts.join(' · ') : null;
 }
 
 export function formatPromotionExpiry(expiresAt: string | null | undefined): string | null {
@@ -339,14 +368,17 @@ function estimateBuyXGetYDiscount(
  * Client coupon preview estimate.
  * Parameter `eligibleBase` is store- or platform-scoped merchandise base.
  * Optional `cartLines` required for accurate buy_x_get_y Rule A/B preview.
+ * Optional `shippingFee` required for shipping-type discount preview.
  * Not the source for line free-unit badges (validatePromotion.freeUnits / task-09).
  */
 export function estimatePromotionDiscount(
   promotion: StorePromotion,
   eligibleBase: number,
   cartLines?: PromotionEstimateCartLine[],
+  shippingFee = 0,
 ): number {
   let discountAmount = 0;
+  const isShippingType = isShippingPromotionType(promotion.type);
 
   if (promotion.type === 'percentage') {
     discountAmount = (eligibleBase * promotion.discountValue) / 100;
@@ -354,13 +386,20 @@ export function estimatePromotionDiscount(
     discountAmount = promotion.discountValue;
   } else if (promotion.type === 'buy_x_get_y') {
     discountAmount = estimateBuyXGetYDiscount(promotion, cartLines);
+  } else if (promotion.type === 'free_shipping') {
+    discountAmount = shippingFee;
+  } else if (promotion.type === 'fixed_shipping_discount') {
+    discountAmount = promotion.discountValue;
+  } else if (promotion.type === 'percentage_shipping_discount') {
+    discountAmount = (shippingFee * promotion.discountValue) / 100;
   }
 
   if (promotion.maxDiscountAmount != null) {
     discountAmount = Math.min(discountAmount, promotion.maxDiscountAmount);
   }
 
-  return Math.min(discountAmount, eligibleBase);
+  const capBase = isShippingType ? shippingFee : eligibleBase;
+  return Math.min(discountAmount, capBase);
 }
 
 /** Map cart GraphQL items → estimate/validate line shape. */
@@ -392,12 +431,31 @@ export function toPromotionEstimateCartLines(
   return lines;
 }
 
+/**
+ * Gates that require server batch (account age / paid-order history).
+ * Optimistic client-available must not include these — prevents available→unavailable flash.
+ */
+export function needsServerEligibilityConfirmation(
+  promotion: StorePromotion,
+  context?: PromotionAvailabilityContext,
+): boolean {
+  if (context?.isGuest) {
+    return false;
+  }
+  return hasNewCustomerConditionEnabled(promotion);
+}
+
 export function isPromotionAvailable(
   promotion: StorePromotion,
   storeSubtotal: number,
   context?: PromotionAvailabilityContext,
 ): boolean {
   if (context?.isGuest && hasGuestAuthConditionEnabled(promotion)) {
+    return false;
+  }
+
+  // Logged-in + newCustomer: hold out of client-available until batch confirms (anti-flash).
+  if (needsServerEligibilityConfirmation(promotion, context)) {
     return false;
   }
 
@@ -479,6 +537,9 @@ function softReasonOverrideFromBatch(
 /**
  * Hybrid Rule G: client-local ∪ batch soft-ineligible, batch override per promo.
  * Shared by both checkout promotion modals — do not fork per modal.
+ *
+ * While batch is pending: omit server-gated (newCustomer for members) from both lists
+ * so they neither flash as available nor as unavailable before confirm.
  */
 export function mergeListTimeEligibility(
   promotions: StorePromotion[],
@@ -489,17 +550,34 @@ export function mergeListTimeEligibility(
 ): MergedListTimeEligibility {
   const client = categorizeStorePromotions(promotions, storeSubtotal, context);
   const softEligibilityError = batchStatus === 'error';
+  const pendingServerIds = new Set(
+    promotions.filter((p) => needsServerEligibilityConfirmation(p, context)).map((p) => p.id),
+  );
 
   if (batchStatus !== 'success' || !batchItems) {
+    const unavailable: UnavailableStorePromotionEntry[] = [];
+
+    for (const promotion of client.unavailable) {
+      if (pendingServerIds.has(promotion.id) && batchStatus !== 'error') {
+        continue; // hold pending until batch
+      }
+      unavailable.push({
+        promotion,
+        ...(pendingServerIds.has(promotion.id) ? { softReasonOverride: 'UNKNOWN' as const } : {}),
+      });
+    }
+
     return {
       available: client.available,
-      unavailable: client.unavailable.map((promotion) => ({ promotion })),
+      unavailable,
       softEligibilityError,
     };
   }
 
   const { byId, byCode } = indexBatchItems(batchItems);
-  const clientUnavailableIds = new Set(client.unavailable.map((p) => p.id));
+  const clientHardUnavailableIds = new Set(
+    client.unavailable.filter((p) => !pendingServerIds.has(p.id)).map((p) => p.id),
+  );
   const unavailable: UnavailableStorePromotionEntry[] = [];
   const unavailableIds = new Set<string>();
 
@@ -517,15 +595,23 @@ export function mergeListTimeEligibility(
       continue;
     }
 
-    if (clientUnavailableIds.has(promotion.id)) {
+    if (clientHardUnavailableIds.has(promotion.id)) {
       unavailable.push({ promotion });
       unavailableIds.add(promotion.id);
     }
   }
 
   const available: StorePromotion[] = [];
-  for (const promotion of client.available) {
-    if (!unavailableIds.has(promotion.id)) {
+  for (const promotion of promotions) {
+    if (unavailableIds.has(promotion.id)) continue;
+
+    const batchItem = resolveBatchItem(promotion, byId, byCode);
+    if (batchItem?.eligible === true) {
+      available.push(promotion);
+      continue;
+    }
+
+    if (client.available.some((p) => p.id === promotion.id)) {
       available.push(promotion);
     }
   }

@@ -29,6 +29,8 @@ export type BuildValidatePromotionsInputParams = {
   subtotal: number;
   /** Store modal: required store UUID. Platform modal: omit/null. */
   storeId?: string | null;
+  /** Shipping fee base for shipping-type promos (order total or per-store). */
+  shippingFee?: number | null;
   lines?: PromotionEstimateCartLine[] | ValidatePromotionLineInput[];
 };
 
@@ -55,11 +57,16 @@ export function buildValidatePromotionsInput(
   }
 
   const mappedLines = toValidatePromotionLines(params.lines, params.storeId);
+  const shippingFee =
+    params.shippingFee != null && Number.isFinite(params.shippingFee)
+      ? params.shippingFee
+      : undefined;
 
   return {
     promotions,
     subtotal: params.subtotal,
     ...(params.storeId ? { storeId: params.storeId } : {}),
+    ...(shippingFee != null ? { shippingFee } : {}),
     ...(mappedLines ? { lines: mappedLines } : {}),
   };
 }

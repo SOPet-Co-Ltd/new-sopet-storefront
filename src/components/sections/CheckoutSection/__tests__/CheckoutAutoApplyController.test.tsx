@@ -71,9 +71,11 @@ vi.mock('@/lib/providers/CartProvider', () => ({
 const mockCheckout = {
   promotionCode: null as string | null,
   storePromotionsByStoreId: {} as Record<string, unknown>,
+  shippingByStoreId: {} as Record<string, { shippingOptionId: string; shippingFee: number }>,
   setPromotion: vi.fn(),
   setPromotionName: vi.fn(),
   setPromotionDiscount: vi.fn(),
+  setPromotionType: vi.fn(),
   setPromotionFreeUnits: vi.fn(),
   setPromotionProductId: vi.fn(),
   setStorePromotion: vi.fn(),
@@ -215,5 +217,24 @@ describe('CheckoutAutoApplyController', () => {
       expect(hasAutoApplyAttempted(nextFp)).toBe(true);
       expect(hasAutoApplyAttempted(CART_FP)).toBe(false);
     });
+  });
+
+  it('does not re-run when a sibling store promotion is written after settle', async () => {
+    const { rerender } = render(<CheckoutAutoApplyController />);
+    await waitFor(() => {
+      expect(runCheckoutAutoApply).toHaveBeenCalledTimes(1);
+    });
+    runCheckoutAutoApply.mockClear();
+
+    mockCheckout.storePromotionsByStoreId = {
+      'store-a': { code: 'AUTO_A', name: 'Auto A', discountAmount: 30 },
+      'store-b': { code: 'MANUAL_B', name: 'Manual B', discountAmount: 15 },
+    };
+    rerender(<CheckoutAutoApplyController />);
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(runCheckoutAutoApply).not.toHaveBeenCalled();
   });
 });

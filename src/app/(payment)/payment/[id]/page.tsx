@@ -62,6 +62,8 @@ export default function PaymentPage() {
   const [retrySubmitError, setRetrySubmitError] = useState<string | null>(null);
   const [paymentRecoveryUnavailable, setPaymentRecoveryUnavailable] = useState(false);
   const [heldUnpaidFromError, setHeldUnpaidFromError] = useState(false);
+  /** Stay locked after successful createPayment until route unmount (checkout pattern). */
+  const [retryNavigating, setRetryNavigating] = useState(false);
   const hasTriedFallback = useRef(false);
   const hasRedirected = useRef(false);
 
@@ -133,19 +135,24 @@ export default function PaymentPage() {
 
         const newPaymentId = resolveNewPaymentId(payment.id, created?.id);
         clearPriorPayment3dsAutoRedirect(payment.id);
+        // Keep failed/recovery UI replaced with processing until navigation completes.
+        setRetryNavigating(true);
         router.push(`/payment/${newPaymentId}`);
       } catch (retryError) {
+        setRetryNavigating(false);
         if (isOrderNotPayableError(retryError)) {
           setPaymentRecoveryUnavailable(true);
           setRetrySubmitError(null);
-          return;
+          throw retryError;
         }
         if (isPaymentHeldPortionBlockedError(retryError)) {
           setHeldUnpaidFromError(true);
           setRetrySubmitError(STORE_SUSPENSION_HOLD_COPY.paymentHeldBlocked);
-          return;
+          throw retryError;
         }
-        setRetrySubmitError(retryErrorMessage(retryError));
+        const message = retryErrorMessage(retryError);
+        setRetrySubmitError(message);
+        throw retryError instanceof Error ? retryError : new Error(message);
       }
     },
     [createPayment, payment, router],
@@ -166,9 +173,10 @@ export default function PaymentPage() {
         }}
         onRetryPayment={handleRetryPayment}
         retrySubmitError={retrySubmitError}
-        retrySubmitting={creatingPayment}
+        retrySubmitting={creatingPayment || retryNavigating}
         paymentRecoveryUnavailable={paymentRecoveryUnavailable}
         heldUnpaidBlocked={heldUnpaidBlocked}
+        orderCreatedAt={order?.createdAt ?? null}
       />
     </main>
   );

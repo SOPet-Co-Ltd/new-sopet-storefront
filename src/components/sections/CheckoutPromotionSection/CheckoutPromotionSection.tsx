@@ -68,8 +68,24 @@ function PlatformPromotionBottomCard({
           <TicketSaleIcon color="#9C6ADE" size={{ mobile: 28, desktop: 28 }} />
         </span>
         <div className="min-w-0 flex-1 text-sop-primary-500">
-          <p className={isMobile ? 'sop-body-sm-medium' : 'sop-body-lg-medium'}>{name}</p>
-          <p className={isMobile ? 'sop-body-xs-regular' : 'sop-body-md-regular'}>{description}</p>
+          <p
+            className={cn(
+              'line-clamp-2 break-words',
+              isMobile ? 'sop-body-sm-medium' : 'sop-body-lg-medium',
+            )}
+            title={name}
+          >
+            {name}
+          </p>
+          <p
+            className={cn(
+              'line-clamp-2 break-words',
+              isMobile ? 'sop-body-xs-regular' : 'sop-body-md-regular',
+            )}
+            title={description}
+          >
+            {description}
+          </p>
         </div>
         <button
           type="button"
@@ -142,20 +158,32 @@ export function CheckoutPromotionSection() {
     promotionCode,
     promotionName,
     promotionDiscount,
+    promotionType,
     promotionFreeUnits,
     promotionProductId,
     setPromotion,
     setPromotionName,
     setPromotionDiscount,
+    setPromotionType,
     setPromotionFreeUnits,
     setPromotionProductId,
     isSubmitting,
+    shippingByStoreId,
   } = useCheckout();
   const [manualCode, setManualCode] = useState(promotionCode ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const cartLines = useMemo(() => toPromotionEstimateCartLines(selectedItems), [selectedItems]);
+
+  const platformShippingFee = useMemo(
+    () =>
+      Object.values(shippingByStoreId).reduce(
+        (sum, selection) => sum + (selection.shippingFee ?? 0),
+        0,
+      ),
+    [shippingByStoreId],
+  );
 
   const appliedPromotion = useMemo<PlatformPromotionSelection>(() => {
     if (!promotionCode) return null;
@@ -164,10 +192,18 @@ export function CheckoutPromotionSection() {
       code: promotionCode,
       name: promotionName ?? promotionCode,
       discountAmount: promotionDiscount,
+      type: promotionType,
       freeUnits: promotionFreeUnits,
       productId: promotionProductId,
     };
-  }, [promotionCode, promotionDiscount, promotionFreeUnits, promotionName, promotionProductId]);
+  }, [
+    promotionCode,
+    promotionDiscount,
+    promotionFreeUnits,
+    promotionName,
+    promotionProductId,
+    promotionType,
+  ]);
 
   const availablePromotionCount = useMemo(() => {
     const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal, {
@@ -195,6 +231,7 @@ export function CheckoutPromotionSection() {
     setPromotion(null);
     setPromotionName(null);
     setPromotionDiscount(0);
+    setPromotionType(null);
     setPromotionFreeUnits(null);
     setPromotionProductId(null);
     setManualCode('');
@@ -219,12 +256,14 @@ export function CheckoutPromotionSection() {
       await applyCheckoutPromotionCode({
         code: normalizedCode,
         subtotal,
+        shippingFee: platformShippingFee,
         lines: cartLines,
         promotions: promotions as StorePromotion[],
         validatePromotion,
         setPromotion,
         setPromotionName,
         setPromotionDiscount,
+        setPromotionType,
         setPromotionFreeUnits,
         setPromotionProductId,
       });
@@ -232,6 +271,7 @@ export function CheckoutPromotionSection() {
       setPromotion(null);
       setPromotionName(null);
       setPromotionDiscount(0);
+      setPromotionType(null);
       setPromotionFreeUnits(null);
       setPromotionProductId(null);
       setError(getPromotionApplyErrorMessage(applyError));
@@ -251,6 +291,7 @@ export function CheckoutPromotionSection() {
     setPromotion(promotion.code);
     setPromotionName(promotion.name);
     setPromotionDiscount(promotion.discountAmount);
+    setPromotionType(promotion.type ?? null);
     setPromotionFreeUnits(promotion.freeUnits ?? null);
     setPromotionProductId(promotion.productId ?? null);
     setManualCode(promotion.code);
@@ -343,6 +384,7 @@ export function CheckoutPromotionSection() {
       <CheckoutPlatformPromotionModal
         isOpen={isModalOpen}
         subtotal={subtotal}
+        shippingFee={platformShippingFee}
         cartLines={cartLines}
         appliedPromotion={appliedPromotion}
         onClose={() => setIsModalOpen(false)}

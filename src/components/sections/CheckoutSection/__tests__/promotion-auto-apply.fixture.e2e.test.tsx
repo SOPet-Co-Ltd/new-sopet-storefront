@@ -39,7 +39,9 @@ import {
 } from '@/test/mocks/fixtures/promotion-auto-apply';
 import {
   promotionAutoApplyHandlers,
+  promotionAutoApplyOverlappingStoreHandlers,
   promotionAutoApplySoftFailHandlers,
+  promotionAutoApplyStoreAOnlyHandlers,
   promotionAutoApplyZeroCandidatesHandlers,
 } from '@/test/mocks/promotion-auto-apply.handlers';
 import { server } from '@/test/mocks/server';
@@ -304,6 +306,25 @@ describe('Promotion auto-apply fixture-e2e', () => {
         ),
       ).toBeInTheDocument();
     });
+
+    it('applies both stores when ActiveStorePromotions responses overlap (AC-012)', async () => {
+      server.use(...promotionAutoApplyOverlappingStoreHandlers);
+
+      render(<AutoApplyCheckoutHarness />);
+
+      await waitFor(() => {
+        expect(
+          within(screen.getByTestId(`checkout-store-discount-${AUTO_APPLY_STORE_A_ID}`)).getByText(
+            /฿30/,
+          ),
+        ).toBeInTheDocument();
+        expect(
+          within(screen.getByTestId(`checkout-store-discount-${AUTO_APPLY_STORE_B_ID}`)).getByText(
+            /฿40/,
+          ),
+        ).toBeInTheDocument();
+      });
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -401,6 +422,49 @@ describe('Promotion auto-apply fixture-e2e', () => {
 
       await user.click(screen.getByTestId(`checkout-store-discount-${AUTO_APPLY_STORE_A_ID}`));
       expect(await screen.findByTestId('checkout-store-promotion-modal')).toBeInTheDocument();
+    });
+  });
+
+  describe('Journey 3 — sibling store manual apply must not drop auto-applied peer', () => {
+    it('keeps store A auto-apply when store B is selected manually', async () => {
+      server.use(...promotionAutoApplyStoreAOnlyHandlers);
+      const user = userEvent.setup();
+
+      render(<AutoApplyCheckoutHarness />);
+
+      await waitFor(() => {
+        expect(
+          within(screen.getByTestId(`checkout-store-discount-${AUTO_APPLY_STORE_A_ID}`)).getByText(
+            /ใช้ส่วนลด/,
+          ),
+        ).toBeInTheDocument();
+        expect(sessionStorage.getItem(AUTO_APPLY_KEY)).toBe(CART_FINGERPRINT);
+      });
+
+      expect(
+        within(screen.getByTestId(`checkout-store-discount-${AUTO_APPLY_STORE_B_ID}`)).queryByText(
+          /ใช้ส่วนลด/,
+        ),
+      ).not.toBeInTheDocument();
+
+      await user.click(screen.getByTestId(`checkout-store-discount-${AUTO_APPLY_STORE_B_ID}`));
+      const modal = await screen.findByTestId('checkout-store-promotion-modal');
+      await user.click(await within(modal).findByText('ส่วนลด ฿15.00'));
+      await user.click(within(modal).getByTestId('store-promotion-confirm-button'));
+
+      await waitFor(() => {
+        expect(
+          within(screen.getByTestId(`checkout-store-discount-${AUTO_APPLY_STORE_B_ID}`)).getByText(
+            /฿15/,
+          ),
+        ).toBeInTheDocument();
+      });
+
+      expect(
+        within(screen.getByTestId(`checkout-store-discount-${AUTO_APPLY_STORE_A_ID}`)).getByText(
+          /฿30/,
+        ),
+      ).toBeInTheDocument();
     });
   });
 });

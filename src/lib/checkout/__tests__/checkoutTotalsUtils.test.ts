@@ -73,4 +73,57 @@ describe('calculateCheckoutTotals', () => {
 
     expect(totals.finalPrice).toBe(0);
   });
+
+  it('does not double-count platform + store FREE_SHIPPING against one shipping fee', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 856,
+      itemCount: 4,
+      storeIds: ['store-1'],
+      shippingByStoreId: {
+        'store-1': { shippingOptionId: 'ship-1', shippingFee: 50 },
+      },
+      storePromotionsByStoreId: {
+        'store-1': {
+          code: 'ATVNDFREESHIP',
+          name: 'Vendor free shipping',
+          discountAmount: 50,
+          type: 'free_shipping',
+        },
+      },
+      platformPromotionDiscount: 50,
+      platformPromotionType: 'free_shipping',
+    });
+
+    expect(totals.platformPromotionDiscount).toBe(50);
+    expect(totals.storeDiscountTotal).toBe(0);
+    expect(totals.totalDiscount).toBe(50);
+    expect(totals.shippingFeeTotal).toBe(50);
+    expect(totals.finalPrice).toBe(856);
+  });
+
+  it('still stacks merchandise store discount with platform free shipping', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 856,
+      itemCount: 4,
+      storeIds: ['store-1'],
+      shippingByStoreId: {
+        'store-1': { shippingOptionId: 'ship-1', shippingFee: 50 },
+      },
+      storePromotionsByStoreId: {
+        'store-1': {
+          code: 'STORE10',
+          name: 'Store 10%',
+          discountAmount: 85.6,
+          type: 'percentage',
+        },
+      },
+      platformPromotionDiscount: 50,
+      platformPromotionType: 'free_shipping',
+    });
+
+    expect(totals.platformPromotionDiscount).toBe(50);
+    expect(totals.storeDiscountTotal).toBe(85.6);
+    expect(totals.totalDiscount).toBe(135.6);
+    expect(totals.finalPrice).toBe(770.4);
+  });
 });

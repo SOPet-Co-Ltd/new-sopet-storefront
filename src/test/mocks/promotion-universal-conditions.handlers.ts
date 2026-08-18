@@ -180,6 +180,37 @@ export function createLoggedInOnlyJourneyPromotionHandlers(
         data: { activePlatformPromotions: [guestLoggedInOnlyPlatformPromotion] },
       });
     }),
+    graphql.query('ValidatePromotions', () => {
+      return HttpResponse.json({
+        data: {
+          validatePromotions: {
+            __typename: 'ValidatePromotionsResult',
+            items: [
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: guestLoggedInOnlyStorePromotion.id,
+                code: guestLoggedInOnlyStorePromotion.code,
+                name: guestLoggedInOnlyStorePromotion.name,
+                eligible: true,
+                ineligibilityReason: null,
+                discountAmount: 50,
+                freeUnits: null,
+              },
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: guestLoggedInOnlyPlatformPromotion.id,
+                code: guestLoggedInOnlyPlatformPromotion.code,
+                name: guestLoggedInOnlyPlatformPromotion.name,
+                eligible: true,
+                ineligibilityReason: null,
+                discountAmount: 50,
+                freeUnits: null,
+              },
+            ],
+          },
+        },
+      });
+    }),
     graphql.query('ValidatePromotion', () => {
       return HttpResponse.json({
         data: { validatePromotion: resolveValidatePromotion(validateMode) },
@@ -207,6 +238,38 @@ export function createBxGyJourneyPromotionHandlers(
     graphql.query('ActivePlatformPromotions', () => {
       return HttpResponse.json({
         data: { activePlatformPromotions: [] },
+      });
+    }),
+    // List-time batch required: bxgyStorePromotion includes newCustomer (server-gated).
+    graphql.query('ValidatePromotions', () => {
+      return HttpResponse.json({
+        data: {
+          validatePromotions: {
+            __typename: 'ValidatePromotionsResult',
+            items: [
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: bxgyStorePromotion.id,
+                code: bxgyStorePromotion.code,
+                name: bxgyStorePromotion.name,
+                eligible: true,
+                ineligibilityReason: null,
+                discountAmount: 200,
+                freeUnits: 1,
+              },
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: fixedAmountClampPromotion.id,
+                code: fixedAmountClampPromotion.code,
+                name: fixedAmountClampPromotion.name,
+                eligible: true,
+                ineligibilityReason: null,
+                discountAmount: 100,
+                freeUnits: null,
+              },
+            ],
+          },
+        },
       });
     }),
     graphql.query('ValidatePromotion', ({ variables }) => {

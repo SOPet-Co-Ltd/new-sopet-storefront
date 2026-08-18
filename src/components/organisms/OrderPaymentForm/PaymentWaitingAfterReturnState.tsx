@@ -16,6 +16,7 @@ export type PaymentWaitingAfterReturnStateProps = {
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  onSubmittingChange?: PaymentRetryPanelProps['onSubmittingChange'];
 };
 
 export function PaymentWaitingAfterReturnState({
@@ -25,6 +26,7 @@ export function PaymentWaitingAfterReturnState({
   onRetrySubmit,
   submitError,
   isSubmitting,
+  onSubmittingChange,
 }: PaymentWaitingAfterReturnStateProps) {
   const [recoveryExpanded, setRecoveryExpanded] = useState(false);
 
@@ -65,6 +67,7 @@ export function PaymentWaitingAfterReturnState({
             onSubmit={onRetrySubmit}
             submitError={submitError}
             isSubmitting={isSubmitting}
+            onSubmittingChange={onSubmittingChange}
           />
         ) : null}
       </div>

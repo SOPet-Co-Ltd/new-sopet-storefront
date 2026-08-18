@@ -38,6 +38,7 @@ function createSetters() {
     setPromotion: vi.fn(),
     setPromotionName: vi.fn(),
     setPromotionDiscount: vi.fn(),
+    setPromotionType: vi.fn(),
     setPromotionFreeUnits: vi.fn(),
     setPromotionProductId: vi.fn(),
     setStorePromotion: vi.fn(),
@@ -60,6 +61,7 @@ function baseParams(
     setPromotion: setters.setPromotion,
     setPromotionName: setters.setPromotionName,
     setPromotionDiscount: setters.setPromotionDiscount,
+    setPromotionType: setters.setPromotionType,
     setPromotionFreeUnits: setters.setPromotionFreeUnits,
     setPromotionProductId: setters.setPromotionProductId,
     setStorePromotion: setters.setStorePromotion,
@@ -254,5 +256,38 @@ describe('runCheckoutAutoApply', () => {
     ).resolves.toMatchObject({ settled: true, appliedStoreCodes: {} });
 
     expect(setters.setStorePromotion).not.toHaveBeenCalled();
+  });
+
+  it('keeps each store catalog when a shared list array is mutated after fetch', async () => {
+    const setters = createSetters();
+    const shared: AutoApplyListPromotion[] = [promo({ id: 'sa', code: 'STORE_A', priority: 1 })];
+
+    const result = await runCheckoutAutoApply(
+      baseParams({
+        storeIds: ['store-a', 'store-b'],
+        storeSubtotals: { 'store-a': 200, 'store-b': 300 },
+        platformPromotions: [],
+        fetchStorePromotions: async (storeId) => {
+          if (storeId === 'store-a') {
+            return shared;
+          }
+          shared.splice(0, shared.length, promo({ id: 'sb', code: 'STORE_B', priority: 1 }));
+          return shared;
+        },
+        validatePromotion: async (input) => validation(input.code, 25),
+        ...setters,
+      }),
+    );
+
+    expect(result.appliedStoreCodes['store-a']).toBe('STORE_A');
+    expect(result.appliedStoreCodes['store-b']).toBe('STORE_B');
+    expect(setters.setStorePromotion).toHaveBeenCalledWith(
+      'store-a',
+      expect.objectContaining({ code: 'STORE_A' }),
+    );
+    expect(setters.setStorePromotion).toHaveBeenCalledWith(
+      'store-b',
+      expect.objectContaining({ code: 'STORE_B' }),
+    );
   });
 });

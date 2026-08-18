@@ -370,29 +370,34 @@ export function useCheckoutSubmit(
 export async function applyCheckoutPromotionCode({
   code,
   subtotal,
+  shippingFee,
   lines,
   promotions,
   validatePromotion,
   setPromotion,
   setPromotionName,
   setPromotionDiscount,
+  setPromotionType,
   setPromotionFreeUnits,
   setPromotionProductId,
 }: {
   code: string;
   subtotal: number;
+  shippingFee?: number | null;
   lines?: import('@/lib/checkout/storePromotionUtils').PromotionEstimateCartLine[];
-  promotions?: Array<{ code: string; conditions?: string | null }>;
+  promotions?: Array<{ code: string; conditions?: string | null; type?: string | null }>;
   validatePromotion: ReturnType<typeof useCheckoutMutations>['validatePromotion'];
   setPromotion: (code: string | null) => void;
   setPromotionName: (name: string | null) => void;
   setPromotionDiscount: (amount: number) => void;
+  setPromotionType?: (type: string | null) => void;
   setPromotionFreeUnits?: (freeUnits: number | null) => void;
   setPromotionProductId?: (productId: string | null) => void;
 }): Promise<void> {
   const validation = await validateCheckoutPromotionCode({
     code,
     subtotal,
+    shippingFee,
     lines,
     validatePromotion,
   });
@@ -407,6 +412,7 @@ export async function applyCheckoutPromotionCode({
   setPromotion(validation.code);
   setPromotionName(validation.name);
   setPromotionDiscount(validation.discountAmount);
+  setPromotionType?.(matched?.type ?? null);
   setPromotionFreeUnits?.(validation.freeUnits ?? null);
   setPromotionProductId?.(productId);
 }

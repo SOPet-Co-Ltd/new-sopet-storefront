@@ -23,6 +23,14 @@ query PaymentByOrderId($orderId: String!) {
   }
 }
 
+query BankTransferDetails {
+  bankTransferDetails {
+    bankName
+    accountName
+    accountNumber
+  }
+}
+
 subscription PaymentStatusUpdated($paymentId: String, $orderId: String) {
   paymentStatusUpdated(paymentId: $paymentId, orderId: $orderId) {
     ...PaymentFields

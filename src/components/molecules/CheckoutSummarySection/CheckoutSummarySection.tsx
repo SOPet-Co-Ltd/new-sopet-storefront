@@ -116,7 +116,7 @@ export function CheckoutSummarySection({
       <Button
         className="mt-sop-16px hidden w-full md:block"
         variant="primary"
-        size="lg"
+        size="xl"
         type="button"
         disabled={!canSubmit || isSubmitting}
         onClick={() => {

@@ -19,6 +19,7 @@ import type {
   GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
 import { clearBuyNowCheckout } from '@/lib/checkout/buyNowCheckout';
+import { clearAutoApplyAttempted } from '@/lib/checkout/autoApplyOnceGate';
 import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import {
@@ -66,6 +67,9 @@ function CheckoutPageReset() {
       queueMicrotask(() => {
         if (generation === checkoutPageResetGeneration) {
           reset();
+          // Leaving checkout clears applied promos — also clear once-gate so a return
+          // visit with the same cart can auto-apply again.
+          clearAutoApplyAttempted();
           // Leaving checkout abandons buy-now; the item was never added to cart.
           clearBuyNowCheckout();
         }

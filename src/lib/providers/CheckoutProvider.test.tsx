@@ -179,6 +179,41 @@ describe('CheckoutProvider', () => {
     ).toBe('1');
   });
 
+  it('keeps independent store promotions when two stores are applied', () => {
+    let context: CheckoutContextValue | null = null;
+    const { root } = renderCheckoutProbe((value) => {
+      context = value;
+    });
+    roots.push(root);
+
+    act(() => {
+      context!.setStorePromotion('store-1', {
+        code: 'AUTO_A',
+        name: 'Store A',
+        discountAmount: 30,
+      });
+      context!.setStorePromotion('store-2', {
+        code: 'AUTO_B',
+        name: 'Store B',
+        discountAmount: 40,
+      });
+    });
+
+    expect(context!.storePromotionsByStoreId['store-1']?.code).toBe('AUTO_A');
+    expect(context!.storePromotionsByStoreId['store-2']?.code).toBe('AUTO_B');
+
+    act(() => {
+      context!.setStorePromotion('store-2', {
+        code: 'MANUAL_B',
+        name: 'Manual B',
+        discountAmount: 15,
+      });
+    });
+
+    expect(context!.storePromotionsByStoreId['store-1']?.code).toBe('AUTO_A');
+    expect(context!.storePromotionsByStoreId['store-2']?.code).toBe('MANUAL_B');
+  });
+
   it('restores defaults when reset is called', () => {
     let context: CheckoutContextValue | null = null;
     const { container, root } = renderCheckoutProbe((value) => {

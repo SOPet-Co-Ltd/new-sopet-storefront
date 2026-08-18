@@ -74,7 +74,10 @@ const nextConfig: NextConfig = {
               "form-action 'self'",
             ].join('; '),
           },
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
@@ -115,8 +118,9 @@ const nextConfig: NextConfig = {
     remotePatterns: imageRemotePatterns(),
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
-    // Allow private IPs for local MinIO
-    unoptimized: process.env.NODE_ENV === 'development',
+    // Serve original CDN/R2 URLs. Vercel Image Optimization returns 402
+    // OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED once the transform quota is hit.
+    unoptimized: true,
   },
 };
 

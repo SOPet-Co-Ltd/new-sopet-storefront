@@ -36,6 +36,16 @@ export type AutoApplyApolloClient = {
   }) => Promise<unknown>;
 };
 
+/** Detach list rows from Apollo cache proxies so overlapping store fetches cannot alias. */
+function snapshotPromotionList(
+  promotions: AutoApplyListPromotion[] | null | undefined,
+): AutoApplyListPromotion[] {
+  if (!promotions?.length) {
+    return [];
+  }
+  return promotions.map((promo) => ({ ...promo }));
+}
+
 function readAutoApplyQueryData(result: unknown):
   | {
       activeStorePromotions?: AutoApplyListPromotion[];
@@ -202,23 +212,24 @@ async function fetchPlatformList(
 ): Promise<AutoApplyListPromotion[]> {
   try {
     if (params.fetchPlatformPromotions) {
-      return await params.fetchPlatformPromotions();
+      return snapshotPromotionList(await params.fetchPlatformPromotions());
     }
 
     // Prefer imperative client.query when available (closes hook readiness race).
+    // no-cache: overlapping store/platform fetches must not share a live cache result.
     if (params.client) {
       const result = await params.client.query({
         query: ActivePlatformPromotionsDocument,
         variables: {},
-        fetchPolicy: 'network-only',
+        fetchPolicy: 'no-cache',
       });
-      return readAutoApplyQueryData(result)?.activePlatformPromotions ?? [];
+      return snapshotPromotionList(readAutoApplyQueryData(result)?.activePlatformPromotions);
     }
   } catch {
     // Fall through to provided list.
   }
 
-  return params.platformPromotions;
+  return snapshotPromotionList(params.platformPromotions);
 }
 
 async function fetchStoreList(
@@ -227,7 +238,7 @@ async function fetchStoreList(
 ): Promise<AutoApplyListPromotion[] | null> {
   try {
     if (params.fetchStorePromotions) {
-      return await params.fetchStorePromotions(storeId);
+      return snapshotPromotionList(await params.fetchStorePromotions(storeId));
     }
 
     if (!params.client) {
@@ -237,10 +248,10 @@ async function fetchStoreList(
     const result = await params.client.query({
       query: ActiveStorePromotionsDocument,
       variables: { storeId },
-      fetchPolicy: 'network-only',
+      fetchPolicy: 'no-cache',
     });
 
-    return readAutoApplyQueryData(result)?.activeStorePromotions ?? [];
+    return snapshotPromotionList(readAutoApplyQueryData(result)?.activeStorePromotions);
   } catch {
     // Active list fetch error → soft-fail that store lane.
     return null;
@@ -264,15 +275,21 @@ export async function runCheckoutAutoApply(
   const appliedStoreCodes: Record<string, string> = {};
   let appliedPlatformCode: string | null = null;
 
-  // Prefetch platform (fallback) + every cart storeId when ungated (prefetch-gap lock).
-  const [platformList, ...storeLists] = await Promise.all([
-    fetchPlatformList(params),
-    ...params.storeIds.map(async (storeId) => {
-      const list = await fetchStoreList(storeId, params);
-      return { storeId, list };
-    }),
-  ]);
+  // Prefetch platform in parallel with stores. Store catalogs are sequential so a
+  // shared/live list cannot be overwritten before we snapshot the previous store.
+  const platformListPromise = fetchPlatformList(params);
+  const storeLists: Array<{
+    storeId: string;
+    list: AutoApplyListPromotion[] | null;
+  }> = [];
+  for (const storeId of params.storeIds) {
+    storeLists.push({ storeId, list: await fetchStoreList(storeId, params) });
+  }
+  const platformList = await platformListPromise;
   const listByStoreId = new Map(storeLists.map((entry) => [entry.storeId, entry.list]));
+
+  let platformWinner: ScoredWithConditions | undefined;
+  const storeWinners: Array<{ storeId: string; winner: ScoredWithConditions }> = [];
 
   const platformTask = (async () => {
     if (!platformEmpty) {
@@ -287,12 +304,7 @@ export async function runCheckoutAutoApply(
         validatePromotion: params.validatePromotion,
       });
       const ranked = rankAutoApplyPromotions(scored);
-      const winner = ranked[0] as ScoredWithConditions | undefined;
-      if (!winner) {
-        return;
-      }
-      applyPlatformWinner(winner, params);
-      appliedPlatformCode = winner.validation.code;
+      platformWinner = ranked[0] as ScoredWithConditions | undefined;
     } catch {
       // Soft-fail platform lane.
     }
@@ -317,14 +329,23 @@ export async function runCheckoutAutoApply(
       if (!winner) {
         return;
       }
-      applyStoreWinner(storeId, winner, params.setStorePromotion);
-      appliedStoreCodes[storeId] = winner.validation.code;
+      storeWinners.push({ storeId, winner });
     } catch {
       // Soft-fail store lane.
     }
   });
 
   await Promise.all([platformTask, ...storeTasks]);
+
+  // Apply after every lane has scored so sibling store writes land in one tick.
+  if (platformWinner) {
+    applyPlatformWinner(platformWinner, params);
+    appliedPlatformCode = platformWinner.validation.code;
+  }
+  for (const { storeId, winner } of storeWinners) {
+    applyStoreWinner(storeId, winner, params.setStorePromotion);
+    appliedStoreCodes[storeId] = winner.validation.code;
+  }
 
   return {
     settled: true,

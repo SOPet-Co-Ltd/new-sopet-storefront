@@ -218,4 +218,23 @@ describe('CheckoutAutoApplyController', () => {
       expect(hasAutoApplyAttempted(CART_FP)).toBe(false);
     });
   });
+
+  it('does not re-run when a sibling store promotion is written after settle', async () => {
+    const { rerender } = render(<CheckoutAutoApplyController />);
+    await waitFor(() => {
+      expect(runCheckoutAutoApply).toHaveBeenCalledTimes(1);
+    });
+    runCheckoutAutoApply.mockClear();
+
+    mockCheckout.storePromotionsByStoreId = {
+      'store-a': { code: 'AUTO_A', name: 'Auto A', discountAmount: 30 },
+      'store-b': { code: 'MANUAL_B', name: 'Manual B', discountAmount: 15 },
+    };
+    rerender(<CheckoutAutoApplyController />);
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(runCheckoutAutoApply).not.toHaveBeenCalled();
+  });
 });

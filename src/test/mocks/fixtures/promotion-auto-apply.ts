@@ -57,6 +57,17 @@ export const autoApplyStoreBPromotion = {
   priority: 5,
 };
 
+/** Manual-only store B catalog — sibling of an auto-apply store A lane. */
+export const manualOnlyStoreBPromotion = {
+  ...autoApplyStoreBPromotion,
+  id: 'promo-store-b-manual',
+  code: 'MANUAL_STORE_B',
+  name: 'ร้าน B มือ',
+  discountValue: 15,
+  autoApply: false,
+  priority: 1,
+};
+
 /** Manual-only peer — must not win auto-apply ranking. */
 export const manualOnlyPlatformPromotion = {
   ...autoApplyPlatformPromotion,
@@ -91,6 +102,15 @@ export const validateAutoApplyStoreB = {
   code: 'AUTO_STORE_B',
   name: 'ร้าน B อัตโนมัติ',
   discountAmount: 40,
+  ineligibilityReason: null as string | null,
+  freeUnits: null as number | null,
+};
+
+export const validateManualStoreB = {
+  __typename: 'PromotionValidationResult' as const,
+  code: 'MANUAL_STORE_B',
+  name: 'ร้าน B มือ',
+  discountAmount: 15,
   ineligibilityReason: null as string | null,
   freeUnits: null as number | null,
 };

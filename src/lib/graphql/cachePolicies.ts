@@ -12,6 +12,16 @@ export const typePolicies: TypePolicies = {
       cart: {
         merge: (_existing, incoming) => incoming,
       },
+      // Parallel auto-apply / two store modals must not share one catalog slot.
+      activeStorePromotions: {
+        keyArgs: ['storeId'],
+      },
+      storeShippingOptions: {
+        keyArgs: ['storeId'],
+      },
+      validatePromotion: {
+        keyArgs: ['input'],
+      },
     },
   },
 };

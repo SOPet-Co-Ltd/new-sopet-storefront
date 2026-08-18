@@ -93,6 +93,7 @@ function makeCart(cartId: string, itemVariantIds: string[]): CartPayload {
         __typename: 'ProductVariantType',
         id: variantId,
         price: 100,
+        compareAtPrice: null,
         sku: `SKU-${variantId}`,
         stockQuantity: 10,
         optionsJson: null,
@@ -103,6 +104,7 @@ function makeCart(cartId: string, itemVariantIds: string[]): CartPayload {
           slug: `product-${index}`,
           storeId: `store-${index}`,
           thumbnailUrl: null,
+          compareAtPrice: null,
           store: {
             __typename: 'StoreType',
             id: `store-${index}`,

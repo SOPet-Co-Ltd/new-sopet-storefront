@@ -91,6 +91,11 @@ function emitConsentChange(preferences: CookieConsentPreferences): void {
 /** Test helper — resets in-memory consent between cases. */
 export function resetCookieConsentMemory(): void {
   memoryPreferences = null;
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage?.removeItem(CONSENT_STORAGE_KEY);
+    } catch {}
+  }
 }
 
 export function readConsentPreferences(): CookieConsentPreferences | null {

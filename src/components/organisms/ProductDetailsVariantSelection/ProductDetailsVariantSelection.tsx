@@ -11,6 +11,12 @@ import { ProductShareModal } from '@/components/organisms/ProductShareModal/Prod
 import { trackAddToCart } from '@/lib/analytics';
 import { flyToCart, getProductFlyImageUrl } from '@/lib/cart/flyToCart';
 import { buildBuyNowCheckoutPayload, setBuyNowCheckout } from '@/lib/checkout/buyNowCheckout';
+import {
+  computeSaleUnitPrice,
+  pickCampaignItem,
+  resolveCompareAtPrice,
+} from '@/lib/catalog/resolve-compare-at-price';
+import { useActiveSaleCampaignItems } from '@/lib/hooks/useActiveSaleCampaignItems';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
@@ -57,9 +63,20 @@ export default function ProductDetailsVariantSelection({
     [product.variants, selectedOptions],
   );
 
+  const { items: campaignItems } = useActiveSaleCampaignItems(product.storeId);
+  const campaignItem = pickCampaignItem(campaignItems, product.id, selectedVariant?.id ?? null);
+
   const variantId = selectedVariant?.id ?? null;
   const variantStock = selectedVariant?.stockQuantity ?? 0;
-  const variantPrice = selectedVariant?.price ?? product.basePrice;
+  const catalogPrice = selectedVariant?.price ?? product.basePrice;
+  const variantPrice =
+    computeSaleUnitPrice(catalogPrice, campaignItem?.discountPercent) ?? catalogPrice;
+  const compareAtPrice = resolveCompareAtPrice({
+    sellPrice: catalogPrice,
+    campaignItem,
+    variantCompareAt: selectedVariant?.compareAtPrice ?? null,
+    productCompareAt: product.compareAtPrice ?? null,
+  });
   const hasAnyPrice = variantPrice > 0;
   const isOutOfStock = variantStock <= 0;
 
@@ -142,6 +159,8 @@ export default function ProductDetailsVariantSelection({
       product,
       variantId,
       quantity: safeQuantity,
+      price: variantPrice,
+      compareAtPrice,
     });
     if (!payload) return;
 

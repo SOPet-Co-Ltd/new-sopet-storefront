@@ -193,7 +193,7 @@ export function HomeProductSection({
     () => visibleProducts.map((product) => product.id),
     [visibleProducts],
   );
-  const { getCampaignCompareAt } = useCampaignCompareAtLookup(visibleProductIds);
+  const { getCampaignPricing } = useCampaignCompareAtLookup(visibleProductIds);
 
   if (isLoading) {
     return (
@@ -231,33 +231,43 @@ export function HomeProductSection({
       <h2 className={`md:px-0 px-4 ${SECTION_HEADING_CLASS}`}>{heading}</h2>
       {layout === 'grid' ? (
         <div className={PRODUCT_CARD_GRID_CLASS}>
-          {displayProducts.map((product, index) => (
-            <div key={product.id} className={cn(getGridProductVisibilityClass(index))}>
-              <ProductCard
-                product={product}
-                campaignCompareAt={getCampaignCompareAt(
-                  product.id,
-                  getProductCardCheapestVariantId(product),
-                  getProductCardDisplayPrice(product),
-                )}
-              />
-            </div>
-          ))}
+          {displayProducts.map((product, index) => {
+            const catalogPrice = getProductCardDisplayPrice(product);
+            const pricing = getCampaignPricing(
+              product.id,
+              getProductCardCheapestVariantId(product),
+              catalogPrice,
+            );
+            return (
+              <div key={product.id} className={cn(getGridProductVisibilityClass(index))}>
+                <ProductCard
+                  product={product}
+                  campaignCompareAt={pricing?.compareAt ?? null}
+                  campaignSalePrice={pricing?.saleUnit ?? null}
+                />
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className={PRODUCT_CAROUSEL_CLASS}>
-          {displayProducts.map((product) => (
-            <div key={product.id} className="shrink-0">
-              <ProductCard
-                product={product}
-                campaignCompareAt={getCampaignCompareAt(
-                  product.id,
-                  getProductCardCheapestVariantId(product),
-                  getProductCardDisplayPrice(product),
-                )}
-              />
-            </div>
-          ))}
+          {displayProducts.map((product) => {
+            const catalogPrice = getProductCardDisplayPrice(product);
+            const pricing = getCampaignPricing(
+              product.id,
+              getProductCardCheapestVariantId(product),
+              catalogPrice,
+            );
+            return (
+              <div key={product.id} className="shrink-0">
+                <ProductCard
+                  product={product}
+                  campaignCompareAt={pricing?.compareAt ?? null}
+                  campaignSalePrice={pricing?.saleUnit ?? null}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
       <div className="mt-6 flex items-center justify-center">

@@ -37,6 +37,30 @@ export type ValidatePromotionStubMode =
 
 export type ValidatePromotionsStubMode = 'success' | 'order-history' | 'transport-error';
 
+function guestIneligibleValidatePromotionsHandler(
+  promotions: Array<{ id: string; code: string; name: string }>,
+) {
+  return graphql.query('ValidatePromotions', () => {
+    return HttpResponse.json({
+      data: {
+        validatePromotions: {
+          __typename: 'ValidatePromotionsResult',
+          items: promotions.map((promo) => ({
+            __typename: 'PromotionEligibilityResult',
+            id: promo.id,
+            code: promo.code,
+            name: promo.name,
+            eligible: false,
+            ineligibilityReason: 'GUEST',
+            discountAmount: 0,
+            freeUnits: null,
+          })),
+        },
+      },
+    });
+  });
+}
+
 function resolveValidatePromotion(mode: ValidatePromotionStubMode) {
   switch (mode) {
     case 'bxgy-insufficient':
@@ -117,6 +141,10 @@ export const guestJourneyPromotionHandlers = [
       data: { validatePromotion: validatePromotionGuestRequired },
     });
   }),
+  guestIneligibleValidatePromotionsHandler([
+    guestNewCustomerStorePromotion,
+    guestNewCustomerPlatformPromotion,
+  ]),
 ];
 
 /**
@@ -139,6 +167,10 @@ export const guestLoggedInOnlyJourneyPromotionHandlers = [
       data: { validatePromotion: validatePromotionLoggedInOnlyGuestRequired },
     });
   }),
+  guestIneligibleValidatePromotionsHandler([
+    guestLoggedInOnlyStorePromotion,
+    guestLoggedInOnlyPlatformPromotion,
+  ]),
 ];
 
 /**
@@ -160,6 +192,10 @@ export const guestBothKeysJourneyPromotionHandlers = [
       data: { validatePromotion: validatePromotionLoggedInOnlyGuestRequired },
     });
   }),
+  guestIneligibleValidatePromotionsHandler([
+    guestLoggedInOnlyAndNewCustomerStorePromotion,
+    guestLoggedInOnlyAndNewCustomerPlatformPromotion,
+  ]),
 ];
 
 /**

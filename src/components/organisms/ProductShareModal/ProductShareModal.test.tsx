@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 import { buildProductShareUrl, getProductShareText, ProductShareModal } from './ProductShareModal';
+import { writeCookieConsent } from '@/lib/consent/cookie-consent';
 
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
@@ -38,6 +39,7 @@ beforeEach(() => {
   toastSuccess.mockClear();
   toastError.mockClear();
   window.dataLayer = [];
+  writeCookieConsent('accepted');
 });
 
 afterEach(() => {

@@ -165,6 +165,7 @@ export type CartItemFieldsFragment = {
   productVariant: {
     id: string;
     price: number;
+    compareAtPrice: number | null;
     sku: string;
     stockQuantity: number;
     optionsJson: string | null;
@@ -174,6 +175,7 @@ export type CartItemFieldsFragment = {
       slug: string;
       storeId: string;
       thumbnailUrl: string | null;
+      compareAtPrice: number | null;
       store: { id: string; name: string; slug: string } | null;
     } | null;
   } | null;
@@ -190,6 +192,7 @@ export type CartFieldsFragment = {
     productVariant: {
       id: string;
       price: number;
+      compareAtPrice: number | null;
       sku: string;
       stockQuantity: number;
       optionsJson: string | null;
@@ -199,6 +202,7 @@ export type CartFieldsFragment = {
         slug: string;
         storeId: string;
         thumbnailUrl: string | null;
+        compareAtPrice: number | null;
         store: { id: string; name: string; slug: string } | null;
       } | null;
     } | null;
@@ -222,6 +226,7 @@ export type CartQuery = {
       productVariant: {
         id: string;
         price: number;
+        compareAtPrice: number | null;
         sku: string;
         stockQuantity: number;
         optionsJson: string | null;
@@ -231,6 +236,7 @@ export type CartQuery = {
           slug: string;
           storeId: string;
           thumbnailUrl: string | null;
+          compareAtPrice: number | null;
           store: { id: string; name: string; slug: string } | null;
         } | null;
       } | null;
@@ -255,6 +261,7 @@ export type AddToCartMutation = {
       productVariant: {
         id: string;
         price: number;
+        compareAtPrice: number | null;
         sku: string;
         stockQuantity: number;
         optionsJson: string | null;
@@ -264,6 +271,7 @@ export type AddToCartMutation = {
           slug: string;
           storeId: string;
           thumbnailUrl: string | null;
+          compareAtPrice: number | null;
           store: { id: string; name: string; slug: string } | null;
         } | null;
       } | null;
@@ -288,6 +296,7 @@ export type UpdateCartItemMutation = {
       productVariant: {
         id: string;
         price: number;
+        compareAtPrice: number | null;
         sku: string;
         stockQuantity: number;
         optionsJson: string | null;
@@ -297,6 +306,7 @@ export type UpdateCartItemMutation = {
           slug: string;
           storeId: string;
           thumbnailUrl: string | null;
+          compareAtPrice: number | null;
           store: { id: string; name: string; slug: string } | null;
         } | null;
       } | null;
@@ -321,6 +331,7 @@ export type RemoveCartItemMutation = {
       productVariant: {
         id: string;
         price: number;
+        compareAtPrice: number | null;
         sku: string;
         stockQuantity: number;
         optionsJson: string | null;
@@ -330,6 +341,7 @@ export type RemoveCartItemMutation = {
           slug: string;
           storeId: string;
           thumbnailUrl: string | null;
+          compareAtPrice: number | null;
           store: { id: string; name: string; slug: string } | null;
         } | null;
       } | null;
@@ -354,6 +366,7 @@ export type MergeCartMutation = {
       productVariant: {
         id: string;
         price: number;
+        compareAtPrice: number | null;
         sku: string;
         stockQuantity: number;
         optionsJson: string | null;
@@ -363,6 +376,7 @@ export type MergeCartMutation = {
           slug: string;
           storeId: string;
           thumbnailUrl: string | null;
+          compareAtPrice: number | null;
           store: { id: string; name: string; slug: string } | null;
         } | null;
       } | null;
@@ -1633,6 +1647,7 @@ export const CartItemFieldsFragmentDoc = {
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'price' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'compareAtPrice' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'sku' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'stockQuantity' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'optionsJson' } },
@@ -1647,6 +1662,7 @@ export const CartItemFieldsFragmentDoc = {
                       { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'storeId' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'thumbnailUrl' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'compareAtPrice' } },
                       {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'store' },
@@ -1726,6 +1742,7 @@ export const CartFieldsFragmentDoc = {
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'price' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'compareAtPrice' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'sku' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'stockQuantity' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'optionsJson' } },
@@ -1740,6 +1757,7 @@ export const CartFieldsFragmentDoc = {
                       { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'storeId' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'thumbnailUrl' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'compareAtPrice' } },
                       {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'store' },

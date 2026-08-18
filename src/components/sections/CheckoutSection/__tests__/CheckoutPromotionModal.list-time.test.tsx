@@ -75,7 +75,6 @@ function mockGuestAuth() {
 
 function storeOrderHistorySoftHandlers() {
   return [
-    ...guestJourneyPromotionHandlers,
     graphql.query('ValidatePromotions', () => {
       return HttpResponse.json({
         data: {
@@ -97,12 +96,12 @@ function storeOrderHistorySoftHandlers() {
         },
       });
     }),
+    ...guestJourneyPromotionHandlers,
   ];
 }
 
 function platformOrderHistorySoftHandlers() {
   return [
-    ...guestJourneyPromotionHandlers,
     graphql.query('ValidatePromotions', () => {
       return HttpResponse.json({
         data: {
@@ -124,6 +123,7 @@ function platformOrderHistorySoftHandlers() {
         },
       });
     }),
+    ...guestJourneyPromotionHandlers,
   ];
 }
 
@@ -284,7 +284,7 @@ describe('Checkout promotion modals — list-time hybrid wiring', () => {
 
   it('store modal: batch transport error → AC-051 banner + retain client-local unavailable (UI-D-005)', async () => {
     mockGuestAuth();
-    server.use(...guestJourneyPromotionHandlers, ...validatePromotionsTransportErrorHandlers);
+    server.use(...validatePromotionsTransportErrorHandlers, ...guestJourneyPromotionHandlers);
 
     const onConfirm = vi.fn();
 
@@ -321,7 +321,7 @@ describe('Checkout promotion modals — list-time hybrid wiring', () => {
 
   it('platform modal: batch transport error → same AC-051 banner + retain client-local (AC-050)', async () => {
     mockGuestAuth();
-    server.use(...guestJourneyPromotionHandlers, ...validatePromotionsTransportErrorHandlers);
+    server.use(...validatePromotionsTransportErrorHandlers, ...guestJourneyPromotionHandlers);
 
     render(
       <ApolloTestWrapper>

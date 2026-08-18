@@ -17,6 +17,7 @@ const samplePayload: BuyNowCheckoutPayload = {
   variantId: 'var-1',
   quantity: 2,
   price: 199,
+  compareAtPrice: null,
   productName: 'Kong Classic',
   productSlug: 'kong-classic',
   thumbnailUrl: 'https://example.com/kong.jpg',
@@ -87,6 +88,37 @@ describe('buyNowCheckout', () => {
       ...samplePayload,
       thumbnailUrl: null,
     });
+  });
+
+  it('keeps honest compare-at on the synthetic cart line when higher than payable', () => {
+    const product = {
+      id: 'prod-1',
+      slug: 'kong-classic',
+      storeId: 'store-1',
+      name: 'Kong Classic',
+      thumbnailUrl: null,
+      store: { id: 'store-1', name: 'Pet Shop', slug: 'pet-shop' },
+      variants: [
+        {
+          id: 'var-1',
+          sku: 'KONG-M',
+          price: 279,
+          stockQuantity: 10,
+          optionsJson: '{"size":"M"}',
+        },
+      ],
+    } as ProductDetail;
+
+    const payload = buildBuyNowCheckoutPayload({
+      product,
+      variantId: 'var-1',
+      quantity: 1,
+      price: 223.2,
+      compareAtPrice: 279,
+    });
+
+    expect(payload?.compareAtPrice).toBe(279);
+    expect(toBuyNowCartItem(payload!).productVariant?.compareAtPrice).toBe(279);
   });
 
   it('returns null when variant is missing', () => {

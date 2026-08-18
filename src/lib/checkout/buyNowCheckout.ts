@@ -10,6 +10,8 @@ export type BuyNowCheckoutPayload = {
   variantId: string;
   quantity: number;
   price: number;
+  /** Honest strikethrough was; omit or null when not higher than payable unit. */
+  compareAtPrice?: number | null;
   productName: string;
   productSlug: string;
   thumbnailUrl: string | null;
@@ -113,6 +115,7 @@ export function toBuyNowCartItem(payload: BuyNowCheckoutPayload): CartItem {
     productVariant: {
       id: payload.variantId,
       price: payload.price,
+      compareAtPrice: payload.compareAtPrice ?? null,
       sku: payload.sku ?? '',
       stockQuantity: payload.stockQuantity,
       optionsJson: payload.optionsJson,
@@ -122,6 +125,7 @@ export function toBuyNowCartItem(payload: BuyNowCheckoutPayload): CartItem {
         slug: payload.productSlug,
         storeId: payload.storeId,
         thumbnailUrl: payload.thumbnailUrl,
+        compareAtPrice: payload.compareAtPrice ?? null,
         store: {
           id: payload.storeId,
           name: payload.storeName,
@@ -136,16 +140,24 @@ export function buildBuyNowCheckoutPayload(params: {
   product: ProductDetail;
   variantId: string;
   quantity: number;
+  /** Payable unit (sale price when a campaign applies); defaults to catalog variant.price. */
+  price?: number;
+  compareAtPrice?: number | null;
 }): BuyNowCheckoutPayload | null {
   const { product, variantId, quantity } = params;
   const variant = (product.variants ?? []).find((entry) => entry.id === variantId);
   if (!variant || quantity < 1) return null;
 
+  const price = params.price ?? variant.price;
+  const compareAtPrice =
+    params.compareAtPrice != null && params.compareAtPrice > price ? params.compareAtPrice : null;
+
   return {
     productId: product.id,
     variantId: variant.id,
     quantity,
-    price: variant.price,
+    price,
+    compareAtPrice,
     productName: product.name,
     productSlug: product.slug,
     thumbnailUrl: product.thumbnailUrl ?? null,

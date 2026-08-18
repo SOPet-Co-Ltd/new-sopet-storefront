@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  computeCompareAtFromDiscountPercent,
+  computeSaleUnitPrice,
   pickCampaignItem,
   resolveCompareAtPrice,
   type ActiveSaleCampaignItem,
@@ -19,25 +19,20 @@ function campaignItem(overrides: Partial<ActiveSaleCampaignItem>): ActiveSaleCam
   };
 }
 
-describe('computeCompareAtFromDiscountPercent', () => {
-  it('computes compare-at from a discount percent, rounded to 2 decimals', () => {
-    expect(computeCompareAtFromDiscountPercent(90, 10)).toBe(100);
-    expect(computeCompareAtFromDiscountPercent(100, 25)).toBeCloseTo(133.33, 2);
+describe('computeSaleUnitPrice', () => {
+  it('applies 20% off catalog 279 → 223.20', () => {
+    expect(computeSaleUnitPrice(279, 20)).toBe(223.2);
   });
 
-  it('returns null when percent is missing', () => {
-    expect(computeCompareAtFromDiscountPercent(100, null)).toBeNull();
-    expect(computeCompareAtFromDiscountPercent(100, undefined)).toBeNull();
+  it('does not invent a higher compare-at (348.75 from 279 / 0.8)', () => {
+    expect(computeSaleUnitPrice(279, 20)).not.toBe(348.75);
+    expect(279 / (1 - 20 / 100)).toBeCloseTo(348.75, 2);
   });
 
-  it('returns null when percent is 100 or more (division by zero or negative)', () => {
-    expect(computeCompareAtFromDiscountPercent(100, 100)).toBeNull();
-    expect(computeCompareAtFromDiscountPercent(100, 150)).toBeNull();
-  });
-
-  it('returns null when sellPrice is zero or negative', () => {
-    expect(computeCompareAtFromDiscountPercent(0, 10)).toBeNull();
-    expect(computeCompareAtFromDiscountPercent(-5, 10)).toBeNull();
+  it('returns null when percent is missing or out of range', () => {
+    expect(computeSaleUnitPrice(279, null)).toBeNull();
+    expect(computeSaleUnitPrice(279, 100)).toBeNull();
+    expect(computeSaleUnitPrice(0, 20)).toBeNull();
   });
 });
 
@@ -89,31 +84,41 @@ describe('pickCampaignItem', () => {
 });
 
 describe('resolveCompareAtPrice', () => {
-  it('uses campaignItem.compareAtPrice first when present', () => {
-    const campaign = campaignItem({ compareAtPrice: 150, discountPercent: 50 });
+  it('uses honest campaign compare-at when greater than catalog', () => {
+    const campaign = campaignItem({ compareAtPrice: 349, discountPercent: 20 });
     expect(
       resolveCompareAtPrice({
-        sellPrice: 100,
+        sellPrice: 279,
         campaignItem: campaign,
         variantCompareAt: 200,
         productCompareAt: 300,
       }),
-    ).toBe(150);
+    ).toBe(349);
   });
 
-  it('computes from campaignItem.discountPercent when compareAtPrice is absent', () => {
-    const campaign = campaignItem({ compareAtPrice: null, discountPercent: 10 });
+  it('uses catalog as was when % sale applies without compare-at (never 348.75)', () => {
+    const campaign = campaignItem({ compareAtPrice: null, discountPercent: 20 });
     expect(
       resolveCompareAtPrice({
-        sellPrice: 90,
+        sellPrice: 279,
         campaignItem: campaign,
         variantCompareAt: 200,
         productCompareAt: 300,
       }),
-    ).toBe(100);
+    ).toBe(279);
   });
 
-  it('falls back to variant compareAtPrice when campaign item has no usable discount', () => {
+  it('ignores compare-at that is not greater than catalog and falls back to catalog when % applies', () => {
+    const campaign = campaignItem({ compareAtPrice: 200, discountPercent: 20 });
+    expect(
+      resolveCompareAtPrice({
+        sellPrice: 279,
+        campaignItem: campaign,
+      }),
+    ).toBe(279);
+  });
+
+  it('falls back to variant compareAtPrice when campaign has no usable %', () => {
     const campaign = campaignItem({ compareAtPrice: null, discountPercent: null });
     expect(
       resolveCompareAtPrice({
@@ -156,17 +161,5 @@ describe('resolveCompareAtPrice', () => {
         productCompareAt: null,
       }),
     ).toBeNull();
-  });
-
-  it('does not fall through to discount-percent-with-100 case (returns null then falls back)', () => {
-    const campaign = campaignItem({ compareAtPrice: null, discountPercent: 100 });
-    expect(
-      resolveCompareAtPrice({
-        sellPrice: 90,
-        campaignItem: campaign,
-        variantCompareAt: 200,
-        productCompareAt: 300,
-      }),
-    ).toBe(200);
   });
 });

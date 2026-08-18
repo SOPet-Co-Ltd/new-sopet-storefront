@@ -1,11 +1,6 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-
-const GlobalLoadingStage = dynamic(
-  () => import('@/components/organisms/GlobalLoadingStage').then((mod) => mod.GlobalLoadingStage),
-  { ssr: false },
-);
+import { GlobalLoadingStage } from '@/components/organisms/GlobalLoadingStage';
 
 export default function Loading() {
   return <GlobalLoadingStage />;

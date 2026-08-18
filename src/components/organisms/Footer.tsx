@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { CookieSettingsFooterLink } from '@/components/organisms/CookieSettingsFooterLink';
 import { cn } from '@/lib/utils';
 
 import { FacebookIcon, FooterMailIcon, LineIcon, QrAddLineOAIcon } from '../atoms/icons';
@@ -29,6 +30,7 @@ const FOOTER_LINKS = [
   { label: 'นโยบายการใช้งาน', href: '/policy/terms-of-service' },
   { label: 'นโยบายการคืนเงิน', href: '/policy/refund-policy' },
   { label: 'นโยบายความเป็นส่วนตัว', href: '/policy/privacy-policy' },
+  { label: 'ศูนย์ความปลอดภัย', href: '/security' },
 ];
 
 const LINE_OA_TITLE = ['ปรึกษาสัต​วแพทย์ฟรี !', 'ผ่าน LINE OA'];
@@ -97,8 +99,8 @@ export function Footer() {
         <p className="sop-body-xs-regular text-center text-sop-base-white md:text-left">
           {COMPANY_INFO.copyright}
         </p>
-        <div className="flex items-center gap-sop-12px">
-          {FOOTER_LINKS.map(({ label, href }, index) => (
+        <div className="flex flex-wrap items-center justify-center gap-sop-12px md:justify-end">
+          {FOOTER_LINKS.map(({ label, href }) => (
             <div key={label} className="flex items-center gap-sop-12px">
               <Link
                 href={href}
@@ -106,11 +108,10 @@ export function Footer() {
               >
                 {label}
               </Link>
-              {index < FOOTER_LINKS.length - 1 && (
-                <div className="h-4 w-px bg-sop-neutral-whitealpha-400" />
-              )}
+              <div className="h-4 w-px bg-sop-neutral-whitealpha-400" />
             </div>
           ))}
+          <CookieSettingsFooterLink />
         </div>
       </div>
     </footer>

@@ -150,7 +150,7 @@ export function ProductListing({
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;
 
   const productIds = useMemo(() => products.map((product) => product.id), [products]);
-  const { getCampaignCompareAt } = useCampaignCompareAtLookup(productIds);
+  const { getCampaignPricing } = useCampaignCompareAtLookup(productIds);
 
   useEffect(() => {
     if (!listingPrefetch || totalPages <= 1 || currentPage >= totalPages) {
@@ -238,19 +238,24 @@ export function ProductListing({
           <p className="sop-body-lg-medium text-sop-neutral-gray-200">สินค้าทั้งหมด ({total})</p>
 
           <ul className={cn('mt-6', PRODUCT_CARD_GRID_CLASS)}>
-            {products.map((product, index) => (
-              <li key={product.id} className="min-w-0 flex justify-center">
-                <ProductCard
-                  product={product}
-                  priority={index < 4}
-                  campaignCompareAt={getCampaignCompareAt(
-                    product.id,
-                    getProductCardCheapestVariantId(product),
-                    getProductCardDisplayPrice(product),
-                  )}
-                />
-              </li>
-            ))}
+            {products.map((product, index) => {
+              const catalogPrice = getProductCardDisplayPrice(product);
+              const pricing = getCampaignPricing(
+                product.id,
+                getProductCardCheapestVariantId(product),
+                catalogPrice,
+              );
+              return (
+                <li key={product.id} className="min-w-0 flex justify-center">
+                  <ProductCard
+                    product={product}
+                    priority={index < 4}
+                    campaignCompareAt={pricing?.compareAt ?? null}
+                    campaignSalePrice={pricing?.saleUnit ?? null}
+                  />
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -275,19 +280,24 @@ export function ProductListing({
       </div>
 
       <ul className={PRODUCT_CARD_GRID_CLASS}>
-        {products.map((product, index) => (
-          <li key={product.id} className="min-w-0 flex justify-center">
-            <ProductCard
-              product={product}
-              priority={index < 4}
-              campaignCompareAt={getCampaignCompareAt(
-                product.id,
-                getProductCardCheapestVariantId(product),
-                getProductCardDisplayPrice(product),
-              )}
-            />
-          </li>
-        ))}
+        {products.map((product, index) => {
+          const catalogPrice = getProductCardDisplayPrice(product);
+          const pricing = getCampaignPricing(
+            product.id,
+            getProductCardCheapestVariantId(product),
+            catalogPrice,
+          );
+          return (
+            <li key={product.id} className="min-w-0 flex justify-center">
+              <ProductCard
+                product={product}
+                priority={index < 4}
+                campaignCompareAt={pricing?.compareAt ?? null}
+                campaignSalePrice={pricing?.saleUnit ?? null}
+              />
+            </li>
+          );
+        })}
       </ul>
 
       <div className="mt-6 flex justify-center md:justify-end">

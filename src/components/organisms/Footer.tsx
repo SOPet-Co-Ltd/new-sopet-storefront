@@ -31,7 +31,7 @@ const FOOTER_LINKS = [
   { label: 'นโยบายความเป็นส่วนตัว', href: '/policy/privacy-policy' },
 ];
 
-const LINE_OA_TITLE = ['ปรึกษาสัตว​์แพทย์ฟรี !', 'ผ่าน LINE OA'];
+const LINE_OA_TITLE = ['ปรึกษาสัต​วแพทย์ฟรี !', 'ผ่าน LINE OA'];
 
 function FooterSectionHeading({ children }: { children: string }) {
   return <h4 className="sop-body-lg-medium text-sop-base-black">{children}</h4>;

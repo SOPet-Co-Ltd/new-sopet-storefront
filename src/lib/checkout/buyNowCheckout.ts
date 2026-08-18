@@ -125,6 +125,7 @@ export function toBuyNowCartItem(payload: BuyNowCheckoutPayload): CartItem {
         slug: payload.productSlug,
         storeId: payload.storeId,
         thumbnailUrl: payload.thumbnailUrl,
+        compareAtPrice: payload.compareAtPrice ?? null,
         store: {
           id: payload.storeId,
           name: payload.storeName,

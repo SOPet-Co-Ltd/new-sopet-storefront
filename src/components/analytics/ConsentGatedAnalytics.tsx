@@ -18,11 +18,7 @@ function subscribeConsent(onStoreChange: () => void) {
  * Essential auth/session cookies are unaffected (HttpOnly BFF).
  */
 export function ConsentGatedAnalytics() {
-  const allowed = useSyncExternalStore(
-    subscribeConsent,
-    hasAnalyticsConsent,
-    () => false,
-  );
+  const allowed = useSyncExternalStore(subscribeConsent, hasAnalyticsConsent, () => false);
 
   if (!allowed) {
     return null;

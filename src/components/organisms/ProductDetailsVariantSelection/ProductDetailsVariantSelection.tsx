@@ -64,11 +64,7 @@ export default function ProductDetailsVariantSelection({
   );
 
   const { items: campaignItems } = useActiveSaleCampaignItems(product.storeId);
-  const campaignItem = pickCampaignItem(
-    campaignItems,
-    product.id,
-    selectedVariant?.id ?? null,
-  );
+  const campaignItem = pickCampaignItem(campaignItems, product.id, selectedVariant?.id ?? null);
 
   const variantId = selectedVariant?.id ?? null;
   const variantStock = selectedVariant?.stockQuantity ?? 0;

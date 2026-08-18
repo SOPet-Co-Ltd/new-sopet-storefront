@@ -33,7 +33,11 @@ function subscribeIsClient() {
  * Banner stays hidden until after hydration to avoid FOUC for returning visitors.
  */
 export function CookieConsentBanner() {
-  const isClient = useSyncExternalStore(subscribeIsClient, () => true, () => false);
+  const isClient = useSyncExternalStore(
+    subscribeIsClient,
+    () => true,
+    () => false,
+  );
   const decided = useSyncExternalStore(subscribeConsent, hasConsentDecision, () => false);
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -67,7 +71,8 @@ export function CookieConsentBanner() {
             )}
           >
             <p className="sop-body-sm-regular text-sop-neutral-gray-200 md:max-w-3xl">
-              เราใช้คุกกี้ที่จำเป็นต่อการเข้าสู่ระบบและตะกร้าสินค้า และขอความยินยอมสำหรับคุกกี้วิเคราะห์
+              เราใช้คุกกี้ที่จำเป็นต่อการเข้าสู่ระบบและตะกร้าสินค้า
+              และขอความยินยอมสำหรับคุกกี้วิเคราะห์
               คุณสามารถยอมรับทั้งหมดหรือเลือกประเภทที่ต้องการได้ ดูรายละเอียดใน{' '}
               <Link
                 href="/policy/privacy-policy"

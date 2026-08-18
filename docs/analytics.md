@@ -89,13 +89,13 @@ Consent is stored in `localStorage` under `sopet_cookie_consent` as JSON:
 
 Legacy values `accepted` / `rejected` are still read and mapped to all-on / essential-only.
 
-| Concern | Location |
-| --- | --- |
-| Consent helpers | `src/lib/consent/cookie-consent.ts` |
-| Banner + preferences panel | `src/components/organisms/CookieConsentBanner.tsx` |
-| Preferences panel | `src/components/organisms/CookiePreferencesPanel.tsx` |
-| Footer reopen link | `src/components/organisms/CookieSettingsFooterLink.tsx` |
-| Gated script load | `src/components/analytics/ConsentGatedAnalytics.tsx` |
+| Concern                    | Location                                                |
+| -------------------------- | ------------------------------------------------------- |
+| Consent helpers            | `src/lib/consent/cookie-consent.ts`                     |
+| Banner + preferences panel | `src/components/organisms/CookieConsentBanner.tsx`      |
+| Preferences panel          | `src/components/organisms/CookiePreferencesPanel.tsx`   |
+| Footer reopen link         | `src/components/organisms/CookieSettingsFooterLink.tsx` |
+| Gated script load          | `src/components/analytics/ConsentGatedAnalytics.tsx`    |
 
 First visit: **ยอมรับทั้งหมด** or **ตั้งค่า** (essential always on; analytics optional). After a decision, reopen via the footer **ตั้งค่าคุกกี้** link.
 

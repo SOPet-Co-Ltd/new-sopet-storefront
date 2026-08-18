@@ -96,9 +96,7 @@ export function CookiePreferencesPanel({ open, onClose }: CookiePreferencesPanel
       width={560}
       insideCloseButton
       onClose={onClose}
-      header={
-        <h2 className="sop-body-lg-medium pr-10 text-sop-neutral-gray-200">ตั้งค่าคุกกี้</h2>
-      }
+      header={<h2 className="sop-body-lg-medium pr-10 text-sop-neutral-gray-200">ตั้งค่าคุกกี้</h2>}
       footer={
         <div className="flex flex-col gap-sop-8px sm:flex-row sm:justify-end">
           <Button
@@ -127,8 +125,8 @@ export function CookiePreferencesPanel({ open, onClose }: CookiePreferencesPanel
       }
     >
       <p className="sop-body-sm-regular text-sop-neutral-gray-400">
-        เลือกประเภทคุกกี้ที่ยินยอม คุกกี้ที่จำเป็นไม่สามารถปิดได้เพราะใช้ในการเข้าสู่ระบบและตะกร้าสินค้า
-        ดูรายละเอียดใน{' '}
+        เลือกประเภทคุกกี้ที่ยินยอม
+        คุกกี้ที่จำเป็นไม่สามารถปิดได้เพราะใช้ในการเข้าสู่ระบบและตะกร้าสินค้า ดูรายละเอียดใน{' '}
         <Link
           href="/policy/privacy-policy"
           className="sop-body-sm-medium text-sop-secondary-500 underline underline-offset-2"

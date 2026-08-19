@@ -14,6 +14,8 @@ export {
   type AwardIconProps,
   BackIcon,
   type BackIconProps,
+  BarChartIcon,
+  type BarChartIconProps,
   BigCheckIcon,
   type BigCheckIconProps,
   BigWarningIcon,

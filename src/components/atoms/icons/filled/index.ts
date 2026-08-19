@@ -5,6 +5,7 @@ export { ArrowRightIcon, type ArrowRightIconProps } from './ArrowRightIcon';
 export { ArrowUpIcon, type ArrowUpIconProps } from './ArrowUpIcon';
 export { AwardIcon, type AwardIconProps } from './AwardIcon';
 export { BackIcon, type BackIconProps } from './BackIcon';
+export { BarChartIcon, type BarChartIconProps } from './BarChartIcon';
 export { BigCheckIcon, type BigCheckIconProps } from './BigCheckIcon';
 export { BigWarningIcon, type BigWarningIconProps } from './BigWarningIcon';
 export { BinIcon, type BinIconProps } from './BinIcon';

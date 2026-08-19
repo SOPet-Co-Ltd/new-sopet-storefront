@@ -27,6 +27,7 @@ import {
   detectCardBrand,
 } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { parseCardExpiry } from '@/lib/payment/omise';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -222,9 +223,7 @@ export function useCheckoutSubmit(
         const message =
           error instanceof SubmitCheckoutError
             ? error.message
-            : error instanceof Error
-              ? error.message
-              : 'ไม่สามารถดำเนินการชำระเงินได้';
+            : getErrorMessage(error, 'ไม่สามารถดำเนินการชำระเงินได้');
 
         toast.error(message);
         return false;
@@ -426,9 +425,5 @@ export function getPromotionApplyErrorMessage(error: unknown): string {
     return error.message;
   }
 
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return 'โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว';
+  return getErrorMessage(error, 'โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว');
 }

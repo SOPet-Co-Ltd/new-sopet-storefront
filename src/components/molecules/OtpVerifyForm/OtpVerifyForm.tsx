@@ -8,6 +8,7 @@ import { Button } from '@/components/atoms/Button';
 import { OtpCodeInput } from '@/components/atoms/OtpCodeInput/OtpCodeInput';
 import { SOPetLogo } from '@/components/atoms/icons';
 import { ReactivateAccountModal } from '@/components/molecules/ReactivateAccountModal/ReactivateAccountModal';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { formatThaiPhoneNumber } from '@/lib/helpers/phone';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -55,11 +56,7 @@ export function OtpVerifyForm() {
         description: `ส่งไปที่ ${formatThaiPhoneNumber(phone)}`,
       });
     } catch (resendError) {
-      setError(
-        resendError instanceof Error
-          ? resendError.message
-          : 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
-      );
+      setError(getErrorMessage(resendError, 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));
     } finally {
       setResending(false);
     }
@@ -86,11 +83,7 @@ export function OtpVerifyForm() {
 
       router.replace('/');
     } catch (verifyError) {
-      setError(
-        verifyError instanceof Error
-          ? verifyError.message
-          : 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง',
-      );
+      setError(getErrorMessage(verifyError, 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'));
     } finally {
       setLoading(false);
     }

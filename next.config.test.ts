@@ -28,8 +28,10 @@ describe('next.config security headers', () => {
     const globalHeaders = headers?.find((entry) => entry.source === '/:path*')?.headers ?? [];
     const byKey = Object.fromEntries(globalHeaders.map((h) => [h.key, h.value]));
 
+    // Vitest runs with NODE_ENV=test, so production CSP is applied.
     expect(byKey['Content-Security-Policy']).toContain("frame-ancestors 'none'");
     expect(byKey['Content-Security-Policy']).toContain('https://cdn.omise.co');
+    expect(byKey['Content-Security-Policy']).toContain("img-src 'self' data: blob: https:");
     expect(byKey['Content-Security-Policy']).not.toContain("'wasm-unsafe-eval'");
     expect(byKey['Strict-Transport-Security']).toContain('max-age=63072000');
     expect(byKey['X-Frame-Options']).toBe('DENY');
@@ -43,12 +45,17 @@ describe('next.config images', () => {
     expect(nextConfig.images?.unoptimized).toBe(true);
   });
 
-  it('allows Cloudflare R2 public buckets', () => {
+  it('allows Cloudflare R2 public buckets and production CDN', () => {
     expect(nextConfig.images?.remotePatterns).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           protocol: 'https',
           hostname: '**.r2.dev',
+          pathname: '/**',
+        }),
+        expect.objectContaining({
+          protocol: 'https',
+          hostname: 'cdn.sopet.org',
           pathname: '/**',
         }),
       ]),

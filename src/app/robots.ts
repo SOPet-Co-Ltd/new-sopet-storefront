@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
         '/thank-you/',
         '/recommend',
         '/search',
+        '/errors-message',
       ],
     },
     sitemap: `${baseUrl}/sitemap.xml`,

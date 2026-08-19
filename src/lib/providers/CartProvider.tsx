@@ -28,6 +28,7 @@ import {
   type StoreCartGroup,
 } from '@/lib/cart/cartUtils';
 import { SUSPENDED_STORE_ITEM_REMOVED_WARNING_CODE } from '@/lib/constants/storeSuspensionHoldCopy';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { ensureSessionId } from '@/lib/session';
 import { mapStoreSuspendedCartError } from '@/lib/store-suspension/mapSuspensionErrors';
@@ -283,8 +284,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         } catch (mutationError) {
           const suspendedMessage = mapStoreSuspendedCartError(mutationError);
           const message =
-            suspendedMessage ??
-            (mutationError instanceof Error ? mutationError.message : errorMessage);
+            suspendedMessage ?? getErrorMessage(mutationError, errorMessage);
           toast.error(message);
           throw mutationError;
         }

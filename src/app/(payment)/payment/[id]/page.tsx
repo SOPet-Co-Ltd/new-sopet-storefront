@@ -7,6 +7,7 @@ import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm';
 import type { PaymentRetrySubmitInput } from '@/components/organisms/OrderPaymentForm/PaymentRetryPanel';
 import { clearPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { STORE_SUSPENSION_HOLD_COPY } from '@/lib/constants/storeSuspensionHoldCopy';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { useCheckout } from '@/lib/hooks/useCheckout';
 import { useOrderDetail } from '@/lib/hooks/useOrders';
 import { usePayment } from '@/lib/hooks/usePayment';
@@ -47,10 +48,7 @@ function retryErrorMessage(error: unknown): string {
   if (error instanceof PaymentRetryError) {
     return error.message;
   }
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return 'ไม่สามารถสร้างการชำระเงินได้';
+  return getErrorMessage(error, 'ไม่สามารถสร้างการชำระเงินได้');
 }
 
 export default function PaymentPage() {

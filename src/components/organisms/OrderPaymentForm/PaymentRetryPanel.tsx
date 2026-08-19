@@ -14,10 +14,12 @@ import { PaymentMethodRadio } from '@/components/molecules/CheckoutPaymentSelect
 import { cleanCardNumber } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { SavedPaymentMethodOption } from '@/components/molecules/CheckoutPaymentSelection/SavedPaymentMethodOption';
 import { mapCheckoutPaymentMethodForApi } from '@/lib/checkout/checkoutPaymentMethod';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { OmiseConfigurationError, parseCardExpiry, tokenizeCard } from '@/lib/payment/omise';
+import { PaymentRetryError } from '@/lib/payment/submitPaymentRetry';
 import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
 
@@ -139,7 +141,7 @@ export function PaymentRetryPanel({
   const showSavedCards =
     selectedPaymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
   const showNewCardForm = selectedPaymentMethod === 'card' && !showSavedCards;
-  const displayError = localError ?? submitError;
+  const displayError = submitError ?? localError;
 
   useEffect(() => {
     onSubmittingChange?.(isSubmitting);
@@ -202,7 +204,7 @@ export function PaymentRetryPanel({
       }
       apiPaymentMethod = mapped;
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : 'ไม่รองรับวิธีการชำระเงินที่เลือก');
+      setLocalError(getErrorMessage(error, 'ไม่รองรับวิธีการชำระเงินที่เลือก'));
       return;
     }
 
@@ -240,9 +242,7 @@ export function PaymentRetryPanel({
           const message =
             error instanceof OmiseConfigurationError
               ? error.message
-              : error instanceof Error
-                ? error.message
-                : 'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร';
+              : getErrorMessage(error, 'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร');
           setCardFormError(message);
           setLocalSubmitting(false);
           return;
@@ -255,7 +255,11 @@ export function PaymentRetryPanel({
         clearCardForm();
       }
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : 'ไม่สามารถสร้างการชำระเงินได้');
+      const message =
+        error instanceof OmiseConfigurationError || error instanceof PaymentRetryError
+          ? error.message
+          : getErrorMessage(error, 'ไม่สามารถสร้างการชำระเงินได้');
+      setLocalError(message);
       setLocalSubmitting(false);
     }
   };

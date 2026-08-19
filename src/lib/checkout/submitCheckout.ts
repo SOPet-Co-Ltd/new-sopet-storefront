@@ -21,6 +21,7 @@ import {
   ORDER_CONTAINS_SUSPENDED_STORE_ERROR_CODE,
   STORE_SUSPENSION_HOLD_COPY,
 } from '@/lib/constants/storeSuspensionHoldCopy';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { mapCheckoutSuspendedStoreError } from '@/lib/store-suspension/mapSuspensionErrors';
 
 export class SubmitCheckoutError extends Error {
@@ -127,9 +128,10 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     // Candidate-001: only hard eligibility / unknown → order_failed.
     // INSUFFICIENT_QTY is apply-skip — retry once without promo codes.
     if (isCreateOrderHardEligibilityCode(code) || code == null) {
-      const message =
-        error instanceof Error && error.message ? error.message : 'ไม่สามารถสร้างคำสั่งซื้อได้';
-      throw new SubmitCheckoutError(message, 'order_failed');
+      throw new SubmitCheckoutError(
+        getErrorMessage(error, 'ไม่สามารถสร้างคำสั่งซื้อได้'),
+        'order_failed',
+      );
     }
 
     try {
@@ -143,11 +145,10 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
       if (retrySuspended) {
         throw new SubmitCheckoutError(retrySuspended, 'order_failed');
       }
-      const message =
-        retryError instanceof Error && retryError.message
-          ? retryError.message
-          : 'ไม่สามารถสร้างคำสั่งซื้อได้';
-      throw new SubmitCheckoutError(message, 'order_failed');
+      throw new SubmitCheckoutError(
+        getErrorMessage(retryError, 'ไม่สามารถสร้างคำสั่งซื้อได้'),
+        'order_failed',
+      );
     }
   }
 

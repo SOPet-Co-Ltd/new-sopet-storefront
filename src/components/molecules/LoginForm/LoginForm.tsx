@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import { SOPetLogo } from '@/components/atoms/icons';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { isValidThaiPhoneNumber, normalizeThaiPhoneNumber } from '@/lib/helpers/phone';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -42,11 +43,7 @@ export function LoginForm({ notice = null }: LoginFormProps) {
       await sendOtp(normalizedPhone);
       router.push(`/login/otp?phone=${encodeURIComponent(normalizedPhone)}`);
     } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
-      );
+      setError(getErrorMessage(submitError, 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));
     } finally {
       setLoading(false);
     }

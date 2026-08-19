@@ -13,6 +13,7 @@ import { ProductDetailDescription } from '@/components/sections/ProductDetailDes
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
 import { trackViewItem } from '@/lib/analytics';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import type { ProductByIdQuery } from '@/lib/graphql/generated/graphql';
 import { useCategories } from '@/lib/hooks/useCategories';
 import { useProduct } from '@/lib/hooks/useProduct';
@@ -158,7 +159,7 @@ export default function ProductDetailsPage({
     return (
       <div data-testid="product-details-error" className="p-8 text-center">
         <p className="sop-body-md-regular text-sop-neutral-gray-400">
-          ไม่สามารถโหลดข้อมูลสินค้าได้
+          {error ? getErrorMessage(error, 'ไม่สามารถโหลดข้อมูลสินค้าได้') : 'ไม่สามารถโหลดข้อมูลสินค้าได้'}
         </p>
       </div>
     );

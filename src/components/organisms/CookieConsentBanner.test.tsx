@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -64,7 +64,7 @@ describe('CookieConsentBanner', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'ความยินยอมคุกกี้' })).not.toBeInTheDocument();
     });
-    expect(container.querySelector('[aria-label="ตั้งค่าคุกกี้"]')).not.toBeInTheDocument();
+    expect(container.querySelector('[aria-label="ตั้งค่าคุกกี้"]')).toBeNull();
   });
 
   it('hides after the shopper accepts all', async () => {
@@ -102,7 +102,9 @@ describe('CookieConsentBanner', () => {
       expect(screen.queryByRole('dialog', { name: 'ความยินยอมคุกกี้' })).not.toBeInTheDocument();
     });
 
-    openCookiePreferences();
+    act(() => {
+      openCookiePreferences();
+    });
     expect(await screen.findByRole('dialog', { name: 'ตั้งค่าคุกกี้' })).toBeInTheDocument();
   });
 });

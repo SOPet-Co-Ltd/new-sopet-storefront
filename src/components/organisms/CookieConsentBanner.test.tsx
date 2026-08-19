@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderToString } from 'react-dom/server';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CookieConsentBanner } from './CookieConsentBanner';
 import {
   openCookiePreferences,
@@ -10,6 +10,13 @@ import {
   writeConsentPreferences,
   writeCookieConsent,
 } from '@/lib/consent/cookie-consent';
+
+vi.mock('next/image', () => ({
+  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} {...props} />
+  ),
+}));
 
 function stubLocalStorage() {
   const store = new Map<string, string>();

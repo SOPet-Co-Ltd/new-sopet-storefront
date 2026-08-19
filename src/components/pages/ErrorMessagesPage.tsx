@@ -149,7 +149,9 @@ function GroupFilterChips({
           <span
             className={cn(
               'sop-body-2xs-regular tabular-nums',
-              selectedGroup === ALL_GROUPS_ID ? 'text-sop-primary-500' : 'text-sop-neutral-gray-400',
+              selectedGroup === ALL_GROUPS_ID
+                ? 'text-sop-primary-500'
+                : 'text-sop-neutral-gray-400',
             )}
           >
             {searchedCounts.get(ALL_GROUPS_ID) ?? 0}
@@ -279,7 +281,11 @@ export function ErrorMessagesPage() {
               'focus-within:border-sop-primary-300 focus-within:ring-2 focus-within:ring-sop-primary-400 focus-within:ring-offset-1',
             )}
           >
-            <SearchIcon size={{ mobile: 18, desktop: 18 }} color="currentColor" aria-hidden="true" />
+            <SearchIcon
+              size={{ mobile: 18, desktop: 18 }}
+              color="currentColor"
+              aria-hidden="true"
+            />
             <input
               id={searchId}
               type="search"
@@ -341,9 +347,7 @@ export function ErrorMessagesPage() {
               {trimmedQuery
                 ? `ไม่มีรายการที่ตรงกับ “${trimmedQuery}”`
                 : 'ไม่มีรายการในกลุ่มที่เลือก'}
-              {selectedGroup !== ALL_GROUPS_ID && trimmedQuery
-                ? ` ในกลุ่ม ${selectedGroup}`
-                : ''}
+              {selectedGroup !== ALL_GROUPS_ID && trimmedQuery ? ` ในกลุ่ม ${selectedGroup}` : ''}
             </p>
             <button
               type="button"

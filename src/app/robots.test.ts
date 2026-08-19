@@ -15,6 +15,7 @@ const EXPECTED_DISALLOW = [
   '/thank-you/',
   '/recommend',
   '/search',
+  '/errors-message',
 ];
 
 const ORIGINAL_ENV = { ...process.env };

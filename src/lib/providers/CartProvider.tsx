@@ -283,8 +283,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }
         } catch (mutationError) {
           const suspendedMessage = mapStoreSuspendedCartError(mutationError);
-          const message =
-            suspendedMessage ?? getErrorMessage(mutationError, errorMessage);
+          const message = suspendedMessage ?? getErrorMessage(mutationError, errorMessage);
           toast.error(message);
           throw mutationError;
         }

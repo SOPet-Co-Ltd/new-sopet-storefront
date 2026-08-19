@@ -74,6 +74,7 @@ export type AdminAuditLogFilterInput = {
   actorId?: InputMaybe<Scalars['String']['input']>;
   actorType?: InputMaybe<Scalars['String']['input']>;
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
+  requestId?: InputMaybe<Scalars['String']['input']>;
   resourceType?: InputMaybe<Scalars['String']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
@@ -89,6 +90,7 @@ export type AdminAuditLogType = {
   id: Scalars['String']['output'];
   ipAddress?: Maybe<Scalars['String']['output']>;
   metadata?: Maybe<Scalars['String']['output']>;
+  requestId?: Maybe<Scalars['String']['output']>;
   resourceId?: Maybe<Scalars['String']['output']>;
   resourceType: Scalars['String']['output'];
 };

@@ -81,9 +81,7 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: [
           // Skip CSP locally so MinIO/http assets and HMR are unrestricted.
-          ...(isLocalDev
-            ? []
-            : [{ key: 'Content-Security-Policy', value: productionCsp }]),
+          ...(isLocalDev ? [] : [{ key: 'Content-Security-Policy', value: productionCsp }]),
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',

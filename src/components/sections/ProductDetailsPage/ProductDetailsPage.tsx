@@ -159,7 +159,9 @@ export default function ProductDetailsPage({
     return (
       <div data-testid="product-details-error" className="p-8 text-center">
         <p className="sop-body-md-regular text-sop-neutral-gray-400">
-          {error ? getErrorMessage(error, 'ไม่สามารถโหลดข้อมูลสินค้าได้') : 'ไม่สามารถโหลดข้อมูลสินค้าได้'}
+          {error
+            ? getErrorMessage(error, 'ไม่สามารถโหลดข้อมูลสินค้าได้')
+            : 'ไม่สามารถโหลดข้อมูลสินค้าได้'}
         </p>
       </div>
     );

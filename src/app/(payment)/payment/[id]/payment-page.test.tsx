@@ -322,7 +322,7 @@ describe('PaymentPage', () => {
     await submitPromptPayRetry(user);
 
     await waitFor(() => {
-      expect(screen.getByText('ไม่สามารถสร้างการชำระเงินได้')).toBeInTheDocument();
+      expect(screen.getByText('ไม่สามารถสร้างการชำระเงินได้ (UNKNOWN_ERROR)')).toBeInTheDocument();
     });
     expect(mockPush).not.toHaveBeenCalled();
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();

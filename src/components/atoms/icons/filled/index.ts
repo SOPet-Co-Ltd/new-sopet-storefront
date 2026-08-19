@@ -63,6 +63,7 @@ export { LinkedinIcon, type LinkedinIconProps } from './LinkedinIcon';
 export { LinkIcon, type LinkIconProps } from './LinkIcon';
 export { LoaderIcon, type LoaderIconProps } from './LoaderIcon';
 export { LocationIcon, type LocationIconProps } from './LocationIcon';
+export { LockSimpleIcon, type LockSimpleIconProps } from './LockSimpleIcon';
 export { LogoutIcon, type LogoutIconProps } from './LogoutIcon';
 export { MapPinFillIcon, type MapPinFillIconProps } from './MapPinFillIcon';
 export { MapPinIcon, type MapPinIconProps } from './MapPinIcon';

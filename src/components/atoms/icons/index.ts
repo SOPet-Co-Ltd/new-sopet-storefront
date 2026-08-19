@@ -130,6 +130,8 @@ export {
   type LoaderIconProps,
   LocationIcon,
   type LocationIconProps,
+  LockSimpleIcon,
+  type LockSimpleIconProps,
   LogoutIcon,
   type LogoutIconProps,
   MapPinFillIcon,

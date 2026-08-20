@@ -38,6 +38,23 @@ describe('submitPaymentRetry', () => {
     });
 
     expect(
+      buildPaymentRetryInput(
+        { ...context, orderNumber: 'ORD-1001' },
+        {
+          paymentMethod: 'credit_card',
+          omiseToken: 'tokn_test',
+        },
+      ),
+    ).toEqual({
+      orderId: 'order-1',
+      amount: 540,
+      currency: 'THB',
+      paymentMethod: 'credit_card',
+      omiseToken: 'tokn_test',
+      orderNumber: 'ORD-1001',
+    });
+
+    expect(
       buildPaymentRetryInput(context, {
         paymentMethod: 'credit_card',
         savedPaymentMethodId: 'saved-1',

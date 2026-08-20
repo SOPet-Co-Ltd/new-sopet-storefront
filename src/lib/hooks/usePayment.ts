@@ -15,6 +15,8 @@ export type PaymentStatus = PaymentRecord['status'];
 export type PollPaymentParams = {
   id?: string;
   orderId?: string;
+  /** Required for unauthenticated guests (BE-006); omit when authenticated. */
+  orderNumber?: string | null;
   intervalMs?: number;
   maxAttempts?: number;
   onStatus?: (status: PaymentStatus, payment: PaymentRecord) => void;
@@ -28,6 +30,8 @@ export type PollPaymentResult = {
 export type UsePaymentParams = {
   id?: string | null;
   orderId?: string | null;
+  /** Required for unauthenticated guests (BE-006); omit when authenticated. */
+  orderNumber?: string | null;
   skip?: boolean;
 };
 
@@ -71,19 +75,25 @@ function pickFreshestPayment(
   return fromSubscription ?? fromQuery ?? null;
 }
 
-export function usePayment({ id, orderId, skip = false }: UsePaymentParams = {}): UsePaymentResult {
+export function usePayment({
+  id,
+  orderId,
+  orderNumber = null,
+  skip = false,
+}: UsePaymentParams = {}): UsePaymentResult {
   const apolloClient = useApolloClient();
   const queryByOrderId = Boolean(orderId) && !id;
   const shouldQuery = !skip && Boolean(id || orderId);
+  const orderNumberVariable = orderNumber?.trim() ? orderNumber.trim() : undefined;
 
   const paymentByIdQuery = useQuery(PaymentDocument, {
-    variables: { id: id ?? '' },
+    variables: { id: id ?? '', orderNumber: orderNumberVariable },
     skip: !shouldQuery || queryByOrderId,
     fetchPolicy: 'network-only',
   });
 
   const paymentByOrderIdQuery = useQuery(PaymentByOrderIdDocument, {
-    variables: { orderId: orderId ?? '' },
+    variables: { orderId: orderId ?? '', orderNumber: orderNumberVariable },
     skip: !shouldQuery || !queryByOrderId,
     fetchPolicy: 'network-only',
   });
@@ -121,6 +131,7 @@ export function usePayment({ id, orderId, skip = false }: UsePaymentParams = {})
     async (params: PollPaymentParams = {}): Promise<PollPaymentResult> => {
       const paymentId = params.id ?? id ?? undefined;
       const paymentOrderId = params.orderId ?? orderId ?? undefined;
+      const pollOrderNumber = (params.orderNumber ?? orderNumber)?.trim() || undefined;
       const intervalMs = params.intervalMs ?? DEFAULT_POLL_INTERVAL_MS;
       const maxAttempts = params.maxAttempts ?? DEFAULT_MAX_POLL_ATTEMPTS;
 
@@ -133,14 +144,14 @@ export function usePayment({ id, orderId, skip = false }: UsePaymentParams = {})
           ? (
               await apolloClient.query({
                 query: PaymentDocument,
-                variables: { id: paymentId },
+                variables: { id: paymentId, orderNumber: pollOrderNumber },
                 fetchPolicy: 'network-only',
               })
             ).data?.payment
           : (
               await apolloClient.query({
                 query: PaymentByOrderIdDocument,
-                variables: { orderId: paymentOrderId ?? '' },
+                variables: { orderId: paymentOrderId ?? '', orderNumber: pollOrderNumber },
                 fetchPolicy: 'network-only',
               })
             ).data?.paymentByOrderId;
@@ -165,7 +176,7 @@ export function usePayment({ id, orderId, skip = false }: UsePaymentParams = {})
 
       throw new Error('Payment polling timed out');
     },
-    [apolloClient, id, orderId],
+    [apolloClient, id, orderId, orderNumber],
   );
 
   // Subscription is best-effort live updates. On UAT/prod, WSS often fails (proxy,

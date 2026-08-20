@@ -872,6 +872,7 @@ export type PaymentFieldsFragment = {
 
 export type PaymentQueryVariables = Exact<{
   id: string;
+  orderNumber?: string | null | undefined;
 }>;
 
 export type PaymentQuery = {
@@ -891,6 +892,7 @@ export type PaymentQuery = {
 
 export type PaymentByOrderIdQueryVariables = Exact<{
   orderId: string;
+  orderNumber?: string | null | undefined;
 }>;
 
 export type PaymentByOrderIdQuery = {
@@ -3842,6 +3844,11 @@ export const PaymentDocument = {
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
           },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'orderNumber' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -3854,6 +3861,11 @@ export const PaymentDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'orderNumber' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'orderNumber' } },
               },
             ],
             selectionSet: {
@@ -3884,6 +3896,11 @@ export const PaymentByOrderIdDocument = {
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
           },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'orderNumber' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -3896,6 +3913,11 @@ export const PaymentByOrderIdDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'orderId' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'orderId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'orderNumber' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'orderNumber' } },
               },
             ],
             selectionSet: {

@@ -459,6 +459,7 @@ export type CreatePaymentInput = {
   currency?: Scalars['String']['input'];
   omiseToken?: InputMaybe<Scalars['String']['input']>;
   orderId: Scalars['String']['input'];
+  orderNumber?: InputMaybe<Scalars['String']['input']>;
   paymentMethod: Scalars['String']['input'];
   savedPaymentMethodId?: InputMaybe<Scalars['String']['input']>;
 };
@@ -819,7 +820,7 @@ export type Mutation = {
   clearLoginPageDesktopImage: LoginPageImagesType;
   clearLoginPageMobileImage: LoginPageImagesType;
   confirmBankTransferPaid: OrderType;
-  confirmGuestOrderDelivered: OrderType;
+  confirmGuestOrderDelivered: OrderTrackingType;
   confirmOrderDelivered: OrderType;
   createAddress: SavedAddressType;
   createBrand: BrandType;
@@ -2146,7 +2147,6 @@ export type Query = {
   getAdminInvitationByToken: AdminInvitationType;
   getPasswordResetTokenStatus: PasswordResetTokenStatusType;
   getStoreInvitationByToken: StoreInvitationPreviewType;
-  guestOrders: Array<OrderType>;
   /** GraphQL API health check */
   health: HealthStatus;
   latestPurchaseProduct?: Maybe<ProductType>;
@@ -2349,10 +2349,6 @@ export type QueryGetStoreInvitationByTokenArgs = {
   token: Scalars['String']['input'];
 };
 
-export type QueryGuestOrdersArgs = {
-  guestPhone: Scalars['String']['input'];
-};
-
 export type QueryLatestPurchaseProductsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -2387,10 +2383,12 @@ export type QueryOrdersArgs = {
 
 export type QueryPaymentArgs = {
   id: Scalars['String']['input'];
+  orderNumber?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryPaymentByOrderIdArgs = {
   orderId: Scalars['String']['input'];
+  orderNumber?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryPendingBankTransferOrdersArgs = {
@@ -3443,6 +3441,7 @@ export type UserProfile = {
   emailVerified: Scalars['Boolean']['output'];
   fullName: Scalars['String']['output'];
   id: Scalars['String']['output'];
+  mustChangePassword: Scalars['Boolean']['output'];
   profilePhotoUrl?: Maybe<Scalars['String']['output']>;
   role: Scalars['String']['output'];
   storeId?: Maybe<Scalars['String']['output']>;

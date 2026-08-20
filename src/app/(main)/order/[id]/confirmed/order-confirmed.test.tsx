@@ -9,6 +9,7 @@ import { CHECKOUT_ORDER_ID, sampleOrder } from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
 
 const mockReplace = vi.fn();
+let searchParams = new URLSearchParams();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -17,7 +18,7 @@ vi.mock('next/navigation', () => ({
   }),
   useParams: () => ({ id: CHECKOUT_ORDER_ID }),
   usePathname: () => `/order/${CHECKOUT_ORDER_ID}/confirmed`,
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => searchParams,
 }));
 
 vi.mock('next/image', () => ({
@@ -79,6 +80,7 @@ describe('OrderConfirmedContent', () => {
 describe('ThankYouPageContent', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    searchParams = new URLSearchParams();
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: vi.fn().mockImplementation((query: string) => ({
@@ -93,6 +95,7 @@ describe('ThankYouPageContent', () => {
   });
 
   it('guest mode loads ORD- from PaymentByOrderId and never queries Order', async () => {
+    searchParams = new URLSearchParams({ orderNumber: 'ORD-GUEST-1001' });
     const orderQuery = vi.fn();
     server.use(
       graphql.query('Order', () => {
@@ -102,7 +105,10 @@ describe('ThankYouPageContent', () => {
         });
       }),
       graphql.query('PaymentByOrderId', ({ variables }) => {
-        expect(variables).toEqual({ orderId: CHECKOUT_ORDER_ID });
+        expect(variables).toEqual({
+          orderId: CHECKOUT_ORDER_ID,
+          orderNumber: 'ORD-GUEST-1001',
+        });
         return HttpResponse.json({
           data: {
             paymentByOrderId: {
@@ -141,7 +147,11 @@ describe('ThankYouPageContent', () => {
     });
 
     server.use(
-      graphql.query('PaymentByOrderId', async () => {
+      graphql.query('PaymentByOrderId', async ({ variables }) => {
+        expect(variables).toMatchObject({
+          orderId: CHECKOUT_ORDER_ID,
+          orderNumber: 'ORD-PENDING-1001',
+        });
         await paymentResponse;
         return HttpResponse.json({
           data: { paymentByOrderId: paidPaymentByOrderId },
@@ -166,13 +176,19 @@ describe('ThankYouPageContent', () => {
   });
 
   it('never flashes the raw route order id — only ORD- customer codes', async () => {
+    searchParams = new URLSearchParams({ orderNumber: 'ORD-1001' });
+
     let resolvePayment: ((value: unknown) => void) | undefined;
     const paymentResponse = new Promise((resolve) => {
       resolvePayment = resolve;
     });
 
     server.use(
-      graphql.query('PaymentByOrderId', async () => {
+      graphql.query('PaymentByOrderId', async ({ variables }) => {
+        expect(variables).toMatchObject({
+          orderId: CHECKOUT_ORDER_ID,
+          orderNumber: 'ORD-1001',
+        });
         await paymentResponse;
         return HttpResponse.json({
           data: { paymentByOrderId: paidPaymentByOrderId },
@@ -187,9 +203,10 @@ describe('ThankYouPageContent', () => {
       wrapper: createWrapper(),
     });
 
-    expect(screen.getByTestId('thank-you-order-number-pending')).toBeInTheDocument();
+    // Guest proof from URL shows ORD- immediately; never the raw route UUID.
+    expect(screen.getByTestId('thank-you-order-number')).toHaveTextContent('ORD-1001');
     expect(screen.queryByText(CHECKOUT_ORDER_ID)).not.toBeInTheDocument();
-    expect(screen.queryByTestId('thank-you-order-number')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('thank-you-order-number-pending')).not.toBeInTheDocument();
 
     resolvePayment?.(undefined);
 
@@ -200,8 +217,14 @@ describe('ThankYouPageContent', () => {
   });
 
   it('shows recommended products section and uses order id route params only', async () => {
+    searchParams = new URLSearchParams({ orderNumber: 'ORD-1001' });
+
     server.use(
-      graphql.query('PaymentByOrderId', () => {
+      graphql.query('PaymentByOrderId', ({ variables }) => {
+        expect(variables).toMatchObject({
+          orderId: CHECKOUT_ORDER_ID,
+          orderNumber: 'ORD-1001',
+        });
         return HttpResponse.json({
           data: { paymentByOrderId: paidPaymentByOrderId },
         });

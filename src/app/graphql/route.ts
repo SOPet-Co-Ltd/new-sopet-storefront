@@ -22,15 +22,15 @@ export async function POST(request: Request) {
 
   const body = await request.text();
   let accessToken = await getAccessTokenFromRequest();
-  let { response: upstream, json } = await forwardGraphql(body, accessToken);
+  let { response: upstream, json } = await forwardGraphql(body, accessToken, request);
 
   if (isUnauthenticatedPayload(json, upstream.status)) {
     const refreshToken = await getRefreshTokenFromRequest();
     if (refreshToken) {
-      const tokens = await refreshTokensUpstream(refreshToken);
+      const tokens = await refreshTokensUpstream(refreshToken, request);
       if (tokens) {
         accessToken = tokens.accessToken;
-        ({ response: upstream, json } = await forwardGraphql(body, accessToken));
+        ({ response: upstream, json } = await forwardGraphql(body, accessToken, request));
         const retryResponse = NextResponse.json(
           {
             ...json,

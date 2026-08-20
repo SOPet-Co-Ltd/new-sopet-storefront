@@ -1,6 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { harvestAuthTokens, redactAuthTokens } from './bff-upstream';
+import {
+  buildUpstreamRequestHeaders,
+  harvestAuthTokens,
+  redactAuthTokens,
+} from './bff-upstream';
 import { assertSameOrigin } from './bff-csrf';
+
+describe('buildUpstreamRequestHeaders', () => {
+  it('forwards visitor IP from x-vercel-forwarded-for', () => {
+    const request = new Request('http://localhost:3000/graphql', {
+      method: 'POST',
+      headers: {
+        'x-vercel-forwarded-for': '203.0.113.10, 10.0.0.1',
+        'x-request-id': 'req-1',
+      },
+    });
+
+    expect(buildUpstreamRequestHeaders(request)).toEqual({
+      'x-request-id': 'req-1',
+      'x-sopet-client-ip': '203.0.113.10',
+      'x-forwarded-for': '203.0.113.10',
+    });
+  });
+});
 
 describe('harvestAuthTokens', () => {
   it('harvests nested tokens payload', () => {

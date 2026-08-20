@@ -13,15 +13,19 @@ export function useSessionId(enabled = true): string | undefined {
       return;
     }
 
-    const existing = getSessionId();
-    if (existing) {
-      setSessionId(existing);
-      return;
-    }
+    let cancelled = false;
 
     void bootstrapSessionId()
-      .then((id) => setSessionId(id))
+      .then((id) => {
+        if (!cancelled) {
+          setSessionId(id);
+        }
+      })
       .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
   }, [enabled]);
 
   return enabled ? sessionId : undefined;

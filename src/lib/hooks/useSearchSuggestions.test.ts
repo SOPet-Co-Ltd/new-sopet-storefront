@@ -11,6 +11,7 @@ const TEST_SESSION_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
 vi.mock('@/lib/session', () => ({
   getSessionId: () => TEST_SESSION_ID,
   ensureSessionId: () => TEST_SESSION_ID,
+  bootstrapSessionId: async () => TEST_SESSION_ID,
 }));
 
 describe('useSearchSuggestions', () => {

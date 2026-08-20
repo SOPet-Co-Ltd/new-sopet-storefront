@@ -1,13 +1,18 @@
 'use client';
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm';
 import type { PaymentRetrySubmitInput } from '@/components/organisms/OrderPaymentForm/PaymentRetryPanel';
-import { clearPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import {
+  clearPendingCheckout,
+  getPendingCheckout,
+  setPendingCheckout,
+} from '@/lib/checkout/pendingCheckout';
 import { STORE_SUSPENSION_HOLD_COPY } from '@/lib/constants/storeSuspensionHoldCopy';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckout } from '@/lib/hooks/useCheckout';
 import { useOrderDetail } from '@/lib/hooks/useOrders';
 import { usePayment } from '@/lib/hooks/usePayment';
@@ -51,10 +56,31 @@ function retryErrorMessage(error: unknown): string {
   return getErrorMessage(error, 'ไม่สามารถสร้างการชำระเงินได้');
 }
 
+function withOrderNumberQuery(path: string, orderNumber: string | null | undefined): string {
+  const trimmed = orderNumber?.trim();
+  if (!trimmed) return path;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}orderNumber=${encodeURIComponent(trimmed)}`;
+}
+
+function resolveGuestOrderNumberProof(options: {
+  fromUrl: string | null;
+  fromPending: string | null | undefined;
+  fromPayment: string | null | undefined;
+}): string | null {
+  for (const candidate of [options.fromUrl, options.fromPending, options.fromPayment]) {
+    const trimmed = candidate?.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+}
+
 export default function PaymentPage() {
   const params = useParams<{ id: string }>();
   const routeId = params.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isAuthenticated } = useAuth();
   const { createPayment, creatingPayment } = useCheckout();
   const [lookupMode, setLookupMode] = useState<LookupMode>('paymentId');
   const [retrySubmitError, setRetrySubmitError] = useState<string | null>(null);
@@ -65,10 +91,35 @@ export default function PaymentPage() {
   const hasTriedFallback = useRef(false);
   const hasRedirected = useRef(false);
 
+  const orderNumberFromUrl = searchParams.get('orderNumber');
+  const pendingCheckout = useMemo(() => getPendingCheckout(), []);
+  const pendingOrderNumber =
+    pendingCheckout &&
+    (pendingCheckout.paymentId === routeId || pendingCheckout.orderId === routeId)
+      ? pendingCheckout.orderNumber
+      : null;
+
+  const guestOrderNumberProof = !isAuthenticated
+    ? resolveGuestOrderNumberProof({
+        fromUrl: orderNumberFromUrl,
+        fromPending: pendingOrderNumber,
+        fromPayment: null,
+      })
+    : null;
+
   const { payment, loading, error, refetch } = usePayment({
     id: lookupMode === 'paymentId' ? routeId : null,
     orderId: lookupMode === 'orderId' ? routeId : null,
+    orderNumber: guestOrderNumberProof,
   });
+
+  const orderNumberForGuestActions = !isAuthenticated
+    ? resolveGuestOrderNumberProof({
+        fromUrl: orderNumberFromUrl,
+        fromPending: pendingOrderNumber,
+        fromPayment: payment?.orderNumber,
+      })
+    : null;
 
   const orderIdForHold = payment?.orderId ?? (lookupMode === 'orderId' ? routeId : undefined);
   const { order } = useOrderDetail(orderIdForHold);
@@ -99,8 +150,13 @@ export default function PaymentPage() {
     hasRedirected.current = true;
     clearPendingCheckout();
     void invalidateCustomerOrders();
-    router.replace(`/thank-you/${payment.orderId}`);
-  }, [payment?.orderId, payment?.status, router]);
+    router.replace(
+      withOrderNumberQuery(
+        `/thank-you/${payment.orderId}`,
+        payment.orderNumber ?? orderNumberForGuestActions,
+      ),
+    );
+  }, [orderNumberForGuestActions, payment?.orderId, payment?.orderNumber, payment?.status, router]);
 
   useEffect(() => {
     if (payment?.status !== 'failed') {
@@ -126,6 +182,7 @@ export default function PaymentPage() {
               amount: payment.amount,
               currency: payment.currency,
               currentPaymentId: payment.id,
+              orderNumber: orderNumberForGuestActions,
             },
             input,
           ),
@@ -133,9 +190,16 @@ export default function PaymentPage() {
 
         const newPaymentId = resolveNewPaymentId(payment.id, created?.id);
         clearPriorPayment3dsAutoRedirect(payment.id);
+        const nextOrderNumber =
+          created?.orderNumber ?? payment.orderNumber ?? orderNumberForGuestActions ?? null;
+        setPendingCheckout({
+          paymentId: newPaymentId,
+          orderId: payment.orderId,
+          orderNumber: nextOrderNumber,
+        });
         // Keep failed/recovery UI replaced with processing until navigation completes.
         setRetryNavigating(true);
-        router.push(`/payment/${newPaymentId}`);
+        router.push(withOrderNumberQuery(`/payment/${newPaymentId}`, nextOrderNumber));
       } catch (retryError) {
         setRetryNavigating(false);
         if (isOrderNotPayableError(retryError)) {
@@ -153,7 +217,7 @@ export default function PaymentPage() {
         throw retryError instanceof Error ? retryError : new Error(message);
       }
     },
-    [createPayment, payment, router],
+    [createPayment, orderNumberForGuestActions, payment, router],
   );
 
   return (

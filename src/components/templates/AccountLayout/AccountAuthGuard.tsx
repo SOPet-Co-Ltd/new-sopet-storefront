@@ -2,8 +2,9 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/hooks/useAuth';
 import { prefetchAllAccountPages } from '@/lib/account/prefetchAccountPage';
+import { getSafeRedirect } from '@/lib/auth/safe-redirect';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 type AccountAuthGuardProps = {
   children: ReactNode;
@@ -16,8 +17,9 @@ export function AccountAuthGuard({ children }: AccountAuthGuardProps) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      const returnUrl = encodeURIComponent(pathname);
-      router.replace(`/login?returnUrl=${returnUrl}`);
+      const next = getSafeRedirect(pathname);
+      const loginPath = next ? `/login?next=${encodeURIComponent(next)}` : '/login';
+      router.replace(loginPath);
     }
   }, [isAuthenticated, isLoading, pathname, router]);
 

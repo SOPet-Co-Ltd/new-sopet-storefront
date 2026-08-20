@@ -1,7 +1,6 @@
 import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 
 const productMarkdownComponents: Components = {
@@ -42,10 +41,6 @@ const productMarkdownComponents: Components = {
   ),
 };
 
-function hasHtmlMarkup(source: string): boolean {
-  return /<[^>]+>/.test(source);
-}
-
 type ProductDescriptionContentProps = {
   description: string;
 };
@@ -55,7 +50,7 @@ export function ProductDescriptionContent({ description }: ProductDescriptionCon
     <div data-testid="product-markdown-content">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={hasHtmlMarkup(description) ? [rehypeRaw, rehypeSanitize] : [rehypeSanitize]}
+        rehypePlugins={[rehypeSanitize]}
         components={productMarkdownComponents}
       >
         {description}

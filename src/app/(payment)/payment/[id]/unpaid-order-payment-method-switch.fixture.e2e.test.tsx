@@ -173,7 +173,9 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       await submitMidQrCardRetry(user);
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
+        expect(mockPush).toHaveBeenCalledWith(
+          `/payment/${CHECKOUT_RETRY_PAYMENT_ID}?orderNumber=ORD-TEST-0001`,
+        );
       });
       expect(createVariables).toMatchObject({
         input: {
@@ -182,6 +184,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
           currency: 'THB',
           paymentMethod: 'credit_card',
           omiseToken: 'tok_test_mid_qr',
+          orderNumber: 'ORD-TEST-0001',
         },
       });
       expect(mockPush).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
@@ -217,7 +220,9 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       await submitMidQrCardRetry(user);
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
+        expect(mockPush).toHaveBeenCalledWith(
+          `/payment/${CHECKOUT_RETRY_PAYMENT_ID}?orderNumber=ORD-TEST-0001`,
+        );
       });
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(screen.queryByText(/ยกเลิกการชำระเงินไม่สำเร็จ/i)).not.toBeInTheDocument();
@@ -277,7 +282,9 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(screen.getByTestId('payment-retry-panel')).not.toBeVisible();
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
+        expect(mockPush).toHaveBeenCalledWith(
+          `/payment/${CHECKOUT_RETRY_PAYMENT_ID}?orderNumber=ORD-TEST-0001`,
+        );
       });
     });
   });

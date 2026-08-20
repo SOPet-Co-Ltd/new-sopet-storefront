@@ -49,6 +49,31 @@ describe('usePayment', () => {
     });
   });
 
+  it('passes optional orderNumber for guest payment lookup', async () => {
+    server.use(
+      graphql.query('Payment', ({ variables }) => {
+        expect(variables).toMatchObject({
+          id: CHECKOUT_PAYMENT_ID,
+          orderNumber: 'ORD-TEST-0001',
+        });
+        return HttpResponse.json({
+          data: { payment: samplePendingPayment },
+        });
+      }),
+    );
+
+    const { result } = renderHook(
+      () => usePayment({ id: CHECKOUT_PAYMENT_ID, orderNumber: 'ORD-TEST-0001' }),
+      {
+        wrapper: createWrapper(),
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.payment?.status).toBe('pending');
+    });
+  });
+
   it('does not surface WebSocket subscription errors as page load errors', async () => {
     subscriptionState.error = new Error('WebSocket connection failed');
 

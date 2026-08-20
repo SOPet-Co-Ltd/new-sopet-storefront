@@ -160,11 +160,18 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     params.checkoutContext.paymentMethod ?? order.paymentMethod,
   );
 
+  const isGuestCheckout = !params.checkoutContext.isAuthenticated;
+  const guestOrderNumber =
+    isGuestCheckout && typeof order.orderNumber === 'string' && order.orderNumber.trim()
+      ? order.orderNumber.trim()
+      : null;
+
   const paymentInput = {
     orderId: order.id,
     amount: order.total,
     paymentMethod: apiPaymentMethod,
     currency: 'THB' as const,
+    ...(guestOrderNumber ? { orderNumber: guestOrderNumber } : {}),
     ...(isNonOmiseApiPaymentMethod(apiPaymentMethod)
       ? {}
       : params.savedPaymentMethodId
@@ -180,12 +187,17 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
   }
 
   const redirectId = resolvePaymentRedirectId(payment.id, order.id);
+  const resolvedOrderNumber = guestOrderNumber ?? order.orderNumber ?? payment.orderNumber ?? null;
+  const redirectPath =
+    isGuestCheckout && resolvedOrderNumber
+      ? `/payment/${redirectId}?orderNumber=${encodeURIComponent(resolvedOrderNumber)}`
+      : `/payment/${redirectId}`;
 
   return {
-    redirectPath: `/payment/${redirectId}`,
+    redirectPath,
     paymentId: payment.id,
     orderId: order.id,
-    orderNumber: order.orderNumber ?? payment.orderNumber ?? null,
+    orderNumber: resolvedOrderNumber,
   };
 }
 

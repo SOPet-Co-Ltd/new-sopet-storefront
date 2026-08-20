@@ -30,7 +30,8 @@ import {
 import { SUSPENDED_STORE_ITEM_REMOVED_WARNING_CODE } from '@/lib/constants/storeSuspensionHoldCopy';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { ensureSessionId } from '@/lib/session';
+import { ensureSessionId, getSessionId } from '@/lib/session';
+import { useGuestSessionReady } from '@/lib/providers/SessionProvider';
 import { mapStoreSuspendedCartError } from '@/lib/store-suspension/mapSuspensionErrors';
 
 export type CartWarning = NonNullable<CartQuery['cart']['warnings']>[number];
@@ -103,8 +104,9 @@ function writeCartToQuery(cache: ApolloCache, cart: CartQuery['cart']): void {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
+  const sessionReady = useGuestSessionReady() || Boolean(getSessionId());
   const wasAuthenticatedRef = useRef(isAuthenticated);
-  const sessionId = typeof window !== 'undefined' ? getSessionIdForCart() : null;
+  const sessionId = sessionReady && typeof window !== 'undefined' ? ensureSessionId() : null;
   // Serialize cart mutations against explicit refetches so a slow in-flight Cart
   // response cannot land after a mutation and wipe the items the mutation wrote.
   const cartOpLockRef = useRef(Promise.resolve());

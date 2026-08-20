@@ -6,6 +6,7 @@ export type MidQrPaymentFixture = {
   __typename: 'PaymentType';
   id: string;
   orderId: string;
+  orderNumber: string;
   amount: number;
   currency: string;
   status: string;

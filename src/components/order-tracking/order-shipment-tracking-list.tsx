@@ -8,6 +8,7 @@ import {
   groupItemsByStoreShipment,
   type ShipmentTrackingItem,
 } from '@/lib/order-tracking/group-items-by-store-shipment';
+import { sanitizeExternalUrl } from '@/lib/sanitize-external-url';
 
 type OrderShipmentTrackingListProps = {
   items: ShipmentTrackingItem[];
@@ -26,6 +27,7 @@ export function OrderShipmentTrackingList({ items }: OrderShipmentTrackingListPr
       <ul className="space-y-3">
         {[...shipments.entries()].map(([storeId, shipment]) => {
           const isHeld = shipment.fulfillmentStatus === HOLD_FULFILLMENT_STATUS;
+          const safeTrackingUrl = sanitizeExternalUrl(shipment.trackingUrl);
           return (
             <li key={storeId} className="space-y-1">
               {shipment.fulfillmentProvider ? (
@@ -60,9 +62,9 @@ export function OrderShipmentTrackingList({ items }: OrderShipmentTrackingListPr
                   {STORE_SUSPENSION_HOLD_COPY.holdItemHint}
                 </p>
               ) : null}
-              {shipment.trackingUrl && !isHeld ? (
+              {safeTrackingUrl && !isHeld ? (
                 <a
-                  href={shipment.trackingUrl}
+                  href={safeTrackingUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex sop-body-sm-medium text-sop-secondary-500 underline"

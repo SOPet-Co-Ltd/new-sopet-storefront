@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ensureSessionId, getSessionId } from '@/lib/session';
+import { bootstrapSessionId, getSessionId } from '@/lib/session';
 
 export function useSessionId(enabled = true): string | undefined {
   const [sessionId, setSessionId] = useState<string | undefined>(() =>
@@ -9,14 +9,24 @@ export function useSessionId(enabled = true): string | undefined {
   );
 
   useEffect(() => {
-    if (!enabled) return;
-    // ensureSessionId writes a fresh cookie as a side effect when none exists yet;
-    // this must run once on mount rather than during render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSessionId(getSessionId() ?? ensureSessionId());
+    if (!enabled) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void bootstrapSessionId()
+      .then((id) => {
+        if (!cancelled) {
+          setSessionId(id);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
   }, [enabled]);
 
-  // Disabled reads bypass the stored sessionId entirely, so nothing needs to be
-  // synced to undefined here.
   return enabled ? sessionId : undefined;
 }

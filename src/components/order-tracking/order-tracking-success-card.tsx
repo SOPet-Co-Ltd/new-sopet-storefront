@@ -19,6 +19,7 @@ import {
   resolveHoldBannerVariant,
   shouldShowOrderTrackingProgress,
 } from '@/lib/order-tracking/holdVisibility';
+import { sanitizeExternalUrl } from '@/lib/sanitize-external-url';
 import { OrderHoldBanner } from './order-hold-banner';
 import { OrderTrackingProgressStepper } from './order-tracking-progress-stepper';
 
@@ -96,6 +97,7 @@ export function OrderTrackingSuccessCard({ order, status, items }: OrderTracking
             <ul className="space-y-4">
               {[...shipments.entries()].map(([storeId, shipment]) => {
                 const isHeld = shipment.fulfillmentStatus === HOLD_FULFILLMENT_STATUS;
+                const safeTrackingUrl = sanitizeExternalUrl(shipment.trackingUrl);
                 return (
                   <li
                     key={storeId}
@@ -139,9 +141,9 @@ export function OrderTrackingSuccessCard({ order, status, items }: OrderTracking
                         {STORE_SUSPENSION_HOLD_COPY.holdItemHint}
                       </p>
                     ) : null}
-                    {shipment.trackingUrl && !isHeld ? (
+                    {safeTrackingUrl && !isHeld ? (
                       <a
-                        href={shipment.trackingUrl}
+                        href={safeTrackingUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-3 inline-flex w-full items-center justify-center rounded-sop-8 bg-sop-primary-500 px-4 py-2 sop-body-sm-medium text-sop-base-white transition-colors hover:bg-sop-primary-600"

@@ -3,6 +3,7 @@
 import { useQuery } from '@apollo/client/react';
 import Image from 'next/image';
 import { PlatformSponsorsDocument } from '@/lib/graphql/generated/graphql';
+import { sanitizeExternalUrl } from '@/lib/sanitize-external-url';
 
 const sponsorItemClassName = 'block w-[150px] shrink-0';
 
@@ -70,11 +71,13 @@ export function HomeSponsorsSection({ heading = 'แบรนด์ที่เ�
             </div>
           );
 
-          if (sponsor.linkUrl) {
+          const linkUrl = sanitizeExternalUrl(sponsor.linkUrl);
+
+          if (linkUrl) {
             return (
               <a
                 key={sponsor.id}
-                href={sponsor.linkUrl}
+                href={linkUrl}
                 target="_blank"
                 rel="noreferrer"
                 className={sponsorItemClassName}

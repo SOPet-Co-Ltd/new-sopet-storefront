@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@apollo/client/react';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { CheckIcon } from '@/components/atoms/icons';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
@@ -36,6 +37,7 @@ function resolveCustomerFacingOrderNumber(
 
 export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const searchParams = useSearchParams();
   const purchaseTrackedRef = useRef<string | null>(null);
   const [pendingOrderNumber] = useState(() => {
     if (typeof window === 'undefined') {
@@ -47,6 +49,12 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
     }
     return resolveCustomerFacingOrderNumber(pending.orderNumber);
   });
+
+  const orderNumberFromUrl = resolveCustomerFacingOrderNumber(searchParams.get('orderNumber'));
+  const guestOrderNumberProof = resolveCustomerFacingOrderNumber(
+    orderNumberFromUrl,
+    pendingOrderNumber,
+  );
 
   const isGuest = !isAuthenticated;
   // Wait for auth bootstrap so we do not fire the customer-scoped `order` query as a
@@ -60,17 +68,21 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
   });
 
   // Public payment lookup is the guest (and fallback) source of ORD-… numbers.
+  // Guests must pass orderNumber (BE-006); authenticated customers may omit it.
   const { data: paymentData, loading: paymentLoading } = useQuery(PaymentByOrderIdDocument, {
-    variables: { orderId },
+    variables: {
+      orderId,
+      orderNumber: isGuest ? (guestOrderNumberProof ?? undefined) : undefined,
+    },
     fetchPolicy: 'network-only',
-    skip: !authReady,
+    skip: !authReady || (isGuest && !guestOrderNumberProof),
   });
 
   const order = data?.order;
   const orderNumber = resolveCustomerFacingOrderNumber(
     order?.orderNumber,
     paymentData?.paymentByOrderId?.orderNumber,
-    pendingOrderNumber,
+    guestOrderNumberProof,
   );
   const isOrderNumberLoading = !orderNumber && (!authReady || orderLoading || paymentLoading);
 

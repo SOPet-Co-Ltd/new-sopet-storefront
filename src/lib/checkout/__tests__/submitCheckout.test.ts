@@ -146,9 +146,10 @@ describe('submitCheckout', () => {
       amount: sampleOrder.total,
       paymentMethod: 'promptpay',
       currency: 'THB',
+      orderNumber: 'ORD-1001',
     });
     expect(result).toEqual({
-      redirectPath: `/payment/${CHECKOUT_PAYMENT_ID}`,
+      redirectPath: `/payment/${CHECKOUT_PAYMENT_ID}?orderNumber=ORD-1001`,
       paymentId: CHECKOUT_PAYMENT_ID,
       orderId: CHECKOUT_ORDER_ID,
       orderNumber: 'ORD-1001',
@@ -413,7 +414,7 @@ describe('submitCheckout MSW integration', () => {
     const submitResult = await submitCheckout(params, createSubmitCheckoutGuard());
 
     expect(submitResult).toEqual({
-      redirectPath: `/payment/${CHECKOUT_PAYMENT_ID}`,
+      redirectPath: `/payment/${CHECKOUT_PAYMENT_ID}?orderNumber=ORD-1001`,
       paymentId: CHECKOUT_PAYMENT_ID,
       orderId: CHECKOUT_ORDER_ID,
       orderNumber: 'ORD-1001',

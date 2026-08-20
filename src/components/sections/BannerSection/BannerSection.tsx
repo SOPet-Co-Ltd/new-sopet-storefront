@@ -4,9 +4,8 @@ import { useQuery } from '@apollo/client/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlatformBannersDocument } from '@/lib/graphql/generated/graphql';
+import { isExternalHref, sanitizeExternalUrl } from '@/lib/sanitize-external-url';
 import { useBannerCarousel } from './useBannerCarousel';
-
-const isExternalHref = (href: string): boolean => /^https?:\/\//i.test(href);
 
 function BannerSkeleton() {
   return (
@@ -28,7 +27,7 @@ export function BannerSection() {
       image_url: banner.imageUrl,
       mobile_image_url: banner.mobileImageUrl ?? undefined,
       name: banner.title,
-      href: banner.linkUrl ?? undefined,
+      href: sanitizeExternalUrl(banner.linkUrl) ?? undefined,
       order: banner.sortOrder,
     }));
 

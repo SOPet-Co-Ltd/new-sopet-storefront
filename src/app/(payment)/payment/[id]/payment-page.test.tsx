@@ -191,7 +191,9 @@ describe('PaymentPage', () => {
     rerender(<PaymentPage />);
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+      expect(mockReplace).toHaveBeenCalledWith(
+        `/thank-you/${CHECKOUT_ORDER_ID}?orderNumber=ORD-TEST-0001`,
+      );
     });
     expect(mockReplace).toHaveBeenCalledTimes(1);
   });
@@ -228,7 +230,9 @@ describe('PaymentPage', () => {
     rerender(<PaymentPage />);
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+      expect(mockReplace).toHaveBeenCalledWith(
+        `/thank-you/${CHECKOUT_ORDER_ID}?orderNumber=ORD-TEST-0001`,
+      );
     });
     expect(mockReplace).toHaveBeenCalledTimes(1);
   });
@@ -280,11 +284,14 @@ describe('PaymentPage', () => {
         amount: samplePendingCardPayment.amount,
         currency: 'THB',
         paymentMethod: 'promptpay',
+        orderNumber: 'ORD-TEST-0001',
       });
     });
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
+      expect(mockPush).toHaveBeenCalledWith(
+        `/payment/${CHECKOUT_RETRY_PAYMENT_ID}?orderNumber=ORD-TEST-0001`,
+      );
     });
     expect(mockPush).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
     expect(sessionStorage.getItem(threeDSAutoRedirectStorageKey(CHECKOUT_PAYMENT_ID))).toBeNull();
@@ -303,7 +310,9 @@ describe('PaymentPage', () => {
     await submitPromptPayRetry(user);
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
+      expect(mockPush).toHaveBeenCalledWith(
+        `/payment/${CHECKOUT_RETRY_PAYMENT_ID}?orderNumber=ORD-TEST-0001`,
+      );
     });
     expect(mockPush).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
   });
@@ -389,11 +398,14 @@ describe('PaymentPage', () => {
         currency: 'THB',
         paymentMethod: 'credit_card',
         omiseToken: 'tok_test_mid_qr',
+        orderNumber: 'ORD-TEST-0001',
       });
     });
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
+      expect(mockPush).toHaveBeenCalledWith(
+        `/payment/${CHECKOUT_RETRY_PAYMENT_ID}?orderNumber=ORD-TEST-0001`,
+      );
     });
     expect(mockPush).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
     expect(mockReplace).not.toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
@@ -507,7 +519,9 @@ describe('PaymentPage', () => {
     await submitMidQrCardRetry(user);
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);
+      expect(mockPush).toHaveBeenCalledWith(
+        `/payment/${CHECKOUT_RETRY_PAYMENT_ID}?orderNumber=ORD-TEST-0001`,
+      );
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByText(/ยกเลิกการชำระเงินไม่สำเร็จ/i)).not.toBeInTheDocument();

@@ -17,6 +17,8 @@ export type PaymentRetryContext = {
   amount: number;
   currency: string;
   currentPaymentId: string;
+  /** Required for unauthenticated guests on createPayment (BE-006). */
+  orderNumber?: string | null;
 };
 
 /** Aligns with submitCheckout paymentInput mapping for same-order recovery. */
@@ -24,11 +26,13 @@ export function buildPaymentRetryInput(
   context: PaymentRetryContext,
   submit: PaymentRetrySubmitInput,
 ): CreatePaymentInput {
+  const orderNumber = context.orderNumber?.trim() || undefined;
   return {
     orderId: context.orderId,
     amount: context.amount,
     currency: context.currency || 'THB',
     paymentMethod: submit.paymentMethod,
+    ...(orderNumber ? { orderNumber } : {}),
     ...(submit.savedPaymentMethodId
       ? { savedPaymentMethodId: submit.savedPaymentMethodId }
       : submit.omiseToken

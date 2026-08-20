@@ -47,6 +47,23 @@ describe('OrderShipmentTrackingList', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
+  it('omits tracking link when trackingUrl is unsafe', () => {
+    render(
+      <OrderShipmentTrackingList
+        items={[
+          {
+            storeId: 'store-1',
+            trackingUrl: 'javascript:alert(1)',
+            trackingNumber: 'TH123',
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.queryByRole('link', { name: 'เปิดลิงก์ติดตามพัสดุ' })).not.toBeInTheDocument();
+    expect(screen.getByText('TH123')).toBeInTheDocument();
+  });
+
   // AC-018: Fulfillment status labels mirror admin map in rendered output.
   // Behavior: Known enum values → hardcoded Thai labels visible in shipment card.
   // @category: integration

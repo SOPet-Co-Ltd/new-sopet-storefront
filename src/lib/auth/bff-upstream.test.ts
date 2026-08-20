@@ -59,4 +59,50 @@ describe('assertSameOrigin', () => {
     expect(rejected).not.toBeNull();
     expect(rejected?.status).toBe(403);
   });
+
+  it('rejects missing Origin/Referer when APP_ENV is staging', () => {
+    const prevAppEnv = process.env.APP_ENV;
+    const prevAllow = process.env.BFF_CSRF_ALLOW_MISSING_ORIGIN;
+    process.env.APP_ENV = 'staging';
+    delete process.env.BFF_CSRF_ALLOW_MISSING_ORIGIN;
+    try {
+      const request = new Request('http://localhost:3000/graphql', { method: 'POST' });
+      const rejected = assertSameOrigin(request);
+      expect(rejected).not.toBeNull();
+      expect(rejected?.status).toBe(403);
+    } finally {
+      if (prevAppEnv === undefined) {
+        delete process.env.APP_ENV;
+      } else {
+        process.env.APP_ENV = prevAppEnv;
+      }
+      if (prevAllow === undefined) {
+        delete process.env.BFF_CSRF_ALLOW_MISSING_ORIGIN;
+      } else {
+        process.env.BFF_CSRF_ALLOW_MISSING_ORIGIN = prevAllow;
+      }
+    }
+  });
+
+  it('allows missing Origin/Referer when BFF_CSRF_ALLOW_MISSING_ORIGIN=true', () => {
+    const prevAppEnv = process.env.APP_ENV;
+    const prevAllow = process.env.BFF_CSRF_ALLOW_MISSING_ORIGIN;
+    process.env.APP_ENV = 'staging';
+    process.env.BFF_CSRF_ALLOW_MISSING_ORIGIN = 'true';
+    try {
+      const request = new Request('http://localhost:3000/graphql', { method: 'POST' });
+      expect(assertSameOrigin(request)).toBeNull();
+    } finally {
+      if (prevAppEnv === undefined) {
+        delete process.env.APP_ENV;
+      } else {
+        process.env.APP_ENV = prevAppEnv;
+      }
+      if (prevAllow === undefined) {
+        delete process.env.BFF_CSRF_ALLOW_MISSING_ORIGIN;
+      } else {
+        process.env.BFF_CSRF_ALLOW_MISSING_ORIGIN = prevAllow;
+      }
+    }
+  });
 });

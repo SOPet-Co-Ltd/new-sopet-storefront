@@ -3095,6 +3095,7 @@ export type Subscription = {
 
 export type SubscriptionPaymentStatusUpdatedArgs = {
   orderId?: InputMaybe<Scalars['String']['input']>;
+  orderNumber?: InputMaybe<Scalars['String']['input']>;
   paymentId?: InputMaybe<Scalars['String']['input']>;
 };
 

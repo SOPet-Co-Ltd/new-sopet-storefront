@@ -8,6 +8,7 @@ import { Button } from '@/components/atoms/Button';
 import { OtpCodeInput } from '@/components/atoms/OtpCodeInput/OtpCodeInput';
 import { SOPetLogo } from '@/components/atoms/icons';
 import { ReactivateAccountModal } from '@/components/molecules/ReactivateAccountModal/ReactivateAccountModal';
+import { getSafeRedirectFromSearchParams } from '@/lib/auth/safe-redirect';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { formatThaiPhoneNumber } from '@/lib/helpers/phone';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -18,6 +19,7 @@ export function OtpVerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phone = searchParams.get('phone') ?? '';
+  const postLoginPath = getSafeRedirectFromSearchParams(searchParams) ?? '/';
   const { sendOtp, verifyOtp, pendingDeletion } = useAuth();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export function OtpVerifyForm() {
         return;
       }
 
-      router.replace('/');
+      router.replace(postLoginPath);
     } catch (verifyError) {
       setError(getErrorMessage(verifyError, 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'));
     } finally {
@@ -158,7 +160,7 @@ export function OtpVerifyForm() {
         isOpen={showReactivateModal || pendingDeletion}
         reactivationToken={reactivationToken}
         onClose={() => setShowReactivateModal(false)}
-        onSuccess={() => router.replace('/')}
+        onSuccess={() => router.replace(postLoginPath)}
       />
     </>
   );

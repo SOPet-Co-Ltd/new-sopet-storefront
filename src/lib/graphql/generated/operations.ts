@@ -919,6 +919,7 @@ export type BankTransferDetailsQuery = {
 export type PaymentStatusUpdatedSubscriptionVariables = Exact<{
   paymentId?: string | null | undefined;
   orderId?: string | null | undefined;
+  orderNumber?: string | null | undefined;
 }>;
 
 export type PaymentStatusUpdatedSubscription = {
@@ -3977,6 +3978,11 @@ export const PaymentStatusUpdatedDocument = {
           variable: { kind: 'Variable', name: { kind: 'Name', value: 'orderId' } },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'orderNumber' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -3994,6 +4000,11 @@ export const PaymentStatusUpdatedDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'orderId' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'orderId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'orderNumber' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'orderNumber' } },
               },
             ],
             selectionSet: {

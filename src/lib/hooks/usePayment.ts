@@ -104,8 +104,9 @@ export function usePayment({
     () => ({
       paymentId: queryByOrderId ? null : (id ?? null),
       orderId: queryByOrderId ? (orderId ?? null) : null,
+      orderNumber: orderNumberVariable ?? null,
     }),
-    [id, orderId, queryByOrderId],
+    [id, orderId, orderNumberVariable, queryByOrderId],
   );
 
   const paymentStatusUpdatedSubscription = useSubscription(PaymentStatusUpdatedDocument, {

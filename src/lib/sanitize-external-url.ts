@@ -58,7 +58,12 @@ export function sanitizePaymentRedirectUrl(uri: string | null | undefined): stri
 
   try {
     const parsed = new URL(trimmed);
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    const allowHttp = process.env.NODE_ENV !== 'production';
+    if (parsed.protocol === 'https:') {
+      // ok
+    } else if (parsed.protocol === 'http:' && allowHttp) {
+      // local / test Omise mocks only
+    } else {
       return null;
     }
 

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing/react';
 import { MeDocument, VerifyCustomerOtpDocument } from '@/lib/graphql/generated/graphql';
 import { AUTH_COMPANION_COOKIE } from '@/lib/config';
-import { SESSION_ID_COOKIE } from '@/lib/session';
+import { getSessionId, resetClientSessionCache, setClientSessionId } from '@/lib/session';
 import { AuthProvider, type AuthContextValue } from './AuthProvider';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -65,8 +65,9 @@ describe('AuthProvider', () => {
 
   beforeEach(() => {
     sessionStorage.clear();
+    resetClientSessionCache();
     document.cookie = `${AUTH_COMPANION_COOKIE}=; max-age=0; path=/`;
-    document.cookie = `${SESSION_ID_COOKIE}=a1b2c3d4-e5f6-4789-a012-3456789abcde; path=/`;
+    setClientSessionId('a1b2c3d4-e5f6-4789-a012-3456789abcde');
     global.fetch = async () => new Response(JSON.stringify({ ok: true }), { status: 200 });
   });
 
@@ -79,8 +80,8 @@ describe('AuthProvider', () => {
     roots = [];
     document.body.innerHTML = '';
     sessionStorage.clear();
+    resetClientSessionCache();
     document.cookie = `${AUTH_COMPANION_COOKIE}=; max-age=0; path=/`;
-    document.cookie = `${SESSION_ID_COOKIE}=; max-age=0; path=/`;
   });
 
   it('skips me query when anonymous', async () => {
@@ -223,7 +224,7 @@ describe('AuthProvider', () => {
     expect(
       container.querySelector('[data-authenticated]')?.getAttribute('data-authenticated'),
     ).toBe('false');
-    expect(document.cookie).toContain(`${SESSION_ID_COOKIE}=`);
+    expect(getSessionId()).toBe('a1b2c3d4-e5f6-4789-a012-3456789abcde');
   });
 
   it('throws when useAuth is used outside AuthProvider', () => {

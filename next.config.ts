@@ -124,7 +124,7 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [75, 85],
     remotePatterns: imageRemotePatterns(),
-    dangerouslyAllowSVG: true,
+    dangerouslyAllowSVG: false,
     contentDispositionType: 'attachment',
     // Serve original CDN/R2 URLs. Vercel Image Optimization returns 402
     // OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED once the transform quota is hit.

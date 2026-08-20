@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { sanitizePaymentRedirectUrl } from '@/lib/sanitize-external-url';
 
 const STORAGE_KEY_PREFIX = 'sopet:3ds-auto-redirect:';
 
@@ -68,14 +69,19 @@ export function Payment3dsAutoRedirect({
       return;
     }
 
-    const key = threeDSAutoRedirectStorageKey(paymentId);
-    const stored = readStoredAuthorizeUri(key);
-    if (stored === authorizeUri) {
+    const safeAuthorizeUri = sanitizePaymentRedirectUrl(authorizeUri);
+    if (!safeAuthorizeUri) {
       return;
     }
 
-    writeStoredAuthorizeUri(key, authorizeUri);
-    navigate(authorizeUri);
+    const key = threeDSAutoRedirectStorageKey(paymentId);
+    const stored = readStoredAuthorizeUri(key);
+    if (stored === safeAuthorizeUri) {
+      return;
+    }
+
+    writeStoredAuthorizeUri(key, safeAuthorizeUri);
+    navigate(safeAuthorizeUri);
   }, [paymentId, status, authorizeUri, navigate]);
 
   return null;

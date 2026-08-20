@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { assertSameOrigin } from '@/lib/auth/bff-csrf';
+import { assertSameOrigin, getAllowedOrigins } from '@/lib/auth/bff-csrf';
 import {
   clearAuthCookies,
   getAccessTokenFromRequest,
@@ -69,7 +69,11 @@ export async function POST(request: Request) {
 }
 
 export async function OPTIONS(request: Request) {
-  const origin = request.headers.get('origin') ?? '*';
+  const origin = request.headers.get('origin');
+  if (!origin || !getAllowedOrigins().includes(origin)) {
+    return new NextResponse(null, { status: 403 });
+  }
+
   return new NextResponse(null, {
     status: 204,
     headers: {

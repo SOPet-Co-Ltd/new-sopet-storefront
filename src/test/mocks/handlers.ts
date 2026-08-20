@@ -1,4 +1,4 @@
-import { graphql, HttpResponse } from 'msw';
+import { graphql, http, HttpResponse } from 'msw';
 import {
   defaultProductsPagination,
   sampleBrands,
@@ -53,6 +53,10 @@ export const sampleApprovedTags = [
  * via `server.use()` or extended in feature-scoped handler modules.
  */
 export const handlers = [
+  http.get('/api/session', () =>
+    HttpResponse.json({ sessionId: 'a1b2c3d4-e5f6-4789-a012-3456789abcde' }),
+  ),
+
   graphql.query('Me', () => {
     return HttpResponse.json({
       data: {

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal } from '@/components/atoms/Modal';
 import { PlatformAdsDocument } from '@/lib/graphql/generated/graphql';
+import { sanitizeExternalUrl } from '@/lib/sanitize-external-url';
 
 export const ADS_DISMISS_STORAGE_KEY = 'sopet:storefront:promo-ads:dismiss-state';
 const DEFAULT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -55,6 +56,7 @@ export function PromotionalAdsModal() {
   });
 
   const ad = data?.platformAds[0];
+  const adLinkUrl = sanitizeExternalUrl(ad?.linkUrl);
 
   useEffect(() => {
     const now = Date.now();
@@ -122,8 +124,8 @@ export function PromotionalAdsModal() {
       <div className="relative p-0">
         <div className="relative mx-auto w-full max-w-[360px] overflow-hidden rounded-xl sm:max-w-[420px]">
           <div className="relative aspect-4/5">
-            {ad.linkUrl ? (
-              <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" aria-label={imageAlt}>
+            {adLinkUrl ? (
+              <a href={adLinkUrl} target="_blank" rel="noopener noreferrer" aria-label={imageAlt}>
                 {promotionAdsImage}
               </a>
             ) : (

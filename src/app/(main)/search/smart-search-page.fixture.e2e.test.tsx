@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchResultsPage } from '@/components/pages/SearchResultsPage';
-import { SESSION_ID_COOKIE } from '@/lib/session';
+import { resetClientSessionCache, setClientSessionId } from '@/lib/session';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { CATALOG_STORE_ID } from '@/test/mocks/fixtures/catalog';
 import { server } from '@/test/mocks/server';
@@ -103,7 +103,8 @@ function getRenderedProductOrder(): string[] {
 beforeEach(() => {
   searchParams = new URLSearchParams({ q: 'อาหารแมว' });
   capturedVariables.length = 0;
-  document.cookie = `${SESSION_ID_COOKIE}=${SESSION_ID}; path=/`;
+  resetClientSessionCache();
+  setClientSessionId(SESSION_ID);
   window.sessionStorage.setItem('sopet_recent_searches', JSON.stringify(['cat food']));
 
   server.use(

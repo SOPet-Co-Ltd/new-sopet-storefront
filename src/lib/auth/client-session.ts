@@ -1,12 +1,15 @@
 import { AUTH_COMPANION_COOKIE } from '@/lib/config';
 
-/** Client-readable companion flag set alongside HttpOnly JWTs. */
+/** Client-readable companion flag set alongside HttpOnly JWTs (supports `__Host-` prefix). */
 export function hasAuthCompanionCookie(): boolean {
   if (typeof document === 'undefined') {
     return false;
   }
-  const prefix = `${AUTH_COMPANION_COOKIE}=`;
-  return document.cookie.split('; ').some((entry) => entry.startsWith(prefix));
+  const entries = document.cookie.split('; ');
+  return (
+    entries.some((entry) => entry.startsWith(`${AUTH_COMPANION_COOKIE}=`)) ||
+    entries.some((entry) => entry.startsWith(`__Host-${AUTH_COMPANION_COOKIE}=`))
+  );
 }
 
 export async function fetchAuthSession(): Promise<{ authenticated: boolean }> {

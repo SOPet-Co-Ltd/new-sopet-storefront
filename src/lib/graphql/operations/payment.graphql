@@ -11,14 +11,14 @@ fragment PaymentFields on PaymentType {
   expiresAt
 }
 
-query Payment($id: String!) {
-  payment(id: $id) {
+query Payment($id: String!, $guestPayToken: String) {
+  payment(id: $id, guestPayToken: $guestPayToken) {
     ...PaymentFields
   }
 }
 
-query PaymentByOrderId($orderId: String!) {
-  paymentByOrderId(orderId: $orderId) {
+query PaymentByOrderId($orderId: String!, $guestPayToken: String) {
+  paymentByOrderId(orderId: $orderId, guestPayToken: $guestPayToken) {
     ...PaymentFields
   }
 }
@@ -31,8 +31,8 @@ query BankTransferDetails {
   }
 }
 
-subscription PaymentStatusUpdated($paymentId: String, $orderId: String) {
-  paymentStatusUpdated(paymentId: $paymentId, orderId: $orderId) {
+subscription PaymentStatusUpdated($paymentId: String, $orderId: String, $guestPayToken: String) {
+  paymentStatusUpdated(paymentId: $paymentId, orderId: $orderId, guestPayToken: $guestPayToken) {
     ...PaymentFields
   }
 }

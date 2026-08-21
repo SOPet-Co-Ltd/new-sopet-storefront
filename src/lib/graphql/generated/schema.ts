@@ -404,6 +404,7 @@ export type ChangePasswordInput = {
 };
 
 export type ConfirmOrderDeliveredInput = {
+  guestPayToken?: InputMaybe<Scalars['String']['input']>;
   guestPhone?: InputMaybe<Scalars['String']['input']>;
   orderId: Scalars['String']['input'];
 };
@@ -457,6 +458,7 @@ export type CreateOrderInput = {
 export type CreatePaymentInput = {
   amount: Scalars['Float']['input'];
   currency?: Scalars['String']['input'];
+  guestPayToken?: InputMaybe<Scalars['String']['input']>;
   omiseToken?: InputMaybe<Scalars['String']['input']>;
   orderId: Scalars['String']['input'];
   paymentMethod: Scalars['String']['input'];
@@ -1804,6 +1806,7 @@ export type OrderType = {
   discountAmount: Scalars['Float']['output'];
   guestEmail?: Maybe<Scalars['String']['output']>;
   guestName?: Maybe<Scalars['String']['output']>;
+  guestPayToken?: Maybe<Scalars['String']['output']>;
   guestPhone?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   items: Array<OrderItemType>;
@@ -2146,7 +2149,6 @@ export type Query = {
   getAdminInvitationByToken: AdminInvitationType;
   getPasswordResetTokenStatus: PasswordResetTokenStatusType;
   getStoreInvitationByToken: StoreInvitationPreviewType;
-  guestOrders: Array<OrderType>;
   /** GraphQL API health check */
   health: HealthStatus;
   latestPurchaseProduct?: Maybe<ProductType>;
@@ -2349,10 +2351,6 @@ export type QueryGetStoreInvitationByTokenArgs = {
   token: Scalars['String']['input'];
 };
 
-export type QueryGuestOrdersArgs = {
-  guestPhone: Scalars['String']['input'];
-};
-
 export type QueryLatestPurchaseProductsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -2386,10 +2384,12 @@ export type QueryOrdersArgs = {
 };
 
 export type QueryPaymentArgs = {
+  guestPayToken?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
 };
 
 export type QueryPaymentByOrderIdArgs = {
+  guestPayToken?: InputMaybe<Scalars['String']['input']>;
   orderId: Scalars['String']['input'];
 };
 
@@ -3096,6 +3096,7 @@ export type Subscription = {
 };
 
 export type SubscriptionPaymentStatusUpdatedArgs = {
+  guestPayToken?: InputMaybe<Scalars['String']['input']>;
   orderId?: InputMaybe<Scalars['String']['input']>;
   paymentId?: InputMaybe<Scalars['String']['input']>;
 };

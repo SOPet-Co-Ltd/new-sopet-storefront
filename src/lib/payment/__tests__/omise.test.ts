@@ -112,6 +112,7 @@ describe('omise payment utilities', () => {
     )?.[0] as HTMLScriptElement | undefined;
 
     expect(script?.src).toBe('https://cdn.omise.co/omise.js');
+    expect(script?.crossOrigin).toBe('anonymous');
 
     window.Omise = {
       setPublicKey: vi.fn(),

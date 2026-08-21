@@ -20,13 +20,13 @@ type ShareButtonConfig = {
 };
 
 function stripHtml(html: string): string {
-  if (typeof document === 'undefined') {
-    return html.replace(/<[^>]*>/g, '');
+  if (typeof DOMParser !== 'undefined') {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent ?? '';
   }
 
-  const element = document.createElement('div');
-  element.innerHTML = html;
-  return element.textContent ?? element.innerText ?? '';
+  // SSR / non-DOM fallback — strip tags without executing markup.
+  return html.replace(/<[^>]*>/g, '');
 }
 
 function getShortDescription(product: ProductDetail): string {

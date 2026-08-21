@@ -3,6 +3,7 @@ import { resetApolloClientSingletons } from '@apollo/client-integration-nextjs';
 import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import React from 'react';
+import { resetSessionIdForTests } from '@/lib/session';
 import { server } from './mocks/server';
 
 vi.mock('next/image', () => ({
@@ -61,6 +62,7 @@ afterEach(() => {
   resetApolloClientSingletons();
   cleanup();
   server.resetHandlers();
+  resetSessionIdForTests();
 });
 
 afterAll(() => {

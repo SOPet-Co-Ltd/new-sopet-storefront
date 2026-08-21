@@ -54,7 +54,7 @@ export async function forwardGraphql(
       json: {
         errors: [
           {
-            message: `Upstream GraphQL returned non-JSON (HTTP ${response.status}). Check Cloudflare WAF / GRAPHQL_SSR_BYPASS_SECRET.`,
+            message: `Upstream GraphQL returned non-JSON (HTTP ${response.status}). Please try again later.`,
             extensions: { code: 'UPSTREAM_NON_JSON' },
           },
         ],

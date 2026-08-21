@@ -61,6 +61,7 @@ export const sampleStorePromotion = {
   storeId: CHECKOUT_STORE_ID,
   autoApply: false,
   priority: 0,
+  conditions: null,
 };
 
 export const samplePlatformPromotion = {
@@ -78,6 +79,7 @@ export const samplePlatformPromotion = {
   storeId: null,
   autoApply: false,
   priority: 0,
+  conditions: null,
 };
 
 export const samplePromotionValidation = {
@@ -103,6 +105,7 @@ export const sampleOrder = {
   guestEmail: null,
   guestName: null,
   guestPhone: null,
+  guestPayToken: null,
   items: [
     {
       __typename: 'OrderItemType' as const,

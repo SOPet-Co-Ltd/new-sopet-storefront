@@ -165,4 +165,33 @@ describe('Payment3dsAutoRedirect', () => {
     expect(navigate).not.toHaveBeenCalled();
     expect(sessionStorage.getItem(threeDSAutoRedirectStorageKey(PAYMENT_ID))).toBeNull();
   });
+
+  it('does not navigate or write gate for disallowed authorizeUri hosts', () => {
+    const evilUri = 'https://evil.example/phish';
+
+    render(
+      <Payment3dsAutoRedirect
+        paymentId={PAYMENT_ID}
+        status="pending"
+        authorizeUri={evilUri}
+        navigate={navigate}
+      />,
+    );
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(threeDSAutoRedirectStorageKey(PAYMENT_ID))).toBeNull();
+  });
+
+  it('does not navigate for javascript: authorizeUri', () => {
+    render(
+      <Payment3dsAutoRedirect
+        paymentId={PAYMENT_ID}
+        status="pending"
+        authorizeUri="javascript:alert(1)"
+        navigate={navigate}
+      />,
+    );
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
 });

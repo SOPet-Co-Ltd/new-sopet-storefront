@@ -5,7 +5,13 @@
  */
 
 function defaultAllowedOrigins(): string[] {
-  const origins = new Set<string>(['http://localhost:3000', 'https://localhost:3000']);
+  const origins = new Set<string>();
+
+  // SOPET-M-11: seed localhost only outside production.
+  if (process.env.NODE_ENV !== 'production') {
+    origins.add('http://localhost:3000');
+    origins.add('https://localhost:3000');
+  }
 
   const fromEnv = process.env.NEXT_PUBLIC_STOREFRONT_URL?.trim();
   if (fromEnv) {

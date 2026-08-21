@@ -10,6 +10,7 @@ import { getGraphqlWsUrl, GRAPHQL_URL } from '@/lib/config';
 import { createAuthLink } from '@/lib/graphql/authLink';
 import { typePolicies } from '@/lib/graphql/cachePolicies';
 import { fragmentRegistry } from '@/lib/graphql/fragmentRegistry';
+import { buildWsConnectionParams } from '@/lib/graphql/wsConnectionParams';
 
 let browserApolloClient: ApolloClient | null = null;
 
@@ -21,8 +22,8 @@ function createWsLink(): GraphQLWsLink | null {
   return new GraphQLWsLink(
     createClient({
       url: getGraphqlWsUrl(),
-      // Auth-gated subscriptions are out of scope; paymentStatusUpdated is @Public.
-      connectionParams: () => ({}),
+      // SOPET-M-05: JWT and/or guestPayToken for backend onConnect.
+      connectionParams: () => buildWsConnectionParams(),
     }),
   );
 }

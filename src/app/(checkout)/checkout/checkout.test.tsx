@@ -47,6 +47,7 @@ vi.mock('@/lib/session', async (importOriginal) => {
     ...actual,
     ensureSessionId: mockEnsureSessionId,
     getSessionId: mockEnsureSessionId,
+    hydrateSessionId: async () => mockEnsureSessionId(),
   };
 });
 

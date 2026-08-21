@@ -7,6 +7,7 @@ import {
   mapCheckoutPaymentMethodForApi,
   isNonOmiseApiPaymentMethod,
 } from '@/lib/checkout/checkoutPaymentMethod';
+import { persistGuestPayToken } from '@/lib/payment/guestPayToken';
 import {
   extractPromotionErrorCode,
   isCreateOrderHardEligibilityCode,
@@ -156,6 +157,10 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     throw new SubmitCheckoutError('ไม่สามารถสร้างคำสั่งซื้อได้', 'order_failed');
   }
 
+  if (order.guestPayToken) {
+    persistGuestPayToken({ orderId: order.id, token: order.guestPayToken });
+  }
+
   const apiPaymentMethod = mapCheckoutPaymentMethodForApi(
     params.checkoutContext.paymentMethod ?? order.paymentMethod,
   );
@@ -165,6 +170,7 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     amount: order.total,
     paymentMethod: apiPaymentMethod,
     currency: 'THB' as const,
+    ...(order.guestPayToken ? { guestPayToken: order.guestPayToken } : {}),
     ...(isNonOmiseApiPaymentMethod(apiPaymentMethod)
       ? {}
       : params.savedPaymentMethodId
@@ -177,6 +183,14 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
   const payment = await params.checkoutHook.createPayment(paymentInput);
   if (!payment?.id) {
     throw new SubmitCheckoutError('ไม่สามารถสร้างรายการชำระเงินได้', 'payment_failed');
+  }
+
+  if (order.guestPayToken) {
+    persistGuestPayToken({
+      orderId: order.id,
+      paymentId: payment.id,
+      token: order.guestPayToken,
+    });
   }
 
   const redirectId = resolvePaymentRedirectId(payment.id, order.id);

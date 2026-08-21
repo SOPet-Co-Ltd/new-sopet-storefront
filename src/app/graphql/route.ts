@@ -7,6 +7,11 @@ import {
   setAuthCookies,
 } from '@/lib/auth/bff-cookies';
 import {
+  ensureSessionIdCookie,
+  injectSessionIdIntoGraphqlBody,
+  setSessionIdCookie,
+} from '@/lib/auth/bff-session';
+import {
   forwardGraphql,
   harvestAuthTokens,
   isUnauthenticatedPayload,
@@ -20,7 +25,11 @@ export async function POST(request: Request) {
     return csrfError;
   }
 
-  const body = await request.text();
+  const rawBody = await request.text();
+  const sessionHolder = NextResponse.json({});
+  const sessionId = await ensureSessionIdCookie(sessionHolder, request);
+  const body = injectSessionIdIntoGraphqlBody(rawBody, sessionId);
+
   let accessToken = await getAccessTokenFromRequest();
   let { response: upstream, json } = await forwardGraphql(body, accessToken);
 
@@ -43,11 +52,13 @@ export async function POST(request: Request) {
         if (harvested) {
           setAuthCookies(retryResponse, harvested.accessToken, harvested.refreshToken, request);
         }
+        setSessionIdCookie(retryResponse, sessionId, request);
         return retryResponse;
       }
 
       const failed = NextResponse.json(json, { status: upstream.status === 200 ? 200 : 401 });
       clearAuthCookies(failed, request);
+      setSessionIdCookie(failed, sessionId, request);
       return failed;
     }
   }
@@ -65,18 +76,14 @@ export async function POST(request: Request) {
     setAuthCookies(response, harvested.accessToken, harvested.refreshToken, request);
   }
 
+  setSessionIdCookie(response, sessionId, request);
   return response;
 }
 
-export async function OPTIONS(request: Request) {
-  const origin = request.headers.get('origin') ?? '*';
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Credentials': 'true',
-    },
-  });
+/**
+ * Same-origin BFF: browsers do not need CORS for same-origin GraphQL POSTs.
+ * Do not reflect Origin or advertise credentials (SOPET-H-06).
+ */
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204 });
 }

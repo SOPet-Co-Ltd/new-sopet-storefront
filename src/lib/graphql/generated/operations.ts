@@ -435,6 +435,7 @@ export type OrderFieldsFragment = {
   guestEmail: string | null;
   guestName: string | null;
   guestPhone: string | null;
+  guestPayToken: string | null;
   items: Array<{
     id: string;
     variantId: string;
@@ -493,6 +494,7 @@ export type CreateOrderMutation = {
     guestEmail: string | null;
     guestName: string | null;
     guestPhone: string | null;
+    guestPayToken: string | null;
     items: Array<{
       id: string;
       variantId: string;
@@ -872,6 +874,7 @@ export type PaymentFieldsFragment = {
 
 export type PaymentQueryVariables = Exact<{
   id: string;
+  guestPayToken?: string | null | undefined;
 }>;
 
 export type PaymentQuery = {
@@ -891,6 +894,7 @@ export type PaymentQuery = {
 
 export type PaymentByOrderIdQueryVariables = Exact<{
   orderId: string;
+  guestPayToken?: string | null | undefined;
 }>;
 
 export type PaymentByOrderIdQuery = {
@@ -917,6 +921,7 @@ export type BankTransferDetailsQuery = {
 export type PaymentStatusUpdatedSubscriptionVariables = Exact<{
   paymentId?: string | null | undefined;
   orderId?: string | null | undefined;
+  guestPayToken?: string | null | undefined;
 }>;
 
 export type PaymentStatusUpdatedSubscription = {
@@ -1873,6 +1878,7 @@ export const OrderFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'guestEmail' } },
           { kind: 'Field', name: { kind: 'Name', value: 'guestName' } },
           { kind: 'Field', name: { kind: 'Name', value: 'guestPhone' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'guestPayToken' } },
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'items' },
@@ -3842,6 +3848,11 @@ export const PaymentDocument = {
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
           },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'guestPayToken' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -3854,6 +3865,11 @@ export const PaymentDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'guestPayToken' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'guestPayToken' } },
               },
             ],
             selectionSet: {
@@ -3884,6 +3900,11 @@ export const PaymentByOrderIdDocument = {
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
           },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'guestPayToken' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -3896,6 +3917,11 @@ export const PaymentByOrderIdDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'orderId' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'orderId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'guestPayToken' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'guestPayToken' } },
               },
             ],
             selectionSet: {
@@ -3955,6 +3981,11 @@ export const PaymentStatusUpdatedDocument = {
           variable: { kind: 'Variable', name: { kind: 'Name', value: 'orderId' } },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'guestPayToken' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -3972,6 +4003,11 @@ export const PaymentStatusUpdatedDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'orderId' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'orderId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'guestPayToken' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'guestPayToken' } },
               },
             ],
             selectionSet: {

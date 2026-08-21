@@ -17,6 +17,7 @@ import { isOrderNotPayableError } from '@/lib/payment/orderNotPayable';
 import {
   buildPaymentRetryInput,
   clearPriorPayment3dsAutoRedirect,
+  mirrorGuestPayTokenForNewPayment,
   PaymentRetryError,
   resolveNewPaymentId,
 } from '@/lib/payment/submitPaymentRetry';
@@ -133,6 +134,11 @@ export default function PaymentPage() {
 
         const newPaymentId = resolveNewPaymentId(payment.id, created?.id);
         clearPriorPayment3dsAutoRedirect(payment.id);
+        mirrorGuestPayTokenForNewPayment({
+          orderId: payment.orderId,
+          newPaymentId,
+          previousPaymentId: payment.id,
+        });
         // Keep failed/recovery UI replaced with processing until navigation completes.
         setRetryNavigating(true);
         router.push(`/payment/${newPaymentId}`);

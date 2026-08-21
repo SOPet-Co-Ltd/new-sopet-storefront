@@ -12,8 +12,13 @@ import {
   acceptAllCookies,
   hasAnalyticsConsent,
   hasConsentDecision,
+  writeConsentPreferences,
 } from '@/lib/consent/cookie-consent';
 import { cn } from '@/lib/utils';
+
+function rejectOptionalCookies(): void {
+  writeConsentPreferences({ analytics: false, marketing: false });
+}
 
 function subscribeConsent(onStoreChange: () => void) {
   window.addEventListener(CONSENT_CHANGE_EVENT, onStoreChange);
@@ -188,6 +193,15 @@ export function CookieConsentBanner() {
                 Actions
                 ======================================== */}
             <div className="relative z-20 flex shrink-0 gap-sop-8px">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => rejectOptionalCookies()}
+              >
+                ปฏิเสธ
+              </Button>
+
               <Button type="button" variant="outline" size="md" onClick={() => setPanelOpen(true)}>
                 ตั้งค่า
               </Button>

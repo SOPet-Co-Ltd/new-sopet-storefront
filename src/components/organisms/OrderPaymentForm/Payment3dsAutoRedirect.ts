@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { isAllowed3dsAuthorizeUri } from '@/lib/payment/authorizeUri';
 
 const STORAGE_KEY_PREFIX = 'sopet:3ds-auto-redirect:';
 
@@ -53,6 +54,7 @@ export type Payment3dsAutoRedirectProps = {
  * One-shot 3DS auto-redirect gate (AC-003 / AC-012).
  * Writes `sopet:3ds-auto-redirect:{paymentId}` = authorizeUri before navigate;
  * skips when stored value equals the current authorizeUri.
+ * Does not navigate when authorizeUri fails the https + Omise/ACS host allowlist.
  */
 export function Payment3dsAutoRedirect({
   paymentId,
@@ -65,6 +67,9 @@ export function Payment3dsAutoRedirect({
       return;
     }
     if (!authorizeUri) {
+      return;
+    }
+    if (!isAllowed3dsAuthorizeUri(authorizeUri)) {
       return;
     }
 

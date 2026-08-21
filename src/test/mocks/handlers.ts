@@ -1,4 +1,4 @@
-import { graphql, HttpResponse } from 'msw';
+import { graphql, http, HttpResponse } from 'msw';
 import {
   defaultProductsPagination,
   sampleBrands,
@@ -52,7 +52,31 @@ export const sampleApprovedTags = [
  * Default MSW handlers for Vitest. Phase-specific handlers are added per test
  * via `server.use()` or extended in feature-scoped handler modules.
  */
+
+/** Default guest session for BFF hydrate in Vitest (SOPET-M-10 HttpOnly). */
+export const TEST_GUEST_SESSION_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
+
 export const handlers = [
+  http.get('/api/session', () => {
+    return HttpResponse.json({ sessionId: TEST_GUEST_SESSION_ID });
+  }),
+
+  http.post('/api/session', async ({ request }) => {
+    let preferred: string | undefined;
+    try {
+      const body = (await request.json()) as { action?: string; sessionId?: string };
+      if (body.action === 'rotate') {
+        return HttpResponse.json({ sessionId: TEST_GUEST_SESSION_ID });
+      }
+      preferred = body.sessionId;
+    } catch {
+      // ignore empty body
+    }
+    return HttpResponse.json({
+      sessionId: preferred ?? TEST_GUEST_SESSION_ID,
+    });
+  }),
+
   graphql.query('Me', () => {
     return HttpResponse.json({
       data: {

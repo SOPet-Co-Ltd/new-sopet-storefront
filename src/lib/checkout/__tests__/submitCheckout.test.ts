@@ -155,6 +155,31 @@ describe('submitCheckout', () => {
     });
   });
 
+  it('persists guestPayToken to sessionStorage and passes it to createPayment', async () => {
+    const createPayment = vi.fn().mockResolvedValue(samplePendingPayment);
+    const guestToken = 'a'.repeat(64);
+    const createOrder = vi.fn().mockResolvedValue({
+      ...sampleOrder,
+      guestPayToken: guestToken,
+    });
+
+    await submitCheckout(
+      createSubmitParams({
+        checkoutHook: createCheckoutHook({ createOrder, createPayment }),
+      }),
+      createSubmitCheckoutGuard(),
+    );
+
+    expect(sessionStorage.getItem(`sopet_guest_pay:${CHECKOUT_ORDER_ID}`)).toBe(guestToken);
+    expect(sessionStorage.getItem(`sopet_guest_pay:${CHECKOUT_PAYMENT_ID}`)).toBe(guestToken);
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: CHECKOUT_ORDER_ID,
+        guestPayToken: guestToken,
+      }),
+    );
+  });
+
   it('skips validatePromotion when no promotion code is set', async () => {
     const checkoutHook = createCheckoutHook();
 

@@ -224,6 +224,28 @@ describe('OrderPaymentForm', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it('disallowed authorizeUri host → no navigate; shows blocked retry copy', () => {
+    const evilUri = 'https://evil.example/phish';
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...cardPendingPayment,
+          authorizeUri: evilUri,
+        }}
+        loading={false}
+        error={undefined}
+        navigateToAuthorizeUri={navigate}
+      />,
+    );
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('payment-3ds-redirecting')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'ไม่สามารถเปิดลิงก์ยืนยันการชำระเงินได้อย่างปลอดภัย',
+    );
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
   it('PromptPay QR branch still renders when qrCodeUrl present', () => {
     renderForm(
       <OrderPaymentForm

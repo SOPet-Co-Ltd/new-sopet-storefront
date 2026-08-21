@@ -55,7 +55,19 @@ describe('CookieConsentBanner', () => {
     render(<CookieConsentBanner />);
     expect(await screen.findByRole('dialog', { name: 'ความยินยอมคุกกี้' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ยอมรับทั้งหมด' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ปฏิเสธ' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ตั้งค่า' })).toBeInTheDocument();
+  });
+
+  it('hides after the shopper rejects optional cookies with equal prominence', async () => {
+    const user = userEvent.setup();
+    render(<CookieConsentBanner />);
+    const dialog = await screen.findByRole('dialog', { name: 'ความยินยอมคุกกี้' });
+    await user.click(screen.getByRole('button', { name: 'ปฏิเสธ' }));
+    await waitFor(() => {
+      expect(dialog).not.toBeInTheDocument();
+    });
+    expect(readConsentPreferences()).toEqual({ analytics: false, marketing: false });
   });
 
   it('stays hidden after mount when consent was already decided', async () => {

@@ -68,7 +68,7 @@ const productionCsp = [
   "font-src 'self' data: https://fonts.gstatic.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Next.js + Omise.js + GTM/GA require script hosts; tighten further when CMP lands.
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.omise.co https://www.googletagmanager.com https://www.google-analytics.com",
+  "script-src 'self' 'unsafe-inline' https://cdn.omise.co https://www.googletagmanager.com https://www.google-analytics.com",
   "connect-src 'self' https://api.omise.co https://vault.omise.co https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
   "frame-src 'self' https://cdn.omise.co https://www.googletagmanager.com",
   "form-action 'self'",

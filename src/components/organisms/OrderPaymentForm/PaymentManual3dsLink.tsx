@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/atoms/Button';
+import { isAllowed3dsAuthorizeUri } from '@/lib/payment/authorizeUri';
 
 export type PaymentManual3dsLinkProps = {
   authorizeUri: string;
@@ -8,10 +9,33 @@ export type PaymentManual3dsLinkProps = {
   variant?: 'primary' | 'secondary';
 };
 
+const BLOCKED_COPY =
+  'ไม่สามารถเปิดลิงก์ยืนยันการชำระเงินได้อย่างปลอดภัย กรุณากดตรวจสอบสถานะหรือเปลี่ยนวิธีชำระเงิน';
+
 export function PaymentManual3dsLink({
   authorizeUri,
   variant = 'primary',
 }: PaymentManual3dsLinkProps) {
+  const allowed = isAllowed3dsAuthorizeUri(authorizeUri);
+
+  if (!allowed) {
+    if (variant === 'secondary') {
+      return (
+        <p className="text-sm text-gray-600" role="status">
+          {BLOCKED_COPY}
+        </p>
+      );
+    }
+
+    return (
+      <div className="flex flex-col items-center gap-4 p-6 text-center">
+        <p className="text-sm text-gray-600" role="status">
+          {BLOCKED_COPY}
+        </p>
+      </div>
+    );
+  }
+
   if (variant === 'secondary') {
     return (
       <a
@@ -35,6 +59,9 @@ export function PaymentManual3dsLink({
         variant="primary"
         className="w-full max-w-xs"
         onClick={() => {
+          if (!isAllowed3dsAuthorizeUri(authorizeUri)) {
+            return;
+          }
           window.location.href = authorizeUri;
         }}
       >

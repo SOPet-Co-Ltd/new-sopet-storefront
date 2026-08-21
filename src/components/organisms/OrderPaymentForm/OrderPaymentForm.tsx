@@ -7,10 +7,12 @@ import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { formatCountdown, usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
 import { useCallback, useState, type ReactNode } from 'react';
+import { isAllowed3dsAuthorizeUri } from '@/lib/payment/authorizeUri';
 import { hasQrExpiredAt } from '@/lib/payment/orderNotPayable';
 import { Payment3dsAutoRedirect, threeDSAutoRedirectStorageKey } from './Payment3dsAutoRedirect';
 import { Payment3dsRedirectingState } from './Payment3dsRedirectingState';
 import { PaymentFailedState } from './PaymentFailedState';
+import { PaymentManual3dsLink } from './PaymentManual3dsLink';
 import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
 import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
@@ -376,8 +378,26 @@ export function OrderPaymentForm({
 
   // Card 3DS path: pending + authorizeUri (PromptPay QR takes precedence when both present)
   if (!hasQrCode && hasRedirectUri && authorizeUri && payment.status === 'pending') {
-    const afterReturn = hasCompleted3dsAutoRedirect(payment.id, authorizeUri);
     const amountLabel = formatAmount(payment.amount, payment.currency);
+
+    if (!isAllowed3dsAuthorizeUri(authorizeUri)) {
+      return (
+        <PaymentBusyShell titleId="payment-waiting-title" title="ชำระเงิน" busy={isRetryBusy}>
+          <div className="mt-4 flex items-center justify-between py-3">
+            <p className="font-medium text-gray-800">ยอดชำระรวม</p>
+            <p className="font-medium text-gray-800">{amountLabel}</p>
+          </div>
+          <div className="relative flex min-h-[250px] flex-col items-center justify-center overflow-hidden rounded-lg border border-gray-300">
+            <PaymentManual3dsLink authorizeUri={authorizeUri} />
+          </div>
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <PaymentStatusCheckButton onCheckStatus={onCheckStatus} />
+          </div>
+        </PaymentBusyShell>
+      );
+    }
+
+    const afterReturn = hasCompleted3dsAutoRedirect(payment.id, authorizeUri);
 
     return (
       <PaymentBusyShell titleId="payment-waiting-title" title="ชำระเงิน" busy={isRetryBusy}>

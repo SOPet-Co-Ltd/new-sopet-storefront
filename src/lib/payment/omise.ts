@@ -1,5 +1,12 @@
 export const OMISE_SCRIPT_SRC = 'https://cdn.omise.co/omise.js';
 
+/**
+ * SOPET-L-04 residual: Omise CDN rotates omise.js without a pinned release URL,
+ * so Subresource Integrity cannot be stably maintained. crossOrigin is set for
+ * CORS readiness if a future pin becomes available.
+ */
+export const OMISE_SCRIPT_CROSS_ORIGIN = 'anonymous' as const;
+
 export const OMISE_PUBLIC_KEY_ENV = 'NEXT_PUBLIC_OMISE_PUBLIC_KEY';
 
 export type TokenizeCardInput = {
@@ -92,6 +99,7 @@ export async function loadOmise(): Promise<OmiseClient> {
       const script = document.createElement('script');
       script.src = OMISE_SCRIPT_SRC;
       script.async = true;
+      script.crossOrigin = OMISE_SCRIPT_CROSS_ORIGIN;
       script.onload = handleReady;
       script.onerror = () => reject(new Error('ไม่สามารถโหลด Omise.js ได้'));
       document.head.appendChild(script);

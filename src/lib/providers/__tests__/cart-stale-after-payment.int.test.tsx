@@ -35,6 +35,7 @@ vi.mock('@/lib/session', async (importOriginal) => {
     ...actual,
     ensureSessionId: vi.fn(() => SESSION_ID),
     getSessionId: vi.fn(() => SESSION_ID),
+    hydrateSessionId: vi.fn(async () => SESSION_ID),
   };
 });
 

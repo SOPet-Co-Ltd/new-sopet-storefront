@@ -1,6 +1,7 @@
 # SOPET Storefront CI
 # Lite (format + lint + forbidden-import guard): PRs whose base is NOT deploy/production or deploy/uat
 # Full (lint + test + build + forbidden-import guard): PRs targeting deploy/production or deploy/uat
+# Security (yarn audit): all PRs; audit is advisory until Dependabot clears known highs
 
 name: CI
 
@@ -9,6 +10,28 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout storefront
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # Yarn classic: --level high fails when high/critical exist (exit bitmask).
+      # Transitive highs under next currently block a hard gate; keep advisory
+      # (continue-on-error) and rely on Dependabot to drive remediation.
+      - name: Dependency audit (high+)
+        continue-on-error: true
+        run: yarn audit --level high --groups dependencies
+
   lite:
     if: github.base_ref != 'deploy/production' && github.base_ref != 'deploy/uat'
     runs-on: ubuntu-latest

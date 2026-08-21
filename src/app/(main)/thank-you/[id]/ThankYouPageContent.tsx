@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@apollo/client/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckIcon } from '@/components/atoms/icons';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
 import { ThankYouAction } from '@/components/organisms/ThankYouAction';
@@ -11,6 +11,7 @@ import { orderLineToAnalyticsItem, trackPurchase } from '@/lib/analytics';
 import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { OrderDocument, PaymentByOrderIdDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { resolveGuestPayToken } from '@/lib/payment/guestPayToken';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
@@ -53,6 +54,14 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
   // guest (UNAUTHENTICATED → auth error link → logout side effects).
   const authReady = !isAuthLoading;
 
+  // SOPET-H-07: guest PaymentByOrderId requires the capability token when the order
+  // has a hash. Pending checkout is cleared on paid → thank-you, so sessionStorage
+  // is the source. Authenticated owners rely on JWT (token optional).
+  const guestPayToken = useMemo(
+    () => (authReady && !isAuthenticated ? resolveGuestPayToken({ orderId }) : undefined),
+    [authReady, isAuthenticated, orderId],
+  );
+
   const { data, loading: orderLoading } = useQuery(OrderDocument, {
     variables: { id: orderId },
     fetchPolicy: 'network-only',
@@ -61,7 +70,7 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
 
   // Public payment lookup is the guest (and fallback) source of ORD-… numbers.
   const { data: paymentData, loading: paymentLoading } = useQuery(PaymentByOrderIdDocument, {
-    variables: { orderId },
+    variables: { orderId, guestPayToken },
     fetchPolicy: 'network-only',
     skip: !authReady,
   });

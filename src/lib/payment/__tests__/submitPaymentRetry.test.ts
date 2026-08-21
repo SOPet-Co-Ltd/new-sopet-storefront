@@ -78,4 +78,15 @@ describe('submitPaymentRetry', () => {
     clearPriorPayment3dsAutoRedirect('payment-old');
     expect(sessionStorage.getItem(key)).toBeNull();
   });
+
+  it('includes guestPayToken from sessionStorage when present', () => {
+    sessionStorage.setItem('sopet_guest_pay:order-1', 'token-xyz');
+    expect(buildPaymentRetryInput(context, { paymentMethod: 'promptpay' })).toEqual({
+      orderId: 'order-1',
+      amount: 540,
+      currency: 'THB',
+      paymentMethod: 'promptpay',
+      guestPayToken: 'token-xyz',
+    });
+  });
 });

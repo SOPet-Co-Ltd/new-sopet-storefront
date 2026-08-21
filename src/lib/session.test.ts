@@ -1,101 +1,133 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SESSION_ID_COOKIE, UUID_V4_REGEX, ensureSessionId, getSessionId } from './session';
+import {
+  SESSION_ID_COOKIE,
+  UUID_V4_REGEX,
+  ensureSessionId,
+  getSessionId,
+  hydrateSessionId,
+  resetSessionIdForTests,
+  rotateSessionId,
+} from './session';
 
 const EXISTING_SESSION_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
 
-function clearSessionCookie(): void {
-  document.cookie = `${SESSION_ID_COOKIE}=; max-age=0; path=/`;
-}
-
 describe('getSessionId', () => {
   beforeEach(() => {
-    clearSessionCookie();
+    resetSessionIdForTests();
   });
 
   afterEach(() => {
-    clearSessionCookie();
+    resetSessionIdForTests();
   });
 
-  it('returns null when the session cookie is absent', () => {
+  it('returns null when memory session is absent', () => {
     expect(getSessionId()).toBeNull();
   });
 
-  it('returns the existing UUID when the cookie is already set', () => {
-    document.cookie = `${SESSION_ID_COOKIE}=${EXISTING_SESSION_ID}; path=/`;
-
-    expect(getSessionId()).toBe(EXISTING_SESSION_ID);
-  });
-
-  it('returns null when the cookie value is not a valid UUID v4', () => {
-    document.cookie = `${SESSION_ID_COOKIE}=not-a-valid-uuid; path=/`;
-
-    expect(getSessionId()).toBeNull();
+  it('returns the in-memory UUID after ensureSessionId', () => {
+    const sessionId = ensureSessionId();
+    expect(getSessionId()).toBe(sessionId);
   });
 });
 
 describe('ensureSessionId', () => {
   beforeEach(() => {
-    clearSessionCookie();
+    resetSessionIdForTests();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ sessionId: EXISTING_SESSION_ID }),
+      }),
+    );
   });
 
   afterEach(() => {
-    clearSessionCookie();
+    resetSessionIdForTests();
     vi.unstubAllGlobals();
   });
 
-  it('creates a UUID v4 cookie on first call', () => {
+  it('creates a UUID v4 in memory on first call without writing document.cookie', () => {
+    const setCookieSpy = vi.spyOn(document, 'cookie', 'set');
     const sessionId = ensureSessionId();
 
     expect(sessionId).toMatch(UUID_V4_REGEX);
-    expect(document.cookie).toContain(`${SESSION_ID_COOKIE}=${sessionId}`);
+    expect(document.cookie).not.toContain(`${SESSION_ID_COOKIE}=${sessionId}`);
+    // May clear a legacy cookie (max-age=0) but must not persist the session id.
+    for (const call of setCookieSpy.mock.calls) {
+      const value = String(call[0] ?? '');
+      expect(value).not.toMatch(new RegExp(`${SESSION_ID_COOKIE}=[0-9a-f-]{36};`, 'i'));
+    }
   });
 
-  it('returns the same id on repeated calls without overwriting the cookie', () => {
+  it('returns the same id on repeated calls', () => {
     const first = ensureSessionId();
     const second = ensureSessionId();
 
     expect(second).toBe(first);
     expect(getSessionId()).toBe(first);
   });
+});
 
-  it('returns the existing cookie value without generating a new UUID', () => {
-    document.cookie = `${SESSION_ID_COOKIE}=${EXISTING_SESSION_ID}; path=/`;
-
-    const sessionId = ensureSessionId();
-
-    expect(sessionId).toBe(EXISTING_SESSION_ID);
-    expect(document.cookie).toContain(`${SESSION_ID_COOKIE}=${EXISTING_SESSION_ID}`);
+describe('hydrateSessionId', () => {
+  beforeEach(() => {
+    resetSessionIdForTests();
   });
 
-  it('sets cookie attributes with 365-day max-age, path /, and SameSite=Lax', () => {
-    const setCookieSpy = vi.spyOn(document, 'cookie', 'set');
+  afterEach(() => {
+    resetSessionIdForTests();
+    vi.unstubAllGlobals();
+  });
 
-    ensureSessionId();
-
-    expect(setCookieSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        new RegExp(
-          `^${SESSION_ID_COOKIE}=[0-9a-f-]{36}; max-age=31536000; path=/; SameSite=Lax$`,
-          'i',
-        ),
-      ),
+  it('loads the session id from the BFF and caches it', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ sessionId: EXISTING_SESSION_ID }),
+      }),
     );
+
+    const sessionId = await hydrateSessionId();
+    expect(sessionId).toBe(EXISTING_SESSION_ID);
+    expect(getSessionId()).toBe(EXISTING_SESSION_ID);
+  });
+});
+
+describe('rotateSessionId', () => {
+  beforeEach(() => {
+    resetSessionIdForTests();
   });
 
-  it('roundtrips the persisted UUID through getSessionId', () => {
-    const sessionId = ensureSessionId();
+  afterEach(() => {
+    resetSessionIdForTests();
+    vi.unstubAllGlobals();
+  });
 
-    expect(getSessionId()).toBe(sessionId);
+  it('replaces the in-memory session from the BFF rotate response', async () => {
+    const rotated = 'b2c3d4e5-f6a7-4890-b123-456789abcdef';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ sessionId: rotated }),
+      }),
+    );
+
+    const sessionId = await rotateSessionId();
+    expect(sessionId).toBe(rotated);
+    expect(getSessionId()).toBe(rotated);
   });
 });
 
 describe('ensureSessionId SSR safety', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    resetSessionIdForTests();
   });
 
-  it('throws when called without document in SSR context', () => {
-    vi.stubGlobal('document', undefined);
+  it('throws when called without window in SSR context', () => {
+    vi.stubGlobal('window', undefined);
 
     expect(() => ensureSessionId()).toThrow('ensureSessionId requires browser context');
   });
@@ -104,10 +136,11 @@ describe('ensureSessionId SSR safety', () => {
 describe('getSessionId SSR safety', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    resetSessionIdForTests();
   });
 
-  it('returns null when document is unavailable', () => {
-    vi.stubGlobal('document', undefined);
+  it('returns null when window is unavailable', () => {
+    vi.stubGlobal('window', undefined);
 
     expect(getSessionId()).toBeNull();
   });

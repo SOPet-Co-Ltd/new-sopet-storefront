@@ -94,6 +94,7 @@ describe('ThankYouPageContent', () => {
 
   it('guest mode loads ORD- from PaymentByOrderId and never queries Order', async () => {
     const orderQuery = vi.fn();
+    sessionStorage.setItem(`sopet_guest_pay:${CHECKOUT_ORDER_ID}`, 'guest-pay-token-test');
     server.use(
       graphql.query('Order', () => {
         orderQuery();
@@ -102,7 +103,10 @@ describe('ThankYouPageContent', () => {
         });
       }),
       graphql.query('PaymentByOrderId', ({ variables }) => {
-        expect(variables).toEqual({ orderId: CHECKOUT_ORDER_ID });
+        expect(variables).toEqual({
+          orderId: CHECKOUT_ORDER_ID,
+          guestPayToken: 'guest-pay-token-test',
+        });
         return HttpResponse.json({
           data: {
             paymentByOrderId: {
@@ -166,13 +170,15 @@ describe('ThankYouPageContent', () => {
   });
 
   it('never flashes the raw route order id — only ORD- customer codes', async () => {
+    sessionStorage.setItem(`sopet_guest_pay:${CHECKOUT_ORDER_ID}`, 'guest-pay-token-test');
     let resolvePayment: ((value: unknown) => void) | undefined;
     const paymentResponse = new Promise((resolve) => {
       resolvePayment = resolve;
     });
 
     server.use(
-      graphql.query('PaymentByOrderId', async () => {
+      graphql.query('PaymentByOrderId', async ({ variables }) => {
+        expect(variables.guestPayToken).toBe('guest-pay-token-test');
         await paymentResponse;
         return HttpResponse.json({
           data: { paymentByOrderId: paidPaymentByOrderId },
@@ -200,6 +206,7 @@ describe('ThankYouPageContent', () => {
   });
 
   it('shows recommended products section and uses order id route params only', async () => {
+    sessionStorage.setItem(`sopet_guest_pay:${CHECKOUT_ORDER_ID}`, 'guest-pay-token-test');
     server.use(
       graphql.query('PaymentByOrderId', () => {
         return HttpResponse.json({

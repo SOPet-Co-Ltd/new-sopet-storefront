@@ -115,9 +115,7 @@ export function CardPaymentForm({
             onChange={(checked) => onSaveCardChange?.(checked)}
             aria-label="บันทึกไว้ใช้ครั้งถัดไป และตั้งเป็นค่าเริ่มต้น"
           />
-          <span className="sop-body-sm-regular text-sop-neutral-gray-200">
-            บันทึกไว้ใช้ครั้งถัดไป และตั้งเป็นค่าเริ่มต้น
-          </span>
+          <span className="sop-body-sm-regular text-sop-neutral-gray-200">ตั้งเป็นค่าเริ่มต้น</span>
         </label>
       ) : null}
 

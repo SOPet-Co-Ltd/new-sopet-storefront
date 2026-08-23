@@ -62,6 +62,8 @@ export type CheckoutContextValue = CheckoutState & {
   setPromotionFreeUnits: (freeUnits: number | null) => void;
   setPromotionProductId: (productId: string | null) => void;
   setStorePromotion: (storeId: string, promotion: StorePromotionSelection) => void;
+  /** Atomic multi-store write — keeps sibling lanes intact (N-store auto-apply / manual). */
+  setStorePromotions: (updates: Record<string, StorePromotionSelection>) => void;
   setPaymentMethod: (method: PaymentMethod | null) => void;
   setRequiredStoreIds: (storeIds: string[]) => void;
   canAdvanceToPayment: () => boolean;
@@ -172,6 +174,16 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const setStorePromotions = useCallback((updates: Record<string, StorePromotionSelection>) => {
+    setState((prev) => ({
+      ...prev,
+      storePromotionsByStoreId: {
+        ...prev.storePromotionsByStoreId,
+        ...updates,
+      },
+    }));
+  }, []);
+
   const setPaymentMethod = useCallback((method: PaymentMethod | null) => {
     setState((prev) => ({ ...prev, paymentMethod: method }));
   }, []);
@@ -195,6 +207,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setPromotionFreeUnits,
       setPromotionProductId,
       setStorePromotion,
+      setStorePromotions,
       setPaymentMethod,
       setRequiredStoreIds,
       canAdvanceToPayment,
@@ -214,6 +227,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       setPromotionFreeUnits,
       setPromotionProductId,
       setStorePromotion,
+      setStorePromotions,
       setPaymentMethod,
       setRequiredStoreIds,
       canAdvanceToPayment,

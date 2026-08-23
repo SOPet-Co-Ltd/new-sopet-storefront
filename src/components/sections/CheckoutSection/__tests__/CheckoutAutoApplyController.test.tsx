@@ -79,6 +79,7 @@ const mockCheckout = {
   setPromotionFreeUnits: vi.fn(),
   setPromotionProductId: vi.fn(),
   setStorePromotion: vi.fn(),
+  setStorePromotions: vi.fn(),
 };
 
 vi.mock('@/lib/providers/CheckoutProvider', () => ({
@@ -205,7 +206,7 @@ describe('CheckoutAutoApplyController', () => {
     });
 
     expect(mockCheckout.setPromotion).toHaveBeenCalledWith(null);
-    expect(mockCheckout.setStorePromotion).toHaveBeenCalledWith('store-a', null);
+    expect(mockCheckout.setStorePromotions).toHaveBeenCalledWith({ 'store-a': null });
     expect(runCheckoutAutoApply).toHaveBeenCalledWith(
       expect.objectContaining({
         promotionCode: null,

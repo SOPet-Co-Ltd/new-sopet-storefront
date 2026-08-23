@@ -14,14 +14,17 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
+import { parseCardExpiry } from '@/lib/payment/omise';
 import { cn } from '@/lib/utils';
 import { CardPaymentForm } from './CardPaymentForm';
 import {
   createCheckoutCardPaymentBridge,
   EMPTY_CHECKOUT_CARD_FORM,
   registerCheckoutCardPaymentBridge,
+  validateCheckoutCardForm,
   type CheckoutCardFormState,
 } from './checkoutCardPaymentBridge';
+import { cleanCardNumber, detectCardBrand } from './paymentFormat';
 import { PaymentMethodRadio } from './PaymentMethodRadio';
 import { SavedPaymentMethodOption } from './SavedPaymentMethodOption';
 
@@ -108,7 +111,7 @@ function resolveDefaultSavedCardId(
 export function CheckoutPaymentSelection() {
   const { paymentMethod, setPaymentMethod, isSubmitting } = useCheckout();
   const { isAuthenticated } = useAuth();
-  const { paymentMethods } = usePaymentMethods();
+  const { paymentMethods, addPaymentMethod } = usePaymentMethods();
   const { data: bankTransferData, loading: bankTransferLoading } = useQuery(
     BankTransferDetailsDocument,
     { fetchPolicy: 'cache-first' },
@@ -126,6 +129,7 @@ export function CheckoutPaymentSelection() {
   const [cardEntryMode, setCardEntryMode] = useState<CardEntryMode>('new');
   const [selectedSavedCardId, setSelectedSavedCardId] = useState<string | null>(null);
   const [saveCardForNextTime, setSaveCardForNextTime] = useState(false);
+  const [isSavingCard, setIsSavingCard] = useState(false);
   const cardFormRef = useRef(cardForm);
   const cardEntryModeRef = useRef(cardEntryMode);
   const selectedSavedCardIdRef = useRef(selectedSavedCardId);
@@ -230,6 +234,57 @@ export function CheckoutPaymentSelection() {
     clearCardForm();
   }, [clearCardForm, isSubmitting]);
 
+  const handleSaveCard = useCallback(async () => {
+    if (isSubmitting || isSavingCard) {
+      return;
+    }
+
+    const validationError = validateCheckoutCardForm(cardForm);
+    if (validationError) {
+      setCardFormError(validationError);
+      return;
+    }
+
+    setIsSavingCard(true);
+    setCardFormError(null);
+
+    try {
+      const { tokenizeCard } = await import('@/lib/payment/omise');
+      const { month, year } = parseCardExpiry(cardForm.expiry);
+      const digits = cleanCardNumber(cardForm.cardNumber);
+      const omiseToken = await tokenizeCard({
+        number: digits,
+        expirationMonth: month,
+        expirationYear: year,
+        securityCode: cardForm.cvv,
+        name: cardForm.cardName.trim(),
+      });
+
+      const brand = detectCardBrand(cardForm.cardNumber);
+      const lastFour = digits.slice(-4);
+
+      const saved = await addPaymentMethod({
+        omiseCardToken: omiseToken,
+        brand,
+        lastFour,
+        expiryMonth: month,
+        expiryYear: year,
+      });
+
+      clearCardForm();
+      setCardEntryMode('saved');
+      if (saved?.id) {
+        setSelectedSavedCardId(saved.id);
+      }
+    } catch (error) {
+      setCardFormError(
+        error instanceof Error ? error.message : 'ไม่สามารถบันทึกบัตรได้ กรุณาลองใหม่อีกครั้ง',
+      );
+    } finally {
+      setIsSavingCard(false);
+    }
+  }, [addPaymentMethod, cardForm, clearCardForm, isSavingCard, isSubmitting]);
+
   return (
     <div
       className="mb-sop-16px min-h-60 w-full rounded-sop-20 bg-sop-base-white p-sop-24px"
@@ -303,15 +358,29 @@ export function CheckoutPaymentSelection() {
             {showNewCardForm ? (
               <div className="flex flex-col gap-sop-20px">
                 {cardEntryMode === 'new' && hasSavedCards ? (
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={handleBackToSavedCards}
-                    className="flex items-center gap-sop-8px text-sop-neutral-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <LeftArrowIcon size={{ mobile: 16 }} color="currentColor" />
-                    <span className="sop-body-md-medium">เพิ่มบัตรใหม่</span>
-                  </button>
+                  <div className="flex items-center justify-between gap-sop-12px">
+                    <button
+                      type="button"
+                      disabled={isSubmitting || isSavingCard}
+                      onClick={handleBackToSavedCards}
+                      className="flex items-center gap-sop-8px text-sop-neutral-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <LeftArrowIcon size={{ mobile: 16 }} color="currentColor" />
+                      <span className="sop-body-md-medium">เพิ่มบัตรใหม่</span>
+                    </button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      rounded="full"
+                      disabled={isSubmitting || isSavingCard}
+                      data-testid="checkout-save-card-button"
+                      onClick={handleSaveCard}
+                      className="h-8 border-sop-secondary-500 px-sop-20px text-sop-secondary-500 hover:bg-sop-secondary-50"
+                    >
+                      {isSavingCard ? 'กำลังบันทึก...' : 'บันทึก'}
+                    </Button>
+                  </div>
                 ) : (
                   <p className="sop-body-md-regular text-sop-neutral-gray-300">ข้อมูลบัตรของคุณ</p>
                 )}{' '}

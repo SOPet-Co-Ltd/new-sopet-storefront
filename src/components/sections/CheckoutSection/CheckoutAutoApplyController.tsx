@@ -47,6 +47,7 @@ export function CheckoutAutoApplyController() {
     setPromotionFreeUnits,
     setPromotionProductId,
     setStorePromotion,
+    setStorePromotions,
   } = useCheckout();
 
   // client.query (not useLazyQuery) — auto-apply validates platform + stores in parallel;
@@ -57,6 +58,7 @@ export function CheckoutAutoApplyController() {
         query: ValidatePromotionDocument,
         variables: { input },
         fetchPolicy: 'no-cache',
+        context: { queryDeduplication: false },
       });
       return result.data?.validatePromotion;
     },
@@ -75,13 +77,16 @@ export function CheckoutAutoApplyController() {
   const prevFingerprintRef = useRef<string | null>(null);
   const promotionCodeRef = useRef(promotionCode);
   const storePromotionsRef = useRef(storePromotionsByStoreId);
+  const shippingByStoreIdRef = useRef(shippingByStoreId);
 
-  // Keep C1 snapshots current without putting promotion state in the auto-apply deps
-  // (applying a sibling store code must not re-enter the orchestrator).
+  // Keep C1 / shipping snapshots current without putting promotion or shipping
+  // state in the auto-apply deps (sibling store writes / per-store shipping
+  // defaults must not re-enter the orchestrator).
   useEffect(() => {
     promotionCodeRef.current = promotionCode;
     storePromotionsRef.current = storePromotionsByStoreId;
-  }, [promotionCode, storePromotionsByStoreId]);
+    shippingByStoreIdRef.current = shippingByStoreId;
+  }, [promotionCode, storePromotionsByStoreId, shippingByStoreId]);
 
   const cartFingerprint = useMemo(
     () =>
@@ -154,8 +159,12 @@ export function CheckoutAutoApplyController() {
         ...Object.keys(storePromotionsRef.current),
         ...selectedItemsByStore.map((group) => group.storeId),
       ]);
-      for (const storeId of storeIdsToClear) {
-        setStorePromotion(storeId, null);
+      if (storeIdsToClear.size > 0) {
+        const clears: Record<string, null> = {};
+        for (const storeId of storeIdsToClear) {
+          clears[storeId] = null;
+        }
+        setStorePromotions(clears);
       }
     }
 
@@ -169,8 +178,9 @@ export function CheckoutAutoApplyController() {
         toPromotionEstimateCartLines(group.items),
       ]),
     );
+    const shippingSnapshot = shippingByStoreIdRef.current;
     const storeShippingFees = Object.fromEntries(
-      storeIds.map((storeId) => [storeId, shippingByStoreId[storeId]?.shippingFee ?? 0]),
+      storeIds.map((storeId) => [storeId, shippingSnapshot[storeId]?.shippingFee ?? 0]),
     );
     const platformShippingFee = Object.values(storeShippingFees).reduce((sum, fee) => sum + fee, 0);
 
@@ -196,6 +206,7 @@ export function CheckoutAutoApplyController() {
           setPromotionFreeUnits,
           setPromotionProductId,
           setStorePromotion,
+          setStorePromotions,
         });
       } catch {
         // Soft-fail entire attempt — still settle once-gate below.
@@ -220,7 +231,7 @@ export function CheckoutAutoApplyController() {
     setPromotionFreeUnits,
     setPromotionProductId,
     setStorePromotion,
-    shippingByStoreId,
+    setStorePromotions,
   ]);
 
   return null;

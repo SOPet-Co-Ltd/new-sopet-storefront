@@ -33,6 +33,7 @@ export type AutoApplyApolloClient = {
     query: typeof ActiveStorePromotionsDocument | typeof ActivePlatformPromotionsDocument;
     variables?: { storeId?: string } | Record<string, never>;
     fetchPolicy?: 'network-only' | 'cache-first' | 'no-cache' | 'cache-only';
+    context?: { queryDeduplication?: boolean };
   }) => Promise<unknown>;
 };
 
@@ -43,7 +44,16 @@ function snapshotPromotionList(
   if (!promotions?.length) {
     return [];
   }
-  return promotions.map((promo) => ({ ...promo }));
+  // Explicit fields (not object spread) so live Apollo proxies cannot leak into later stores.
+  return promotions.map((promo) => ({
+    id: promo.id,
+    code: promo.code,
+    name: promo.name,
+    type: promo.type,
+    priority: promo.priority,
+    autoApply: promo.autoApply,
+    conditions: promo.conditions,
+  }));
 }
 
 function readAutoApplyQueryData(result: unknown):
@@ -102,6 +112,11 @@ export type RunCheckoutAutoApplyParams = {
   setPromotionFreeUnits: (freeUnits: number | null) => void;
   setPromotionProductId: (productId: string | null) => void;
   setStorePromotion: (storeId: string, promotion: StorePromotionSelection) => void;
+  /**
+   * Preferred N-store write — one state update for every store winner.
+   * Falls back to repeated `setStorePromotion` when omitted (tests / older callers).
+   */
+  setStorePromotions?: (updates: Record<string, StorePromotionSelection>) => void;
 };
 
 export type RunCheckoutAutoApplyResult = {
@@ -188,20 +203,16 @@ function applyPlatformWinner(
   setters.setPromotionProductId(productId);
 }
 
-function applyStoreWinner(
-  storeId: string,
-  winner: ScoredWithConditions,
-  setStorePromotion: RunCheckoutAutoApplyParams['setStorePromotion'],
-): void {
+function buildStorePromotionSelection(winner: ScoredWithConditions): StorePromotionSelection {
   const productId = parseStorePromotionConditions(winner.listConditions).productId ?? null;
-  setStorePromotion(storeId, {
+  return {
     code: winner.validation.code,
     name: winner.validation.name,
     discountAmount: winner.validation.discountAmount,
     type: winner.type ?? null,
     freeUnits: winner.validation.freeUnits ?? null,
     productId,
-  });
+  };
 }
 
 async function fetchPlatformList(
@@ -216,12 +227,13 @@ async function fetchPlatformList(
     }
 
     // Prefer imperative client.query when available (closes hook readiness race).
-    // no-cache: overlapping store/platform fetches must not share a live cache result.
+    // no-cache + no dedupe: each store/platform fetch must be an independent round-trip.
     if (params.client) {
       const result = await params.client.query({
         query: ActivePlatformPromotionsDocument,
         variables: {},
         fetchPolicy: 'no-cache',
+        context: { queryDeduplication: false },
       });
       return snapshotPromotionList(readAutoApplyQueryData(result)?.activePlatformPromotions);
     }
@@ -249,6 +261,7 @@ async function fetchStoreList(
       query: ActiveStorePromotionsDocument,
       variables: { storeId },
       fetchPolicy: 'no-cache',
+      context: { queryDeduplication: false },
     });
 
     return snapshotPromotionList(readAutoApplyQueryData(result)?.activeStorePromotions);
@@ -289,8 +302,10 @@ export async function runCheckoutAutoApply(
   const listByStoreId = new Map(storeLists.map((entry) => [entry.storeId, entry.list]));
 
   let platformWinner: ScoredWithConditions | undefined;
-  const storeWinners: Array<{ storeId: string; winner: ScoredWithConditions }> = [];
+  const storeWinnerById = new Map<string, ScoredWithConditions>();
 
+  // Platform scoring overlaps store lanes; each store lane is scored one-at-a-time
+  // so N-store carts cannot cross validate results under load.
   const platformTask = (async () => {
     if (!platformEmpty) {
       return;
@@ -310,41 +325,56 @@ export async function runCheckoutAutoApply(
     }
   })();
 
-  const storeTasks = emptyStoreIds.map(async (storeId) => {
-    const list = listByStoreId.get(storeId);
-    if (list == null) {
-      return;
-    }
-
-    try {
-      const scored = await scoreLaneCandidates(list, {
-        subtotal: params.storeSubtotals[storeId] ?? 0,
-        storeId,
-        shippingFee: params.storeShippingFees?.[storeId] ?? 0,
-        lines: params.storeLinesByStoreId?.[storeId],
-        validatePromotion: params.validatePromotion,
-      });
-      const ranked = rankAutoApplyPromotions(scored);
-      const winner = ranked[0] as ScoredWithConditions | undefined;
-      if (!winner) {
-        return;
+  const storeTask = (async () => {
+    for (const storeId of emptyStoreIds) {
+      const list = listByStoreId.get(storeId);
+      if (list == null) {
+        continue;
       }
-      storeWinners.push({ storeId, winner });
-    } catch {
-      // Soft-fail store lane.
+
+      try {
+        const scored = await scoreLaneCandidates(list, {
+          subtotal: params.storeSubtotals[storeId] ?? 0,
+          storeId,
+          shippingFee: params.storeShippingFees?.[storeId] ?? 0,
+          lines: params.storeLinesByStoreId?.[storeId],
+          validatePromotion: params.validatePromotion,
+        });
+        const ranked = rankAutoApplyPromotions(scored);
+        const winner = ranked[0] as ScoredWithConditions | undefined;
+        if (!winner) {
+          continue;
+        }
+        storeWinnerById.set(storeId, winner);
+      } catch {
+        // Soft-fail store lane.
+      }
     }
-  });
+  })();
 
-  await Promise.all([platformTask, ...storeTasks]);
+  await Promise.all([platformTask, storeTask]);
 
-  // Apply after every lane has scored so sibling store writes land in one tick.
+  // Apply after every lane has scored. Store winners land in one provider write
+  // so sibling lanes cannot drop when N>2 or when shipping updates interleave.
   if (platformWinner) {
     applyPlatformWinner(platformWinner, params);
     appliedPlatformCode = platformWinner.validation.code;
   }
-  for (const { storeId, winner } of storeWinners) {
-    applyStoreWinner(storeId, winner, params.setStorePromotion);
-    appliedStoreCodes[storeId] = winner.validation.code;
+
+  if (storeWinnerById.size > 0) {
+    const updates: Record<string, StorePromotionSelection> = {};
+    for (const [storeId, winner] of storeWinnerById) {
+      updates[storeId] = buildStorePromotionSelection(winner);
+      appliedStoreCodes[storeId] = winner.validation.code;
+    }
+
+    if (params.setStorePromotions) {
+      params.setStorePromotions(updates);
+    } else {
+      for (const [storeId, promotion] of Object.entries(updates)) {
+        params.setStorePromotion(storeId, promotion);
+      }
+    }
   }
 
   return {

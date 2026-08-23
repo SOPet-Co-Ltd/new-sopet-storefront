@@ -290,4 +290,49 @@ describe('runCheckoutAutoApply', () => {
       expect.objectContaining({ code: 'STORE_B' }),
     );
   });
+
+  it('auto-applies independent winners for three or more stores in one batch write', async () => {
+    const setStorePromotions = vi.fn();
+    const setters = createSetters();
+
+    const result = await runCheckoutAutoApply(
+      baseParams({
+        storeIds: ['store-a', 'store-b', 'store-c'],
+        storeSubtotals: { 'store-a': 200, 'store-b': 300, 'store-c': 400 },
+        platformPromotions: [],
+        fetchStorePromotions: async (storeId) => {
+          if (storeId === 'store-a') {
+            return [promo({ id: 'a', code: 'STORE_A', priority: 1 })];
+          }
+          if (storeId === 'store-b') {
+            return [promo({ id: 'b', code: 'STORE_B', priority: 1 })];
+          }
+          return [promo({ id: 'c', code: 'STORE_C', priority: 1 })];
+        },
+        validatePromotion: async (input) => {
+          const amounts: Record<string, number> = {
+            STORE_A: 25,
+            STORE_B: 35,
+            STORE_C: 45,
+          };
+          return validation(input.code, amounts[input.code] ?? 0);
+        },
+        ...setters,
+        setStorePromotions,
+      }),
+    );
+
+    expect(result.appliedStoreCodes).toEqual({
+      'store-a': 'STORE_A',
+      'store-b': 'STORE_B',
+      'store-c': 'STORE_C',
+    });
+    expect(setStorePromotions).toHaveBeenCalledTimes(1);
+    expect(setStorePromotions).toHaveBeenCalledWith({
+      'store-a': expect.objectContaining({ code: 'STORE_A', discountAmount: 25 }),
+      'store-b': expect.objectContaining({ code: 'STORE_B', discountAmount: 35 }),
+      'store-c': expect.objectContaining({ code: 'STORE_C', discountAmount: 45 }),
+    });
+    expect(setters.setStorePromotion).not.toHaveBeenCalled();
+  });
 });

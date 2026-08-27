@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CheckIcon, RightArrowIcon, TicketSaleIcon, TruckIcon } from '@/components/atoms/icons';
 import { toPromotionEstimateCartLines } from '@/lib/checkout/storePromotionUtils';
+import { resolveStorePromoDiscount } from '@/lib/checkout/checkoutTotalsUtils';
 import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useShippingOptions } from '@/lib/hooks/useShippingOptions';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
@@ -78,7 +79,8 @@ export function CheckoutStoreActionsRow({
   }, [selectedItemsByStore, storeId]);
 
   const appliedPromotion = storePromotionsByStoreId[storeId] ?? null;
-  const appliedDiscountAmount = appliedPromotion?.discountAmount ?? 0;
+  const selectedShippingFee = shippingByStoreId[storeId]?.shippingFee ?? 0;
+  const appliedDiscountAmount = resolveStorePromoDiscount(appliedPromotion, selectedShippingFee);
 
   const selectedOptionId = shippingByStoreId[storeId]?.shippingOptionId ?? null;
   const selectedOption = options.find((option) => option.id === selectedOptionId) ?? null;

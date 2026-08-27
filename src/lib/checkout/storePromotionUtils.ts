@@ -22,6 +22,10 @@ export type StorePromotionSelection = {
   discountAmount: number;
   /** Promotion type from catalog — used to stack shipping discounts vs fee. */
   type?: string | null;
+  /** Catalog discountValue — recompute shipping promos when fee changes. */
+  discountValue?: number | null;
+  /** Catalog maxDiscountAmount — cap for percentage shipping promos. */
+  maxDiscountAmount?: number | null;
   /** Server validatePromotion.freeUnits only — Gate A line badges (task-09). */
   freeUnits?: number | null;
   /** BxGy product P for Gate A free-unit line allocation (from conditions). */

@@ -7,6 +7,8 @@ export type AutoApplyCandidate = {
   autoApply: boolean;
   name?: string | null;
   type?: string | null;
+  discountValue?: number | null;
+  maxDiscountAmount?: number | null;
 };
 
 export type ScoredAutoApplyCandidate = AutoApplyCandidate & {

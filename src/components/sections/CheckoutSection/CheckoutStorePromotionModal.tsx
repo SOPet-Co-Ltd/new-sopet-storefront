@@ -311,6 +311,8 @@ export function CheckoutStorePromotionModal({
         name: result.name,
         discountAmount: result.discountAmount,
         type: matched?.type ?? null,
+        discountValue: matched?.discountValue ?? null,
+        maxDiscountAmount: matched?.maxDiscountAmount ?? null,
         freeUnits: result.freeUnits ?? null,
         productId,
       });

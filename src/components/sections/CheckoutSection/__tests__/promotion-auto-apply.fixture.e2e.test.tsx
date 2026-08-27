@@ -281,7 +281,12 @@ describe('Promotion auto-apply fixture-e2e', () => {
       const summaryRoot = screen.getByText('สรุปคำสั่งซื้อ').closest('div.w-full');
       expect(summaryRoot).toBeTruthy();
       expect(within(summaryRoot as HTMLElement).getByText('ส่วนลดแพลตฟอร์ม')).toBeInTheDocument();
-      expect(within(summaryRoot as HTMLElement).getByText('ส่วนลดร้านค้า')).toBeInTheDocument();
+      expect(
+        within(summaryRoot as HTMLElement).getByText(/ร้าน A \(AUTO_STORE_A\)/),
+      ).toBeInTheDocument();
+      expect(
+        within(summaryRoot as HTMLElement).getByText(/ร้าน B \(AUTO_STORE_B\)/),
+      ).toBeInTheDocument();
 
       expect(
         screen.queryByRole('status', { name: /auto-apply|อัตโนมัติ/i }),

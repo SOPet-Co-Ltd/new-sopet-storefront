@@ -47,10 +47,28 @@ export function resolveStorePromoDiscount(
   const raw = Math.max(0, promotion.discountAmount ?? 0);
 
   if (isShippingPromotionType(promotion.type)) {
+    let discountAmount = 0;
+
     if (promotion.type === 'free_shipping') {
-      return cappedStoreFee;
+      discountAmount = cappedStoreFee;
+    } else if (promotion.type === 'fixed_shipping_discount') {
+      const fixedValue = promotion.discountValue ?? raw;
+      discountAmount = fixedValue;
+    } else if (promotion.type === 'percentage_shipping_discount') {
+      if (promotion.discountValue != null) {
+        discountAmount = (cappedStoreFee * promotion.discountValue) / 100;
+      } else {
+        discountAmount = raw;
+      }
+    } else {
+      discountAmount = raw;
     }
-    return Math.min(raw, cappedStoreFee);
+
+    if (promotion.maxDiscountAmount != null) {
+      discountAmount = Math.min(discountAmount, promotion.maxDiscountAmount);
+    }
+
+    return Math.min(discountAmount, cappedStoreFee);
   }
 
   return raw;

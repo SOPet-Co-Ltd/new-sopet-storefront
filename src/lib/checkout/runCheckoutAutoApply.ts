@@ -22,6 +22,8 @@ export type AutoApplyListPromotion = {
   code: string;
   name?: string | null;
   type?: string | null;
+  discountValue?: number | null;
+  maxDiscountAmount?: number | null;
   priority?: number | null;
   autoApply?: boolean | null;
   conditions?: string | null;
@@ -50,6 +52,8 @@ function snapshotPromotionList(
     code: promo.code,
     name: promo.name,
     type: promo.type,
+    discountValue: promo.discountValue,
+    maxDiscountAmount: promo.maxDiscountAmount,
     priority: promo.priority,
     autoApply: promo.autoApply,
     conditions: promo.conditions,
@@ -138,6 +142,8 @@ function toCandidate(promo: AutoApplyListPromotion): AutoApplyCandidate {
     autoApply: promo.autoApply === true,
     name: promo.name,
     type: promo.type,
+    discountValue: promo.discountValue,
+    maxDiscountAmount: promo.maxDiscountAmount,
   };
 }
 
@@ -210,6 +216,8 @@ function buildStorePromotionSelection(winner: ScoredWithConditions): StorePromot
     name: winner.validation.name,
     discountAmount: winner.validation.discountAmount,
     type: winner.type ?? null,
+    discountValue: winner.discountValue ?? null,
+    maxDiscountAmount: winner.maxDiscountAmount ?? null,
     freeUnits: winner.validation.freeUnits ?? null,
     productId,
   };

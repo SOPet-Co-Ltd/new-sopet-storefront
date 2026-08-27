@@ -123,7 +123,83 @@ describe('calculateCheckoutTotals', () => {
 
     expect(totals.platformPromotionDiscount).toBe(50);
     expect(totals.storeDiscountTotal).toBe(85.6);
+    expect(totals.storeDiscountByStoreId['store-1']).toBe(85.6);
     expect(totals.totalDiscount).toBe(135.6);
     expect(totals.finalPrice).toBe(770.4);
+  });
+
+  it('does not let a stale store shipping discount leak into another store fee', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 500,
+      itemCount: 2,
+      storeIds: ['store-a', 'store-b'],
+      shippingByStoreId: {
+        'store-a': { shippingOptionId: 'ship-cheap', shippingFee: 30 },
+        'store-b': { shippingOptionId: 'ship-1', shippingFee: 40 },
+      },
+      storePromotionsByStoreId: {
+        'store-a': {
+          code: 'FREESHIP',
+          name: 'Free shipping',
+          discountAmount: 50,
+          type: 'free_shipping',
+        },
+      },
+      platformPromotionDiscount: 0,
+    });
+
+    expect(totals.storeDiscountByStoreId['store-a']).toBe(30);
+    expect(totals.storeDiscountTotal).toBe(30);
+    expect(totals.shippingFeeTotal).toBe(70);
+    expect(totals.finalPrice).toBe(540);
+  });
+
+  it('recomputes free shipping discount when store fee increases after apply', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 200,
+      itemCount: 1,
+      storeIds: ['store-1'],
+      shippingByStoreId: {
+        'store-1': { shippingOptionId: 'ship-express', shippingFee: 80 },
+      },
+      storePromotionsByStoreId: {
+        'store-1': {
+          code: 'FREESHIP',
+          name: 'Free shipping',
+          discountAmount: 50,
+          type: 'free_shipping',
+        },
+      },
+      platformPromotionDiscount: 0,
+    });
+
+    expect(totals.storeDiscountByStoreId['store-1']).toBe(80);
+    expect(totals.storeDiscountTotal).toBe(80);
+    expect(totals.finalPrice).toBe(200);
+  });
+
+  it('caps fixed shipping discount to the store own fee in multi-store checkout', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 400,
+      itemCount: 2,
+      storeIds: ['store-a', 'store-b'],
+      shippingByStoreId: {
+        'store-a': { shippingOptionId: 'ship-1', shippingFee: 20 },
+        'store-b': { shippingOptionId: 'ship-1', shippingFee: 45 },
+      },
+      storePromotionsByStoreId: {
+        'store-a': {
+          code: 'SHIP30',
+          name: 'Fixed ship discount',
+          discountAmount: 30,
+          type: 'fixed_shipping_discount',
+        },
+      },
+      platformPromotionDiscount: 0,
+    });
+
+    expect(totals.storeDiscountByStoreId['store-a']).toBe(20);
+    expect(totals.storeDiscountTotal).toBe(20);
+    expect(totals.finalPrice).toBe(445);
   });
 });

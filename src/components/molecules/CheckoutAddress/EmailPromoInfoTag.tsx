@@ -5,7 +5,7 @@ export function EmailPromoInfoTag() {
       data-testid="email-promo-tag"
     >
       <span aria-hidden="true">📩 </span>
-      กรอกอีเมล เพื่อรับอัปเดตจาก Sopet ก่อนใคร
+      กรอกอีเมล เพื่อรับข้อมูลการสั่งซื้อ
     </div>
   );
 }

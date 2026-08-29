@@ -87,14 +87,10 @@ export function Footer() {
 
       <div
         className={cn(
-          'flex w-full items-center',
+          'sop-gradient-01 flex w-full items-center',
           'px-sop-16px py-sop-16px md:px-sop-32px lg:px-sop-80px',
           'flex-col gap-sop-12px md:flex-row md:justify-between',
         )}
-        style={{
-          backgroundImage:
-            'linear-gradient(90deg, var(--color-sop-primary-500) 0%, var(--color-sop-secondary-500) 100%)',
-        }}
       >
         <p className="sop-body-xs-regular text-center text-sop-base-white md:text-left">
           {COMPANY_INFO.copyright}

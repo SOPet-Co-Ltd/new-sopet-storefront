@@ -180,7 +180,7 @@ export function ChatWithAdminFloatingButton() {
             >
               <div className="flex items-center gap-2">
                 <span className="sop-body-md-medium whitespace-nowrap text-sop-neutral-gray-200">
-                  ติดต่อแอดมิน
+                  ปรึกษา / ติดต่อแอดมิน
                 </span>
                 {statusDot()}
               </div>

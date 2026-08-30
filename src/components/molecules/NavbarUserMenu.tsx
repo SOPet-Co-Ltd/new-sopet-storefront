@@ -2,7 +2,18 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useId, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ComponentType,
+  type ReactNode,
+} from 'react';
+import { createPortal } from 'react-dom';
+
+const subscribeIsClient = () => () => {};
 
 import { useAuth } from '@/lib/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -289,7 +300,23 @@ function NavbarUserMenuDesktop() {
 function NavbarUserMenuMobile() {
   const { customer, isAuthenticated, isLoading, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const isClient = useSyncExternalStore(
+    subscribeIsClient,
+    () => true,
+    () => false,
+  );
   const panelId = useId();
+
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
 
   if (isLoading) {
     return (
@@ -299,6 +326,79 @@ function NavbarUserMenuMobile() {
 
   const displayName = customer ? getDisplayName(customer) : '';
   const firstName = getFirstName(displayName);
+
+  const drawerContent = (
+    <div
+      role="presentation"
+      aria-hidden={!open}
+      className={cn(
+        'fixed inset-0 z-50 bg-black/40 transition-opacity duration-200 ease-out',
+        open ? 'opacity-100' : 'pointer-events-none opacity-0',
+      )}
+      onClick={() => setOpen(false)}
+    >
+      <section
+        id={panelId}
+        role="dialog"
+        aria-modal="true"
+        aria-label="เมนูผู้ใช้"
+        onClick={(event) => event.stopPropagation()}
+        className={cn(
+          'absolute top-0 right-0 z-10 h-full h-dvh w-[75%] max-w-xs overflow-y-auto bg-sop-base-white shadow-2xl',
+          'transition duration-200 ease-out',
+          open ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-full opacity-0',
+        )}
+      >
+        <div className="flex h-[92px] items-end justify-end px-[17px] py-[21px]">
+          <button
+            type="button"
+            className="inline-flex aspect-square min-h-[32px] min-w-[32px] items-center justify-center rounded-xl bg-sop-primary-500 p-sop-8px cursor-pointer"
+            aria-label="ปิดเมนูผู้ใช้"
+            onClick={() => setOpen(false)}
+          >
+            <CloseIcon size={{ mobile: 16, desktop: 16 }} color="#fff" />
+          </button>
+        </div>
+
+        <div className="flex flex-col">
+          {!isAuthenticated || !customer ? (
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-3 bg-sop-primary-200 px-4 py-2.5"
+            >
+              <SignInIcon size={{ mobile: 14, desktop: 14 }} color="#454547" />
+              <p className="sop-body-sm-regular">เข้าสู่ระบบ</p>
+            </Link>
+          ) : (
+            <>
+              <div className="mb-5 flex h-sop-56px items-center gap-sop-16px px-4">
+                <UserAvatar customer={customer} size="small" />
+                <span className="sop-body-sm-regular">{firstName}</span>
+              </div>
+              {NAVBAR_MENU_ITEMS.map((item) => (
+                <NavbarMenuLink
+                  key={item.href}
+                  item={item}
+                  mobile
+                  onNavigate={() => setOpen(false)}
+                />
+              ))}
+              <MobileListItem
+                icon={<SignOutIcon size={{ mobile: 14, desktop: 14 }} color="#454547" />}
+                label="ออกจากระบบ"
+                separator
+                onClick={async () => {
+                  setOpen(false);
+                  await logout();
+                }}
+              />
+            </>
+          )}
+        </div>
+      </section>
+    </div>
+  );
 
   return (
     <div className="block md:hidden">
@@ -314,76 +414,7 @@ function NavbarUserMenuMobile() {
         </button>
       </div>
 
-      <div
-        role="presentation"
-        aria-hidden={!open}
-        className={cn(
-          'fixed inset-0 z-10 bg-black/20 transition-opacity duration-200 ease-out',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0',
-        )}
-        onClick={() => setOpen(false)}
-      >
-        <section
-          id={panelId}
-          role="dialog"
-          aria-modal="true"
-          aria-label="เมนูผู้ใช้"
-          onClick={(event) => event.stopPropagation()}
-          className={cn(
-            'absolute top-0 right-0 z-10 h-full w-[75%] bg-sop-base-white',
-            'transition duration-200 ease-out',
-            open ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-full opacity-0',
-          )}
-        >
-          <div className="flex h-[92px] items-end justify-end px-[17px] py-[21px]">
-            <button
-              type="button"
-              className="inline-flex aspect-square min-h-[32px] min-w-[32px] items-center justify-center rounded-xl bg-sop-primary-500 p-sop-8px"
-              aria-label="ปิดเมนูผู้ใช้"
-              onClick={() => setOpen(false)}
-            >
-              <CloseIcon size={{ mobile: 16, desktop: 16 }} color="#fff" />
-            </button>
-          </div>
-
-          <div className="flex flex-col">
-            {!isAuthenticated || !customer ? (
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="flex w-full items-center gap-3 bg-sop-primary-200 px-4 py-2.5"
-              >
-                <SignInIcon size={{ mobile: 14, desktop: 14 }} color="#454547" />
-                <p className="sop-body-sm-regular">เข้าสู่ระบบ</p>
-              </Link>
-            ) : (
-              <>
-                <div className="mb-5 flex h-sop-56px items-center gap-sop-16px px-4">
-                  <UserAvatar customer={customer} size="small" />
-                  <span className="sop-body-sm-regular">{firstName}</span>
-                </div>
-                {NAVBAR_MENU_ITEMS.map((item) => (
-                  <NavbarMenuLink
-                    key={item.href}
-                    item={item}
-                    mobile
-                    onNavigate={() => setOpen(false)}
-                  />
-                ))}
-                <MobileListItem
-                  icon={<SignOutIcon size={{ mobile: 14, desktop: 14 }} color="#454547" />}
-                  label="ออกจากระบบ"
-                  separator
-                  onClick={async () => {
-                    setOpen(false);
-                    await logout();
-                  }}
-                />
-              </>
-            )}
-          </div>
-        </section>
-      </div>
+      {isClient ? createPortal(drawerContent, document.body) : null}
     </div>
   );
 }

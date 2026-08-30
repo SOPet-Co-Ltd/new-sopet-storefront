@@ -337,6 +337,7 @@ export function AddressManagementModal({
   const renderFormView = (mode: 'add' | 'edit') => (
     <div
       data-testid={mode === 'add' ? 'address-modal-add' : `address-modal-edit-${editingAddressId}`}
+      className="pb-4"
     >
       <ShippingAddressFields
         values={formValues}
@@ -383,7 +384,7 @@ export function AddressManagementModal({
   );
 
   const renderDeleteView = () => (
-    <div data-testid="address-delete-confirm">
+    <div data-testid="address-delete-confirm" className="pb-4">
       <p className="sop-body-sm-regular text-sop-neutral-gray-300">
         คุณต้องการลบที่อยู่นี้หรือไม่?
       </p>

@@ -103,4 +103,23 @@ describe('NavbarUserMenu', () => {
     const profileLink = screen.getByRole('link', { name: 'ข้อมูลส่วนตัว' });
     expect(profileLink.querySelector('svg')).toBeTruthy();
   });
+
+  it('opens and closes mobile user menu drawer with full navigation items', async () => {
+    const user = userEvent.setup();
+    mockedUseAuth.mockReturnValue(authenticatedAuth);
+
+    render(<NavbarUserMenu variant="mobile" />);
+
+    const openButton = screen.getByRole('button', { name: 'เปิดเมนูผู้ใช้' });
+    expect(openButton).toBeInTheDocument();
+
+    await user.click(openButton);
+
+    expect(screen.getByRole('dialog', { name: 'เมนูผู้ใช้' })).toBeInTheDocument();
+    expect(screen.getByText('สมชาย')).toBeInTheDocument();
+
+    const closeButtons = screen.getAllByRole('button', { name: 'ปิดเมนูผู้ใช้' });
+    expect(closeButtons.length).toBeGreaterThanOrEqual(1);
+    await user.click(closeButtons[closeButtons.length - 1]);
+  });
 });

@@ -1,36 +1,11 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BackIcon, LineSquareCustomIcon, QrAddLineOAIcon } from '@/components/atoms/icons';
 import { cn } from '@/lib/utils';
 
 const LINE_OA_URL = 'https://line.me/R/ti/p/@sopet';
 const LINE_ID = '@sopet';
-const TRANSITION_DURATION_MS = 500;
-const TRANSITION_EASE = 'cubic-bezier(0.4,0,0.2,1)';
-
-function useCollapsedWidth(cardRef: React.RefObject<HTMLDivElement | null>, isQrOpen: boolean) {
-  const [collapsedWidth, setCollapsedWidth] = useState<number | null>(null);
-  useLayoutEffect(() => {
-    if (isQrOpen) return;
-    const card = cardRef.current;
-    if (!card) return;
-    const measure = () => {
-      if (isQrOpen) return;
-      const prev = card.style.width;
-      card.style.width = '';
-      const measured = card.offsetWidth;
-      card.style.width = prev;
-      if (measured > 0) {
-        setCollapsedWidth(measured);
-      }
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [cardRef, isQrOpen]);
-  return collapsedWidth;
-}
 
 function useOverlapDetection(buttonRef: React.RefObject<HTMLDivElement | null>) {
   const [overlapping, setOverlapping] = useState(false);
@@ -75,12 +50,10 @@ function useOverlapDetection(buttonRef: React.RefObject<HTMLDivElement | null>) 
 
 export function ChatWithAdminFloatingButton() {
   const buttonRef = useRef<HTMLDivElement | null>(null);
-  const cardRef = useRef<HTMLDivElement | null>(null);
   const lineButtonRef = useRef<HTMLButtonElement | null>(null);
   const backButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isQrOpen, setIsQrOpen] = useState(false);
 
-  const collapsedWidth = useCollapsedWidth(cardRef, isQrOpen);
   const overlapping = useOverlapDetection(buttonRef);
 
   useEffect(() => {
@@ -101,26 +74,12 @@ export function ChatWithAdminFloatingButton() {
     }
   }, [isQrOpen]);
 
-  const widthTransition =
-    collapsedWidth == null
-      ? undefined
-      : `width ${TRANSITION_DURATION_MS}ms ${TRANSITION_EASE} ${isQrOpen ? '0ms' : '400ms'}`;
-
-  const heightTransition = (() => {
-    const props = 'grid-template-rows, opacity, margin-top';
-    const delay = isQrOpen ? '400ms' : '0ms';
-    return props
-      .split(', ')
-      .map((p) => `${p} ${TRANSITION_DURATION_MS}ms ${TRANSITION_EASE} ${delay}`)
-      .join(', ');
-  })();
-
   const statusDot = (hidden?: string) => (
     <div
       aria-hidden="true"
       className={cn(
         hidden,
-        'w-2.5 h-2.5 rounded-full border border-solid border-sop-base-white bg-sop-system-success-400',
+        'w-2.5 h-2.5 rounded-full border border-solid border-sop-base-white bg-sop-system-success-400 shrink-0',
       )}
     />
   );
@@ -134,23 +93,15 @@ export function ChatWithAdminFloatingButton() {
       )}
     >
       <div
-        ref={cardRef}
         role="region"
         aria-label="ติดต่อแอดมินผ่าน LINE"
         className={cn(
-          'bg-sop-neutral-whitealpha-900 px-5 py-4 flex flex-col overflow-hidden',
+          'bg-sop-neutral-whitealpha-900 px-5 py-4 flex flex-col overflow-hidden transition-all duration-500 cubic-bezier(0.4,0,0.2,1)',
           'rounded-tl-sop-28px rounded-tr-sop-28px rounded-bl-sop-28px rounded-br-sop-4px',
           'ring-1 ring-inset ring-sop-neutral-whitealpha-300',
           'backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04),inset_1px_1px_24px_rgba(255,255,255,0.4)]',
+          isQrOpen ? 'w-[min(320px,calc(100vw-16px))]' : 'w-18 lg:w-[248px]',
         )}
-        style={{
-          width: isQrOpen
-            ? 'min(320px, calc(100vw - 16px))'
-            : collapsedWidth
-              ? `${collapsedWidth}px`
-              : undefined,
-          transition: widthTransition,
-        }}
       >
         <div className="flex items-center gap-2.5 transition-all duration-300 ease-out">
           {isQrOpen && (
@@ -159,7 +110,7 @@ export function ChatWithAdminFloatingButton() {
               type="button"
               onClick={() => setIsQrOpen(false)}
               aria-label="ปิดรายละเอียด LINE"
-              className="flex items-center justify-center cursor-pointer"
+              className="flex items-center justify-center cursor-pointer shrink-0"
             >
               <BackIcon size={{ mobile: 24, desktop: 24 }} />
             </button>
@@ -177,14 +128,14 @@ export function ChatWithAdminFloatingButton() {
               isQrOpen ? 'cursor-auto' : 'cursor-pointer',
             )}
           >
-            <div className="relative">
+            <div className="relative shrink-0">
               <LineSquareCustomIcon size={{ mobile: 32, desktop: 32 }} />
               {statusDot(isQrOpen ? 'hidden' : 'lg:hidden flex absolute -top-[3px] -right-[3px]')}
             </div>
             <div
               className={cn(
-                'flex-col -space-y-1 items-start',
-                isQrOpen ? 'flex' : 'hidden lg:flex',
+                'flex-col -space-y-1 items-start transition-opacity duration-300',
+                isQrOpen ? 'flex opacity-100' : 'hidden lg:flex lg:opacity-100',
               )}
             >
               <div className="flex items-center gap-2">
@@ -203,12 +154,11 @@ export function ChatWithAdminFloatingButton() {
         <div
           aria-hidden={!isQrOpen}
           className={cn(
-            'grid',
+            'grid transition-all duration-500 cubic-bezier(0.4,0,0.2,1)',
             isQrOpen
               ? 'grid-rows-[1fr] opacity-100 w-full mt-sop-12px'
               : 'grid-rows-[0fr] opacity-0 w-0 mt-0',
           )}
-          style={{ transition: heightTransition }}
         >
           <div className="overflow-hidden">
             <div className="flex flex-col gap-sop-12px">

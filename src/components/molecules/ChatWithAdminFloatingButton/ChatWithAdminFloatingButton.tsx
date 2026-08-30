@@ -9,21 +9,26 @@ const LINE_ID = '@sopet';
 const TRANSITION_DURATION_MS = 500;
 const TRANSITION_EASE = 'cubic-bezier(0.4,0,0.2,1)';
 
-function useCollapsedWidth(cardRef: React.RefObject<HTMLDivElement | null>) {
+function useCollapsedWidth(cardRef: React.RefObject<HTMLDivElement | null>, isQrOpen: boolean) {
   const [collapsedWidth, setCollapsedWidth] = useState<number | null>(null);
   useLayoutEffect(() => {
+    if (isQrOpen) return;
     const card = cardRef.current;
     if (!card) return;
     const measure = () => {
+      if (isQrOpen) return;
       const prev = card.style.width;
       card.style.width = '';
-      setCollapsedWidth(card.getBoundingClientRect().width);
+      const measured = card.offsetWidth;
       card.style.width = prev;
+      if (measured > 0) {
+        setCollapsedWidth(measured);
+      }
     };
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [cardRef]);
+  }, [cardRef, isQrOpen]);
   return collapsedWidth;
 }
 
@@ -75,7 +80,7 @@ export function ChatWithAdminFloatingButton() {
   const backButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isQrOpen, setIsQrOpen] = useState(false);
 
-  const collapsedWidth = useCollapsedWidth(cardRef);
+  const collapsedWidth = useCollapsedWidth(cardRef, isQrOpen);
   const overlapping = useOverlapDetection(buttonRef);
 
   useEffect(() => {
@@ -139,7 +144,11 @@ export function ChatWithAdminFloatingButton() {
           'backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.04),inset_1px_1px_24px_rgba(255,255,255,0.4)]',
         )}
         style={{
-          width: isQrOpen ? '320px' : collapsedWidth ? `${collapsedWidth}px` : undefined,
+          width: isQrOpen
+            ? 'min(320px, calc(100vw - 16px))'
+            : collapsedWidth
+              ? `${collapsedWidth}px`
+              : undefined,
           transition: widthTransition,
         }}
       >

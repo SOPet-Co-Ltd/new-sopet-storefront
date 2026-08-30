@@ -116,7 +116,7 @@ export default function CheckoutPage() {
   const [guestForm, setGuestForm] = useState<GuestCheckoutFormState>(EMPTY_GUEST_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<GuestCheckoutField, string>>>({});
   const [showFieldErrors, setShowFieldErrors] = useState(false);
-  const [saveAddressChecked, setSaveAddressChecked] = useState(false);
+  const [saveAddressChecked, setSaveAddressChecked] = useState(true);
 
   const addressSubmitContext = useMemo<AddressSubmitContext>(
     () => ({

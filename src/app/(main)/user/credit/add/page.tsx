@@ -1,6 +1,5 @@
 'use client';
 
-import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
@@ -12,6 +11,7 @@ import {
   type CheckoutCardFormState,
 } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import { cleanCardNumber } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import {
   loadOmise,
   OmiseConfigurationError,
@@ -21,15 +21,11 @@ import {
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 
 function getAddCardErrorMessage(error: unknown): string {
-  if (CombinedGraphQLErrors.is(error)) {
-    return error.errors[0]?.message ?? 'ไม่สามารถเพิ่มบัตรได้';
-  }
-
-  if (error instanceof Error) {
+  if (error instanceof OmiseConfigurationError) {
     return error.message;
   }
 
-  return 'ไม่สามารถเพิ่มบัตรได้';
+  return getErrorMessage(error, 'ไม่สามารถเพิ่มบัตรได้');
 }
 
 function detectCardBrand(cardNumber: string): string {

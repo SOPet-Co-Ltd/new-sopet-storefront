@@ -62,6 +62,8 @@ type CheckoutStorePromotionModalProps = {
   storeId: string;
   storeName: string;
   storeSubtotal: number;
+  /** This store's shipping fee for shipping-type promo preview/batch. */
+  shippingFee?: number;
   /** Cart lines for BxGy Rule A/B preview (optional; omit → BxGy estimate ฿0). */
   cartLines?: PromotionEstimateCartLine[];
   appliedPromotion: StorePromotionSelection;
@@ -74,13 +76,14 @@ export function CheckoutStorePromotionModal({
   storeId,
   storeName,
   storeSubtotal,
+  shippingFee = 0,
   cartLines,
   appliedPromotion,
   onClose,
   onConfirm,
 }: CheckoutStorePromotionModalProps) {
   const isMobile = useIsMobile(768);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const isGuest = !isAuthenticated;
   const { promotions, loading, error } = useActiveStorePromotions(isOpen ? storeId : null);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
@@ -135,9 +138,13 @@ export function CheckoutStorePromotionModal({
 
   const footerDiscountAmount = useMemo(() => {
     if (selection.type === 'none' || !selectedPromotion) return 0;
-    return estimatePromotionDiscount(selectedPromotion, storeSubtotal, cartLines);
-  }, [cartLines, selectedPromotion, selection, storeSubtotal]);
+    return estimatePromotionDiscount(selectedPromotion, storeSubtotal, cartLines, shippingFee);
+  }, [cartLines, selectedPromotion, selection, shippingFee, storeSubtotal]);
 
+  const listTimePending =
+    promotions.length > 0 && (batchStatus === 'idle' || batchStatus === 'loading');
+  // Hold skeleton until auth + catalog + list-time batch settle — avoids available/unavailable flash.
+  const showListSkeleton = authLoading || loading || listTimePending;
   const showApplyFooter = available.length > 0 || Boolean(appliedPromotion);
 
   // Reset modal state when it opens/closes, adjusting state during render
@@ -186,6 +193,7 @@ export function CheckoutStorePromotionModal({
       promotions,
       subtotal: storeSubtotal,
       storeId,
+      shippingFee,
       lines: cartLines,
     });
 
@@ -203,7 +211,17 @@ export function CheckoutStorePromotionModal({
     return () => {
       cancelled = true;
     };
-  }, [cartLines, error, isOpen, loading, promotions, storeId, storeSubtotal, validatePromotions]);
+  }, [
+    cartLines,
+    error,
+    isOpen,
+    loading,
+    promotions,
+    shippingFee,
+    storeId,
+    storeSubtotal,
+    validatePromotions,
+  ]);
 
   const handleApplyManualCode = async () => {
     const normalizedCode = manualCode.trim();
@@ -219,6 +237,7 @@ export function CheckoutStorePromotionModal({
         code: normalizedCode,
         subtotal: storeSubtotal,
         storeId,
+        shippingFee,
         lines: cartLines,
         validatePromotion,
       });
@@ -275,6 +294,7 @@ export function CheckoutStorePromotionModal({
         code: selection.code,
         subtotal: storeSubtotal,
         storeId,
+        shippingFee,
         lines: cartLines,
         validatePromotion,
       });
@@ -290,6 +310,9 @@ export function CheckoutStorePromotionModal({
         code: result.code,
         name: result.name,
         discountAmount: result.discountAmount,
+        type: matched?.type ?? null,
+        discountValue: matched?.discountValue ?? null,
+        maxDiscountAmount: matched?.maxDiscountAmount ?? null,
         freeUnits: result.freeUnits ?? null,
         productId,
       });
@@ -378,7 +401,7 @@ export function CheckoutStorePromotionModal({
                 size="lg"
                 rounded="full"
                 className="shrink-0 px-sop-24px"
-                disabled={isConfirming}
+                disabled={isConfirming || listTimePending}
                 loading={isConfirming}
                 onClick={() => {
                   void handleConfirm();
@@ -396,21 +419,21 @@ export function CheckoutStorePromotionModal({
         </div>
       }
     >
-      <div className="flex max-h-95 flex-col gap-sop-20px overflow-y-auto px-sop-16px pb-sop-16px">
-        {loading ? (
+      <div className="flex flex-col gap-sop-20px px-sop-16px pb-sop-16px">
+        {showListSkeleton ? (
           <div className="animate-pulse space-y-3 py-sop-20px">
             <div className="h-27.5 rounded-sop-20px bg-sop-neutral-gray-500" />
             <div className="h-27.5 rounded-sop-20px bg-sop-neutral-gray-500" />
           </div>
         ) : null}
 
-        {error ? (
+        {error && !showListSkeleton ? (
           <p className="sop-body-sm-regular text-sop-system-error-500">
             ไม่สามารถโหลดส่วนลดร้านค้าได้
           </p>
         ) : null}
 
-        {!loading ? (
+        {!showListSkeleton ? (
           <>
             {softEligibilityError ? <SoftEligibilityErrorBanner /> : null}
 
@@ -427,6 +450,7 @@ export function CheckoutStorePromotionModal({
                       promotion={promotion}
                       storeSubtotal={storeSubtotal}
                       selected={isSelected}
+                      disabled={listTimePending}
                       onSelect={() => setSelection({ type: 'promo', code: promotion.code })}
                     />
                   );

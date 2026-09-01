@@ -8,6 +8,7 @@ import {
   type SoftCustomerReason,
   type PromotionEstimateCartLine,
 } from '@/lib/checkout/storePromotionUtils';
+import { extractErrorCode } from '@/lib/errors/getErrorMessage';
 
 export class PromotionValidationError extends Error {
   constructor(message: string) {
@@ -33,6 +34,8 @@ export type ValidateCheckoutPromotionParams = {
   code: string;
   subtotal: number;
   storeId?: string | null;
+  /** Shipping fee base for shipping-type promo preview/confirm. */
+  shippingFee?: number | null;
   /** Cart lines for accurate BxGy preview (Design Doc validatePromotion contract). */
   lines?: PromotionEstimateCartLine[] | ValidatePromotionLineInput[];
   validatePromotion: (input: ValidatePromotionInput) => Promise<PromotionValidation | undefined>;
@@ -50,6 +53,7 @@ export const CREATE_ORDER_HARD_ELIGIBILITY_CODES = [
   'PROMOTION_LIMIT',
   'PROMOTION_CUSTOMER_LIMIT',
   'PROMOTION_STORE',
+  'PROMOTION_SCOPE',
   'PROMOTION_MIN_PURCHASE',
 ] as const;
 
@@ -65,25 +69,16 @@ export function isCreateOrderHardEligibilityCode(code: string | null | undefined
 
 /** Extract machine-readable promotion error code from Apollo / Nest GraphQL errors. */
 export function extractPromotionErrorCode(error: unknown): string | null {
-  if (!error || typeof error !== 'object') return null;
+  const code = extractErrorCode(error);
+  if (!code) return null;
 
-  const record = error as {
-    graphQLErrors?: Array<{ extensions?: { code?: unknown }; message?: string }>;
-    message?: string;
-  };
-
-  const fromExtensions = record.graphQLErrors?.find(
-    (gqlError) => typeof gqlError.extensions?.code === 'string',
-  )?.extensions?.code;
-  if (typeof fromExtensions === 'string' && fromExtensions.length > 0) {
-    return fromExtensions;
+  if (code === 'INSUFFICIENT_QTY') return code;
+  if ((CREATE_ORDER_HARD_ELIGIBILITY_CODES as readonly string[]).includes(code)) {
+    return code;
   }
 
-  const message = typeof record.message === 'string' ? record.message : '';
-  const known = CREATE_ORDER_HARD_ELIGIBILITY_CODES.find((code) => message.includes(code));
-  if (known) return known;
-  if (message.includes('INSUFFICIENT_QTY')) return 'INSUFFICIENT_QTY';
-  return null;
+  // createOrder may surface other structural codes (e.g. suspended store) — return them.
+  return code;
 }
 
 export function toValidatePromotionLines(
@@ -105,6 +100,7 @@ export async function validateCheckoutPromotionCode({
   code,
   subtotal,
   storeId,
+  shippingFee,
   lines,
   validatePromotion,
 }: ValidateCheckoutPromotionParams): Promise<PromotionValidation> {
@@ -115,11 +111,14 @@ export async function validateCheckoutPromotionCode({
   }
 
   const mappedLines = toValidatePromotionLines(lines, storeId);
+  const resolvedShippingFee =
+    shippingFee != null && Number.isFinite(shippingFee) ? shippingFee : undefined;
 
   const result = await validatePromotion({
     code: trimmedCode,
     subtotal,
     ...(storeId ? { storeId } : {}),
+    ...(resolvedShippingFee != null ? { shippingFee: resolvedShippingFee } : {}),
     ...(mappedLines ? { lines: mappedLines } : {}),
   });
 

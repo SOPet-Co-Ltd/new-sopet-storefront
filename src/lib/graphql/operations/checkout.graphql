@@ -42,6 +42,7 @@ fragment OrderFields on OrderType {
   guestEmail
   guestName
   guestPhone
+  guestPayToken
   items {
     ...OrderItemFields
   }

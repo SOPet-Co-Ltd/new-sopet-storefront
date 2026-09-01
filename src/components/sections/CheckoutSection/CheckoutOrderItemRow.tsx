@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import type { CartItem } from '@/lib/cart/cartUtils';
-import { getCartItemUnitPrice } from '@/lib/cart/cartUtils';
+import { getCartItemCompareAtPrice, getCartItemUnitPrice } from '@/lib/cart/cartUtils';
 import { CheckoutOrderLineFreeUnitIndicator } from './CheckoutOrderLineFreeUnitIndicator';
 import { formatCheckoutPrice, formatCheckoutVariantLabel } from './checkoutOrderItemUtils';
 
@@ -14,6 +14,7 @@ type CheckoutOrderItemRowProps = {
 
 export function CheckoutOrderItemRow({ item, freeQuantity = 0 }: CheckoutOrderItemRowProps) {
   const unitPrice = getCartItemUnitPrice(item);
+  const compareAtPrice = getCartItemCompareAtPrice(item);
   const product = item.productVariant?.product;
   const variantLabel = formatCheckoutVariantLabel(item.productVariant?.optionsJson);
 
@@ -44,9 +45,22 @@ export function CheckoutOrderItemRow({ item, freeQuantity = 0 }: CheckoutOrderIt
         <span className="sop-body-sm-regular text-sop-neutral-gray-400 lg:sop-headline-sm-regular">
           x{item.quantity}
         </span>
-        <span className="sop-body-sm-medium text-sop-base-black lg:sop-body-lg-medium">
-          {formatCheckoutPrice(unitPrice)}
-        </span>
+        <div className="flex flex-wrap items-baseline justify-end gap-1">
+          <span
+            className="sop-body-sm-medium text-sop-base-black lg:sop-body-lg-medium"
+            data-testid="checkout-order-item-unit-price"
+          >
+            {formatCheckoutPrice(unitPrice)}
+          </span>
+          {compareAtPrice != null ? (
+            <span
+              className="sop-strike-sm-regular text-sop-neutral-grayalpha-400 lg:sop-strike-md-regular"
+              data-testid="checkout-order-item-compare-at"
+            >
+              {formatCheckoutPrice(compareAtPrice)}
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   );

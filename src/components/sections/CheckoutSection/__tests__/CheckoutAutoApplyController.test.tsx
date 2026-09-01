@@ -20,6 +20,12 @@ vi.mock('@/lib/checkout/runCheckoutAutoApply', () => ({
   runCheckoutAutoApply,
 }));
 
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/checkout',
+}));
+
 vi.mock('@apollo/client/react', () => ({
   useApolloClient: () => ({ query: vi.fn() }),
   useQuery: () => ({
@@ -65,12 +71,15 @@ vi.mock('@/lib/providers/CartProvider', () => ({
 const mockCheckout = {
   promotionCode: null as string | null,
   storePromotionsByStoreId: {} as Record<string, unknown>,
+  shippingByStoreId: {} as Record<string, { shippingOptionId: string; shippingFee: number }>,
   setPromotion: vi.fn(),
   setPromotionName: vi.fn(),
   setPromotionDiscount: vi.fn(),
+  setPromotionType: vi.fn(),
   setPromotionFreeUnits: vi.fn(),
   setPromotionProductId: vi.fn(),
   setStorePromotion: vi.fn(),
+  setStorePromotions: vi.fn(),
 };
 
 vi.mock('@/lib/providers/CheckoutProvider', () => ({
@@ -197,7 +206,7 @@ describe('CheckoutAutoApplyController', () => {
     });
 
     expect(mockCheckout.setPromotion).toHaveBeenCalledWith(null);
-    expect(mockCheckout.setStorePromotion).toHaveBeenCalledWith('store-a', null);
+    expect(mockCheckout.setStorePromotions).toHaveBeenCalledWith({ 'store-a': null });
     expect(runCheckoutAutoApply).toHaveBeenCalledWith(
       expect.objectContaining({
         promotionCode: null,
@@ -209,5 +218,24 @@ describe('CheckoutAutoApplyController', () => {
       expect(hasAutoApplyAttempted(nextFp)).toBe(true);
       expect(hasAutoApplyAttempted(CART_FP)).toBe(false);
     });
+  });
+
+  it('does not re-run when a sibling store promotion is written after settle', async () => {
+    const { rerender } = render(<CheckoutAutoApplyController />);
+    await waitFor(() => {
+      expect(runCheckoutAutoApply).toHaveBeenCalledTimes(1);
+    });
+    runCheckoutAutoApply.mockClear();
+
+    mockCheckout.storePromotionsByStoreId = {
+      'store-a': { code: 'AUTO_A', name: 'Auto A', discountAmount: 30 },
+      'store-b': { code: 'MANUAL_B', name: 'Manual B', discountAmount: 15 },
+    };
+    rerender(<CheckoutAutoApplyController />);
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(runCheckoutAutoApply).not.toHaveBeenCalled();
   });
 });

@@ -14,7 +14,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, waitFor } from '@testing-library/react';
+import { act, render, waitFor } from '@testing-library/react';
 import { createElement, useEffect, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -432,6 +432,7 @@ describe('promotion-auto-apply integration', () => {
         setPromotion: checkout!.setPromotion,
         setPromotionName: checkout!.setPromotionName,
         setPromotionDiscount: checkout!.setPromotionDiscount,
+        setPromotionType: checkout!.setPromotionType,
         setPromotionFreeUnits: checkout!.setPromotionFreeUnits,
         setPromotionProductId: checkout!.setPromotionProductId,
         setStorePromotion: checkout!.setStorePromotion,
@@ -525,9 +526,11 @@ describe('promotion-auto-apply integration', () => {
         setPromotion: checkout!.setPromotion,
         setPromotionName: checkout!.setPromotionName,
         setPromotionDiscount: checkout!.setPromotionDiscount,
+        setPromotionType: checkout!.setPromotionType,
         setPromotionFreeUnits: checkout!.setPromotionFreeUnits,
         setPromotionProductId: checkout!.setPromotionProductId,
         setStorePromotion: checkout!.setStorePromotion,
+        setStorePromotions: checkout!.setStorePromotions,
       });
 
       expect(result.settled).toBe(true);
@@ -549,6 +552,102 @@ describe('promotion-auto-apply integration', () => {
 
       const validatedCodes = validatePromotion.mock.calls.map((c) => c[0].code).sort();
       expect(validatedCodes).toEqual(['AUTO_A', 'AUTO_B', 'AUTO_PLAT']);
+    });
+
+    it('auto-applies three store lanes and keeps siblings when one is changed manually', async () => {
+      let checkout: CheckoutContextValue | undefined;
+      renderWithCheckout((ctx) => {
+        checkout = ctx;
+      });
+
+      await waitFor(() => {
+        expect(checkout).toBeDefined();
+      });
+
+      const fetchStorePromotions = vi.fn(async (storeId: string) => {
+        if (storeId === 'store-a') {
+          return [
+            {
+              id: 'sa',
+              code: 'AUTO_A',
+              name: 'A',
+              autoApply: true,
+              priority: 1,
+              type: 'fixed_amount',
+              conditions: null,
+            },
+          ];
+        }
+        if (storeId === 'store-b') {
+          return [
+            {
+              id: 'sb',
+              code: 'AUTO_B',
+              name: 'B',
+              autoApply: true,
+              priority: 1,
+              type: 'fixed_amount',
+              conditions: null,
+            },
+          ];
+        }
+        return [
+          {
+            id: 'sc',
+            code: 'AUTO_C',
+            name: 'C',
+            autoApply: true,
+            priority: 1,
+            type: 'fixed_amount',
+            conditions: null,
+          },
+        ];
+      });
+
+      await runCheckoutAutoApply({
+        promotionCode: null,
+        storePromotionsByStoreId: {},
+        storeIds: ['store-a', 'store-b', 'store-c'],
+        platformSubtotal: 900,
+        storeSubtotals: { 'store-a': 200, 'store-b': 300, 'store-c': 400 },
+        platformPromotions: [],
+        fetchStorePromotions,
+        validatePromotion: async (input) => {
+          const amounts: Record<string, number> = {
+            AUTO_A: 30,
+            AUTO_B: 40,
+            AUTO_C: 20,
+          };
+          return validation(amounts[input.code] ?? 0, input.code);
+        },
+        setPromotion: checkout!.setPromotion,
+        setPromotionName: checkout!.setPromotionName,
+        setPromotionDiscount: checkout!.setPromotionDiscount,
+        setPromotionType: checkout!.setPromotionType,
+        setPromotionFreeUnits: checkout!.setPromotionFreeUnits,
+        setPromotionProductId: checkout!.setPromotionProductId,
+        setStorePromotion: checkout!.setStorePromotion,
+        setStorePromotions: checkout!.setStorePromotions,
+      });
+
+      await waitFor(() => {
+        expect(checkout!.storePromotionsByStoreId['store-a']?.code).toBe('AUTO_A');
+        expect(checkout!.storePromotionsByStoreId['store-b']?.code).toBe('AUTO_B');
+        expect(checkout!.storePromotionsByStoreId['store-c']?.code).toBe('AUTO_C');
+      });
+
+      act(() => {
+        checkout!.setStorePromotion('store-b', {
+          code: 'MANUAL_B',
+          name: 'Manual B',
+          discountAmount: 15,
+        });
+      });
+
+      expect(checkout!.storePromotionsByStoreId['store-a']?.code).toBe('AUTO_A');
+      expect(checkout!.storePromotionsByStoreId['store-b']?.code).toBe('MANUAL_B');
+      expect(checkout!.storePromotionsByStoreId['store-c']?.code).toBe('AUTO_C');
+      expect(fetchStorePromotions).toHaveBeenCalledTimes(3);
     });
 
     it('applies nothing for a lane with zero autoApply candidates (AC-022)', async () => {
@@ -591,6 +690,7 @@ describe('promotion-auto-apply integration', () => {
         setPromotion: checkout!.setPromotion,
         setPromotionName: checkout!.setPromotionName,
         setPromotionDiscount: checkout!.setPromotionDiscount,
+        setPromotionType: checkout!.setPromotionType,
         setPromotionFreeUnits: checkout!.setPromotionFreeUnits,
         setPromotionProductId: checkout!.setPromotionProductId,
         setStorePromotion: checkout!.setStorePromotion,

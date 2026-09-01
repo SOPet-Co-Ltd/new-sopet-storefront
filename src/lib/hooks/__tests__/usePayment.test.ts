@@ -11,13 +11,17 @@ import {
   samplePendingPayment,
 } from '@/test/mocks/fixtures/checkout';
 
+const subscriptionState = vi.hoisted(() => ({
+  error: undefined as Error | undefined,
+}));
+
 vi.mock('@apollo/client/react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@apollo/client/react')>();
   return {
     ...actual,
     useSubscription: () => ({
       data: undefined,
-      error: undefined,
+      error: subscriptionState.error,
       loading: false,
     }),
   };
@@ -43,6 +47,30 @@ describe('usePayment', () => {
     await waitFor(() => {
       expect(result.current.payment?.status).toBe('pending');
     });
+  });
+
+  it('does not surface WebSocket subscription errors as page load errors', async () => {
+    subscriptionState.error = new Error('WebSocket connection failed');
+
+    server.use(
+      graphql.query('Payment', () => {
+        return HttpResponse.json({
+          data: { payment: samplePaidPayment },
+        });
+      }),
+    );
+
+    const { result } = renderHook(() => usePayment({ id: CHECKOUT_PAYMENT_ID }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.payment?.status).toBe('paid');
+    });
+
+    expect(result.current.error).toBeUndefined();
+
+    subscriptionState.error = undefined;
   });
 
   it('poll returns pending then paid and stops', async () => {

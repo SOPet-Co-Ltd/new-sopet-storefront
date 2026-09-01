@@ -94,6 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         variables: { input: { phone } },
       });
 
+      if (result.error) {
+        throw result.error;
+      }
+
       if (!result.data?.sendCustomerOtp) {
         throw new Error('ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
       }
@@ -109,6 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await verifyOtpMutation({
         variables: { input: { phone, code, sessionId } },
       });
+
+      if (result.error) {
+        throw result.error;
+      }
 
       const payload = result.data?.verifyCustomerOtp;
       if (!payload) {
@@ -139,6 +147,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         variables: { input: { phone, code } },
       });
 
+      if (result.error) {
+        throw result.error;
+      }
+
       const payload = result.data?.changeCustomerPhone;
       if (!payload?.tokens) {
         throw new Error('ไม่สามารถเปลี่ยนเบอร์โทรศัพท์ได้ กรุณาลองใหม่อีกครั้ง');
@@ -159,6 +171,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await reactivateAccountMutation({
         variables: { input: { reactivationToken: token } },
       });
+
+      if (result.error) {
+        throw result.error;
+      }
 
       const payload = result.data?.reactivateAccount;
       if (!payload?.tokens) {

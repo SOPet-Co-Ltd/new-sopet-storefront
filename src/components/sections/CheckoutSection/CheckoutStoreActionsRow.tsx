@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CheckIcon, RightArrowIcon, TicketSaleIcon, TruckIcon } from '@/components/atoms/icons';
 import { toPromotionEstimateCartLines } from '@/lib/checkout/storePromotionUtils';
+import { resolveStorePromoDiscount } from '@/lib/checkout/checkoutTotalsUtils';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useShippingOptions } from '@/lib/hooks/useShippingOptions';
-import { useCart } from '@/lib/providers/CartProvider';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { formatCheckoutPrice } from './checkoutOrderItemUtils';
 import { CheckoutShippingMethodModal } from './CheckoutShippingMethodModal';
@@ -61,9 +62,14 @@ export function CheckoutStoreActionsRow({
   storeSubtotal,
 }: CheckoutStoreActionsRowProps) {
   const { options, loading, error } = useShippingOptions(storeId);
-  const { selectedItemsByStore } = useCart();
-  const { shippingByStoreId, setShipping, storePromotionsByStoreId, setStorePromotion } =
-    useCheckout();
+  const { selectedItemsByStore } = useCheckoutCartSelection();
+  const {
+    shippingByStoreId,
+    setShipping,
+    storePromotionsByStoreId,
+    setStorePromotion,
+    isSubmitting,
+  } = useCheckout();
   const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
 
@@ -73,10 +79,17 @@ export function CheckoutStoreActionsRow({
   }, [selectedItemsByStore, storeId]);
 
   const appliedPromotion = storePromotionsByStoreId[storeId] ?? null;
-  const appliedDiscountAmount = appliedPromotion?.discountAmount ?? 0;
+  const selectedShippingFee = shippingByStoreId[storeId]?.shippingFee ?? 0;
+  const appliedDiscountAmount = resolveStorePromoDiscount(appliedPromotion, selectedShippingFee);
 
   const selectedOptionId = shippingByStoreId[storeId]?.shippingOptionId ?? null;
   const selectedOption = options.find((option) => option.id === selectedOptionId) ?? null;
+
+  // Close modals when checkout submit locks the page (adjust state during render).
+  if (isSubmitting && (isShippingModalOpen || isPromotionModalOpen)) {
+    setIsShippingModalOpen(false);
+    setIsPromotionModalOpen(false);
+  }
 
   useEffect(() => {
     if (options.length === 0 || selectedOptionId) return;
@@ -87,7 +100,7 @@ export function CheckoutStoreActionsRow({
     }
   }, [options, selectedOptionId, setShipping, storeId]);
 
-  const shippingDisabled = loading || Boolean(error) || options.length === 0;
+  const shippingDisabled = isSubmitting || loading || Boolean(error) || options.length === 0;
 
   return (
     <>
@@ -98,6 +111,7 @@ export function CheckoutStoreActionsRow({
         <CheckoutStoreActionButton
           label="ส่วนลดร้านค้า"
           icon={<TicketSaleIcon size={{ mobile: 32 }} color="#9C6ADE" />}
+          disabled={isSubmitting}
           onClick={() => setIsPromotionModalOpen(true)}
           testId={`checkout-store-discount-${storeId}`}
         >
@@ -149,6 +163,7 @@ export function CheckoutStoreActionsRow({
           storeId={storeId}
           storeName={storeName}
           storeSubtotal={storeSubtotal}
+          shippingFee={shippingByStoreId[storeId]?.shippingFee ?? 0}
           cartLines={cartLines}
           appliedPromotion={appliedPromotion}
           onClose={() => setIsPromotionModalOpen(false)}

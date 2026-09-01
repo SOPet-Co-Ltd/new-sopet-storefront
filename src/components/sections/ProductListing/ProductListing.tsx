@@ -5,9 +5,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EmptySearchResults } from '@/components/molecules/EmptySearchResults';
 import { Pagination } from '@/components/molecules/Pagination';
 import { SearchSortBar, type SearchSortValue } from '@/components/molecules/SearchSortBar';
-import ProductCard from '@/components/organisms/ProductCard';
+import ProductCard, {
+  getProductCardCheapestVariantId,
+  getProductCardDisplayPrice,
+} from '@/components/organisms/ProductCard';
 import { prefetchProductsListing } from '@/lib/catalog/prefetchProductsListing';
 import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
+import { useCampaignCompareAtLookup } from '@/lib/hooks/useCampaignCompareAtLookup';
 import { useProducts } from '@/lib/hooks/useProducts';
 import { useSearchContext } from '@/lib/hooks/useSearchContext';
 import { useSessionId } from '@/lib/hooks/useSessionId';
@@ -145,6 +149,9 @@ export function ProductListing({
     useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;
 
+  const productIds = useMemo(() => products.map((product) => product.id), [products]);
+  const { getCampaignPricing } = useCampaignCompareAtLookup(productIds);
+
   useEffect(() => {
     if (!listingPrefetch || totalPages <= 1 || currentPage >= totalPages) {
       return;
@@ -231,11 +238,24 @@ export function ProductListing({
           <p className="sop-body-lg-medium text-sop-neutral-gray-200">สินค้าทั้งหมด ({total})</p>
 
           <ul className={cn('mt-6', PRODUCT_CARD_GRID_CLASS)}>
-            {products.map((product, index) => (
-              <li key={product.id} className="min-w-0 flex justify-center">
-                <ProductCard product={product} priority={index < 4} />
-              </li>
-            ))}
+            {products.map((product, index) => {
+              const catalogPrice = getProductCardDisplayPrice(product);
+              const pricing = getCampaignPricing(
+                product.id,
+                getProductCardCheapestVariantId(product),
+                catalogPrice,
+              );
+              return (
+                <li key={product.id} className="min-w-0 flex justify-center">
+                  <ProductCard
+                    product={product}
+                    priority={index < 4}
+                    campaignCompareAt={pricing?.compareAt ?? null}
+                    campaignSalePrice={pricing?.saleUnit ?? null}
+                  />
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
@@ -260,11 +280,24 @@ export function ProductListing({
       </div>
 
       <ul className={PRODUCT_CARD_GRID_CLASS}>
-        {products.map((product, index) => (
-          <li key={product.id} className="min-w-0 flex justify-center">
-            <ProductCard product={product} priority={index < 4} />
-          </li>
-        ))}
+        {products.map((product, index) => {
+          const catalogPrice = getProductCardDisplayPrice(product);
+          const pricing = getCampaignPricing(
+            product.id,
+            getProductCardCheapestVariantId(product),
+            catalogPrice,
+          );
+          return (
+            <li key={product.id} className="min-w-0 flex justify-center">
+              <ProductCard
+                product={product}
+                priority={index < 4}
+                campaignCompareAt={pricing?.compareAt ?? null}
+                campaignSalePrice={pricing?.saleUnit ?? null}
+              />
+            </li>
+          );
+        })}
       </ul>
 
       <div className="mt-6 flex justify-center md:justify-end">

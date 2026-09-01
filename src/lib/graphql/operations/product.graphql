@@ -33,6 +33,7 @@ fragment ProductDetailFields on ProductType {
     id
     sku
     price
+    compareAtPrice
     stockQuantity
     optionsJson
   }

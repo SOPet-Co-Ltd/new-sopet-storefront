@@ -112,6 +112,7 @@ describe('omise payment utilities', () => {
     )?.[0] as HTMLScriptElement | undefined;
 
     expect(script?.src).toBe('https://cdn.omise.co/omise.js');
+    expect(script?.crossOrigin).toBe('anonymous');
 
     window.Omise = {
       setPublicKey: vi.fn(),
@@ -144,7 +145,7 @@ describe('checkout card payment bridge', () => {
     registerCheckoutCardPaymentBridge(null);
   });
 
-  it('tokenizes card form data through prepareCardPaymentToken and clears the form', async () => {
+  it('tokenizes card form data through prepareCardPaymentToken without clearing it', async () => {
     let form = { ...VALID_CARD_FORM };
 
     registerCheckoutCardPaymentBridge(
@@ -167,12 +168,7 @@ describe('checkout card payment bridge', () => {
     const token = await prepareCardPaymentToken();
 
     expect(token).toBe('tokn_test_bridge');
-    expect(form).toEqual({
-      cardNumber: '',
-      cardName: '',
-      expiry: '',
-      cvv: '',
-    });
+    expect(form).toEqual(VALID_CARD_FORM);
   });
 
   it('throws validation error when card form is incomplete', async () => {

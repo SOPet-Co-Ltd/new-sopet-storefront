@@ -433,6 +433,7 @@ describe('Promotion logged-in-only Journey 2 — logged-in only-loggedInOnly ava
 
     await waitFor(() => {
       expect(within(modal).getByText('ใช้ได้ตอนนี้ (1)')).toBeInTheDocument();
+      expect(within(modal).getByTestId('store-promotion-confirm-button')).not.toBeDisabled();
     });
 
     await user.click(within(modal).getByRole('button', { name: /ส่วนลด 10%/ }));

@@ -268,9 +268,13 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
 
       await user.click(submit);
 
+      // Checkout-like processing stage replaces recovery chrome while createPayment is in flight
+      // (same AC-023 surface as payment-page.test.tsx Mid-QR creatingPayment path).
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeDisabled();
+        expect(screen.getByTestId('payment-retry-processing')).toBeInTheDocument();
       });
+      expect(screen.getByText('กำลังดำเนินการ...')).toBeInTheDocument();
+      expect(screen.getByTestId('payment-retry-panel')).not.toBeVisible();
 
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith(`/payment/${CHECKOUT_RETRY_PAYMENT_ID}`);

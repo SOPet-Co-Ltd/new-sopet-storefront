@@ -24,7 +24,7 @@ import {
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
 import { CheckoutPlatformPromotionModal } from './CheckoutPlatformPromotionModal';
@@ -36,6 +36,7 @@ type PlatformPromotionBottomCardProps = {
   description?: string;
   onOpenModal: () => void;
   onRemove: () => void;
+  disabled?: boolean;
 };
 
 function PlatformPromotionBottomCard({
@@ -45,6 +46,7 @@ function PlatformPromotionBottomCard({
   description,
   onOpenModal,
   onRemove,
+  disabled = false,
 }: PlatformPromotionBottomCardProps) {
   const isMobile = useIsMobile(768);
 
@@ -54,6 +56,7 @@ function PlatformPromotionBottomCard({
         className={cn(
           'flex w-full items-center gap-sop-12px rounded-sop-16px border border-sop-neutral-grayalpha-300 py-sop-12px',
           isMobile ? 'p-sop-12px' : 'px-sop-16px',
+          disabled && 'opacity-60',
         )}
         data-testid="applied-platform-promotion"
         data-stage="active"
@@ -65,13 +68,30 @@ function PlatformPromotionBottomCard({
           <TicketSaleIcon color="#9C6ADE" size={{ mobile: 28, desktop: 28 }} />
         </span>
         <div className="min-w-0 flex-1 text-sop-primary-500">
-          <p className={isMobile ? 'sop-body-sm-medium' : 'sop-body-lg-medium'}>{name}</p>
-          <p className={isMobile ? 'sop-body-xs-regular' : 'sop-body-md-regular'}>{description}</p>
+          <p
+            className={cn(
+              'line-clamp-2 break-words',
+              isMobile ? 'sop-body-sm-medium' : 'sop-body-lg-medium',
+            )}
+            title={name}
+          >
+            {name}
+          </p>
+          <p
+            className={cn(
+              'line-clamp-2 break-words',
+              isMobile ? 'sop-body-xs-regular' : 'sop-body-md-regular',
+            )}
+            title={description}
+          >
+            {description}
+          </p>
         </div>
         <button
           type="button"
           onClick={onRemove}
-          className="flex h-sop-20px w-sop-20px shrink-0 cursor-pointer items-center justify-center"
+          disabled={disabled}
+          className="flex h-sop-20px w-sop-20px shrink-0 cursor-pointer items-center justify-center disabled:cursor-not-allowed"
           aria-label="ลบส่วนลดแพลตฟอร์ม"
           data-testid="remove-platform-promotion-button"
         >
@@ -85,6 +105,7 @@ function PlatformPromotionBottomCard({
     <button
       type="button"
       onClick={onOpenModal}
+      disabled={disabled}
       data-testid={
         stage === 'suggest'
           ? 'platform-promotion-suggest-button'
@@ -94,6 +115,7 @@ function PlatformPromotionBottomCard({
       className={cn(
         'flex w-full cursor-pointer items-center gap-sop-12px rounded-sop-16px border border-dashed border-sop-primary-300 text-left',
         isMobile ? 'p-sop-12px' : 'px-sop-16px py-sop-12px',
+        'disabled:cursor-not-allowed disabled:opacity-60',
       )}
     >
       <span
@@ -129,26 +151,39 @@ export function CheckoutPromotionSection() {
   const isMobile = useIsMobile(768);
   const { isAuthenticated } = useAuth();
   const isGuest = !isAuthenticated;
-  const { selectedSubtotal: subtotal, selectedItems } = useCart();
+  const { selectedSubtotal: subtotal, selectedItems } = useCheckoutCartSelection();
   const { promotions, loading: loadingPromotions } = useActivePlatformPromotions(true);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
   const {
     promotionCode,
     promotionName,
     promotionDiscount,
+    promotionType,
     promotionFreeUnits,
     promotionProductId,
     setPromotion,
     setPromotionName,
     setPromotionDiscount,
+    setPromotionType,
     setPromotionFreeUnits,
     setPromotionProductId,
+    isSubmitting,
+    shippingByStoreId,
   } = useCheckout();
   const [manualCode, setManualCode] = useState(promotionCode ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const cartLines = useMemo(() => toPromotionEstimateCartLines(selectedItems), [selectedItems]);
+
+  const platformShippingFee = useMemo(
+    () =>
+      Object.values(shippingByStoreId).reduce(
+        (sum, selection) => sum + (selection.shippingFee ?? 0),
+        0,
+      ),
+    [shippingByStoreId],
+  );
 
   const appliedPromotion = useMemo<PlatformPromotionSelection>(() => {
     if (!promotionCode) return null;
@@ -157,10 +192,18 @@ export function CheckoutPromotionSection() {
       code: promotionCode,
       name: promotionName ?? promotionCode,
       discountAmount: promotionDiscount,
+      type: promotionType,
       freeUnits: promotionFreeUnits,
       productId: promotionProductId,
     };
-  }, [promotionCode, promotionDiscount, promotionFreeUnits, promotionName, promotionProductId]);
+  }, [
+    promotionCode,
+    promotionDiscount,
+    promotionFreeUnits,
+    promotionName,
+    promotionProductId,
+    promotionType,
+  ]);
 
   const availablePromotionCount = useMemo(() => {
     const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal, {
@@ -177,10 +220,18 @@ export function CheckoutPromotionSection() {
 
   const showBottomCard = Boolean(appliedPromotion) || !loadingPromotions;
 
+  if (isSubmitting && isModalOpen) {
+    setIsModalOpen(false);
+  }
+
   const clearPromotion = () => {
+    if (isSubmitting) {
+      return;
+    }
     setPromotion(null);
     setPromotionName(null);
     setPromotionDiscount(0);
+    setPromotionType(null);
     setPromotionFreeUnits(null);
     setPromotionProductId(null);
     setManualCode('');
@@ -188,6 +239,10 @@ export function CheckoutPromotionSection() {
   };
 
   const handleApplyCode = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     const normalizedCode = manualCode.trim();
 
     if (!normalizedCode) {
@@ -201,12 +256,14 @@ export function CheckoutPromotionSection() {
       await applyCheckoutPromotionCode({
         code: normalizedCode,
         subtotal,
+        shippingFee: platformShippingFee,
         lines: cartLines,
         promotions: promotions as StorePromotion[],
         validatePromotion,
         setPromotion,
         setPromotionName,
         setPromotionDiscount,
+        setPromotionType,
         setPromotionFreeUnits,
         setPromotionProductId,
       });
@@ -214,6 +271,7 @@ export function CheckoutPromotionSection() {
       setPromotion(null);
       setPromotionName(null);
       setPromotionDiscount(0);
+      setPromotionType(null);
       setPromotionFreeUnits(null);
       setPromotionProductId(null);
       setError(getPromotionApplyErrorMessage(applyError));
@@ -221,6 +279,10 @@ export function CheckoutPromotionSection() {
   };
 
   const handleModalConfirm = (promotion: PlatformPromotionSelection) => {
+    if (isSubmitting) {
+      return;
+    }
+
     if (!promotion) {
       clearPromotion();
       return;
@@ -229,6 +291,7 @@ export function CheckoutPromotionSection() {
     setPromotion(promotion.code);
     setPromotionName(promotion.name);
     setPromotionDiscount(promotion.discountAmount);
+    setPromotionType(promotion.type ?? null);
     setPromotionFreeUnits(promotion.freeUnits ?? null);
     setPromotionProductId(promotion.productId ?? null);
     setManualCode(promotion.code);
@@ -262,6 +325,7 @@ export function CheckoutPromotionSection() {
                   state={error ? 'error' : 'default'}
                   placeholder="กรอกโค้ดส่วนลด"
                   value={manualCode}
+                  disabled={isSubmitting}
                   onChange={(event) => {
                     setManualCode(event.target.value);
                     if (error) {
@@ -284,7 +348,7 @@ export function CheckoutPromotionSection() {
                 variant="outline"
                 size={isMobile ? 'md' : 'xl'}
                 rounded="rounded"
-                disabled={manualCode.trim().length === 0 || validatingPromotion}
+                disabled={isSubmitting || manualCode.trim().length === 0 || validatingPromotion}
                 onClick={() => {
                   void handleApplyCode();
                 }}
@@ -309,6 +373,7 @@ export function CheckoutPromotionSection() {
                   ? formatPlatformPromotionAppliedDescription(appliedPromotion.discountAmount)
                   : undefined
               }
+              disabled={isSubmitting}
               onOpenModal={() => setIsModalOpen(true)}
               onRemove={clearPromotion}
             />
@@ -319,6 +384,7 @@ export function CheckoutPromotionSection() {
       <CheckoutPlatformPromotionModal
         isOpen={isModalOpen}
         subtotal={subtotal}
+        shippingFee={platformShippingFee}
         cartLines={cartLines}
         appliedPromotion={appliedPromotion}
         onClose={() => setIsModalOpen(false)}

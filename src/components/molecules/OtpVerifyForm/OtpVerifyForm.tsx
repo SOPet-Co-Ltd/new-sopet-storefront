@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/atoms/Button';
 import { OtpCodeInput } from '@/components/atoms/OtpCodeInput/OtpCodeInput';
 import { SOPetLogo } from '@/components/atoms/icons';
 import { ReactivateAccountModal } from '@/components/molecules/ReactivateAccountModal/ReactivateAccountModal';
+import { clearOtpPhone, readOtpPhone } from '@/lib/auth/otpPhone';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { formatThaiPhoneNumber } from '@/lib/helpers/phone';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -15,8 +17,7 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 export function OtpVerifyForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const phone = searchParams.get('phone') ?? '';
+  const [phone, setPhone] = useState('');
   const { sendOtp, verifyOtp, pendingDeletion } = useAuth();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -27,10 +28,14 @@ export function OtpVerifyForm() {
   const [reactivationToken, setReactivationToken] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!phone) {
+    const stored = readOtpPhone() ?? '';
+    if (!stored) {
       router.replace('/login');
+      return;
     }
-  }, [phone, router]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate phone from sessionStorage once
+    setPhone(stored);
+  }, [router]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -55,11 +60,7 @@ export function OtpVerifyForm() {
         description: `ส่งไปที่ ${formatThaiPhoneNumber(phone)}`,
       });
     } catch (resendError) {
-      setError(
-        resendError instanceof Error
-          ? resendError.message
-          : 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
-      );
+      setError(getErrorMessage(resendError, 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));
     } finally {
       setResending(false);
     }
@@ -84,13 +85,10 @@ export function OtpVerifyForm() {
         return;
       }
 
+      clearOtpPhone();
       router.replace('/');
     } catch (verifyError) {
-      setError(
-        verifyError instanceof Error
-          ? verifyError.message
-          : 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง',
-      );
+      setError(getErrorMessage(verifyError, 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'));
     } finally {
       setLoading(false);
     }
@@ -109,7 +107,7 @@ export function OtpVerifyForm() {
           ยืนยันรหัส OTP
         </h1>
         <p className="mb-2 text-center sop-body-sm-regular text-sop-neutral-gray-400">
-          ส่งรหัสไปที่ {formatThaiPhoneNumber(phone)}
+          ส่งรหัสไปที่ {phone ? formatThaiPhoneNumber(phone) : '…'}
         </p>
 
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4" noValidate>
@@ -165,7 +163,10 @@ export function OtpVerifyForm() {
         isOpen={showReactivateModal || pendingDeletion}
         reactivationToken={reactivationToken}
         onClose={() => setShowReactivateModal(false)}
-        onSuccess={() => router.replace('/')}
+        onSuccess={() => {
+          clearOtpPhone();
+          router.replace('/');
+        }}
       />
     </>
   );

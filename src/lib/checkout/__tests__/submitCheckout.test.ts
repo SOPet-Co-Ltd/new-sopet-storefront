@@ -151,7 +151,33 @@ describe('submitCheckout', () => {
       redirectPath: `/payment/${CHECKOUT_PAYMENT_ID}`,
       paymentId: CHECKOUT_PAYMENT_ID,
       orderId: CHECKOUT_ORDER_ID,
+      orderNumber: 'ORD-1001',
     });
+  });
+
+  it('persists guestPayToken to sessionStorage and passes it to createPayment', async () => {
+    const createPayment = vi.fn().mockResolvedValue(samplePendingPayment);
+    const guestToken = 'a'.repeat(64);
+    const createOrder = vi.fn().mockResolvedValue({
+      ...sampleOrder,
+      guestPayToken: guestToken,
+    });
+
+    await submitCheckout(
+      createSubmitParams({
+        checkoutHook: createCheckoutHook({ createOrder, createPayment }),
+      }),
+      createSubmitCheckoutGuard(),
+    );
+
+    expect(sessionStorage.getItem(`sopet_guest_pay:${CHECKOUT_ORDER_ID}`)).toBe(guestToken);
+    expect(sessionStorage.getItem(`sopet_guest_pay:${CHECKOUT_PAYMENT_ID}`)).toBe(guestToken);
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: CHECKOUT_ORDER_ID,
+        guestPayToken: guestToken,
+      }),
+    );
   });
 
   it('skips validatePromotion when no promotion code is set', async () => {
@@ -206,6 +232,35 @@ describe('submitCheckout', () => {
     const [first, second] = await Promise.all([
       submitCheckout(params, guard),
       submitCheckout(params, guard),
+    ]);
+
+    expect(createOrderCalls).toBe(1);
+    expect(first.redirectPath).toBe(second.redirectPath);
+  });
+
+  it('deduplicates concurrent submits even when payment method changes mid-flight', async () => {
+    let createOrderCalls = 0;
+    const checkoutHook = createCheckoutHook({
+      createOrder: vi.fn().mockImplementation(async () => {
+        createOrderCalls += 1;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return sampleOrder;
+      }),
+    });
+    const guard = createSubmitCheckoutGuard();
+    const promptPayParams = createSubmitParams({ checkoutHook });
+    const cardParams = createSubmitParams({
+      checkoutHook,
+      checkoutContext: {
+        ...promptPayParams.checkoutContext,
+        paymentMethod: 'card',
+      },
+      omiseToken: 'tokn_test_midflight',
+    });
+
+    const [first, second] = await Promise.all([
+      submitCheckout(promptPayParams, guard),
+      submitCheckout(cardParams, guard),
     ]);
 
     expect(createOrderCalls).toBe(1);
@@ -386,6 +441,7 @@ describe('submitCheckout MSW integration', () => {
       redirectPath: `/payment/${CHECKOUT_PAYMENT_ID}`,
       paymentId: CHECKOUT_PAYMENT_ID,
       orderId: CHECKOUT_ORDER_ID,
+      orderNumber: 'ORD-1001',
     });
   });
 });

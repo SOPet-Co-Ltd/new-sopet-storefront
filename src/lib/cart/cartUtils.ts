@@ -18,6 +18,15 @@ export function getCartItemUnitPrice(item: CartItem): number {
   return item.productVariant?.price ?? 0;
 }
 
+/** Honest strikethrough was; only when strictly greater than the payable unit. */
+export function getCartItemCompareAtPrice(item: CartItem): number | null {
+  const unitPrice = getCartItemUnitPrice(item);
+  const compareAt =
+    item.productVariant?.compareAtPrice ?? item.productVariant?.product?.compareAtPrice ?? null;
+  if (compareAt == null || compareAt <= unitPrice) return null;
+  return compareAt;
+}
+
 export function computeCartSubtotal(items: CartItem[]): number {
   return items.reduce((total, item) => total + item.quantity * getCartItemUnitPrice(item), 0);
 }

@@ -8,6 +8,7 @@ import {
 } from '@/components/organisms/OrderPaymentForm/Payment3dsAutoRedirect';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { CHECKOUT_ORDER_ID, samplePendingPayment } from '@/test/mocks/fixtures/checkout';
+import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 
 vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: vi.fn(() => ({
@@ -47,6 +48,11 @@ const cardPendingPayment: PaymentRecord = {
   expiresAt: null,
 };
 
+function renderForm(ui: React.ReactElement) {
+  const Wrapper = createApolloTestWrapper();
+  return render(<Wrapper>{ui}</Wrapper>);
+}
+
 describe('OrderPaymentForm', () => {
   const navigate = vi.fn();
 
@@ -62,7 +68,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('renders QR image when qrCodeUrl is present and payment has not expired', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
@@ -86,7 +92,7 @@ describe('OrderPaymentForm', () => {
     const user = userEvent.setup();
     const onCheckStatus = vi.fn().mockResolvedValue(undefined);
 
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
@@ -104,7 +110,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('does not show status check button when onCheckStatus is omitted', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
@@ -122,7 +128,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('shows retry panel when pending PromptPay QR countdown has expired', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
@@ -141,7 +147,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('authorizeUri present → redirecting state and auto-navigates once (AC-003/004)', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={cardPendingPayment}
         loading={false}
@@ -162,7 +168,7 @@ describe('OrderPaymentForm', () => {
   it('after one-shot → waiting-after-return; no second location assign (AC-012)', () => {
     sessionStorage.setItem(threeDSAutoRedirectStorageKey(cardPendingPayment.id), AUTHORIZE_URI);
 
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={cardPendingPayment}
         loading={false}
@@ -184,7 +190,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('frictionless (no authorizeUri) → no location assign (AC-004)', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...cardPendingPayment,
@@ -202,7 +208,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('empty authorizeUri → no forced redirect (empty input)', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...cardPendingPayment,
@@ -218,8 +224,30 @@ describe('OrderPaymentForm', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it('disallowed authorizeUri host → no navigate; shows blocked retry copy', () => {
+    const evilUri = 'https://evil.example/phish';
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...cardPendingPayment,
+          authorizeUri: evilUri,
+        }}
+        loading={false}
+        error={undefined}
+        navigateToAuthorizeUri={navigate}
+      />,
+    );
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('payment-3ds-redirecting')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'ไม่สามารถเปิดลิงก์ยืนยันการชำระเงินได้อย่างปลอดภัย',
+    );
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
   it('PromptPay QR branch still renders when qrCodeUrl present', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
@@ -239,7 +267,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('shows Thai error message when payment status is failed', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{ ...basePayment, status: 'failed', expiresAt: null }}
         loading={false}
@@ -251,8 +279,39 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
   });
 
+  it('retrySubmitting swaps failed chrome for processing stage (no unsuccessful banner)', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{ ...basePayment, status: 'failed', expiresAt: null }}
+        loading={false}
+        error={undefined}
+        retrySubmitting
+      />,
+    );
+
+    expect(screen.getByTestId('payment-retry-processing')).toBeInTheDocument();
+    expect(screen.getByText('กำลังดำเนินการ...')).toBeInTheDocument();
+    expect(screen.getByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')).not.toBeVisible();
+    // Panel stays mounted (hidden) so in-flight submit can unlock on failure.
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+  });
+
+  it('paid status shows success handoff, never failed banner', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{ ...basePayment, status: 'paid', expiresAt: null }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByTestId('payment-paid-handoff')).toBeInTheDocument();
+    expect(screen.getByText('ชำระเงินสำเร็จ กำลังเปลี่ยนหน้า...')).toBeInTheDocument();
+    expect(screen.queryByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')).not.toBeInTheDocument();
+  });
+
   it('shows PaymentRetryPanel when failed PromptPay payment QR has expired', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{ ...basePayment, status: 'failed', expiresAt: pastExpiresAt }}
         loading={false}
@@ -266,7 +325,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('shows PaymentRetryPanel when failed payment has not expired', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{ ...basePayment, status: 'failed', expiresAt: futureExpiresAt }}
         loading={false}
@@ -279,7 +338,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('hides PaymentRetryPanel when paymentRecoveryUnavailable is set', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
@@ -301,7 +360,7 @@ describe('OrderPaymentForm', () => {
     const user = userEvent.setup();
     const onRetry = vi.fn();
 
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={null}
         loading={false}
@@ -318,8 +377,19 @@ describe('OrderPaymentForm', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
+  it('prefers loading spinner over load-error while payment is still resolving', () => {
+    renderForm(
+      <OrderPaymentForm payment={null} loading error={new Error('Subscription socket failed')} />,
+    );
+
+    expect(screen.getByLabelText('กำลังโหลดข้อมูลการชำระเงิน')).toBeInTheDocument();
+    expect(
+      screen.queryByText('ไม่สามารถโหลดข้อมูลการชำระเงินได้ กรุณาลองใหม่อีกครั้ง'),
+    ).not.toBeInTheDocument();
+  });
+
   it('paid → thank-you handoff copy once (PaymentPaidHandoff)', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{ ...basePayment, status: 'paid', orderId: CHECKOUT_ORDER_ID }}
         loading={false}
@@ -335,7 +405,7 @@ describe('OrderPaymentForm', () => {
     const user = userEvent.setup();
     sessionStorage.setItem(threeDSAutoRedirectStorageKey(cardPendingPayment.id), AUTHORIZE_URI);
 
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={cardPendingPayment}
         loading={false}
@@ -351,7 +421,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('Mid-QR live pending: CTA collapsed by default (aria-expanded=false, panel absent)', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
@@ -373,7 +443,7 @@ describe('OrderPaymentForm', () => {
     const user = userEvent.setup();
     const onRetryPayment = vi.fn();
 
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
@@ -409,7 +479,7 @@ describe('OrderPaymentForm', () => {
       expiresAt: futureExpiresAt,
     };
 
-    const { unmount } = render(
+    const { unmount } = renderForm(
       <OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />,
     );
 
@@ -418,7 +488,7 @@ describe('OrderPaymentForm', () => {
 
     unmount();
 
-    render(<OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />);
+    renderForm(<OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />);
 
     expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
       'aria-expanded',
@@ -428,7 +498,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('QR-expired interim shows retry panel and does not mount Mid-QR change-method CTA', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
@@ -446,7 +516,7 @@ describe('OrderPaymentForm', () => {
   });
 
   it('frictionless pending (no qrCodeUrl) does not mount Mid-QR CTA', () => {
-    render(
+    renderForm(
       <OrderPaymentForm
         payment={{
           ...cardPendingPayment,
@@ -459,5 +529,31 @@ describe('OrderPaymentForm', () => {
 
     expect(screen.getByTestId('payment-waiting-frictionless')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
+  });
+
+  it('bank transfer pending shows back links to the order while waiting for admin approval', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          paymentMethod: 'bank_transfer',
+          qrCodeUrl: null,
+          authorizeUri: null,
+          expiresAt: null,
+        }}
+        loading={false}
+        error={undefined}
+        onCheckStatus={vi.fn()}
+        orderCreatedAt="2024-05-12T07:30:00.000Z"
+      />,
+    );
+
+    const orderHref = `/user/orders/${CHECKOUT_ORDER_ID}`;
+    const back = screen.getByTestId('payment-busy-back');
+    expect(back).toHaveAttribute('href', orderHref);
+    expect(back).toHaveTextContent('กลับไปที่คำสั่งซื้อ');
+    expect(screen.getByRole('heading', { name: /คัดลอกบัญชีธนาคาร/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ยืนยันชำระเงินแล้ว' })).toBeInTheDocument();
+    expect(screen.getByTestId('payment-busy-back')).toBeInTheDocument();
   });
 });

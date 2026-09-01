@@ -1,7 +1,7 @@
-import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import { ERROR_MESSAGES } from '@/lib/errors/errorMessages';
+import { extractErrorCode } from '@/lib/errors/getErrorMessage';
 
-export const PAYMENT_ORDER_NOT_PAYABLE_COPY =
-  'คำสั่งซื้อนี้หมดเวลาชำระเงินแล้ว หรือถูกยกเลิกแล้ว กรุณาทำรายการสั่งซื้อใหม่';
+export const PAYMENT_ORDER_NOT_PAYABLE_COPY = ERROR_MESSAGES.ORDER_NOT_PAYABLE;
 
 export function hasQrExpiredAt(
   expiresAt: string | null | undefined,
@@ -16,15 +16,13 @@ export function hasQrExpiredAt(
 }
 
 export function isOrderNotPayableError(error: unknown): boolean {
-  if (CombinedGraphQLErrors.is(error)) {
-    return error.errors.some((graphError) => graphError.extensions?.code === 'ORDER_NOT_PAYABLE');
+  if (extractErrorCode(error) === 'ORDER_NOT_PAYABLE') {
+    return true;
   }
 
+  // Legacy English API text before code-only responses.
   if (error instanceof Error) {
-    return (
-      error.message.includes('ORDER_NOT_PAYABLE') ||
-      error.message.includes('no longer awaiting payment')
-    );
+    return error.message.includes('no longer awaiting payment');
   }
 
   return false;

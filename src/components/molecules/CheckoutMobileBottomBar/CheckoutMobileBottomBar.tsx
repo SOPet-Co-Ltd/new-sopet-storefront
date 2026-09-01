@@ -2,11 +2,6 @@
 
 import { Button } from '@/components/atoms/Button';
 import { useCheckoutTotals } from '@/lib/hooks/useCheckoutTotals';
-import {
-  useCheckoutSubmit,
-  type AddressSubmitContext,
-} from '@/components/sections/CheckoutSection/useCheckoutSubmit';
-import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 
 function formatPrice(amount: number): string {
   return `฿${amount.toLocaleString('th-TH', {
@@ -16,18 +11,17 @@ function formatPrice(amount: number): string {
 }
 
 type CheckoutMobileBottomBarProps = {
-  guestForm: GuestCheckoutFormState | null;
-  addressSubmitContext?: AddressSubmitContext;
+  onSubmit: () => void | Promise<void>;
+  isSubmitting: boolean;
+  canSubmit: boolean;
 };
 
 export function CheckoutMobileBottomBar({
-  guestForm,
-  addressSubmitContext,
+  onSubmit,
+  isSubmitting,
+  canSubmit,
 }: CheckoutMobileBottomBarProps) {
   const totals = useCheckoutTotals();
-  const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
-    addressSubmitContext,
-  });
 
   return (
     <div className="block md:hidden" data-testid="checkout-mobile-bottom-bar">
@@ -40,13 +34,13 @@ export function CheckoutMobileBottomBar({
         </div>
         <div className="flex flex-col items-end">
           <Button
-            className="w-fit"
+            className="w-sop-192px"
             variant="primary"
-            size="lg"
+            size="xl"
             type="button"
             disabled={!canSubmit || isSubmitting}
             onClick={() => {
-              void handleSubmit();
+              void onSubmit();
             }}
             data-testid="checkout-submit-mobile"
           >

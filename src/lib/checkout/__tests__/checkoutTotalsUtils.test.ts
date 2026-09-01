@@ -73,4 +73,209 @@ describe('calculateCheckoutTotals', () => {
 
     expect(totals.finalPrice).toBe(0);
   });
+
+  it('does not double-count platform + store FREE_SHIPPING against one shipping fee', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 856,
+      itemCount: 4,
+      storeIds: ['store-1'],
+      shippingByStoreId: {
+        'store-1': { shippingOptionId: 'ship-1', shippingFee: 50 },
+      },
+      storePromotionsByStoreId: {
+        'store-1': {
+          code: 'ATVNDFREESHIP',
+          name: 'Vendor free shipping',
+          discountAmount: 50,
+          type: 'free_shipping',
+        },
+      },
+      platformPromotionDiscount: 50,
+      platformPromotionType: 'free_shipping',
+    });
+
+    expect(totals.platformPromotionDiscount).toBe(50);
+    expect(totals.storeDiscountTotal).toBe(0);
+    expect(totals.totalDiscount).toBe(50);
+    expect(totals.shippingFeeTotal).toBe(50);
+    expect(totals.finalPrice).toBe(856);
+  });
+
+  it('still stacks merchandise store discount with platform free shipping', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 856,
+      itemCount: 4,
+      storeIds: ['store-1'],
+      shippingByStoreId: {
+        'store-1': { shippingOptionId: 'ship-1', shippingFee: 50 },
+      },
+      storePromotionsByStoreId: {
+        'store-1': {
+          code: 'STORE10',
+          name: 'Store 10%',
+          discountAmount: 85.6,
+          type: 'percentage',
+        },
+      },
+      platformPromotionDiscount: 50,
+      platformPromotionType: 'free_shipping',
+    });
+
+    expect(totals.platformPromotionDiscount).toBe(50);
+    expect(totals.storeDiscountTotal).toBe(85.6);
+    expect(totals.storeDiscountByStoreId['store-1']).toBe(85.6);
+    expect(totals.totalDiscount).toBe(135.6);
+    expect(totals.finalPrice).toBe(770.4);
+  });
+
+  it('does not let a stale store shipping discount leak into another store fee', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 500,
+      itemCount: 2,
+      storeIds: ['store-a', 'store-b'],
+      shippingByStoreId: {
+        'store-a': { shippingOptionId: 'ship-cheap', shippingFee: 30 },
+        'store-b': { shippingOptionId: 'ship-1', shippingFee: 40 },
+      },
+      storePromotionsByStoreId: {
+        'store-a': {
+          code: 'FREESHIP',
+          name: 'Free shipping',
+          discountAmount: 50,
+          type: 'free_shipping',
+        },
+      },
+      platformPromotionDiscount: 0,
+    });
+
+    expect(totals.storeDiscountByStoreId['store-a']).toBe(30);
+    expect(totals.storeDiscountTotal).toBe(30);
+    expect(totals.shippingFeeTotal).toBe(70);
+    expect(totals.finalPrice).toBe(540);
+  });
+
+  it('recomputes free shipping discount when store fee increases after apply', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 200,
+      itemCount: 1,
+      storeIds: ['store-1'],
+      shippingByStoreId: {
+        'store-1': { shippingOptionId: 'ship-express', shippingFee: 80 },
+      },
+      storePromotionsByStoreId: {
+        'store-1': {
+          code: 'FREESHIP',
+          name: 'Free shipping',
+          discountAmount: 50,
+          type: 'free_shipping',
+        },
+      },
+      platformPromotionDiscount: 0,
+    });
+
+    expect(totals.storeDiscountByStoreId['store-1']).toBe(80);
+    expect(totals.storeDiscountTotal).toBe(80);
+    expect(totals.finalPrice).toBe(200);
+  });
+
+  it('caps fixed shipping discount to the store own fee in multi-store checkout', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 400,
+      itemCount: 2,
+      storeIds: ['store-a', 'store-b'],
+      shippingByStoreId: {
+        'store-a': { shippingOptionId: 'ship-1', shippingFee: 20 },
+        'store-b': { shippingOptionId: 'ship-1', shippingFee: 45 },
+      },
+      storePromotionsByStoreId: {
+        'store-a': {
+          code: 'SHIP30',
+          name: 'Fixed ship discount',
+          discountAmount: 30,
+          type: 'fixed_shipping_discount',
+          discountValue: 30,
+        },
+      },
+      platformPromotionDiscount: 0,
+    });
+
+    expect(totals.storeDiscountByStoreId['store-a']).toBe(20);
+    expect(totals.storeDiscountTotal).toBe(20);
+    expect(totals.finalPrice).toBe(445);
+  });
+
+  it('recomputes fixed shipping discount when store fee decreases after apply', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 200,
+      itemCount: 1,
+      storeIds: ['store-1'],
+      shippingByStoreId: {
+        'store-1': { shippingOptionId: 'ship-cheap', shippingFee: 20 },
+      },
+      storePromotionsByStoreId: {
+        'store-1': {
+          code: 'SHIP40',
+          name: 'Fixed ship discount',
+          discountAmount: 40,
+          type: 'fixed_shipping_discount',
+          discountValue: 40,
+        },
+      },
+      platformPromotionDiscount: 0,
+    });
+
+    expect(totals.storeDiscountByStoreId['store-1']).toBe(20);
+    expect(totals.storeDiscountTotal).toBe(20);
+    expect(totals.finalPrice).toBe(200);
+  });
+
+  it('restores fixed shipping discount when store fee increases after apply', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 200,
+      itemCount: 1,
+      storeIds: ['store-1'],
+      shippingByStoreId: {
+        'store-1': { shippingOptionId: 'ship-standard', shippingFee: 45 },
+      },
+      storePromotionsByStoreId: {
+        'store-1': {
+          code: 'SHIP40',
+          name: 'Fixed ship discount',
+          discountAmount: 20,
+          type: 'fixed_shipping_discount',
+          discountValue: 40,
+        },
+      },
+      platformPromotionDiscount: 0,
+    });
+
+    expect(totals.storeDiscountByStoreId['store-1']).toBe(40);
+    expect(totals.storeDiscountTotal).toBe(40);
+    expect(totals.finalPrice).toBe(205);
+  });
+
+  it('recomputes percentage shipping discount when store fee changes after apply', () => {
+    const totals = calculateCheckoutTotals({
+      subtotal: 200,
+      itemCount: 1,
+      storeIds: ['store-1'],
+      shippingByStoreId: {
+        'store-1': { shippingOptionId: 'ship-cheap', shippingFee: 20 },
+      },
+      storePromotionsByStoreId: {
+        'store-1': {
+          code: 'SHIP50PCT',
+          name: '50% ship discount',
+          discountAmount: 100,
+          type: 'percentage_shipping_discount',
+          discountValue: 50,
+        },
+      },
+      platformPromotionDiscount: 0,
+    });
+
+    expect(totals.storeDiscountByStoreId['store-1']).toBe(10);
+    expect(totals.storeDiscountTotal).toBe(10);
+    expect(totals.finalPrice).toBe(210);
+  });
 });

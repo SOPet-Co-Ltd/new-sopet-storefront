@@ -1,14 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { callGtag, ensureDataLayer, pushToDataLayer } from './dataLayer';
+import { resetCookieConsentMemory, writeCookieConsent } from '@/lib/consent/cookie-consent';
 
 const ORIGINAL_ENV = { ...process.env };
 
 beforeEach(() => {
   process.env = { ...ORIGINAL_ENV };
   vi.unstubAllEnvs();
-  // Fresh window.dataLayer / gtag per test
   delete window.dataLayer;
   delete window.gtag;
+  resetCookieConsentMemory();
 });
 
 afterEach(() => {
@@ -16,6 +17,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
   delete window.dataLayer;
   delete window.gtag;
+  resetCookieConsentMemory();
 });
 
 describe('ensureDataLayer', () => {
@@ -36,13 +38,22 @@ describe('pushToDataLayer', () => {
   it('no-ops when analytics IDs are missing', () => {
     vi.stubEnv('NEXT_PUBLIC_GTM_ID', '');
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', '');
+    writeCookieConsent('accepted');
 
     expect(pushToDataLayer({ event: 'page_view' })).toBe(false);
     expect(window.dataLayer).toBeUndefined();
   });
 
-  it('pushes when a valid GTM ID is configured', () => {
+  it('no-ops when consent is missing', () => {
     vi.stubEnv('NEXT_PUBLIC_GTM_ID', 'GTM-TEST01');
+
+    expect(pushToDataLayer({ event: 'page_view' })).toBe(false);
+    expect(window.dataLayer).toBeUndefined();
+  });
+
+  it('pushes when a valid GTM ID is configured and consent is granted', () => {
+    vi.stubEnv('NEXT_PUBLIC_GTM_ID', 'GTM-TEST01');
+    writeCookieConsent('accepted');
 
     expect(pushToDataLayer({ event: 'page_view', page_path: '/cart' })).toBe(true);
     expect(window.dataLayer).toEqual([{ event: 'page_view', page_path: '/cart' }]);
@@ -51,6 +62,7 @@ describe('pushToDataLayer', () => {
   it('no-ops when the kill-switch is false', () => {
     vi.stubEnv('NEXT_PUBLIC_GTM_ID', 'GTM-TEST01');
     vi.stubEnv('NEXT_PUBLIC_ANALYTICS_ENABLED', 'false');
+    writeCookieConsent('accepted');
 
     expect(pushToDataLayer({ event: 'page_view' })).toBe(false);
     expect(window.dataLayer).toBeUndefined();
@@ -60,11 +72,13 @@ describe('pushToDataLayer', () => {
 describe('callGtag', () => {
   it('returns false when gtag is not defined', () => {
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', 'G-TEST01');
+    writeCookieConsent('accepted');
     expect(callGtag('event', 'page_view')).toBe(false);
   });
 
-  it('invokes window.gtag when available and analytics is enabled', () => {
+  it('invokes window.gtag when available, analytics enabled, and consent granted', () => {
     vi.stubEnv('NEXT_PUBLIC_GA4_MEASUREMENT_ID', 'G-TEST01');
+    writeCookieConsent('accepted');
     const gtag = vi.fn();
     window.gtag = gtag;
 

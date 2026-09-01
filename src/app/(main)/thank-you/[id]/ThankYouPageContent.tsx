@@ -1,15 +1,17 @@
 'use client';
 
 import { useQuery } from '@apollo/client/react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckIcon } from '@/components/atoms/icons';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
 import { ThankYouAction } from '@/components/organisms/ThankYouAction';
 import ThankYouPageCopyId from '@/components/organisms/ThankYouPageCopyId';
 import ThankYouRecommendedProductSection from '@/components/organisms/ThankYouRecommendedProductSection';
 import { orderLineToAnalyticsItem, trackPurchase } from '@/lib/analytics';
-import { OrderDocument } from '@/lib/graphql/generated/graphql';
+import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { OrderDocument, PaymentByOrderIdDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { resolveGuestPayToken } from '@/lib/payment/guestPayToken';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
@@ -17,16 +19,69 @@ type ThankYouPageContentProps = {
   orderId: string;
 };
 
+/** Human-facing order codes only (never raw UUID / payment ids from the route). */
+export function isCustomerFacingOrderNumber(value: string | null | undefined): value is string {
+  return typeof value === 'string' && /^ORD-/i.test(value.trim());
+}
+
+function resolveCustomerFacingOrderNumber(
+  ...candidates: Array<string | null | undefined>
+): string | null {
+  for (const candidate of candidates) {
+    if (isCustomerFacingOrderNumber(candidate)) {
+      return candidate.trim();
+    }
+  }
+  return null;
+}
+
 export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
-  const { isAuthenticated } = useAuth();
-  const { data } = useQuery(OrderDocument, {
-    variables: { id: orderId },
-    fetchPolicy: 'network-only',
-  });
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const purchaseTrackedRef = useRef<string | null>(null);
+  const [pendingOrderNumber] = useState(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    const pending = getPendingCheckout();
+    if (pending?.orderId !== orderId) {
+      return null;
+    }
+    return resolveCustomerFacingOrderNumber(pending.orderNumber);
+  });
 
   const isGuest = !isAuthenticated;
+  // Wait for auth bootstrap so we do not fire the customer-scoped `order` query as a
+  // guest (UNAUTHENTICATED → auth error link → logout side effects).
+  const authReady = !isAuthLoading;
+
+  // SOPET-H-07: guest PaymentByOrderId requires the capability token when the order
+  // has a hash. Pending checkout is cleared on paid → thank-you, so sessionStorage
+  // is the source. Authenticated owners rely on JWT (token optional).
+  const guestPayToken = useMemo(
+    () => (authReady && !isAuthenticated ? resolveGuestPayToken({ orderId }) : undefined),
+    [authReady, isAuthenticated, orderId],
+  );
+
+  const { data, loading: orderLoading } = useQuery(OrderDocument, {
+    variables: { id: orderId },
+    fetchPolicy: 'network-only',
+    skip: !authReady || !isAuthenticated,
+  });
+
+  // Public payment lookup is the guest (and fallback) source of ORD-… numbers.
+  const { data: paymentData, loading: paymentLoading } = useQuery(PaymentByOrderIdDocument, {
+    variables: { orderId, guestPayToken },
+    fetchPolicy: 'network-only',
+    skip: !authReady,
+  });
+
   const order = data?.order;
+  const orderNumber = resolveCustomerFacingOrderNumber(
+    order?.orderNumber,
+    paymentData?.paymentByOrderId?.orderNumber,
+    pendingOrderNumber,
+  );
+  const isOrderNumberLoading = !orderNumber && (!authReady || orderLoading || paymentLoading);
 
   useEffect(() => {
     if (!order?.id || purchaseTrackedRef.current === order.id) {
@@ -118,16 +173,35 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
               <span className="sop-body-lg-medium text-sop-neutral-gray-200">
                 รหัสคำสั่งซื้อ :{' '}
               </span>
-              <span className="sop-body-lg-medium text-sop-secondary-500">
-                {order?.orderNumber ?? orderId}
-              </span>
-              <ThankYouPageCopyId id={order?.orderNumber ?? orderId} />
+              {orderNumber ? (
+                <>
+                  <span
+                    className="sop-body-lg-medium text-sop-secondary-500"
+                    data-testid="thank-you-order-number"
+                  >
+                    {orderNumber}
+                  </span>
+                  <ThankYouPageCopyId id={orderNumber} />
+                </>
+              ) : (
+                <span
+                  className={cn(
+                    'inline-block h-7 min-w-[160px] rounded-sop-8 bg-sop-neutral-grayalpha-200',
+                    isOrderNumberLoading && 'animate-pulse',
+                  )}
+                  aria-busy={isOrderNumberLoading}
+                  aria-label={
+                    isOrderNumberLoading ? 'กำลังโหลดรหัสคำสั่งซื้อ' : 'ไม่พบรหัสคำสั่งซื้อ'
+                  }
+                  data-testid="thank-you-order-number-pending"
+                />
+              )}
             </div>
             <p className="sop-body-md-regular text-sop-neutral-gray-300">
               เราได้รับข้อมูลคำสั่งซื้อของคุณเรียบร้อยแล้ว
             </p>
           </div>
-          <ThankYouAction isGuest={isGuest} orderNumber={order?.orderNumber ?? orderId} />
+          <ThankYouAction isGuest={isGuest} orderNumber={orderNumber ?? ''} />
         </div>
       </section>
 

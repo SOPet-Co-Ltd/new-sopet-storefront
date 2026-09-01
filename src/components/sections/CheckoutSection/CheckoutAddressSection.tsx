@@ -41,7 +41,7 @@ export function CheckoutAddressSection({
 }: CheckoutAddressSectionProps) {
   const { isAuthenticated, customer } = useAuth();
   const { addresses, loading, error, refetch, ...addressesApi } = useAddresses();
-  const { selectedAddressId, setAddress } = useCheckout();
+  const { selectedAddressId, setAddress, isSubmitting } = useCheckout();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isRecipientPhoneDirty, setIsRecipientPhoneDirty] = useState(false);
@@ -85,12 +85,15 @@ export function CheckoutAddressSection({
 
   const handleContactPhoneChange = useCallback(
     (value: string) => {
+      if (isSubmitting) {
+        return;
+      }
       onGuestFormChange('contactPhone', value);
       if (!isRecipientPhoneDirty) {
         onGuestFormChange('recipientPhone', value);
       }
     },
-    [isRecipientPhoneDirty, onGuestFormChange],
+    [isRecipientPhoneDirty, isSubmitting, onGuestFormChange],
   );
 
   useEffect(() => {
@@ -105,7 +108,14 @@ export function CheckoutAddressSection({
     }
   }, [addresses, selectedAddressId, setAddress]);
 
+  if (isSubmitting && isModalOpen) {
+    setIsModalOpen(false);
+  }
+
   const handleShippingChange = (field: keyof GuestCheckoutFormState, value: string) => {
+    if (isSubmitting) {
+      return;
+    }
     if (field === 'recipientPhone') {
       setIsRecipientPhoneDirty(value !== '');
     }
@@ -113,6 +123,9 @@ export function CheckoutAddressSection({
   };
 
   const handleCascadeReset = (fields: Array<keyof GuestCheckoutFormState>) => {
+    if (isSubmitting) {
+      return;
+    }
     for (const field of fields) {
       onGuestFormChange(field, '');
     }
@@ -151,7 +164,10 @@ export function CheckoutAddressSection({
         ) : null}
 
         {displayMode === 'guest' || displayMode === 'auth-inline' ? (
-          <div className="flex flex-col gap-sop-20px">
+          <fieldset
+            disabled={isSubmitting}
+            className="m-0 flex min-w-0 flex-col gap-sop-20px border-0 p-0 disabled:opacity-60"
+          >
             <CheckoutContactSection
               contactPhone={guestForm.contactPhone}
               email={guestForm.email ?? ''}
@@ -173,7 +189,7 @@ export function CheckoutAddressSection({
                 onChange={(checked) => onSaveAddressPreferenceChange?.(checked)}
               />
             ) : null}
-          </div>
+          </fieldset>
         ) : null}
 
         {displayMode === 'auth-summary' && selectedAddress ? (
@@ -182,6 +198,7 @@ export function CheckoutAddressSection({
               address={selectedAddress}
               onChangeClick={() => setIsModalOpen(true)}
               isModalOpen={isModalOpen}
+              disabled={isSubmitting}
             />
             <AddressManagementModal
               key={isModalOpen ? 'address-modal-open' : 'address-modal-closed'}

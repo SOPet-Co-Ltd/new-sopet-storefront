@@ -27,12 +27,13 @@ import {
   detectCardBrand,
 } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { parseCardExpiry } from '@/lib/payment/omise';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
-import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { ensureSessionId } from '@/lib/session';
 
@@ -60,7 +61,9 @@ export function useCheckoutSubmit(
     selectedSubtotal: subtotal,
     refetch,
     pruneDeselectedIds,
-  } = useCart();
+    isBuyNow,
+    clearBuyNow,
+  } = useCheckoutCartSelection();
   const checkoutMutations = useCheckoutMutations();
   const { addPaymentMethod } = usePaymentMethods();
   const {
@@ -74,8 +77,12 @@ export function useCheckoutSubmit(
     canAdvanceToReview,
     setStep,
     setAddress,
+    isSubmitting,
+    setIsSubmitting,
   } = useCheckout();
   const submitGuardRef = useRef(createSubmitCheckoutGuard());
+  /** Sync lock so double-clicks before React re-renders are ignored. */
+  const submittingRef = useRef(false);
 
   const addressSubmitContext = options?.addressSubmitContext;
 
@@ -103,7 +110,9 @@ export function useCheckoutSubmit(
         .map((promotion) => promotion?.code?.trim())
         .filter((code): code is string => Boolean(code)),
       paymentMethod,
-      sessionId: isGuestCheckout ? ensureSessionId() : null,
+      // Guest session cookie is resolved at submit time — ensureSessionId
+      // must not run during render (client components still SSR).
+      sessionId: null as string | null,
     }),
     [
       isAuthenticated,
@@ -133,8 +142,22 @@ export function useCheckoutSubmit(
     items.length > 0 &&
     !(isAuthPath && (addressQueryLoading || addressQueryError));
 
+  const beginSubmitting = useCallback(() => {
+    if (submittingRef.current) {
+      return false;
+    }
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    return true;
+  }, [setIsSubmitting]);
+
+  const endSubmitting = useCallback(() => {
+    submittingRef.current = false;
+    setIsSubmitting(false);
+  }, [setIsSubmitting]);
+
   const executeSubmit = useCallback(
-    async (overrideAddressId?: string | null) => {
+    async (overrideAddressId?: string | null): Promise<boolean> => {
       try {
         const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
@@ -168,8 +191,9 @@ export function useCheckoutSubmit(
             checkoutContext: {
               ...checkoutContext,
               selectedAddressId: overrideAddressId ?? checkoutContext.selectedAddressId,
+              sessionId: isGuestCheckout ? ensureSessionId() : null,
             },
-            cart: { items },
+            cart: { items, includeCartItemIds: !isBuyNow },
             guestForm: isGuestCheckout ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
@@ -183,27 +207,35 @@ export function useCheckoutSubmit(
         setPendingCheckout({
           paymentId: result.paymentId,
           orderId: result.orderId,
+          orderNumber: result.orderNumber,
         });
-        pruneDeselectedIds(checkedOutItemIds);
-        await refetch();
+        if (isBuyNow) {
+          clearBuyNow();
+        } else {
+          pruneDeselectedIds(checkedOutItemIds);
+          await refetch();
+        }
 
         router.push(result.redirectPath);
+        // Keep UI locked until unmount/reset so a slow navigation cannot double-submit.
+        return true;
       } catch (error) {
         const message =
           error instanceof SubmitCheckoutError
             ? error.message
-            : error instanceof Error
-              ? error.message
-              : 'ไม่สามารถดำเนินการชำระเงินได้';
+            : getErrorMessage(error, 'ไม่สามารถดำเนินการชำระเงินได้');
 
         toast.error(message);
+        return false;
       }
     },
     [
       addPaymentMethod,
       checkoutContext,
       checkoutMutations,
+      clearBuyNow,
       guestForm,
+      isBuyNow,
       isGuestCheckout,
       items,
       paymentMethod,
@@ -216,6 +248,10 @@ export function useCheckoutSubmit(
   );
 
   const handleSubmit = useCallback(async () => {
+    if (submittingRef.current || isSubmitting) {
+      return;
+    }
+
     if (!canSubmit) {
       if (isAuthErrorMode) {
         toast.error('ไม่สามารถโหลดที่อยู่ได้ กรุณาลองอีกครั้ง');
@@ -243,24 +279,32 @@ export function useCheckoutSubmit(
         return;
       }
 
-      const created = await createAddress(
-        mapGuestFormToCreateAddressInput(guestForm, {
-          isDefault: addressSubmitContext.saveAddressChecked,
-        }),
-      );
-
-      if (!created?.id) {
-        toast.error('ไม่สามารถบันทึกที่อยู่ได้');
+      if (!beginSubmitting()) {
         return;
       }
 
-      addressSubmitContext.setAddress(created.id);
-      setAddress(created.id);
-
       try {
-        await executeSubmit(created.id);
+        const created = await createAddress(
+          mapGuestFormToCreateAddressInput(guestForm, {
+            isDefault: addressSubmitContext.saveAddressChecked,
+          }),
+        );
+
+        if (!created?.id) {
+          toast.error('ไม่สามารถบันทึกที่อยู่ได้');
+          endSubmitting();
+          return;
+        }
+
+        addressSubmitContext.setAddress(created.id);
+        setAddress(created.id);
+
+        const ok = await executeSubmit(created.id);
+        if (!ok) {
+          endSubmitting();
+        }
       } catch {
-        // executeSubmit already surfaces toast errors
+        endSubmitting();
       }
       return;
     }
@@ -285,14 +329,23 @@ export function useCheckoutSubmit(
       }
     }
 
+    if (!beginSubmitting()) {
+      return;
+    }
+
     try {
-      await executeSubmit();
+      const ok = await executeSubmit();
+      if (!ok) {
+        endSubmitting();
+      }
     } catch {
-      // executeSubmit already surfaces toast errors
+      endSubmitting();
     }
   }, [
     addressSubmitContext,
+    beginSubmitting,
     canSubmit,
+    endSubmitting,
     executeSubmit,
     guestForm,
     isAuthenticated,
@@ -300,13 +353,14 @@ export function useCheckoutSubmit(
     isAuthInlineMode,
     isAuthSummaryMode,
     isGuestCheckout,
+    isSubmitting,
     selectedAddressId,
     setAddress,
   ]);
 
   return {
     handleSubmit,
-    isSubmitting: checkoutMutations.loading,
+    isSubmitting,
     canSubmit,
     step,
   };
@@ -315,29 +369,34 @@ export function useCheckoutSubmit(
 export async function applyCheckoutPromotionCode({
   code,
   subtotal,
+  shippingFee,
   lines,
   promotions,
   validatePromotion,
   setPromotion,
   setPromotionName,
   setPromotionDiscount,
+  setPromotionType,
   setPromotionFreeUnits,
   setPromotionProductId,
 }: {
   code: string;
   subtotal: number;
+  shippingFee?: number | null;
   lines?: import('@/lib/checkout/storePromotionUtils').PromotionEstimateCartLine[];
-  promotions?: Array<{ code: string; conditions?: string | null }>;
+  promotions?: Array<{ code: string; conditions?: string | null; type?: string | null }>;
   validatePromotion: ReturnType<typeof useCheckoutMutations>['validatePromotion'];
   setPromotion: (code: string | null) => void;
   setPromotionName: (name: string | null) => void;
   setPromotionDiscount: (amount: number) => void;
+  setPromotionType?: (type: string | null) => void;
   setPromotionFreeUnits?: (freeUnits: number | null) => void;
   setPromotionProductId?: (productId: string | null) => void;
 }): Promise<void> {
   const validation = await validateCheckoutPromotionCode({
     code,
     subtotal,
+    shippingFee,
     lines,
     validatePromotion,
   });
@@ -352,6 +411,7 @@ export async function applyCheckoutPromotionCode({
   setPromotion(validation.code);
   setPromotionName(validation.name);
   setPromotionDiscount(validation.discountAmount);
+  setPromotionType?.(matched?.type ?? null);
   setPromotionFreeUnits?.(validation.freeUnits ?? null);
   setPromotionProductId?.(productId);
 }
@@ -365,9 +425,5 @@ export function getPromotionApplyErrorMessage(error: unknown): string {
     return error.message;
   }
 
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return 'โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว';
+  return getErrorMessage(error, 'โค้ดส่วนลดไม่ถูกต้องหรือหมดอายุแล้ว');
 }

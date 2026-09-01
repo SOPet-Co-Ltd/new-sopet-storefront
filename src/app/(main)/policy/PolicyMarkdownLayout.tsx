@@ -1,78 +1,66 @@
+import type { Components } from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
+
 type PolicyMarkdownLayoutProps = {
   title: string;
   source: string;
 };
 
-function PolicyMarkdownContent({ source }: { source: string }) {
-  const lines = source.trim().split('\n');
-  const nodes: React.ReactNode[] = [];
-  let listItems: string[] = [];
-  let key = 0;
-
-  const flushList = () => {
-    if (listItems.length === 0) {
-      return;
-    }
-
-    nodes.push(
-      <ul
-        key={key++}
-        className="list-disc pl-4 list-outside mb-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300"
+const policyMarkdownComponents: Components = {
+  h2: ({ children }) => (
+    <h2 className="sop-headline-sm-medium text-sop-primary-700 mb-4 mt-8">{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="sop-headline-xs-medium text-sop-primary-700 mb-4 mt-6">{children}</h3>
+  ),
+  p: ({ children }) => (
+    <p className="mb-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300">{children}</p>
+  ),
+  ul: ({ children }) => (
+    <ul className="mb-4 list-outside list-disc pl-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="mb-4 list-outside list-decimal pl-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300">
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => (
+    <li className="mb-2 sop-body-md-regular text-sop-neutral-gray-300">{children}</li>
+  ),
+  strong: ({ children }) => (
+    <strong className="sop-body-md-medium text-sop-neutral-gray-200">{children}</strong>
+  ),
+  em: ({ children }) => <em className="italic text-sop-neutral-gray-300">{children}</em>,
+  a: ({ children, href }) => {
+    const isExternal = Boolean(href?.startsWith('http://') || href?.startsWith('https://'));
+    return (
+      <a
+        href={href}
+        className="text-sop-secondary-500 underline underline-offset-2"
+        {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       >
-        {listItems.map((item, index) => (
-          <li key={index} className="mb-2 sop-body-md-regular text-sop-neutral-gray-300">
-            {item}
-          </li>
-        ))}
-      </ul>,
+        {children}
+      </a>
     );
-    listItems = [];
-  };
+  },
+};
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    if (!trimmed) {
-      flushList();
-      continue;
-    }
-
-    if (trimmed.startsWith('## ')) {
-      flushList();
-      nodes.push(
-        <h2 key={key++} className="sop-headline-sm-medium text-sop-primary-700 mb-4 mt-8">
-          {trimmed.slice(3)}
-        </h2>,
-      );
-      continue;
-    }
-
-    if (trimmed.startsWith('### ')) {
-      flushList();
-      nodes.push(
-        <h3 key={key++} className="sop-headline-xs-medium text-sop-primary-700 mb-4 mt-6">
-          {trimmed.slice(4)}
-        </h3>,
-      );
-      continue;
-    }
-
-    if (trimmed.startsWith('-')) {
-      listItems.push(trimmed.replace(/^-\s?/, ''));
-      continue;
-    }
-
-    flushList();
-    nodes.push(
-      <p key={key++} className="mb-4 last:mb-0 sop-body-md-regular text-sop-neutral-gray-300">
-        {trimmed}
-      </p>,
-    );
-  }
-
-  flushList();
-
-  return <>{nodes}</>;
+function PolicyMarkdownContent({ source }: { source: string }) {
+  return (
+    <div data-testid="policy-markdown-content">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeSanitize]}
+        components={policyMarkdownComponents}
+      >
+        {source.trim()}
+      </ReactMarkdown>
+    </div>
+  );
 }
 
 export function PolicyMarkdownLayout({ title, source }: PolicyMarkdownLayoutProps) {

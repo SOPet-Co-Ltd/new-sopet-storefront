@@ -6,7 +6,7 @@ import type { StorePromotionSelection } from '@/lib/checkout/storePromotionUtils
 
 export type CheckoutStep = 'shipping' | 'payment' | 'review';
 
-export type PaymentMethod = 'promptpay' | 'card' | 'cod';
+export type PaymentMethod = 'promptpay' | 'card' | 'cod' | 'bank_transfer';
 
 export type ShippingSelection = {
   shippingOptionId: string;
@@ -20,6 +20,8 @@ export type CheckoutState = {
   promotionCode: string | null;
   promotionName: string | null;
   promotionDiscount: number;
+  /** Platform promotion type (e.g. free_shipping) for checkout totals stacking. */
+  promotionType: string | null;
   /** Platform BxGy Gate A — server freeUnits only. */
   promotionFreeUnits: number | null;
   /** Platform BxGy product P from conditions JSON. */
@@ -37,6 +39,7 @@ function createInitialCheckoutState(): CheckoutState {
     promotionCode: null,
     promotionName: null,
     promotionDiscount: 0,
+    promotionType: null,
     promotionFreeUnits: null,
     promotionProductId: null,
     storePromotionsByStoreId: {},
@@ -46,15 +49,21 @@ function createInitialCheckoutState(): CheckoutState {
 }
 
 export type CheckoutContextValue = CheckoutState & {
+  /** True from pay-click until success navigation or failure unlock. Locks checkout UI. */
+  isSubmitting: boolean;
+  setIsSubmitting: (value: boolean) => void;
   setStep: (step: CheckoutStep) => void;
   setShipping: (storeId: string, selection: ShippingSelection) => void;
   setAddress: (addressId: string | null) => void;
   setPromotion: (code: string | null) => void;
   setPromotionName: (name: string | null) => void;
   setPromotionDiscount: (amount: number) => void;
+  setPromotionType: (type: string | null) => void;
   setPromotionFreeUnits: (freeUnits: number | null) => void;
   setPromotionProductId: (productId: string | null) => void;
   setStorePromotion: (storeId: string, promotion: StorePromotionSelection) => void;
+  /** Atomic multi-store write — keeps sibling lanes intact (N-store auto-apply / manual). */
+  setStorePromotions: (updates: Record<string, StorePromotionSelection>) => void;
   setPaymentMethod: (method: PaymentMethod | null) => void;
   setRequiredStoreIds: (storeIds: string[]) => void;
   canAdvanceToPayment: () => boolean;
@@ -77,9 +86,11 @@ function hasShippingForAllStores(
 
 export function CheckoutProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<CheckoutState>(createInitialCheckoutState);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reset = useCallback(() => {
     setState(createInitialCheckoutState());
+    setIsSubmitting(false);
   }, []);
 
   const canAdvanceToPayment = useCallback(() => {
@@ -127,6 +138,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       promotionCode: code,
       promotionDiscount: code ? prev.promotionDiscount : 0,
       promotionName: code ? prev.promotionName : null,
+      promotionType: code ? prev.promotionType : null,
       promotionFreeUnits: code ? prev.promotionFreeUnits : null,
       promotionProductId: code ? prev.promotionProductId : null,
     }));
@@ -138,6 +150,10 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
 
   const setPromotionDiscount = useCallback((amount: number) => {
     setState((prev) => ({ ...prev, promotionDiscount: amount }));
+  }, []);
+
+  const setPromotionType = useCallback((type: string | null) => {
+    setState((prev) => ({ ...prev, promotionType: type }));
   }, []);
 
   const setPromotionFreeUnits = useCallback((freeUnits: number | null) => {
@@ -158,6 +174,16 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const setStorePromotions = useCallback((updates: Record<string, StorePromotionSelection>) => {
+    setState((prev) => ({
+      ...prev,
+      storePromotionsByStoreId: {
+        ...prev.storePromotionsByStoreId,
+        ...updates,
+      },
+    }));
+  }, []);
+
   const setPaymentMethod = useCallback((method: PaymentMethod | null) => {
     setState((prev) => ({ ...prev, paymentMethod: method }));
   }, []);
@@ -169,15 +195,19 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CheckoutContextValue>(
     () => ({
       ...state,
+      isSubmitting,
+      setIsSubmitting,
       setStep,
       setShipping,
       setAddress,
       setPromotion,
       setPromotionName,
       setPromotionDiscount,
+      setPromotionType,
       setPromotionFreeUnits,
       setPromotionProductId,
       setStorePromotion,
+      setStorePromotions,
       setPaymentMethod,
       setRequiredStoreIds,
       canAdvanceToPayment,
@@ -186,15 +216,18 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     }),
     [
       state,
+      isSubmitting,
       setStep,
       setShipping,
       setAddress,
       setPromotion,
       setPromotionName,
       setPromotionDiscount,
+      setPromotionType,
       setPromotionFreeUnits,
       setPromotionProductId,
       setStorePromotion,
+      setStorePromotions,
       setPaymentMethod,
       setRequiredStoreIds,
       canAdvanceToPayment,

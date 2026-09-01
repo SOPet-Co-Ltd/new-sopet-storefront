@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/atoms/Button';
 import { PlusIcon, QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/atoms/icons';
 import { CardPaymentForm } from '@/components/molecules/CheckoutPaymentSelection/CardPaymentForm';
@@ -13,15 +14,18 @@ import { PaymentMethodRadio } from '@/components/molecules/CheckoutPaymentSelect
 import { cleanCardNumber } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { SavedPaymentMethodOption } from '@/components/molecules/CheckoutPaymentSelection/SavedPaymentMethodOption';
 import { mapCheckoutPaymentMethodForApi } from '@/lib/checkout/checkoutPaymentMethod';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
+import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { OmiseConfigurationError, parseCardExpiry, tokenizeCard } from '@/lib/payment/omise';
+import { PaymentRetryError } from '@/lib/payment/submitPaymentRetry';
 import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
 
 export type PaymentRetrySubmitInput = {
-  /** Mid-QR / recovery: PromptPay + card only (COD not offered on payment page). */
-  paymentMethod: 'promptpay' | 'credit_card';
+  /** Mid-QR / recovery: PromptPay, card, or bank transfer when platform-enabled. */
+  paymentMethod: 'promptpay' | 'credit_card' | 'bank_transfer';
   omiseToken?: string;
   savedPaymentMethodId?: string;
 };
@@ -33,11 +37,18 @@ export type PaymentRetryPanelProps = {
   submitError?: string | null;
   /** Parent mutation in-flight (task-04 createPayment) */
   isSubmitting?: boolean;
+  /** Notify parent so failed/recovery chrome can swap to the processing stage. */
+  onSubmittingChange?: (submitting: boolean) => void;
   /**
    * Mid-QR wait: hide PromptPay so customers switch away from the active QR
    * (card / new card remain available). Failed and after-return keep PromptPay.
    */
   hidePromptPay?: boolean;
+  /**
+   * Bank-transfer wait: hide Bank Account option (already on that method).
+   * Other recovery surfaces show it when admin has enabled bank transfer.
+   */
+  hideBankTransfer?: boolean;
 };
 
 type CardEntryMode = 'saved' | 'new';
@@ -48,7 +59,7 @@ type PaymentOption = {
   icon: React.ReactNode;
 };
 
-const PAYMENT_OPTIONS: PaymentOption[] = [
+const BASE_PAYMENT_OPTIONS: PaymentOption[] = [
   {
     value: 'promptpay',
     label: 'QR Code / PromptPay',
@@ -60,6 +71,12 @@ const PAYMENT_OPTIONS: PaymentOption[] = [
     icon: <SubtractIcon size={{ mobile: 28 }} color="#9C6ADE" />,
   },
 ];
+
+const BANK_TRANSFER_OPTION: PaymentOption = {
+  value: 'bank_transfer',
+  label: 'Bank Account (บัญชีธนาคาร)',
+  icon: <WalletIcon size={{ mobile: 28 }} color="#9C6ADE" />,
+};
 
 function resolveDefaultSavedCardId(
   paymentMethods: ReturnType<typeof usePaymentMethods>['paymentMethods'],
@@ -76,17 +93,34 @@ export function PaymentRetryPanel({
   onSubmit,
   submitError = null,
   isSubmitting: externalSubmitting = false,
+  onSubmittingChange,
   hidePromptPay = false,
+  hideBankTransfer = false,
 }: PaymentRetryPanelProps) {
   const { isAuthenticated } = useAuth();
   const { paymentMethods } = usePaymentMethods();
+  const { data: bankTransferData } = useQuery(BankTransferDetailsDocument, {
+    fetchPolicy: 'cache-first',
+  });
+  const bankTransferAvailable = Boolean(bankTransferData?.bankTransferDetails);
 
-  const visibleOptions = hidePromptPay
-    ? PAYMENT_OPTIONS.filter((option) => option.value !== 'promptpay')
-    : PAYMENT_OPTIONS;
+  const visibleOptions = useMemo(() => {
+    let options = hidePromptPay
+      ? BASE_PAYMENT_OPTIONS.filter((option) => option.value !== 'promptpay')
+      : BASE_PAYMENT_OPTIONS;
+
+    if (bankTransferAvailable && !hideBankTransfer) {
+      options = [...options, BANK_TRANSFER_OPTION];
+    }
+
+    return options;
+  }, [bankTransferAvailable, hideBankTransfer, hidePromptPay]);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(() => {
     if (hidePromptPay && initialPaymentMethod === 'promptpay') {
+      return null;
+    }
+    if (hideBankTransfer && initialPaymentMethod === 'bank_transfer') {
       return null;
     }
     return initialPaymentMethod;
@@ -101,9 +135,17 @@ export function PaymentRetryPanel({
 
   const isSubmitting = externalSubmitting || localSubmitting;
   const hasSavedCards = isAuthenticated && paymentMethods.length > 0;
-  const showSavedCards = paymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
-  const showNewCardForm = paymentMethod === 'card' && !showSavedCards;
-  const displayError = localError ?? submitError;
+  const bankTransferSelectable = bankTransferAvailable && !hideBankTransfer;
+  const selectedPaymentMethod =
+    paymentMethod === 'bank_transfer' && !bankTransferSelectable ? null : paymentMethod;
+  const showSavedCards =
+    selectedPaymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
+  const showNewCardForm = selectedPaymentMethod === 'card' && !showSavedCards;
+  const displayError = submitError ?? localError;
+
+  useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
 
   // Plain functions: React Compiler memoizes; manual useCallback deps fought preserve-manual-memoization.
   const clearCardForm = () => {
@@ -113,6 +155,10 @@ export function PaymentRetryPanel({
   };
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
+    if (isSubmitting) {
+      return;
+    }
+
     setLocalError(null);
     setCardFormError(null);
 
@@ -140,27 +186,33 @@ export function PaymentRetryPanel({
     setLocalError(null);
     setCardFormError(null);
 
-    if (paymentMethod === null) {
+    if (selectedPaymentMethod === null) {
       setLocalError('กรุณาเลือกวิธีการชำระเงิน');
       return;
     }
 
     let apiPaymentMethod: PaymentRetrySubmitInput['paymentMethod'];
     try {
-      const mapped = mapCheckoutPaymentMethodForApi(paymentMethod);
+      const mapped = mapCheckoutPaymentMethodForApi(selectedPaymentMethod);
       if (mapped === 'cod') {
         setLocalError('ไม่รองรับวิธีการชำระเงินที่เลือก');
         return;
       }
+      if (mapped === 'bank_transfer' && !bankTransferSelectable) {
+        setLocalError('Bank Account (บัญชีธนาคาร) ยังไม่พร้อมใช้งาน');
+        return;
+      }
       apiPaymentMethod = mapped;
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : 'ไม่รองรับวิธีการชำระเงินที่เลือก');
+      setLocalError(getErrorMessage(error, 'ไม่รองรับวิธีการชำระเงินที่เลือก'));
       return;
     }
 
     const payload: PaymentRetrySubmitInput = { paymentMethod: apiPaymentMethod };
+    const usesNewCardForm =
+      selectedPaymentMethod === 'card' && !(cardEntryMode === 'saved' && selectedSavedCardId);
 
-    if (paymentMethod === 'card') {
+    if (selectedPaymentMethod === 'card') {
       if (cardEntryMode === 'saved' && selectedSavedCardId) {
         payload.savedPaymentMethodId = selectedSavedCardId;
       } else {
@@ -169,7 +221,14 @@ export function PaymentRetryPanel({
           setCardFormError(validationError);
           return;
         }
+      }
+    }
 
+    // Lock the panel before any async work (tokenize + createPayment) so values cannot change.
+    // On success, stay locked until unmount/navigation (same as checkout isSubmitting).
+    setLocalSubmitting(true);
+    try {
+      if (usesNewCardForm) {
         try {
           const { month, year } = parseCardExpiry(cardForm.expiry);
           payload.omiseToken = await tokenizeCard({
@@ -179,26 +238,28 @@ export function PaymentRetryPanel({
             securityCode: cardForm.cvv,
             name: cardForm.cardName.trim(),
           });
-          clearCardForm();
         } catch (error) {
           const message =
             error instanceof OmiseConfigurationError
               ? error.message
-              : error instanceof Error
-                ? error.message
-                : 'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร';
+              : getErrorMessage(error, 'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร');
           setCardFormError(message);
+          setLocalSubmitting(false);
           return;
         }
       }
-    }
 
-    setLocalSubmitting(true);
-    try {
       await onSubmit?.(payload);
+      // Clear sensitive card fields only after a successful submit.
+      if (usesNewCardForm) {
+        clearCardForm();
+      }
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : 'ไม่สามารถสร้างการชำระเงินได้');
-    } finally {
+      const message =
+        error instanceof OmiseConfigurationError || error instanceof PaymentRetryError
+          ? error.message
+          : getErrorMessage(error, 'ไม่สามารถสร้างการชำระเงินได้');
+      setLocalError(message);
       setLocalSubmitting(false);
     }
   };
@@ -216,7 +277,7 @@ export function PaymentRetryPanel({
       <div className="mt-sop-16px flex flex-col gap-sop-20px">
         <div role="radiogroup" aria-label="วิธีการชำระเงิน" className="flex flex-col gap-sop-12px">
           {visibleOptions.map((option) => {
-            const isSelected = paymentMethod === option.value;
+            const isSelected = selectedPaymentMethod === option.value;
             return (
               <button
                 key={option.value}
@@ -247,7 +308,7 @@ export function PaymentRetryPanel({
           })}
         </div>
 
-        {paymentMethod === 'card' ? (
+        {selectedPaymentMethod === 'card' ? (
           <>
             <div className="h-px w-full bg-sop-neutral-grayalpha-200" />
 
@@ -263,6 +324,9 @@ export function PaymentRetryPanel({
                     disabled={isSubmitting}
                     data-testid="retry-add-new-card-button"
                     onClick={() => {
+                      if (isSubmitting) {
+                        return;
+                      }
                       setCardEntryMode('new');
                       clearCardForm();
                     }}
@@ -283,7 +347,12 @@ export function PaymentRetryPanel({
                       key={method.id}
                       method={method}
                       selected={selectedSavedCardId === method.id}
-                      onSelect={() => setSelectedSavedCardId(method.id)}
+                      disabled={isSubmitting}
+                      onSelect={() => {
+                        if (!isSubmitting) {
+                          setSelectedSavedCardId(method.id);
+                        }
+                      }}
                     />
                   ))}
                 </div>
@@ -295,7 +364,11 @@ export function PaymentRetryPanel({
                 <p className="sop-body-md-regular text-sop-neutral-gray-300">ข้อมูลบัตรของคุณ</p>
                 <CardPaymentForm
                   value={cardForm}
+                  disabled={isSubmitting}
                   onChange={(next) => {
+                    if (isSubmitting) {
+                      return;
+                    }
                     setCardForm(next);
                     if (cardFormError) {
                       setCardFormError(null);
@@ -304,7 +377,11 @@ export function PaymentRetryPanel({
                   error={cardFormError}
                   showSaveCardCheckbox={isAuthenticated}
                   saveCardChecked={saveCardForNextTime}
-                  onSaveCardChange={setSaveCardForNextTime}
+                  onSaveCardChange={(checked) => {
+                    if (!isSubmitting) {
+                      setSaveCardForNextTime(checked);
+                    }
+                  }}
                 />
               </div>
             ) : null}

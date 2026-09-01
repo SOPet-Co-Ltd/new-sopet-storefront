@@ -1,6 +1,5 @@
 export { CheckIcon, type CheckIconProps } from './CheckIcon';
 export { ClipboardAddIcon, type ClipboardAddIconProps } from './ClipboardAddIcon';
-export { ClipboardListIcon, type ClipboardListIconProps } from './ClipboardListIcon';
 export { ContactCardIcon, type ContactCardIconProps } from './ContactCardIcon';
 export { CopyIcon, type CopyIconProps } from './CopyIcon';
 export { DangerTriangleIcon, type DangerTriangleIconProps } from './DangerTriangleIcon';
@@ -19,7 +18,6 @@ export { QRCodeIcon, type QRCodeIconProps } from './QRCodeIcon';
 export { SaleIcon, type SaleIconProps } from './SaleIcon';
 export { SearchIcon, type SearchIconProps } from './SearchIcon';
 export { ShieldCheckIcon, type ShieldCheckIconProps } from './ShieldCheckIcon';
-export { ShopIcon, type ShopIconProps } from './ShopIcon';
 export { SOPetLogo, type SOPetLogoProps } from './SOPetLogo';
 export { SpinnerIcon, type SpinnerIconProps } from './SpinnerIcon';
 export { TicketSaleIcon, type TicketSaleIconProps } from './TicketSaleIcon';
@@ -28,4 +26,3 @@ export {
   type TrashBinMinimalisticIconProps,
 } from './TrashBinMinimalisticIcon';
 export { UserIcon, type UserIconProps } from './UserIcon';
-export { WalletIcon, type WalletIconProps } from './WalletIcon';

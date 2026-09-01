@@ -3,7 +3,11 @@ import {
   type CreateOrderCheckoutContext,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
-import { mapCheckoutPaymentMethodForApi } from '@/lib/checkout/checkoutPaymentMethod';
+import {
+  mapCheckoutPaymentMethodForApi,
+  isNonOmiseApiPaymentMethod,
+} from '@/lib/checkout/checkoutPaymentMethod';
+import { persistGuestPayToken } from '@/lib/payment/guestPayToken';
 import {
   extractPromotionErrorCode,
   isCreateOrderHardEligibilityCode,
@@ -18,6 +22,7 @@ import {
   ORDER_CONTAINS_SUSPENDED_STORE_ERROR_CODE,
   STORE_SUSPENSION_HOLD_COPY,
 } from '@/lib/constants/storeSuspensionHoldCopy';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { mapCheckoutSuspendedStoreError } from '@/lib/store-suspension/mapSuspensionErrors';
 
 export class SubmitCheckoutError extends Error {
@@ -45,6 +50,7 @@ export type SubmitCheckoutResult = {
   redirectPath: string;
   paymentId: string;
   orderId: string;
+  orderNumber: string | null;
 };
 
 export type SubmitCheckoutGuard = {
@@ -123,9 +129,10 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     // Candidate-001: only hard eligibility / unknown → order_failed.
     // INSUFFICIENT_QTY is apply-skip — retry once without promo codes.
     if (isCreateOrderHardEligibilityCode(code) || code == null) {
-      const message =
-        error instanceof Error && error.message ? error.message : 'ไม่สามารถสร้างคำสั่งซื้อได้';
-      throw new SubmitCheckoutError(message, 'order_failed');
+      throw new SubmitCheckoutError(
+        getErrorMessage(error, 'ไม่สามารถสร้างคำสั่งซื้อได้'),
+        'order_failed',
+      );
     }
 
     try {
@@ -139,16 +146,19 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
       if (retrySuspended) {
         throw new SubmitCheckoutError(retrySuspended, 'order_failed');
       }
-      const message =
-        retryError instanceof Error && retryError.message
-          ? retryError.message
-          : 'ไม่สามารถสร้างคำสั่งซื้อได้';
-      throw new SubmitCheckoutError(message, 'order_failed');
+      throw new SubmitCheckoutError(
+        getErrorMessage(retryError, 'ไม่สามารถสร้างคำสั่งซื้อได้'),
+        'order_failed',
+      );
     }
   }
 
   if (!order?.id) {
     throw new SubmitCheckoutError('ไม่สามารถสร้างคำสั่งซื้อได้', 'order_failed');
+  }
+
+  if (order.guestPayToken) {
+    persistGuestPayToken({ orderId: order.id, token: order.guestPayToken });
   }
 
   const apiPaymentMethod = mapCheckoutPaymentMethodForApi(
@@ -160,7 +170,8 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     amount: order.total,
     paymentMethod: apiPaymentMethod,
     currency: 'THB' as const,
-    ...(apiPaymentMethod === 'cod'
+    ...(order.guestPayToken ? { guestPayToken: order.guestPayToken } : {}),
+    ...(isNonOmiseApiPaymentMethod(apiPaymentMethod)
       ? {}
       : params.savedPaymentMethodId
         ? { savedPaymentMethodId: params.savedPaymentMethodId }
@@ -174,12 +185,21 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     throw new SubmitCheckoutError('ไม่สามารถสร้างรายการชำระเงินได้', 'payment_failed');
   }
 
+  if (order.guestPayToken) {
+    persistGuestPayToken({
+      orderId: order.id,
+      paymentId: payment.id,
+      token: order.guestPayToken,
+    });
+  }
+
   const redirectId = resolvePaymentRedirectId(payment.id, order.id);
 
   return {
     redirectPath: `/payment/${redirectId}`,
     paymentId: payment.id,
     orderId: order.id,
+    orderNumber: order.orderNumber ?? payment.orderNumber ?? null,
   };
 }
 
@@ -187,12 +207,13 @@ export async function submitCheckout(
   params: SubmitCheckoutParams,
   guard: SubmitCheckoutGuard = createSubmitCheckoutGuard(),
 ): Promise<SubmitCheckoutResult> {
-  const submitKey = buildSubmitKey(params);
-
-  if (guard.inFlight && guard.lastKey === submitKey) {
+  // Reject any concurrent submit — including different payment/shipping keys —
+  // so mid-flight UI changes cannot spawn a second order.
+  if (guard.inFlight) {
     return guard.inFlight;
   }
 
+  const submitKey = buildSubmitKey(params);
   const submission = runSubmitCheckout(params);
   guard.inFlight = submission;
   guard.lastKey = submitKey;

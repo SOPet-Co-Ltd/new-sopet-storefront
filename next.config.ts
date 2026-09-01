@@ -32,10 +32,16 @@ function imageRemotePatterns(): RemotePattern[] {
       protocol: 'https',
       hostname: 'images.unsplash.com',
     },
-    // Cloudflare R2 public buckets (pub-<hash>.r2.dev)
+    // Cloudflare R2 — UAT public bucket + any pub-*.r2.dev
     {
       protocol: 'https',
       hostname: '**.r2.dev',
+      pathname: '/**',
+    },
+    // Production custom domain for R2
+    {
+      protocol: 'https',
+      hostname: 'cdn.sopet.org',
       pathname: '/**',
     },
   ];
@@ -51,7 +57,46 @@ function imageRemotePatterns(): RemotePattern[] {
   return patterns;
 }
 
+const isLocalDev = process.env.NODE_ENV === 'development';
+
+const productionCsp = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  // Next.js + Omise.js + GTM/GA require script hosts; tighten further when CMP lands.
+  "script-src 'self' 'unsafe-inline' https://cdn.omise.co https://www.googletagmanager.com https://www.google-analytics.com",
+  "connect-src 'self' https://api.omise.co https://vault.omise.co https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
+  "frame-src 'self' https://cdn.omise.co https://www.googletagmanager.com",
+  "form-action 'self'",
+].join('; ');
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          // Skip CSP locally so MinIO/http assets and HMR are unrestricted.
+          ...(isLocalDev ? [] : [{ key: 'Content-Security-Policy', value: productionCsp }]),
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(self)',
+          },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {
@@ -81,8 +126,9 @@ const nextConfig: NextConfig = {
     remotePatterns: imageRemotePatterns(),
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
-    // Allow private IPs for local MinIO
-    unoptimized: process.env.NODE_ENV === 'development',
+    // Serve original CDN/R2 URLs. Vercel Image Optimization returns 402
+    // OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED once the transform quota is hit.
+    unoptimized: true,
   },
 };
 

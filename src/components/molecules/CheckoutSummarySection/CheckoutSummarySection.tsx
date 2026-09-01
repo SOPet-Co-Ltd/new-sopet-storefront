@@ -1,14 +1,12 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { PiggyBankIcon } from '@/components/atoms/icons';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckoutTotals } from '@/lib/hooks/useCheckoutTotals';
-import {
-  useCheckoutSubmit,
-  type AddressSubmitContext,
-} from '@/components/sections/CheckoutSection/useCheckoutSubmit';
-import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
+import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 function formatPrice(amount: number): string {
   return `฿${amount.toLocaleString('th-TH', {
@@ -25,15 +23,24 @@ type SummaryRowProps = {
   label: string;
   value: string;
   valueClassName?: string;
+  labelTitle?: string;
 };
 
-function SummaryRow({ label, value, valueClassName = 'text-sop-base-black' }: SummaryRowProps) {
+function SummaryRow({
+  label,
+  value,
+  valueClassName = 'text-sop-base-black',
+  labelTitle,
+}: SummaryRowProps) {
   return (
     <div className="flex justify-between gap-sop-8px">
-      <label className="sop-body-sm-regular text-sop-neutral-gray-200 lg:sop-body-md-regular">
+      <label
+        className="min-w-0 flex-1 truncate sop-body-sm-regular text-sop-neutral-gray-200 lg:sop-body-md-regular"
+        title={labelTitle ?? label}
+      >
         {label}
       </label>
-      <label className={`sop-body-sm-medium lg:sop-body-md-medium ${valueClassName}`}>
+      <label className={`shrink-0 sop-body-sm-medium lg:sop-body-md-medium ${valueClassName}`}>
         {value}
       </label>
     </div>
@@ -41,19 +48,40 @@ function SummaryRow({ label, value, valueClassName = 'text-sop-base-black' }: Su
 }
 
 type CheckoutSummarySectionProps = {
-  guestForm: GuestCheckoutFormState | null;
-  addressSubmitContext?: AddressSubmitContext;
+  onSubmit: () => void | Promise<void>;
+  isSubmitting: boolean;
+  canSubmit: boolean;
 };
 
 export function CheckoutSummarySection({
-  guestForm,
-  addressSubmitContext,
+  onSubmit,
+  isSubmitting,
+  canSubmit,
 }: CheckoutSummarySectionProps) {
   const { isAuthenticated } = useAuth();
   const totals = useCheckoutTotals();
-  const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
-    addressSubmitContext,
-  });
+  const { storePromotionsByStoreId } = useCheckout();
+  const { selectedItemsByStore } = useCheckoutCartSelection();
+
+  const storeDiscountRows = useMemo(() => {
+    const storeNameById = new Map(
+      selectedItemsByStore.map((group) => [group.storeId, group.storeName]),
+    );
+
+    return Object.entries(totals.storeDiscountByStoreId)
+      .filter(([, amount]) => amount > 0)
+      .map(([storeId, amount]) => {
+        const promotion = storePromotionsByStoreId[storeId];
+        const storeName = storeNameById.get(storeId);
+        const code = promotion?.code ?? '';
+        const label = storeName ? `${storeName} (${code})` : code;
+        const labelTitle = storeName
+          ? `ส่วนลดร้านค้า ${storeName} · ${code}`
+          : `ส่วนลดร้านค้า · ${code}`;
+
+        return { storeId, label, labelTitle, amount };
+      });
+  }, [selectedItemsByStore, storePromotionsByStoreId, totals.storeDiscountByStoreId]);
 
   return (
     <div className="w-full rounded-sop-24px bg-sop-base-white px-sop-16px py-sop-20px lg:px-sop-24px lg:py-sop-20px">
@@ -72,13 +100,15 @@ export function CheckoutSummarySection({
           label={`ยอดรวมสินค้า (${totals.itemCount} ชิ้น)`}
           value={formatPrice(totals.subtotal)}
         />
-        {totals.storeDiscountTotal > 0 ? (
+        {storeDiscountRows.map((row) => (
           <SummaryRow
-            label="ส่วนลดร้านค้า"
-            value={formatDiscountPrice(totals.storeDiscountTotal)}
+            key={row.storeId}
+            label={row.label}
+            labelTitle={row.labelTitle}
+            value={formatDiscountPrice(row.amount)}
             valueClassName="text-sop-secondary-600"
           />
-        ) : null}
+        ))}
         {totals.platformPromotionDiscount > 0 ? (
           <SummaryRow
             label="ส่วนลดแพลตฟอร์ม"
@@ -122,11 +152,11 @@ export function CheckoutSummarySection({
       <Button
         className="mt-sop-16px hidden w-full md:block"
         variant="primary"
-        size="lg"
+        size="xl"
         type="button"
         disabled={!canSubmit || isSubmitting}
         onClick={() => {
-          void handleSubmit();
+          void onSubmit();
         }}
         data-testid="checkout-submit-desktop"
       >

@@ -7,6 +7,7 @@ import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm';
 import type { PaymentRetrySubmitInput } from '@/components/organisms/OrderPaymentForm/PaymentRetryPanel';
 import { clearPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { STORE_SUSPENSION_HOLD_COPY } from '@/lib/constants/storeSuspensionHoldCopy';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { useCheckout } from '@/lib/hooks/useCheckout';
 import { useOrderDetail } from '@/lib/hooks/useOrders';
 import { usePayment } from '@/lib/hooks/usePayment';
@@ -16,6 +17,7 @@ import { isOrderNotPayableError } from '@/lib/payment/orderNotPayable';
 import {
   buildPaymentRetryInput,
   clearPriorPayment3dsAutoRedirect,
+  mirrorGuestPayTokenForNewPayment,
   PaymentRetryError,
   resolveNewPaymentId,
 } from '@/lib/payment/submitPaymentRetry';
@@ -47,10 +49,7 @@ function retryErrorMessage(error: unknown): string {
   if (error instanceof PaymentRetryError) {
     return error.message;
   }
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return 'ไม่สามารถสร้างการชำระเงินได้';
+  return getErrorMessage(error, 'ไม่สามารถสร้างการชำระเงินได้');
 }
 
 export default function PaymentPage() {
@@ -62,6 +61,8 @@ export default function PaymentPage() {
   const [retrySubmitError, setRetrySubmitError] = useState<string | null>(null);
   const [paymentRecoveryUnavailable, setPaymentRecoveryUnavailable] = useState(false);
   const [heldUnpaidFromError, setHeldUnpaidFromError] = useState(false);
+  /** Stay locked after successful createPayment until route unmount (checkout pattern). */
+  const [retryNavigating, setRetryNavigating] = useState(false);
   const hasTriedFallback = useRef(false);
   const hasRedirected = useRef(false);
 
@@ -133,19 +134,29 @@ export default function PaymentPage() {
 
         const newPaymentId = resolveNewPaymentId(payment.id, created?.id);
         clearPriorPayment3dsAutoRedirect(payment.id);
+        mirrorGuestPayTokenForNewPayment({
+          orderId: payment.orderId,
+          newPaymentId,
+          previousPaymentId: payment.id,
+        });
+        // Keep failed/recovery UI replaced with processing until navigation completes.
+        setRetryNavigating(true);
         router.push(`/payment/${newPaymentId}`);
       } catch (retryError) {
+        setRetryNavigating(false);
         if (isOrderNotPayableError(retryError)) {
           setPaymentRecoveryUnavailable(true);
           setRetrySubmitError(null);
-          return;
+          throw retryError;
         }
         if (isPaymentHeldPortionBlockedError(retryError)) {
           setHeldUnpaidFromError(true);
           setRetrySubmitError(STORE_SUSPENSION_HOLD_COPY.paymentHeldBlocked);
-          return;
+          throw retryError;
         }
-        setRetrySubmitError(retryErrorMessage(retryError));
+        const message = retryErrorMessage(retryError);
+        setRetrySubmitError(message);
+        throw retryError instanceof Error ? retryError : new Error(message);
       }
     },
     [createPayment, payment, router],
@@ -155,8 +166,8 @@ export default function PaymentPage() {
     <main className="flex min-h-dvh items-center justify-center bg-sop-primary-100 px-4 py-8">
       <OrderPaymentForm
         payment={payment}
-        loading={loading}
-        error={error}
+        loading={loading || (lookupMode === 'paymentId' && isPaymentNotFoundError(error))}
+        error={lookupMode === 'paymentId' && isPaymentNotFoundError(error) ? undefined : error}
         onRetry={() => {
           void refetch();
         }}
@@ -166,9 +177,10 @@ export default function PaymentPage() {
         }}
         onRetryPayment={handleRetryPayment}
         retrySubmitError={retrySubmitError}
-        retrySubmitting={creatingPayment}
+        retrySubmitting={creatingPayment || retryNavigating}
         paymentRecoveryUnavailable={paymentRecoveryUnavailable}
         heldUnpaidBlocked={heldUnpaidBlocked}
+        orderCreatedAt={order?.createdAt ?? null}
       />
     </main>
   );

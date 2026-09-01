@@ -1,6 +1,9 @@
+import { ERROR_MESSAGES } from '@/lib/errors/errorMessages';
+
 /**
  * Provisional Thai copy for store-suspension customer hold UX
  * (docs/ui-spec/store-suspension-customer-hold-ui-spec.md § Provisional Thai copy).
+ * API-code-backed strings are sourced from the error catalog to avoid duplication.
  */
 export const STORE_SUSPENSION_HOLD_COPY = {
   orderStatusOnHold: 'พักการดำเนินการ',
@@ -9,12 +12,11 @@ export const STORE_SUSPENSION_HOLD_COPY = {
     'บางรายการถูกพักชั่วคราวเนื่องจากร้านค้าถูกระงับ การจัดส่งจากร้านอื่นยังดำเนินการได้ตามปกติ',
   holdBannerFull: 'คำสั่งซื้อถูกพักชั่วคราวเนื่องจากร้านค้าถูกระงับ',
   holdItemHint: 'พักชั่วคราว — ร้านค้าถูกระงับ',
-  cartAddSuspended: 'ร้านค้านี้ถูกระงับชั่วคราว ไม่สามารถเพิ่มสินค้าลงตะกร้าได้',
-  cartInvalidatedBanner: 'สินค้าจากร้านที่ถูกระงับถูกลบออกจากตะกร้าแล้ว',
-  checkoutCreateSuspended: 'ไม่สามารถสร้างคำสั่งซื้อได้ เนื่องจากมีสินค้าจากร้านที่ถูกระงับ',
-  paymentHeldBlocked: 'ไม่สามารถชำระเงินส่วนที่ถูกพักได้ในขณะนี้ เนื่องจากร้านค้าถูกระงับชั่วคราว',
-  cancelHeldDenied:
-    'ไม่สามารถยกเลิกรายการที่ถูกพักเนื่องจากร้านถูกระงับได้ กรุณาติดต่อฝ่ายสนับสนุนหากต้องการความช่วยเหลือ',
+  cartAddSuspended: ERROR_MESSAGES.STORE_SUSPENDED,
+  cartInvalidatedBanner: ERROR_MESSAGES.SUSPENDED_STORE_ITEM_REMOVED,
+  checkoutCreateSuspended: ERROR_MESSAGES.ORDER_CONTAINS_SUSPENDED_STORE,
+  paymentHeldBlocked: ERROR_MESSAGES.PAYMENT_HELD_PORTION_BLOCKED,
+  cancelHeldDenied: ERROR_MESSAGES.HOLD_CANCEL_FORBIDDEN,
 } as const;
 
 export const STORE_SUSPENDED_ERROR_CODE = 'STORE_SUSPENDED';

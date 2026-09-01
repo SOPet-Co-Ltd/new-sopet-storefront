@@ -38,6 +38,7 @@ function createSetters() {
     setPromotion: vi.fn(),
     setPromotionName: vi.fn(),
     setPromotionDiscount: vi.fn(),
+    setPromotionType: vi.fn(),
     setPromotionFreeUnits: vi.fn(),
     setPromotionProductId: vi.fn(),
     setStorePromotion: vi.fn(),
@@ -60,6 +61,7 @@ function baseParams(
     setPromotion: setters.setPromotion,
     setPromotionName: setters.setPromotionName,
     setPromotionDiscount: setters.setPromotionDiscount,
+    setPromotionType: setters.setPromotionType,
     setPromotionFreeUnits: setters.setPromotionFreeUnits,
     setPromotionProductId: setters.setPromotionProductId,
     setStorePromotion: setters.setStorePromotion,
@@ -253,6 +255,84 @@ describe('runCheckoutAutoApply', () => {
       ),
     ).resolves.toMatchObject({ settled: true, appliedStoreCodes: {} });
 
+    expect(setters.setStorePromotion).not.toHaveBeenCalled();
+  });
+
+  it('keeps each store catalog when a shared list array is mutated after fetch', async () => {
+    const setters = createSetters();
+    const shared: AutoApplyListPromotion[] = [promo({ id: 'sa', code: 'STORE_A', priority: 1 })];
+
+    const result = await runCheckoutAutoApply(
+      baseParams({
+        storeIds: ['store-a', 'store-b'],
+        storeSubtotals: { 'store-a': 200, 'store-b': 300 },
+        platformPromotions: [],
+        fetchStorePromotions: async (storeId) => {
+          if (storeId === 'store-a') {
+            return shared;
+          }
+          shared.splice(0, shared.length, promo({ id: 'sb', code: 'STORE_B', priority: 1 }));
+          return shared;
+        },
+        validatePromotion: async (input) => validation(input.code, 25),
+        ...setters,
+      }),
+    );
+
+    expect(result.appliedStoreCodes['store-a']).toBe('STORE_A');
+    expect(result.appliedStoreCodes['store-b']).toBe('STORE_B');
+    expect(setters.setStorePromotion).toHaveBeenCalledWith(
+      'store-a',
+      expect.objectContaining({ code: 'STORE_A' }),
+    );
+    expect(setters.setStorePromotion).toHaveBeenCalledWith(
+      'store-b',
+      expect.objectContaining({ code: 'STORE_B' }),
+    );
+  });
+
+  it('auto-applies independent winners for three or more stores in one batch write', async () => {
+    const setStorePromotions = vi.fn();
+    const setters = createSetters();
+
+    const result = await runCheckoutAutoApply(
+      baseParams({
+        storeIds: ['store-a', 'store-b', 'store-c'],
+        storeSubtotals: { 'store-a': 200, 'store-b': 300, 'store-c': 400 },
+        platformPromotions: [],
+        fetchStorePromotions: async (storeId) => {
+          if (storeId === 'store-a') {
+            return [promo({ id: 'a', code: 'STORE_A', priority: 1 })];
+          }
+          if (storeId === 'store-b') {
+            return [promo({ id: 'b', code: 'STORE_B', priority: 1 })];
+          }
+          return [promo({ id: 'c', code: 'STORE_C', priority: 1 })];
+        },
+        validatePromotion: async (input) => {
+          const amounts: Record<string, number> = {
+            STORE_A: 25,
+            STORE_B: 35,
+            STORE_C: 45,
+          };
+          return validation(input.code, amounts[input.code] ?? 0);
+        },
+        ...setters,
+        setStorePromotions,
+      }),
+    );
+
+    expect(result.appliedStoreCodes).toEqual({
+      'store-a': 'STORE_A',
+      'store-b': 'STORE_B',
+      'store-c': 'STORE_C',
+    });
+    expect(setStorePromotions).toHaveBeenCalledTimes(1);
+    expect(setStorePromotions).toHaveBeenCalledWith({
+      'store-a': expect.objectContaining({ code: 'STORE_A', discountAmount: 25 }),
+      'store-b': expect.objectContaining({ code: 'STORE_B', discountAmount: 35 }),
+      'store-c': expect.objectContaining({ code: 'STORE_C', discountAmount: 45 }),
+    });
     expect(setters.setStorePromotion).not.toHaveBeenCalled();
   });
 });

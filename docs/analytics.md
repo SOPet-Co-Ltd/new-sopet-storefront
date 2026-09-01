@@ -77,9 +77,29 @@ Currency defaults to **THB**. Helpers (`trackViewItem`, `trackAddToCart`, …) l
 
 ## Privacy / PDPA (Thailand)
 
-There is **no cookie consent / CMP** in the storefront yet. Tags load when env enables them.
+## Cookie consent (CMP)
 
-Future improvement: gate `AnalyticsScripts` and `pushToDataLayer` behind PDPA-compliant consent (e.g. only load GTM/GA4 after marketing analytics consent). Until then, keep production IDs out of local `.env` if you need a clean local session, or set `NEXT_PUBLIC_ANALYTICS_ENABLED=false`.
+Analytics scripts and `pushToDataLayer` / `callGtag` load **only after** the shopper accepts analytics cookies. Essential auth/session cookies are unchanged (HttpOnly BFF). Marketing is reserved in storage (`marketing: false`) but hidden from the CMP UI until marketing scripts ship.
+
+Consent is stored in `localStorage` under `sopet_cookie_consent` as JSON:
+
+```json
+{ "v": 1, "analytics": true, "marketing": false }
+```
+
+Legacy values `accepted` / `rejected` are still read and mapped to all-on / essential-only.
+
+| Concern                    | Location                                                |
+| -------------------------- | ------------------------------------------------------- |
+| Consent helpers            | `src/lib/consent/cookie-consent.ts`                     |
+| Banner + preferences panel | `src/components/organisms/CookieConsentBanner.tsx`      |
+| Preferences panel          | `src/components/organisms/CookiePreferencesPanel.tsx`   |
+| Footer reopen link         | `src/components/organisms/CookieSettingsFooterLink.tsx` |
+| Gated script load          | `src/components/analytics/ConsentGatedAnalytics.tsx`    |
+
+First visit: **ยอมรับทั้งหมด** or **ตั้งค่า** (essential always on; analytics optional). After a decision, reopen via the footer **ตั้งค่าคุกกี้** link.
+
+Banner copy is an engineering default — replace after legal review. Optional: set `NEXT_PUBLIC_SECURITY_CONTACT` for Trust Center disclosure email.
 
 ## Extending
 

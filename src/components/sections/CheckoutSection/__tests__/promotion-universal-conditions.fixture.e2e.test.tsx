@@ -479,6 +479,37 @@ describe('Promotion universal conditions Journey 2 — BxGy + fixed clamp + Gate
           },
         });
       }),
+      graphql.query('ValidatePromotions', () => {
+        return HttpResponse.json({
+          data: {
+            validatePromotions: {
+              __typename: 'ValidatePromotionsResult',
+              items: [
+                {
+                  __typename: 'PromotionEligibilityResult',
+                  id: bxgyStorePromotion.id,
+                  code: bxgyStorePromotion.code,
+                  name: bxgyStorePromotion.name,
+                  eligible: true,
+                  ineligibilityReason: null,
+                  discountAmount: 200,
+                  freeUnits: 1,
+                },
+                {
+                  __typename: 'PromotionEligibilityResult',
+                  id: fixedAmountClampPromotion.id,
+                  code: fixedAmountClampPromotion.code,
+                  name: fixedAmountClampPromotion.name,
+                  eligible: true,
+                  ineligibilityReason: null,
+                  discountAmount: 100,
+                  freeUnits: null,
+                },
+              ],
+            },
+          },
+        });
+      }),
       graphql.query('ValidatePromotion', ({ variables }) => {
         capturedLines = (variables as { input?: { lines?: unknown } })?.input?.lines;
         return HttpResponse.json({
@@ -507,6 +538,7 @@ describe('Promotion universal conditions Journey 2 — BxGy + fixed clamp + Gate
     const modal = await screen.findByTestId('checkout-store-promotion-modal');
     await waitFor(() => {
       expect(within(modal).getByText('ซื้อ 2 แถม 1')).toBeInTheDocument();
+      expect(within(modal).getByTestId('store-promotion-confirm-button')).not.toBeDisabled();
     });
 
     await user.click(within(modal).getByText('ซื้อ 2 แถม 1'));

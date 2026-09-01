@@ -49,8 +49,8 @@ cp .env.example .env.local
 | `GRAPHQL_SSR_URL`                      | `http://localhost:3002/graphql`   | Server-side GraphQL                                                 |
 | `GRAPHQL_SSR_BYPASS_SECRET`            | —                                 | Server-only; Cloudflare SSR bypass (see docs/cloudflare-ssr-bypass) |
 | `NEXT_PUBLIC_OMISE_PUBLIC_KEY`         | —                                 | Must match backend `OMISE_PUBLIC_KEY`                               |
-| `NEXT_PUBLIC_FACEBOOK_APP_ID`          | —                                 | Optional; Messenger share on products                               |
-| `NEXT_PUBLIC_BASE_URL`                 | `http://localhost:3000`           | Canonical URLs, Open Graph, sitemap, robots                         |
+| `NEXT_PUBLIC_FACEBOOK_APP_ID`          | —                                 | Required for the Messenger share button on products                 |
+| `NEXT_PUBLIC_BASE_URL`                 | `http://localhost:3000`           | Canonical URLs, Open Graph, sitemap, robots, product share links    |
 | `NEXT_PUBLIC_SITE_NAME`                | `Sopet`                           | Title template, Open Graph `siteName`                               |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | —                                 | Optional Google Search Console tag                                  |
 | `NEXT_PUBLIC_GTM_ID`                   | —                                 | Optional; Google Tag Manager container (`GTM-XXXX`)                 |

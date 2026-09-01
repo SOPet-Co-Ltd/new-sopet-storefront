@@ -16,7 +16,7 @@ import {
   type ValidatePromotionInput,
 } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 /**
@@ -35,16 +35,19 @@ export function CheckoutAutoApplyController() {
     selectedItems,
     selectedItemsByStore,
     selectedSubtotal,
-  } = useCart();
+  } = useCheckoutCartSelection();
   const {
     promotionCode,
     storePromotionsByStoreId,
+    shippingByStoreId,
     setPromotion,
     setPromotionName,
     setPromotionDiscount,
+    setPromotionType,
     setPromotionFreeUnits,
     setPromotionProductId,
     setStorePromotion,
+    setStorePromotions,
   } = useCheckout();
 
   // client.query (not useLazyQuery) — auto-apply validates platform + stores in parallel;
@@ -54,7 +57,8 @@ export function CheckoutAutoApplyController() {
       const result = await client.query({
         query: ValidatePromotionDocument,
         variables: { input },
-        fetchPolicy: 'network-only',
+        fetchPolicy: 'no-cache',
+        context: { queryDeduplication: false },
       });
       return result.data?.validatePromotion;
     },
@@ -71,6 +75,18 @@ export function CheckoutAutoApplyController() {
   const attemptStartedRef = useRef(false);
   const prevAuthenticatedRef = useRef(isAuthenticated);
   const prevFingerprintRef = useRef<string | null>(null);
+  const promotionCodeRef = useRef(promotionCode);
+  const storePromotionsRef = useRef(storePromotionsByStoreId);
+  const shippingByStoreIdRef = useRef(shippingByStoreId);
+
+  // Keep C1 / shipping snapshots current without putting promotion or shipping
+  // state in the auto-apply deps (sibling store writes / per-store shipping
+  // defaults must not re-enter the orchestrator).
+  useEffect(() => {
+    promotionCodeRef.current = promotionCode;
+    storePromotionsRef.current = storePromotionsByStoreId;
+    shippingByStoreIdRef.current = shippingByStoreId;
+  }, [promotionCode, storePromotionsByStoreId, shippingByStoreId]);
 
   const cartFingerprint = useMemo(
     () =>
@@ -125,20 +141,30 @@ export function CheckoutAutoApplyController() {
     const priorFingerprint = getAutoApplyAttemptedFingerprint();
     const cartChangedSincePrior = priorFingerprint != null && priorFingerprint !== cartFingerprint;
 
+    // C1 snapshot from refs so applying a store code cannot re-enter this effect.
+    const snapshotPromotionCode = cartChangedSincePrior ? null : promotionCodeRef.current;
+    const snapshotStorePromotions = cartChangedSincePrior ? {} : storePromotionsRef.current;
+
     // New order / cart content change: clear lanes so C1 empty-lane can re-fill winners.
     // Same-fingerprint remount keeps selections and skips via hasAutoApplyAttempted above.
+
     if (cartChangedSincePrior) {
       setPromotion(null);
       setPromotionName(null);
       setPromotionDiscount(0);
+      setPromotionType(null);
       setPromotionFreeUnits(null);
       setPromotionProductId(null);
       const storeIdsToClear = new Set([
-        ...Object.keys(storePromotionsByStoreId),
+        ...Object.keys(storePromotionsRef.current),
         ...selectedItemsByStore.map((group) => group.storeId),
       ]);
-      for (const storeId of storeIdsToClear) {
-        setStorePromotion(storeId, null);
+      if (storeIdsToClear.size > 0) {
+        const clears: Record<string, null> = {};
+        for (const storeId of storeIdsToClear) {
+          clears[storeId] = null;
+        }
+        setStorePromotions(clears);
       }
     }
 
@@ -152,10 +178,11 @@ export function CheckoutAutoApplyController() {
         toPromotionEstimateCartLines(group.items),
       ]),
     );
-
-    // Pass empty lane snapshot when cart changed — React state setters are async.
-    const snapshotPromotionCode = cartChangedSincePrior ? null : promotionCode;
-    const snapshotStorePromotions = cartChangedSincePrior ? {} : storePromotionsByStoreId;
+    const shippingSnapshot = shippingByStoreIdRef.current;
+    const storeShippingFees = Object.fromEntries(
+      storeIds.map((storeId) => [storeId, shippingSnapshot[storeId]?.shippingFee ?? 0]),
+    );
+    const platformShippingFee = Object.values(storeShippingFees).reduce((sum, fee) => sum + fee, 0);
 
     void (async () => {
       try {
@@ -165,6 +192,8 @@ export function CheckoutAutoApplyController() {
           storeIds,
           platformSubtotal: selectedSubtotal,
           storeSubtotals,
+          platformShippingFee,
+          storeShippingFees,
           platformLines: toPromotionEstimateCartLines(selectedItems),
           storeLinesByStoreId,
           platformPromotions,
@@ -173,9 +202,11 @@ export function CheckoutAutoApplyController() {
           setPromotion,
           setPromotionName,
           setPromotionDiscount,
+          setPromotionType,
           setPromotionFreeUnits,
           setPromotionProductId,
           setStorePromotion,
+          setStorePromotions,
         });
       } catch {
         // Soft-fail entire attempt — still settle once-gate below.
@@ -187,8 +218,6 @@ export function CheckoutAutoApplyController() {
     ready,
     cartFingerprint,
     isAuthenticated,
-    promotionCode,
-    storePromotionsByStoreId,
     selectedItemsByStore,
     selectedItems,
     selectedSubtotal,
@@ -198,9 +227,11 @@ export function CheckoutAutoApplyController() {
     setPromotion,
     setPromotionName,
     setPromotionDiscount,
+    setPromotionType,
     setPromotionFreeUnits,
     setPromotionProductId,
     setStorePromotion,
+    setStorePromotions,
   ]);
 
   return null;

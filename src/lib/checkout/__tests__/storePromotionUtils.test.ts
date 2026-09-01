@@ -9,6 +9,7 @@ import {
   getUnavailablePromotionWarning,
   hasLoggedInOnlyConditionEnabled,
   isPromotionAvailable,
+  isShippingPromotionType,
   mapSoftIneligibilityReason,
   mergeListTimeEligibility,
   parseStorePromotionConditions,
@@ -63,6 +64,31 @@ describe('storePromotionUtils', () => {
           500,
         ),
       ).toBe('เมื่อซื้อครบ ฿200.00');
+    });
+
+    it('includes members-only and new-customer audience labels', () => {
+      expect(
+        formatPromotionConditionText(
+          {
+            ...promotionWithConditions,
+            minPurchaseAmount: null,
+            maxDiscountAmount: null,
+            conditions: stringifyConditions(buildLoggedInOnlyConditions()),
+          },
+          500,
+        ),
+      ).toBe('สมาชิกเท่านั้น');
+
+      expect(
+        formatPromotionConditionText(
+          {
+            ...guestNewCustomerStorePromotion,
+            minPurchaseAmount: 200,
+            maxDiscountAmount: null,
+          },
+          500,
+        ),
+      ).toBe('ลูกค้าใหม่ ≤ 30 วัน · เมื่อซื้อครบ ฿200.00');
     });
   });
 
@@ -142,15 +168,15 @@ describe('storePromotionUtils', () => {
         label: 'logged-in + newCustomer only',
         promo: guestNewCustomerStorePromotion,
         isGuest: false,
-        available: true,
-        countIncludes: true,
+        available: false,
+        countIncludes: false,
       },
       {
         label: 'logged-in + both keys',
         promo: guestLoggedInOnlyAndNewCustomerStorePromotion,
         isGuest: false,
-        available: true,
-        countIncludes: true,
+        available: false,
+        countIncludes: false,
       },
     ])(
       '$label → available=$available; countIncludes=$countIncludes',
@@ -193,9 +219,10 @@ describe('storePromotionUtils', () => {
     it('marks guest + newCustomer.enabled as unavailable even when min purchase is met', () => {
       const promo = guestNewCustomerStorePromotion;
 
-      expect(isPromotionAvailable(promo, 999)).toBe(true);
+      // Without isGuest context, newCustomer still needs server confirmation → unavailable.
+      expect(isPromotionAvailable(promo, 999)).toBe(false);
       expect(isPromotionAvailable(promo, 999, { isGuest: true })).toBe(false);
-      expect(isPromotionAvailable(promo, 999, { isGuest: false })).toBe(true);
+      expect(isPromotionAvailable(promo, 999, { isGuest: false })).toBe(false);
     });
 
     it('keeps promotions without guest gates available for guests', () => {
@@ -218,15 +245,15 @@ describe('storePromotionUtils', () => {
       expect(unavailable.map((p) => p.code)).toEqual(['NEWSTORE30', 'NEWPLAT30']);
     });
 
-    it('leaves conditioned promos available when not guest', () => {
+    it('holds newCustomer pending for members; loggedInOnly stays client-available', () => {
       const { available, unavailable } = categorizeStorePromotions(
         [guestNewCustomerStorePromotion, guestLoggedInOnlyStorePromotion],
         500,
         { isGuest: false },
       );
 
-      expect(available).toHaveLength(2);
-      expect(unavailable).toHaveLength(0);
+      expect(available.map((p) => p.code)).toEqual(['MEMBERSTORE10']);
+      expect(unavailable.map((p) => p.code)).toEqual(['NEWSTORE30']);
     });
   });
 
@@ -358,7 +385,7 @@ describe('storePromotionUtils', () => {
     const catalog = [availablePromo, minPurchasePromo, newCustomerPromo];
     const subtotalBelowMin = 100;
 
-    it('(a) client-local-only when batchStatus !== success', () => {
+    it('(a) client-local-only when batchStatus !== success; server-gated rows held pending', () => {
       const client = categorizeStorePromotions(catalog, subtotalBelowMin, { isGuest: false });
       const softBatch: PromotionEligibilityBatchItem[] = [
         {
@@ -369,7 +396,14 @@ describe('storePromotionUtils', () => {
         },
       ];
 
-      for (const batchStatus of ['idle', 'loading', 'error'] as const) {
+      // newCustomer is client-unavailable (pending) for members — held out of both lists
+      // until batch success so the picker does not flash available → unavailable.
+      expect(client.available.map((p) => p.id)).toEqual([availablePromo.id]);
+      expect(client.unavailable.map((p) => p.id).sort()).toEqual(
+        [minPurchasePromo.id, newCustomerPromo.id].sort(),
+      );
+
+      for (const batchStatus of ['idle', 'loading'] as const) {
         const merged = mergeListTimeEligibility(
           catalog,
           subtotalBelowMin,
@@ -378,13 +412,24 @@ describe('storePromotionUtils', () => {
           batchStatus,
         );
 
-        expect(merged.available.map((p) => p.id)).toEqual(client.available.map((p) => p.id));
-        expect(merged.unavailable.map((e) => e.promotion.id)).toEqual(
-          client.unavailable.map((p) => p.id),
-        );
+        expect(merged.available.map((p) => p.id)).toEqual([availablePromo.id]);
+        expect(merged.unavailable.map((e) => e.promotion.id)).toEqual([minPurchasePromo.id]);
         expect(merged.unavailable.every((e) => e.softReasonOverride === undefined)).toBe(true);
-        expect(merged.softEligibilityError).toBe(batchStatus === 'error');
+        expect(merged.softEligibilityError).toBe(false);
       }
+
+      const errorMerged = mergeListTimeEligibility(
+        catalog,
+        subtotalBelowMin,
+        { isGuest: false },
+        softBatch,
+        'error',
+      );
+      expect(errorMerged.available.map((p) => p.id)).toEqual([availablePromo.id]);
+      expect(errorMerged.unavailable.map((e) => e.promotion.id).sort()).toEqual(
+        [minPurchasePromo.id, newCustomerPromo.id].sort(),
+      );
+      expect(errorMerged.softEligibilityError).toBe(true);
 
       const nullItems = mergeListTimeEligibility(
         catalog,
@@ -395,6 +440,25 @@ describe('storePromotionUtils', () => {
       );
       expect(nullItems.available.map((p) => p.id)).toEqual(client.available.map((p) => p.id));
       expect(nullItems.softEligibilityError).toBe(false);
+    });
+
+    it('(a2) batch eligible promotes pending newCustomer into available', () => {
+      const merged = mergeListTimeEligibility(
+        [newCustomerPromo],
+        500,
+        { isGuest: false },
+        [
+          {
+            id: newCustomerPromo.id,
+            code: newCustomerPromo.code,
+            eligible: true,
+            ineligibilityReason: null,
+          },
+        ],
+        'success',
+      );
+      expect(merged.available.map((p) => p.id)).toEqual([newCustomerPromo.id]);
+      expect(merged.unavailable).toHaveLength(0);
     });
 
     it('(b) eligible===false → unavailable with mapped softReasonOverride or UNKNOWN when absent', () => {
@@ -612,14 +676,64 @@ describe('storePromotionUtils', () => {
       ).toBe('ซื้อ 3 แถม 2');
     });
 
+    it('formatPromotionDiscountTitle labels shipping types distinctly from merchandise discounts', () => {
+      expect(
+        formatPromotionDiscountTitle({
+          ...sampleStorePromotion,
+          type: 'free_shipping',
+          discountValue: 0,
+        }),
+      ).toBe('ส่งฟรี');
+      expect(
+        formatPromotionDiscountTitle({
+          ...sampleStorePromotion,
+          type: 'fixed_shipping_discount',
+          discountValue: 30,
+        }),
+      ).toBe('ลดค่าส่ง ฿30.00');
+      expect(
+        formatPromotionDiscountTitle({
+          ...sampleStorePromotion,
+          type: 'percentage_shipping_discount',
+          discountValue: 50,
+        }),
+      ).toBe('ลดค่าส่ง 50%');
+    });
+
+    it('isShippingPromotionType distinguishes shipping vs merchandise promos', () => {
+      expect(isShippingPromotionType('free_shipping')).toBe(true);
+      expect(isShippingPromotionType('fixed_shipping_discount')).toBe(true);
+      expect(isShippingPromotionType('percentage_shipping_discount')).toBe(true);
+      expect(isShippingPromotionType('percentage')).toBe(false);
+      expect(isShippingPromotionType('fixed_amount')).toBe(false);
+      expect(isShippingPromotionType('buy_x_get_y')).toBe(false);
+    });
+
+    it('estimatePromotionDiscount for percentage_shipping uses shipping fee base', () => {
+      expect(
+        estimatePromotionDiscount(
+          {
+            ...sampleStorePromotion,
+            type: 'percentage_shipping_discount',
+            discountValue: 50,
+          },
+          856,
+          undefined,
+          50,
+        ),
+      ).toBe(25);
+    });
+
     it('marks BxGy freeN=0 unavailable when cartLines provided (preview path)', () => {
+      const bxgyOnly = {
+        ...bxgyStorePromotion,
+        conditions: stringifyConditions(buildBxGyConditions()),
+      };
       const insufficient = linesForQ([{ quantity: 2, unitPrice: 100 }]);
-      expect(isPromotionAvailable(bxgyStorePromotion, 1000, { cartLines: insufficient })).toBe(
-        false,
-      );
+      expect(isPromotionAvailable(bxgyOnly, 1000, { cartLines: insufficient })).toBe(false);
 
       const sufficient = linesForQ([{ quantity: 3, unitPrice: 100 }]);
-      expect(isPromotionAvailable(bxgyStorePromotion, 1000, { cartLines: sufficient })).toBe(true);
+      expect(isPromotionAvailable(bxgyOnly, 1000, { cartLines: sufficient })).toBe(true);
     });
   });
 });

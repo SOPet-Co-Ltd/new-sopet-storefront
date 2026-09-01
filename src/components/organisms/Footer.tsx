@@ -1,14 +1,23 @@
 import Link from 'next/link';
 
+import { CookieSettingsFooterLink } from '@/components/organisms/CookieSettingsFooterLink';
 import { cn } from '@/lib/utils';
 
-import { FacebookIcon, FooterMailIcon, LineIcon, QrAddLineOAIcon } from '../atoms/icons';
+import {
+  FacebookIcon,
+  FooterMailIcon,
+  FooterPhoneIcon,
+  FooterTikTokIcon,
+  LineIcon,
+  QrAddLineOAIcon,
+} from '../atoms/icons';
 
 const COMPANY_INFO = {
   name: 'บริษัท เอสโอเพ็ท จำกัด',
   address: 'เลขที่ 17 ซอยสุขุมวิท 35 แขวงคลองตันเหนือ',
   district: 'เขตวัฒนา กรุงเทพมหานคร 10110',
   email: 'sopetofficial@gmail.com',
+  phone: '096-876-5031',
   copyright: 'Copyright © 2025 SOpet All right reserved',
 };
 
@@ -23,15 +32,21 @@ const SOCIAL_LINKS = [
     href: 'https://line.me/R/ti/p/@131skdjz',
     Icon: LineIcon,
   },
+  {
+    name: 'Tiktok',
+    href: 'https://www.tiktok.com/@sopetofficial.th',
+    Icon: FooterTikTokIcon,
+  },
 ];
 
 const FOOTER_LINKS = [
   { label: 'นโยบายการใช้งาน', href: '/policy/terms-of-service' },
   { label: 'นโยบายการคืนเงิน', href: '/policy/refund-policy' },
   { label: 'นโยบายความเป็นส่วนตัว', href: '/policy/privacy-policy' },
+  { label: 'ศูนย์ความปลอดภัย', href: '/security' },
 ];
 
-const LINE_OA_TITLE = ['ปรึกษาสัตว​์แพทย์ฟรี !', 'ผ่าน LINE OA'];
+const LINE_OA_TITLE = ['ปรึกษาสัต​วแพทย์ฟรี !', 'ผ่าน LINE OA'];
 
 function FooterSectionHeading({ children }: { children: string }) {
   return <h4 className="sop-body-lg-medium text-sop-base-black">{children}</h4>;
@@ -68,6 +83,15 @@ export function Footer() {
                 </Link>
               ))}
             </div>
+            <div className="flex items-center h-sop-40px gap-sop-8px px-sop-8px py-sop-8px bg-sop-primary-500 w-fit rounded-sop-36px">
+              <div className="inline-flex items-center justify-center bg-sop-base-white p-sop-8px rounded-full">
+                <FooterPhoneIcon size={{ desktop: 12, mobile: 12 }} color="#9C6ADE" />
+              </div>
+
+              <p className="sop-body-xs-medium text-sop-base-white pr-sop-4px">
+                {COMPANY_INFO.phone}
+              </p>
+            </div>
           </div>
 
           <div className="col-span-1 flex flex-col">
@@ -85,20 +109,16 @@ export function Footer() {
 
       <div
         className={cn(
-          'flex w-full items-center',
+          'sop-gradient-01 flex w-full items-center',
           'px-sop-16px py-sop-16px md:px-sop-32px lg:px-sop-80px',
           'flex-col gap-sop-12px md:flex-row md:justify-between',
         )}
-        style={{
-          backgroundImage:
-            'linear-gradient(90deg, var(--color-sop-primary-500) 0%, var(--color-sop-secondary-500) 100%)',
-        }}
       >
         <p className="sop-body-xs-regular text-center text-sop-base-white md:text-left">
           {COMPANY_INFO.copyright}
         </p>
-        <div className="flex items-center gap-sop-12px">
-          {FOOTER_LINKS.map(({ label, href }, index) => (
+        <div className="flex flex-wrap items-center justify-center gap-sop-12px md:justify-end">
+          {FOOTER_LINKS.map(({ label, href }) => (
             <div key={label} className="flex items-center gap-sop-12px">
               <Link
                 href={href}
@@ -106,11 +126,10 @@ export function Footer() {
               >
                 {label}
               </Link>
-              {index < FOOTER_LINKS.length - 1 && (
-                <div className="h-4 w-px bg-sop-neutral-whitealpha-400" />
-              )}
+              <div className="h-4 w-px bg-sop-neutral-whitealpha-400" />
             </div>
           ))}
+          <CookieSettingsFooterLink />
         </div>
       </div>
     </footer>

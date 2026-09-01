@@ -98,6 +98,16 @@ export function PromotionalAdsModal() {
 
   const imageAlt = ad.title.trim() || DEFAULT_ADS_IMAGE_ALT;
 
+  const promotionAdsImage = (
+    <Image
+      src={ad.imageUrl}
+      alt={imageAlt}
+      fill
+      sizes="(max-width: 640px) 90vw, 420px"
+      className="h-full w-full object-cover"
+    />
+  );
+
   return (
     <Modal
       onClose={handleDismiss}
@@ -112,13 +122,13 @@ export function PromotionalAdsModal() {
       <div className="relative p-0">
         <div className="relative mx-auto w-full max-w-[360px] overflow-hidden rounded-xl sm:max-w-[420px]">
           <div className="relative aspect-4/5">
-            <Image
-              src={ad.imageUrl}
-              alt={imageAlt}
-              fill
-              sizes="(max-width: 640px) 90vw, 420px"
-              className="h-full w-full object-cover"
-            />
+            {ad.linkUrl ? (
+              <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" aria-label={imageAlt}>
+                {promotionAdsImage}
+              </a>
+            ) : (
+              promotionAdsImage
+            )}
           </div>
         </div>
       </div>

@@ -34,9 +34,30 @@ describe('getDefaultOfferPrice', () => {
       ...sampleProductDetail,
       basePrice: 500,
       variants: [
-        { id: 'v1', sku: 'SKU-1', price: 800, stockQuantity: 10, optionsJson: null },
-        { id: 'v2', sku: 'SKU-2', price: 750, stockQuantity: 5, optionsJson: null },
-        { id: 'v3', sku: 'SKU-3', price: 700, stockQuantity: 0, optionsJson: null },
+        {
+          id: 'v1',
+          sku: 'SKU-1',
+          price: 800,
+          compareAtPrice: null,
+          stockQuantity: 10,
+          optionsJson: null,
+        },
+        {
+          id: 'v2',
+          sku: 'SKU-2',
+          price: 750,
+          compareAtPrice: null,
+          stockQuantity: 5,
+          optionsJson: null,
+        },
+        {
+          id: 'v3',
+          sku: 'SKU-3',
+          price: 700,
+          compareAtPrice: null,
+          stockQuantity: 0,
+          optionsJson: null,
+        },
       ],
     };
 

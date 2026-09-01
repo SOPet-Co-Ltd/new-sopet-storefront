@@ -5,11 +5,15 @@ import { useMemo } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { RightArrowLineIcon } from '@/components/atoms/icons/filled/RightArrowLineIcon';
 import { prefetchProductsListing } from '@/lib/catalog/prefetchProductsListing';
+import { useCampaignCompareAtLookup } from '@/lib/hooks/useCampaignCompareAtLookup';
 import { useProducts, type ProductListItem } from '@/lib/hooks/useProducts';
 import { buildSearchContextInput, useSearchContext } from '@/lib/hooks/useSearchContext';
 import { useSessionId } from '@/lib/hooks/useSessionId';
 import { cn } from '@/lib/utils';
-import ProductCard from '@/components/organisms/ProductCard';
+import ProductCard, {
+  getProductCardCheapestVariantId,
+  getProductCardDisplayPrice,
+} from '@/components/organisms/ProductCard';
 import { PRODUCT_CARD_GRID_CLASS } from '@/components/sections/ProductListing/productListingGrid';
 
 const SECTION_HEADING_CLASS = 'mb-5 sop-body-lg-medium text-sop-neutral-gray-200';
@@ -185,6 +189,12 @@ export function HomeProductSection({
   const isLoading = loading || (shouldFetchFallback && fallbackLoading);
   const resolvedError = error ?? (shouldFetchFallback ? fallbackError : undefined);
 
+  const visibleProductIds = useMemo(
+    () => visibleProducts.map((product) => product.id),
+    [visibleProducts],
+  );
+  const { getCampaignPricing } = useCampaignCompareAtLookup(visibleProductIds);
+
   if (isLoading) {
     return (
       <section className="w-full" aria-busy="true">
@@ -221,19 +231,43 @@ export function HomeProductSection({
       <h2 className={`md:px-0 px-4 ${SECTION_HEADING_CLASS}`}>{heading}</h2>
       {layout === 'grid' ? (
         <div className={PRODUCT_CARD_GRID_CLASS}>
-          {displayProducts.map((product, index) => (
-            <div key={product.id} className={cn(getGridProductVisibilityClass(index))}>
-              <ProductCard product={product} />
-            </div>
-          ))}
+          {displayProducts.map((product, index) => {
+            const catalogPrice = getProductCardDisplayPrice(product);
+            const pricing = getCampaignPricing(
+              product.id,
+              getProductCardCheapestVariantId(product),
+              catalogPrice,
+            );
+            return (
+              <div key={product.id} className={cn(getGridProductVisibilityClass(index))}>
+                <ProductCard
+                  product={product}
+                  campaignCompareAt={pricing?.compareAt ?? null}
+                  campaignSalePrice={pricing?.saleUnit ?? null}
+                />
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className={PRODUCT_CAROUSEL_CLASS}>
-          {displayProducts.map((product) => (
-            <div key={product.id} className="shrink-0">
-              <ProductCard product={product} />
-            </div>
-          ))}
+          {displayProducts.map((product) => {
+            const catalogPrice = getProductCardDisplayPrice(product);
+            const pricing = getCampaignPricing(
+              product.id,
+              getProductCardCheapestVariantId(product),
+              catalogPrice,
+            );
+            return (
+              <div key={product.id} className="shrink-0">
+                <ProductCard
+                  product={product}
+                  campaignCompareAt={pricing?.compareAt ?? null}
+                  campaignSalePrice={pricing?.saleUnit ?? null}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
       <div className="mt-6 flex items-center justify-center">

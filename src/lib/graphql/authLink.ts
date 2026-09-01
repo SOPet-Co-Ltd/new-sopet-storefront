@@ -40,6 +40,7 @@ function clearCompanionCookie(): void {
     return;
   }
   document.cookie = `${AUTH_COMPANION_COOKIE}=; max-age=0; path=/; SameSite=Lax`;
+  document.cookie = `__Host-${AUTH_COMPANION_COOKIE}=; max-age=0; path=/; Secure; SameSite=Lax`;
 }
 
 export async function clearTokens(): Promise<void> {

@@ -8,6 +8,7 @@ export const sampleCartItem: CartQuery['cart']['items'][number] = {
   productVariant: {
     id: 'var-small',
     price: 890,
+    compareAtPrice: null,
     sku: 'DOG-S',
     stockQuantity: 10,
     optionsJson: '{"size":"S"}',
@@ -17,6 +18,7 @@ export const sampleCartItem: CartQuery['cart']['items'][number] = {
       slug: sampleProductDetail.slug,
       storeId: CATALOG_STORE_ID,
       thumbnailUrl: sampleProductDetail.thumbnailUrl,
+      compareAtPrice: null,
       store: sampleProductDetail.store
         ? {
             id: sampleProductDetail.store.id,

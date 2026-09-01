@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { computeCartItemCount, groupCartItemsByStore } from '@/lib/cart/cartUtils';
 import { CartDocument } from '@/lib/graphql/generated/graphql';
@@ -25,6 +25,7 @@ vi.mock('@/lib/session', async (importOriginal) => {
     ...actual,
     ensureSessionId: vi.fn(() => sessionId),
     getSessionId: vi.fn(() => sessionId),
+    hydrateSessionId: vi.fn(async () => sessionId),
   };
 });
 
@@ -72,17 +73,19 @@ describe('useCart', () => {
     expect(groupCartItemsByStore(sampleCart.items)).toHaveLength(1);
   });
 
-  it('loads cart items and derives item count from CartProvider context', () => {
+  it('loads cart items and derives item count from CartProvider context', async () => {
     render(
       <CartProvider>
         <CartProbe />
       </CartProvider>,
     );
 
-    expect(screen.getByTestId('cart-probe')).toHaveAttribute(
-      'data-item-count',
-      String(sampleCart.items[0]?.quantity ?? 0),
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('cart-probe')).toHaveAttribute(
+        'data-item-count',
+        String(sampleCart.items[0]?.quantity ?? 0),
+      );
+    });
     expect(screen.getByTestId('cart-probe')).toHaveAttribute('data-store-count', '1');
     expect(screen.getByTestId('cart-probe')).toHaveAttribute('data-loading', 'false');
   });

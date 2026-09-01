@@ -2,12 +2,13 @@
 
 import { useMemo } from 'react';
 import { calculateCheckoutTotals } from '@/lib/checkout/checkoutTotalsUtils';
-import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 export function useCheckoutTotals() {
-  const { selectedItemCount, selectedSubtotal, selectedItemsByStore } = useCart();
-  const { shippingByStoreId, promotionDiscount, storePromotionsByStoreId } = useCheckout();
+  const { selectedItemCount, selectedSubtotal, selectedItemsByStore } = useCheckoutCartSelection();
+  const { shippingByStoreId, promotionDiscount, promotionType, storePromotionsByStoreId } =
+    useCheckout();
 
   const storeIds = useMemo(
     () => selectedItemsByStore.map((group) => group.storeId),
@@ -23,6 +24,7 @@ export function useCheckoutTotals() {
         shippingByStoreId,
         storePromotionsByStoreId,
         platformPromotionDiscount: promotionDiscount,
+        platformPromotionType: promotionType,
       }),
     [
       selectedSubtotal,
@@ -31,6 +33,7 @@ export function useCheckoutTotals() {
       shippingByStoreId,
       storePromotionsByStoreId,
       promotionDiscount,
+      promotionType,
     ],
   );
 }

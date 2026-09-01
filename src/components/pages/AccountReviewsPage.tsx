@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation } from '@apollo/client/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -16,6 +15,8 @@ import ReviewModal, {
   type ReviewSubmitData,
 } from '@/components/organisms/ReviewModal';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
+import { ERROR_MESSAGES } from '@/lib/errors/errorMessages';
+import { extractErrorCode, getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { CreateReviewDocument } from '@/lib/graphql/generated/graphql';
 import { uploadReviewImage } from '@/lib/upload/uploadReviewImage';
 import {
@@ -32,7 +33,6 @@ const REVIEW_TABS = [
 const PENDING_EMPTY_MESSAGE = 'ยังไม่มีสินค้าที่รอให้รีวิว';
 const WRITTEN_EMPTY_MESSAGE = 'ยังไม่มีรีวิวที่เขียนแล้ว';
 const REVIEWS_ERROR_MESSAGE = 'ไม่สามารถโหลดข้อมูลรีวิวได้';
-const REVIEW_WINDOW_EXPIRED_MESSAGE = 'หมดเวลาในการเขียนรีวิวแล้ว';
 
 export function parseReviewsTab(rawTab: string | null): ReviewTab {
   if (rawTab === 'written') {
@@ -53,23 +53,11 @@ export function toReviewModalItem(item: CustomerReviewableItem): ReviewModalItem
 }
 
 function getReviewMutationErrorMessage(error: unknown): string {
-  if (CombinedGraphQLErrors.is(error)) {
-    const graphQLError = error.errors[0];
-
-    if (graphQLError?.extensions?.code === 'REVIEW_WINDOW_EXPIRED') {
-      return REVIEW_WINDOW_EXPIRED_MESSAGE;
-    }
-
-    if (graphQLError?.message) {
-      return graphQLError.message;
-    }
+  if (extractErrorCode(error) === 'REVIEW_WINDOW_EXPIRED') {
+    return ERROR_MESSAGES.REVIEW_WINDOW_EXPIRED;
   }
 
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return 'ล้มเหลวในการส่งรีวิว';
+  return getErrorMessage(error, 'ล้มเหลวในการส่งรีวิว');
 }
 
 function ReviewsLoadingSkeleton() {

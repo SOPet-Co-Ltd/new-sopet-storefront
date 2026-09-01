@@ -3,6 +3,7 @@
 import { Fragment, useMemo } from 'react';
 import { ClipboardListIcon, ShopIcon } from '@/components/atoms/icons';
 import type { StoreCartGroup } from '@/lib/cart/cartUtils';
+import { resolveStorePromoDiscount } from '@/lib/checkout/checkoutTotalsUtils';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 import { allocateServerFreeUnitsToLines } from './allocateServerFreeUnits';
 import { CheckoutOrderItemRow } from './CheckoutOrderItemRow';
@@ -31,7 +32,7 @@ function CheckoutStoreCard({ group, platformFreeByItemId }: CheckoutStoreCardPro
   const itemCount = group.items.reduce((total, item) => total + item.quantity, 0);
   const selectedShippingFee = shippingByStoreId[group.storeId]?.shippingFee ?? 0;
   const appliedStorePromo = storePromotionsByStoreId[group.storeId] ?? null;
-  const storeDiscount = appliedStorePromo?.discountAmount ?? 0;
+  const storeDiscount = resolveStorePromoDiscount(appliedStorePromo, selectedShippingFee);
   const storeTotal = group.subtotal + selectedShippingFee - storeDiscount;
 
   const freeQuantityByItemId = useMemo(() => {

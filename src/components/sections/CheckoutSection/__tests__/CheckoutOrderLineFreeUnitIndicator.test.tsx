@@ -28,6 +28,7 @@ function makeCartItem(overrides: {
     productVariant: {
       id: overrides.variantId ?? `var-${overrides.id}`,
       price: overrides.unitPrice,
+      compareAtPrice: null,
       optionsJson: null,
       product: {
         id: overrides.productId ?? BXGY_PRODUCT_ID,
@@ -81,6 +82,30 @@ describe('allocateServerFreeUnitsToLines (Gate A)', () => {
   it('returns empty when productId missing even if freeUnits > 0', () => {
     const items = [makeCartItem({ id: 'line-a', quantity: 3, unitPrice: 100 })];
     expect(allocateServerFreeUnitsToLines(1, items, null)).toEqual({});
+  });
+});
+
+describe('CheckoutOrderItemRow sale compare-at', () => {
+  it('shows strikethrough was when compareAt is higher than payable unit', () => {
+    const item = makeCartItem({ id: 'line-1', quantity: 1, unitPrice: 223.2 });
+    item.productVariant = {
+      ...item.productVariant!,
+      compareAtPrice: 279,
+    };
+
+    render(<CheckoutOrderItemRow item={item} />);
+
+    expect(screen.getByTestId('checkout-order-item-unit-price')).toHaveTextContent('฿223.20');
+    expect(screen.getByTestId('checkout-order-item-compare-at')).toHaveTextContent('฿279.00');
+  });
+
+  it('does not invent strikethrough when compareAt is missing or not higher', () => {
+    render(
+      <CheckoutOrderItemRow item={makeCartItem({ id: 'line-1', quantity: 1, unitPrice: 279 })} />,
+    );
+
+    expect(screen.getByTestId('checkout-order-item-unit-price')).toHaveTextContent('฿279.00');
+    expect(screen.queryByTestId('checkout-order-item-compare-at')).not.toBeInTheDocument();
   });
 });
 

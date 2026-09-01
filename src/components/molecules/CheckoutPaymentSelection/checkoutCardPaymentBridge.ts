@@ -112,7 +112,6 @@ export async function prepareCardPayment(): Promise<CardPaymentPayload> {
     const omiseToken = await bridge.tokenizeCardForCheckout();
     const saveCardForNextTime = bridge.getSaveCardForNextTime();
     const cardForm = bridge.getCardForm();
-    bridge.clearCardForm();
     return { type: 'token', omiseToken, saveCardForNextTime, cardForm };
   } catch (error) {
     if (error instanceof OmiseConfigurationError) {

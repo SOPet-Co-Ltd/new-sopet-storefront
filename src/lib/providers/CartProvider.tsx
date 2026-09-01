@@ -28,8 +28,9 @@ import {
   type StoreCartGroup,
 } from '@/lib/cart/cartUtils';
 import { SUSPENDED_STORE_ITEM_REMOVED_WARNING_CODE } from '@/lib/constants/storeSuspensionHoldCopy';
+import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { ensureSessionId } from '@/lib/session';
+import { ensureSessionId, hydrateSessionId, rotateSessionId } from '@/lib/session';
 import { mapStoreSuspendedCartError } from '@/lib/store-suspension/mapSuspensionErrors';
 
 export type CartWarning = NonNullable<CartQuery['cart']['warnings']>[number];
@@ -103,20 +104,32 @@ function writeCartToQuery(cache: ApolloCache, cart: CartQuery['cart']): void {
 export function CartProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   const wasAuthenticatedRef = useRef(isAuthenticated);
-  const sessionId = typeof window !== 'undefined' ? getSessionIdForCart() : null;
+  const [sessionId, setSessionId] = useState<string | null>(null);
   // Serialize cart mutations against explicit refetches so a slow in-flight Cart
   // response cannot land after a mutation and wipe the items the mutation wrote.
   const cartOpLockRef = useRef(Promise.resolve());
 
-  // `sessionId` is null during SSR but defined on the client, which flips the
+  // `sessionId` is null during SSR / before BFF hydrate, which flips the
   // derived `loading` state between the server and the first client render.
   // Track hydration so the initial client render matches the server output.
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    // Intentional hydration flag: must flip after the first client render so the
-    // client's initial render matches the server output (see comment above).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHydrated(true);
+    let cancelled = false;
+    void hydrateSessionId()
+      .then((id) => {
+        if (cancelled) return;
+        setSessionId(id);
+        setHydrated(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Fallback: local ensure still kicks off BFF sync.
+        setSessionId(ensureSessionId());
+        setHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const { data, loading, error, refetch } = useQuery(CartDocument, {
@@ -282,9 +295,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }
         } catch (mutationError) {
           const suspendedMessage = mapStoreSuspendedCartError(mutationError);
-          const message =
-            suspendedMessage ??
-            (mutationError instanceof Error ? mutationError.message : errorMessage);
+          const message = suspendedMessage ?? getErrorMessage(mutationError, errorMessage);
           toast.error(message);
           throw mutationError;
         }
@@ -424,7 +435,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     void mergeCartMutation({
       variables: { sessionId: guestSessionId },
     })
-      .then(() => refetchCart())
+      .then(async () => {
+        // SOPET-M-10: rotate guest session after merge so the old id cannot be reused.
+        try {
+          const next = await rotateSessionId();
+          setSessionId(next);
+        } catch {
+          // Non-fatal — cart already merged under the authenticated customer.
+        }
+        await refetchCart();
+      })
       .catch(() => {
         toast.error('ไม่สามารถรวมตะกร้าหลังเข้าสู่ระบบได้');
       });

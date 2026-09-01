@@ -66,6 +66,25 @@ describe('CheckoutProvider', () => {
     expect(context!.promotionCode).toBeNull();
     expect(context!.paymentMethod).toBeNull();
     expect(context!.requiredStoreIds).toEqual([]);
+    expect(context!.isSubmitting).toBe(false);
+  });
+
+  it('toggles isSubmitting and clears it on reset', () => {
+    let context: CheckoutContextValue | null = null;
+    const { root } = renderCheckoutProbe((value) => {
+      context = value;
+    });
+    roots.push(root);
+
+    act(() => {
+      context!.setIsSubmitting(true);
+    });
+    expect(context!.isSubmitting).toBe(true);
+
+    act(() => {
+      context!.reset();
+    });
+    expect(context!.isSubmitting).toBe(false);
   });
 
   it('updates step via setStep when shipping is complete for all stores', () => {
@@ -158,6 +177,73 @@ describe('CheckoutProvider', () => {
     expect(
       container.querySelector('[data-shipping-count]')?.getAttribute('data-shipping-count'),
     ).toBe('1');
+  });
+
+  it('keeps independent store promotions when two stores are applied', () => {
+    let context: CheckoutContextValue | null = null;
+    const { root } = renderCheckoutProbe((value) => {
+      context = value;
+    });
+    roots.push(root);
+
+    act(() => {
+      context!.setStorePromotion('store-1', {
+        code: 'AUTO_A',
+        name: 'Store A',
+        discountAmount: 30,
+      });
+      context!.setStorePromotion('store-2', {
+        code: 'AUTO_B',
+        name: 'Store B',
+        discountAmount: 40,
+      });
+    });
+
+    expect(context!.storePromotionsByStoreId['store-1']?.code).toBe('AUTO_A');
+    expect(context!.storePromotionsByStoreId['store-2']?.code).toBe('AUTO_B');
+
+    act(() => {
+      context!.setStorePromotion('store-2', {
+        code: 'MANUAL_B',
+        name: 'Manual B',
+        discountAmount: 15,
+      });
+    });
+
+    expect(context!.storePromotionsByStoreId['store-1']?.code).toBe('AUTO_A');
+    expect(context!.storePromotionsByStoreId['store-2']?.code).toBe('MANUAL_B');
+  });
+
+  it('keeps all sibling store promotions when setStorePromotions writes N stores atomically', () => {
+    let context: CheckoutContextValue | null = null;
+    const { root } = renderCheckoutProbe((value) => {
+      context = value;
+    });
+    roots.push(root);
+
+    act(() => {
+      context!.setStorePromotions({
+        'store-1': { code: 'AUTO_A', name: 'A', discountAmount: 10 },
+        'store-2': { code: 'AUTO_B', name: 'B', discountAmount: 20 },
+        'store-3': { code: 'AUTO_C', name: 'C', discountAmount: 30 },
+      });
+    });
+
+    expect(context!.storePromotionsByStoreId['store-1']?.code).toBe('AUTO_A');
+    expect(context!.storePromotionsByStoreId['store-2']?.code).toBe('AUTO_B');
+    expect(context!.storePromotionsByStoreId['store-3']?.code).toBe('AUTO_C');
+
+    act(() => {
+      context!.setStorePromotion('store-2', {
+        code: 'MANUAL_B',
+        name: 'Manual B',
+        discountAmount: 15,
+      });
+    });
+
+    expect(context!.storePromotionsByStoreId['store-1']?.code).toBe('AUTO_A');
+    expect(context!.storePromotionsByStoreId['store-2']?.code).toBe('MANUAL_B');
+    expect(context!.storePromotionsByStoreId['store-3']?.code).toBe('AUTO_C');
   });
 
   it('restores defaults when reset is called', () => {

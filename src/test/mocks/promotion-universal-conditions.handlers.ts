@@ -37,6 +37,30 @@ export type ValidatePromotionStubMode =
 
 export type ValidatePromotionsStubMode = 'success' | 'order-history' | 'transport-error';
 
+function guestIneligibleValidatePromotionsHandler(
+  promotions: Array<{ id: string; code: string; name: string }>,
+) {
+  return graphql.query('ValidatePromotions', () => {
+    return HttpResponse.json({
+      data: {
+        validatePromotions: {
+          __typename: 'ValidatePromotionsResult',
+          items: promotions.map((promo) => ({
+            __typename: 'PromotionEligibilityResult',
+            id: promo.id,
+            code: promo.code,
+            name: promo.name,
+            eligible: false,
+            ineligibilityReason: 'GUEST',
+            discountAmount: 0,
+            freeUnits: null,
+          })),
+        },
+      },
+    });
+  });
+}
+
 function resolveValidatePromotion(mode: ValidatePromotionStubMode) {
   switch (mode) {
     case 'bxgy-insufficient':
@@ -117,6 +141,10 @@ export const guestJourneyPromotionHandlers = [
       data: { validatePromotion: validatePromotionGuestRequired },
     });
   }),
+  guestIneligibleValidatePromotionsHandler([
+    guestNewCustomerStorePromotion,
+    guestNewCustomerPlatformPromotion,
+  ]),
 ];
 
 /**
@@ -139,6 +167,10 @@ export const guestLoggedInOnlyJourneyPromotionHandlers = [
       data: { validatePromotion: validatePromotionLoggedInOnlyGuestRequired },
     });
   }),
+  guestIneligibleValidatePromotionsHandler([
+    guestLoggedInOnlyStorePromotion,
+    guestLoggedInOnlyPlatformPromotion,
+  ]),
 ];
 
 /**
@@ -160,6 +192,10 @@ export const guestBothKeysJourneyPromotionHandlers = [
       data: { validatePromotion: validatePromotionLoggedInOnlyGuestRequired },
     });
   }),
+  guestIneligibleValidatePromotionsHandler([
+    guestLoggedInOnlyAndNewCustomerStorePromotion,
+    guestLoggedInOnlyAndNewCustomerPlatformPromotion,
+  ]),
 ];
 
 /**
@@ -178,6 +214,37 @@ export function createLoggedInOnlyJourneyPromotionHandlers(
     graphql.query('ActivePlatformPromotions', () => {
       return HttpResponse.json({
         data: { activePlatformPromotions: [guestLoggedInOnlyPlatformPromotion] },
+      });
+    }),
+    graphql.query('ValidatePromotions', () => {
+      return HttpResponse.json({
+        data: {
+          validatePromotions: {
+            __typename: 'ValidatePromotionsResult',
+            items: [
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: guestLoggedInOnlyStorePromotion.id,
+                code: guestLoggedInOnlyStorePromotion.code,
+                name: guestLoggedInOnlyStorePromotion.name,
+                eligible: true,
+                ineligibilityReason: null,
+                discountAmount: 50,
+                freeUnits: null,
+              },
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: guestLoggedInOnlyPlatformPromotion.id,
+                code: guestLoggedInOnlyPlatformPromotion.code,
+                name: guestLoggedInOnlyPlatformPromotion.name,
+                eligible: true,
+                ineligibilityReason: null,
+                discountAmount: 50,
+                freeUnits: null,
+              },
+            ],
+          },
+        },
       });
     }),
     graphql.query('ValidatePromotion', () => {
@@ -207,6 +274,38 @@ export function createBxGyJourneyPromotionHandlers(
     graphql.query('ActivePlatformPromotions', () => {
       return HttpResponse.json({
         data: { activePlatformPromotions: [] },
+      });
+    }),
+    // List-time batch required: bxgyStorePromotion includes newCustomer (server-gated).
+    graphql.query('ValidatePromotions', () => {
+      return HttpResponse.json({
+        data: {
+          validatePromotions: {
+            __typename: 'ValidatePromotionsResult',
+            items: [
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: bxgyStorePromotion.id,
+                code: bxgyStorePromotion.code,
+                name: bxgyStorePromotion.name,
+                eligible: true,
+                ineligibilityReason: null,
+                discountAmount: 200,
+                freeUnits: 1,
+              },
+              {
+                __typename: 'PromotionEligibilityResult',
+                id: fixedAmountClampPromotion.id,
+                code: fixedAmountClampPromotion.code,
+                name: fixedAmountClampPromotion.name,
+                eligible: true,
+                ineligibilityReason: null,
+                discountAmount: 100,
+                freeUnits: null,
+              },
+            ],
+          },
+        },
       });
     }),
     graphql.query('ValidatePromotion', ({ variables }) => {

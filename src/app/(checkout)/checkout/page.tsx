@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckoutErrorToast } from '@/components/atoms/CheckoutErrorToast/CheckoutErrorToast';
 import { CheckoutMobileBottomBar } from '@/components/molecules/CheckoutMobileBottomBar/CheckoutMobileBottomBar';
 import { CheckoutPaymentSelection } from '@/components/molecules/CheckoutPaymentSelection/CheckoutPaymentSelection';
@@ -9,16 +9,24 @@ import { CheckoutSummarySection } from '@/components/molecules/CheckoutSummarySe
 import { CheckoutPromotionSection } from '@/components/sections/CheckoutPromotionSection/CheckoutPromotionSection';
 import { CheckoutAutoApplyController } from '@/components/sections/CheckoutSection/CheckoutAutoApplyController';
 import { CheckoutSection } from '@/components/sections/CheckoutSection/CheckoutSection';
-import type { AddressSubmitContext } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
+import {
+  useCheckoutSubmit,
+  type AddressSubmitContext,
+} from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 import { cartLineToAnalyticsItem, trackBeginCheckout } from '@/lib/analytics';
 import type {
   GuestCheckoutField,
   GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import { clearBuyNowCheckout } from '@/lib/checkout/buyNowCheckout';
+import { clearAutoApplyAttempted } from '@/lib/checkout/autoApplyOnceGate';
 import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
+import {
+  BUY_NOW_CHECKOUT_MODE,
+  useCheckoutCartSelection,
+} from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
-import { useCart } from '@/lib/providers/CartProvider';
 
 const EMPTY_GUEST_FORM: GuestCheckoutFormState = {
   contactPhone: '',
@@ -59,6 +67,11 @@ function CheckoutPageReset() {
       queueMicrotask(() => {
         if (generation === checkoutPageResetGeneration) {
           reset();
+          // Leaving checkout clears applied promos — also clear once-gate so a return
+          // visit with the same cart can auto-apply again.
+          clearAutoApplyAttempted();
+          // Leaving checkout abandons buy-now; the item was never added to cart.
+          clearBuyNowCheckout();
         }
       });
     };
@@ -69,7 +82,10 @@ function CheckoutPageReset() {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { selectedItemCount, selectedItems, selectedSubtotal, loading } = useCart();
+  const searchParams = useSearchParams();
+  const isBuyNowMode = searchParams.get('mode') === BUY_NOW_CHECKOUT_MODE;
+  const { selectedItemCount, selectedItems, selectedSubtotal, loading } =
+    useCheckoutCartSelection();
   const { setAddress } = useCheckout();
   const {
     addresses,
@@ -78,6 +94,13 @@ export default function CheckoutPage() {
     createAddress,
   } = useAddresses();
   const beginCheckoutTrackedRef = useRef(false);
+
+  // Cart checkout must not reuse a stale buy-now session from a closed tab.
+  useEffect(() => {
+    if (!isBuyNowMode) {
+      clearBuyNowCheckout();
+    }
+  }, [isBuyNowMode]);
 
   useEffect(() => {
     if (loading || beginCheckoutTrackedRef.current || selectedItems.length === 0) {
@@ -93,7 +116,7 @@ export default function CheckoutPage() {
   const [guestForm, setGuestForm] = useState<GuestCheckoutFormState>(EMPTY_GUEST_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<GuestCheckoutField, string>>>({});
   const [showFieldErrors, setShowFieldErrors] = useState(false);
-  const [saveAddressChecked, setSaveAddressChecked] = useState(false);
+  const [saveAddressChecked, setSaveAddressChecked] = useState(true);
 
   const addressSubmitContext = useMemo<AddressSubmitContext>(
     () => ({
@@ -115,6 +138,10 @@ export default function CheckoutPage() {
       setAddress,
     ],
   );
+
+  const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
+    addressSubmitContext,
+  });
 
   const handleGuestFormChange = (field: keyof GuestCheckoutFormState, value: string) => {
     setGuestForm((prev) => ({ ...prev, [field]: value }));
@@ -177,13 +204,18 @@ export default function CheckoutPage() {
             <CheckoutPromotionSection />
             <CheckoutPaymentSelection />
             <CheckoutSummarySection
-              guestForm={guestForm}
-              addressSubmitContext={addressSubmitContext}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              canSubmit={canSubmit}
             />
           </div>
         </div>
       </div>
-      <CheckoutMobileBottomBar guestForm={guestForm} addressSubmitContext={addressSubmitContext} />
+      <CheckoutMobileBottomBar
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        canSubmit={canSubmit}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 export const AUTO_APPLY_STORE_A_ID = 'store-auto-a';
 export const AUTO_APPLY_STORE_B_ID = 'store-auto-b';
+export const AUTO_APPLY_STORE_C_ID = 'store-auto-c';
 
 export const autoApplyPlatformPromotion = {
   __typename: 'PromotionType' as const,
@@ -57,6 +58,35 @@ export const autoApplyStoreBPromotion = {
   priority: 5,
 };
 
+export const autoApplyStoreCPromotion = {
+  __typename: 'PromotionType' as const,
+  id: 'promo-store-c-auto',
+  code: 'AUTO_STORE_C',
+  name: 'ร้าน C อัตโนมัติ',
+  description: null,
+  type: 'fixed_amount',
+  discountValue: 20,
+  minPurchaseAmount: null,
+  maxDiscountAmount: null,
+  expiresAt: '2027-05-24T00:00:00.000Z',
+  scope: 'store',
+  storeId: AUTO_APPLY_STORE_C_ID,
+  conditions: null,
+  autoApply: true,
+  priority: 5,
+};
+
+/** Manual-only store B catalog — sibling of an auto-apply store A lane. */
+export const manualOnlyStoreBPromotion = {
+  ...autoApplyStoreBPromotion,
+  id: 'promo-store-b-manual',
+  code: 'MANUAL_STORE_B',
+  name: 'ร้าน B มือ',
+  discountValue: 15,
+  autoApply: false,
+  priority: 1,
+};
+
 /** Manual-only peer — must not win auto-apply ranking. */
 export const manualOnlyPlatformPromotion = {
   ...autoApplyPlatformPromotion,
@@ -91,6 +121,24 @@ export const validateAutoApplyStoreB = {
   code: 'AUTO_STORE_B',
   name: 'ร้าน B อัตโนมัติ',
   discountAmount: 40,
+  ineligibilityReason: null as string | null,
+  freeUnits: null as number | null,
+};
+
+export const validateAutoApplyStoreC = {
+  __typename: 'PromotionValidationResult' as const,
+  code: 'AUTO_STORE_C',
+  name: 'ร้าน C อัตโนมัติ',
+  discountAmount: 20,
+  ineligibilityReason: null as string | null,
+  freeUnits: null as number | null,
+};
+
+export const validateManualStoreB = {
+  __typename: 'PromotionValidationResult' as const,
+  code: 'MANUAL_STORE_B',
+  name: 'ร้าน B มือ',
+  discountAmount: 15,
   ineligibilityReason: null as string | null,
   freeUnits: null as number | null,
 };

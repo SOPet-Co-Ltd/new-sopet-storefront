@@ -178,3 +178,5 @@ Push to a deploy branch triggers `.github/workflows/deploy.yml`, which POSTs to 
 6. See [feature development guide](docs/feature-development.md)
 
 Schema changes land in `../sopet-backend` first (`src/schema.gql`), then run `yarn graphql:codegen` here (and in `../sopet-admin` if affected). Commit each repo separately.
+
+<!-- Deployment pipeline verification: 2026-09-02 -->

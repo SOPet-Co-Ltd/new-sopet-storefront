@@ -4,6 +4,7 @@ import {
   ORDER_STATUS_BADGE_VARIANTS,
   ORDER_STATUS_LABELS,
   getOrderStatusBadgeVariant,
+  getOrderStatusLabel,
   isPendingPaymentStatus,
   isReturnEligibleOrderStatus,
 } from './orderStatus';
@@ -22,6 +23,25 @@ describe('ORDER_STATUS_LABELS', () => {
     for (const key of CANONICAL_ORDER_STATUS_KEYS) {
       expect(ORDER_STATUS_LABELS[key]).toBeTruthy();
     }
+  });
+});
+
+describe('getOrderStatusLabel', () => {
+  it('returns รอตรวจสอบการโอนเงิน for unpaid bank_transfer orders', () => {
+    expect(getOrderStatusLabel('pending_payment', 'bank_transfer')).toBe('รอตรวจสอบการโอนเงิน');
+    expect(getOrderStatusLabel('pending', 'bank_transfer')).toBe('รอตรวจสอบการโอนเงิน');
+  });
+
+  it('keeps standard pending label for other payment methods', () => {
+    expect(getOrderStatusLabel('pending_payment', 'promptpay')).toBe('รอชำระเงิน');
+    expect(getOrderStatusLabel('pending_payment', 'credit_card')).toBe('รอชำระเงิน');
+    expect(getOrderStatusLabel('pending_payment')).toBe('รอชำระเงิน');
+    expect(getOrderStatusLabel('pending_payment', null)).toBe('รอชำระเงิน');
+  });
+
+  it('does not override non-pending statuses for bank_transfer', () => {
+    expect(getOrderStatusLabel('paid', 'bank_transfer')).toBe('ชำระเงินแล้ว');
+    expect(getOrderStatusLabel('cancelled', 'bank_transfer')).toBe('ยกเลิก');
   });
 });
 

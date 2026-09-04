@@ -28,6 +28,14 @@ export function getOrderStatusBadgeVariant(status: string): OrderStatusBadgeVari
   return ORDER_STATUS_BADGE_VARIANTS[status] ?? 'default';
 }
 
+/** Customer-facing label; bank transfer unpaid orders wait on admin confirm. */
+export function getOrderStatusLabel(status: string, paymentMethod?: string | null): string {
+  if (isPendingPaymentStatus(status) && paymentMethod === 'bank_transfer') {
+    return 'รอตรวจสอบการโอนเงิน';
+  }
+  return ORDER_STATUS_LABELS[status] ?? status;
+}
+
 export function isPendingPaymentStatus(status: string): boolean {
   return status === 'pending_payment' || status === 'pending';
 }

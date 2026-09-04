@@ -13,8 +13,8 @@ import { OrderShipmentTrackingList } from '@/components/order-tracking/order-shi
 import { HeldUnpaidPaymentBlock } from '@/components/organisms/OrderPaymentForm/HeldUnpaidPaymentBlock';
 import { OrderConfirmationSummary } from '@/components/organisms/OrderConfirmationSummary';
 import {
-  ORDER_STATUS_LABELS,
   getOrderStatusBadgeVariant,
+  getOrderStatusLabel,
   isPendingPaymentStatus,
 } from '@/lib/constants/orderStatus';
 import { STORE_SUSPENSION_HOLD_COPY } from '@/lib/constants/storeSuspensionHoldCopy';
@@ -77,7 +77,7 @@ export default function OrderDetailPage() {
     );
   }
 
-  const statusLabel = ORDER_STATUS_LABELS[order.status] ?? order.status;
+  const statusLabel = getOrderStatusLabel(order.status, order.paymentMethod);
   const orderHasHeldItems = hasHeldFulfillmentItems(order.items);
   const holdBannerVariant = resolveHoldBannerVariant(order.status, order.items);
   const heldUnpaidBlocked = isPendingPaymentStatus(order.status) && orderHasHeldItems;

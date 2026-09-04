@@ -4,6 +4,7 @@ fragment OrderListFields on OrderType {
   status
   createdAt
   total
+  paymentMethod
   items {
     id
     productName

@@ -79,7 +79,18 @@ export default function PaymentPage() {
   );
   const heldUnpaidBlocked = heldUnpaidFromOrder || heldUnpaidFromError;
 
-  const handleCheckStatus = useCallback(() => refetch(), [refetch]);
+  const handleCheckStatus = useCallback(() => {
+    // Bank transfer: customer acknowledges they transferred. Admin still confirms paid —
+    // do not wait for status===paid and do not call any mark-paid mutation.
+    if (payment?.paymentMethod === 'bank_transfer' && payment.orderId && !hasRedirected.current) {
+      hasRedirected.current = true;
+      clearPendingCheckout();
+      void invalidateCustomerOrders();
+      router.replace(`/thank-you/${payment.orderId}`);
+      return;
+    }
+    return refetch();
+  }, [payment, refetch, router]);
 
   useEffect(() => {
     if (lookupMode !== 'paymentId' || hasTriedFallback.current || loading) {

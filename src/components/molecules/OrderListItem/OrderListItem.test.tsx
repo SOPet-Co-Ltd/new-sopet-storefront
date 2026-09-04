@@ -7,13 +7,14 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ prefetch: vi.fn() }),
 }));
 
-function createOrder(status: string): OrderSummary {
+function createOrder(status: string, paymentMethod: string = 'credit_card'): OrderSummary {
   return {
     id: 'order-1',
     orderNumber: 'ORD-001',
     status,
     createdAt: '2025-01-01T00:00:00.000Z',
     total: 950,
+    paymentMethod,
     items: [
       {
         id: 'item-1',
@@ -43,6 +44,11 @@ describe('OrderListItem', () => {
   it('renders pending_payment status label', () => {
     render(<OrderListItem order={createOrder('pending_payment')} />);
     expect(screen.getByText('รอชำระเงิน')).toBeInTheDocument();
+  });
+
+  it('renders bank_transfer pending as รอตรวจสอบการโอนเงิน', () => {
+    render(<OrderListItem order={createOrder('pending_payment', 'bank_transfer')} />);
+    expect(screen.getByText('รอตรวจสอบการโอนเงิน')).toBeInTheDocument();
   });
 
   it('renders legacy pending status label', () => {

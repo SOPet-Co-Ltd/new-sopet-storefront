@@ -110,7 +110,7 @@ export function BankTransferWaitingState({
           คัดลอกบัญชีธนาคาร เพื่อชำระเงิน
         </h1>
         <p className="text-base font-medium leading-6 text-sop-neutral-gray-300">
-          กรุณาอยู่ในหน้านี้จนกว่าการชำระเงินจะสำเร็จ
+          โอนเงินตามยอดด้านล่าง แล้วกดยืนยันชำระเงินแล้วเมื่อโอนเสร็จ
         </p>
       </div>
 

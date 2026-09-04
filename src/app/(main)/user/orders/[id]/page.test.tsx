@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ prefetch: vi.fn() }),
 }));
 
-function createOrder(status: string): OrderDetail {
+function createOrder(status: string, paymentMethod: string = 'credit_card'): OrderDetail {
   return {
     id: 'order-1',
     orderNumber: 'ORD-001',
@@ -32,7 +32,7 @@ function createOrder(status: string): OrderDetail {
     shippingFee: 50,
     discountAmount: 0,
     total: 950,
-    paymentMethod: 'credit_card',
+    paymentMethod,
     items: [
       {
         id: 'item-1',
@@ -77,6 +77,26 @@ describe('OrderDetailPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('รอชำระเงิน')).toBeInTheDocument();
+    });
+  });
+
+  it('renders bank_transfer pending as รอตรวจสอบการโอนเงิน and keeps pay CTA', async () => {
+    mockUseOrderDetail.mockReturnValue({
+      order: createOrder('pending_payment', 'bank_transfer'),
+      loading: false,
+      error: undefined,
+      confirmOrderDelivered: vi.fn(),
+      confirmingDelivery: false,
+    });
+
+    render(<OrderDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('รอตรวจสอบการโอนเงิน')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'ชำระเงิน' })).toHaveAttribute(
+        'href',
+        '/payment/order-1',
+      );
     });
   });
 

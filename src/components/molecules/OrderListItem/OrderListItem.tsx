@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ORDER_STATUS_LABELS,
   getOrderStatusBadgeVariant,
+  getOrderStatusLabel,
   isPendingPaymentStatus,
 } from '@/lib/constants/orderStatus';
 import { prefetchOrderDetail } from '@/lib/account/prefetchAccountPage';
@@ -24,7 +24,7 @@ type OrderListItemProps = {
 
 export function OrderListItem({ order, showReviewedTag = false }: OrderListItemProps) {
   const router = useRouter();
-  const statusLabel = ORDER_STATUS_LABELS[order.status] ?? order.status;
+  const statusLabel = getOrderStatusLabel(order.status, order.paymentMethod);
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const orderHref = `/user/orders/${order.id}`;
 

@@ -737,6 +737,7 @@ export type OrderListFieldsFragment = {
   status: string;
   createdAt: string;
   total: number;
+  paymentMethod: string;
   items: Array<{ id: string; productName: string; quantity: number }>;
 };
 
@@ -783,6 +784,7 @@ export type OrdersQuery = {
       status: string;
       createdAt: string;
       total: number;
+      paymentMethod: string;
       items: Array<{ id: string; productName: string; quantity: number }>;
     }>;
     pagination: { page: number; limit: number; total: number; totalPages: number };
@@ -2114,6 +2116,7 @@ export const OrderListFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'status' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'total' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'paymentMethod' } },
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'items' },

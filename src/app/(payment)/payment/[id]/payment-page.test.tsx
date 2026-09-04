@@ -233,6 +233,45 @@ describe('PaymentPage', () => {
     expect(mockReplace).toHaveBeenCalledTimes(1);
   });
 
+  it('bank transfer pending CTA navigates to thank-you without waiting for paid', async () => {
+    const user = userEvent.setup();
+    paymentState.payment = {
+      ...samplePendingPayment,
+      paymentMethod: 'bank_transfer',
+      qrCodeUrl: null,
+      authorizeUri: null,
+      expiresAt: null,
+    };
+
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'ยืนยันชำระเงินแล้ว' })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'ยืนยันชำระเงินแล้ว' }));
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+    });
+    expect(paymentState.payment.status).toBe('pending');
+  });
+
+  it('PromptPay status check does not navigate to thank-you while pending', async () => {
+    const user = userEvent.setup();
+    paymentState.payment = samplePendingPayment;
+
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }));
+
+    expect(mockReplace).not.toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+  });
+
   it('falls back to paymentByOrderId when payment id lookup is not found', async () => {
     server.use(
       graphql.query('Payment', () => {

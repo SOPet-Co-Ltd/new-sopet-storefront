@@ -198,12 +198,20 @@ export function ChatWithAdminFloatingButton() {
                   แอดไลน์เลย
                 </a>
               </div>
-              <span
-                className="sop-body-sm-light line-clamp-1 text-sop-neutral-gray-200 text-center w-full"
-                role="note"
-              >
-                ปรึกษาปัญหาสัตว์เลี้ยงฟรี 24 ชม.
-              </span>
+              <div className="flex flex-col gap-sop-4px">
+                <span
+                  className="sop-body-sm-light line-clamp-1 text-sop-neutral-gray-200 text-center w-full"
+                  role="note"
+                >
+                  ลูกค้า Sopet แนะนำการรักษา +
+                </span>
+                <span
+                  className="sop-body-sm-light line-clamp-1 text-sop-neutral-gray-200 text-center w-full"
+                  role="note"
+                >
+                  ติดตามการใช้ยา 24 ชม.
+                </span>
+              </div>
             </div>
           </div>
         </div>

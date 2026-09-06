@@ -46,7 +46,7 @@ const FOOTER_LINKS = [
   { label: 'ศูนย์ความปลอดภัย', href: '/security' },
 ];
 
-const LINE_OA_TITLE = ['ปรึกษาสัต​วแพทย์ฟรี !', 'ผ่าน LINE OA'];
+const LINE_OA_TITLE = ['ลูกค้า Sopet แนะนำการรักษา +', 'ติดตามการใช้ยา 24 ชม'];
 
 function FooterSectionHeading({ children }: { children: string }) {
   return <h4 className="sop-body-lg-medium text-sop-base-black">{children}</h4>;

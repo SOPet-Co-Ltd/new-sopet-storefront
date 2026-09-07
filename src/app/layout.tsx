@@ -14,6 +14,8 @@ const googleSans = Google_Sans({
   weight: ['400', '500', '600', '700'],
   display: 'swap',
   preload: true,
+  adjustFontFallback: false,
+  fallback: ['ui-sans-serif', 'system-ui', 'sans-serif'],
 });
 
 export function buildRootMetadata(): Metadata {

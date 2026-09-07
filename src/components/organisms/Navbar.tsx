@@ -44,16 +44,19 @@ function NavbarCartButton() {
 }
 
 function PromoBar() {
-  const promoItems = [
-    { icon: SaleIcon, label: 'ส่วนลดพิเศษ' },
-    { icon: ClipboardAddIcon, label: 'ปรึกษาทุกปัญหา' },
-    { icon: LinkIcon, label: 'สัตวแพทย์แนะนำ' },
-    { icon: ShieldCheckIcon, label: 'ของแท้ 100%' },
-  ] as const;
+  // const promoItems = [
+  //   { icon: SaleIcon, label: 'ส่วนลดพิเศษ' },
+  //   { icon: ClipboardAddIcon, label: 'ปรึกษาทุกปัญหา' },
+  //   { icon: LinkIcon, label: 'สัตวแพทย์แนะนำ' },
+  //   { icon: ShieldCheckIcon, label: 'ของแท้ 100%' },
+  // ] as const;
 
   return (
-    <div className="sop-gradient-01 px-sop-4px md:px-sop-48px py-sop-4px flex h-10 items-center justify-between md:justify-end md:gap-3">
-      {promoItems.map(({ icon: Icon, label }) => (
+    <div className="sop-gradient-01 px-sop-4px md:px-sop-48px py-sop-4px flex h-10 items-center justify-center md:gap-3">
+      <p className="sop-body-sm-regular md:sop-body-md-regular text-sop-base-white">
+        Sopet สนับสนุนโดยสถาบันนวัตกรรมบูรณาการแห่งจุฬาฯ (CSII)
+      </p>
+      {/* {promoItems.map(({ icon: Icon, label }) => (
         <div
           key={label}
           className="flex items-center gap-0.5 rounded-full bg-sop-neutral-whitealpha-100 md:gap-2"
@@ -65,7 +68,7 @@ function PromoBar() {
             {label}
           </p>
         </div>
-      ))}
+      ))} */}
     </div>
   );
 }

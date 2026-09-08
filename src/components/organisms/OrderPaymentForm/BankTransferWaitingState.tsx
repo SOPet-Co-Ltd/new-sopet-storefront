@@ -34,8 +34,9 @@ function CopyAccountButton({ accountNumber }: { accountNumber: string }) {
       type="button"
       variant="outline"
       size="md"
+      className="shrink-0 max-sm:min-w-9 max-sm:px-sop-8px"
       onClick={() => void onCopy()}
-      aria-label="คัดลอกเลขบัญชี"
+      aria-label={copied ? 'คัดลอกแล้ว' : 'คัดลอกเลขบัญชี'}
       iconLeft={
         copied ? (
           <CheckIcon size={{ mobile: 16 }} color="currentColor" />
@@ -44,7 +45,7 @@ function CopyAccountButton({ accountNumber }: { accountNumber: string }) {
         )
       }
     >
-      {copied ? 'คัดลอกแล้ว' : 'คัดลอก'}
+      <span className="max-sm:sr-only">{copied ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
     </Button>
   );
 }
@@ -128,9 +129,14 @@ export function BankTransferWaitingState({
           <p className="text-base font-semibold text-[#232323]">ข้อมูลบัญชีรับเงิน</p>
           <div className="flex items-center gap-3">
             <BankAvatar bankName={details.bankName} />
-            <div className="min-w-0 flex-1">
-              <p className="text-base font-bold text-sop-base-black">{details.accountNumber}</p>
-              <p className="mt-0.5 text-sm font-medium text-[#232323]">{details.accountName}</p>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <p className="truncate text-base font-bold text-sop-base-black">
+                {details.accountNumber}
+              </p>
+              <p className="truncate text-sm font-medium text-[#232323]">{details.bankName}</p>
+              <p className="mt-0.5 truncate text-sm font-medium text-[#232323]">
+                {details.accountName}
+              </p>
             </div>
             <CopyAccountButton accountNumber={details.accountNumber} />
           </div>

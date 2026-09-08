@@ -167,7 +167,7 @@ export function ThankYouPageContent({ orderId }: ThankYouPageContentProps) {
               id="order-confirmation-title"
               className="sop-body-lg-medium text-sop-neutral-gray-200"
             >
-              ขอบคุณสำหรับคำสั่งซื้อ
+              (ไม่ต้องแนบสลิป) ขอบคุณสำหรับคำสั่งซื้อ
             </h1>
             <div className="flex items-center justify-center gap-1">
               <span className="sop-body-lg-medium text-sop-neutral-gray-200">

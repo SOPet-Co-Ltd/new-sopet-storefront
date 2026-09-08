@@ -125,7 +125,7 @@ export function HomeFaqSection({ heading = 'คำถามที่พบบ่
                   }}
                   className="pb-4 md:pb-5"
                 >
-                  <p className="sop-body-sm-regular md:sop-body-md-regular text-sop-neutral-gray-300 leading-relaxed">
+                  <p className="sop-body-sm-regular md:sop-body-md-regular text-sop-neutral-gray-300 leading-relaxed whitespace-pre-line">
                     {item.answer}
                   </p>
                 </div>

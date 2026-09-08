@@ -293,6 +293,7 @@ describe('ProductDetailsPage', () => {
     expect(screen.getByText('Test Customer')).toBeInTheDocument();
     expect(screen.getByText('Great product')).toBeInTheDocument();
     expect(screen.getByTestId('store-review-average')).toHaveTextContent('5');
+    expect(screen.getByRole('heading', { name: 'คำถามที่พบบ่อย' })).toBeInTheDocument();
   });
 
   it('updates price and stock when variant is changed', async () => {

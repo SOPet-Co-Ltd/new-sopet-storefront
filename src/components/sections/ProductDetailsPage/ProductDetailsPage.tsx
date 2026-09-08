@@ -11,6 +11,7 @@ import { getDefaultVariant } from '@/components/organisms/ProductDetailsVariantS
 import { ProductGallery } from '@/components/organisms/ProductGallery/ProductGallery';
 import { ProductDetailDescription } from '@/components/sections/ProductDetailDescription/ProductDetailDescription';
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
+import { HomeFaqSection, HOME_FAQ_ITEMS } from '@/components/sections/HomeFaqSection';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
 import { trackViewItem } from '@/lib/analytics';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
@@ -199,6 +200,8 @@ export default function ProductDetailsPage({
         totalReviews={reviewSummary.totalReviews}
         loading={reviewsLoading}
       />
+
+      <HomeFaqSection items={HOME_FAQ_ITEMS} />
 
       <div className="mt-2 flex flex-col gap-8 md:mt-3">
         <HomeProductSection

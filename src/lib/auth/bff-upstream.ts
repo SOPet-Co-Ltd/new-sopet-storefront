@@ -2,6 +2,13 @@ import { buildGraphqlSsrBypassHeaders, getGraphqlSsrBypassSecret } from '@/lib/c
 
 const DEFAULT_UPSTREAM = 'http://localhost:3002/graphql';
 
+const REQUEST_ID_HEADER = 'x-request-id';
+const CLIENT_IP_HEADER = 'x-sopet-client-ip';
+const SESSION_ID_HEADER = 'x-sopet-session-id';
+const VERCEL_FORWARDED_FOR_HEADER = 'x-vercel-forwarded-for';
+const FORWARDED_FOR_HEADER = 'x-forwarded-for';
+const REAL_IP_HEADER = 'x-real-ip';
+
 export function getUpstreamGraphqlUrl(): string {
   return process.env.GRAPHQL_SSR_URL ?? DEFAULT_UPSTREAM;
 }
@@ -25,13 +32,68 @@ const REFRESH_MUTATION = `
   }
 `;
 
+function firstHop(value: string | null): string | null {
+  const hop = value?.split(',')[0]?.trim() ?? '';
+  return hop || null;
+}
+
+/**
+ * Visitor IP as seen by Vercel — not the serverless egress IP.
+ * Prefer x-vercel-forwarded-for; x-forwarded-for can be the proxy hop once this
+ * request is forwarded through Cloudflare to the API.
+ */
+export function getIncomingClientIp(incomingRequest: Request): string | null {
+  return (
+    firstHop(incomingRequest.headers.get(VERCEL_FORWARDED_FOR_HEADER)) ||
+    firstHop(incomingRequest.headers.get(REAL_IP_HEADER)) ||
+    firstHop(incomingRequest.headers.get(FORWARDED_FOR_HEADER))
+  );
+}
+
+export type UpstreamHeaderOptions = {
+  sessionId?: string | null;
+};
+
+/** Forward client correlation headers so backend rate limits + audit logs see the visitor. */
+export function buildUpstreamRequestHeaders(
+  incomingRequest?: Request,
+  options?: UpstreamHeaderOptions,
+): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (!incomingRequest) {
+    if (options?.sessionId) {
+      headers[SESSION_ID_HEADER] = options.sessionId;
+    }
+    return headers;
+  }
+
+  const requestId = incomingRequest.headers.get(REQUEST_ID_HEADER)?.trim();
+  headers[REQUEST_ID_HEADER] = requestId || crypto.randomUUID();
+
+  const clientIp = getIncomingClientIp(incomingRequest);
+  if (clientIp) {
+    // Custom header survives Cloudflare rewriting X-Forwarded-For to the Vercel hop.
+    headers[CLIENT_IP_HEADER] = clientIp;
+    headers[FORWARDED_FOR_HEADER] = clientIp;
+  }
+
+  if (options?.sessionId) {
+    headers[SESSION_ID_HEADER] = options.sessionId;
+  }
+
+  return headers;
+}
+
 export async function forwardGraphql(
   body: string,
   accessToken?: string,
+  incomingRequest?: Request,
+  options?: UpstreamHeaderOptions,
 ): Promise<{ response: Response; json: GraphQLJson }> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...buildGraphqlSsrBypassHeaders(getGraphqlSsrBypassSecret()),
+    ...buildUpstreamRequestHeaders(incomingRequest, options),
   };
   if (accessToken) {
     headers.authorization = `Bearer ${accessToken}`;
@@ -63,12 +125,19 @@ export async function forwardGraphql(
   }
 }
 
-export async function refreshTokensUpstream(refreshToken: string): Promise<AuthTokenPair | null> {
+export async function refreshTokensUpstream(
+  refreshToken: string,
+  incomingRequest?: Request,
+  options?: UpstreamHeaderOptions,
+): Promise<AuthTokenPair | null> {
   const { response, json } = await forwardGraphql(
     JSON.stringify({
       query: REFRESH_MUTATION,
       variables: { input: { refreshToken } },
     }),
+    undefined,
+    incomingRequest,
+    options,
   );
 
   const tokens = (json.data as { refreshToken?: AuthTokenPair } | undefined)?.refreshToken;

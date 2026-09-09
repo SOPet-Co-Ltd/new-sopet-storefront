@@ -123,7 +123,7 @@ export function ThankYouAction({ isGuest, orderNumber }: ThankYouActionsProps) {
         onClick={() => setLineModalOpen(true)}
         aria-label="เปิดหน้าต่างติดตามการสั่งซื้อผ่าน LINE"
       >
-        ติดตามการสั่งซื้อผ่าน LINE OA
+        ติดตามการใช้ยาและการสั่งซื้อ
       </Button>
 
       {lineModalOpen && (

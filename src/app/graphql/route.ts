@@ -29,17 +29,28 @@ export async function POST(request: Request) {
   const sessionHolder = NextResponse.json({});
   const sessionId = await ensureSessionIdCookie(sessionHolder, request);
   const body = injectSessionIdIntoGraphqlBody(rawBody, sessionId);
+  const upstreamOptions = { sessionId };
 
   let accessToken = await getAccessTokenFromRequest();
-  let { response: upstream, json } = await forwardGraphql(body, accessToken);
+  let { response: upstream, json } = await forwardGraphql(
+    body,
+    accessToken,
+    request,
+    upstreamOptions,
+  );
 
   if (isUnauthenticatedPayload(json, upstream.status)) {
     const refreshToken = await getRefreshTokenFromRequest();
     if (refreshToken) {
-      const tokens = await refreshTokensUpstream(refreshToken);
+      const tokens = await refreshTokensUpstream(refreshToken, request, upstreamOptions);
       if (tokens) {
         accessToken = tokens.accessToken;
-        ({ response: upstream, json } = await forwardGraphql(body, accessToken));
+        ({ response: upstream, json } = await forwardGraphql(
+          body,
+          accessToken,
+          request,
+          upstreamOptions,
+        ));
         const retryResponse = NextResponse.json(
           {
             ...json,

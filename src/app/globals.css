@@ -239,16 +239,20 @@
 /* ========================================================================== */
 @utility sop-gradient-01 {
   /* primary-500 -> additionalblue-400 */
-  background-image: linear-gradient(90deg,
-      var(--color-sop-primary-500) 0%,
-      var(--color-sop-additionalblue-400) 100%);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-sop-primary-500) 0%,
+    var(--color-sop-additionalblue-400) 100%
+  );
 }
 
 @utility sop-gradient-02 {
   /* exact 90deg + 30% stop on primary-500 to tertiary-500 */
-  background-image: linear-gradient(90deg,
-      var(--color-sop-primary-500) 30%,
-      var(--color-sop-tertiary-500) 100%);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-sop-primary-500) 30%,
+    var(--color-sop-tertiary-500) 100%
+  );
 }
 
 /* ========================================================================== */
@@ -946,46 +950,54 @@ input[type='range'].slider-thumb:focus::-moz-range-thumb {
 }
 
 .sop-skeleton-shimmer {
-  background: linear-gradient(105deg,
-      var(--color-sop-primary-100) 0%,
-      var(--color-sop-primary-100) 32%,
-      var(--color-sop-primary-300) 50%,
-      var(--color-sop-primary-100) 68%,
-      var(--color-sop-primary-100) 100%);
+  background: linear-gradient(
+    105deg,
+    var(--color-sop-primary-100) 0%,
+    var(--color-sop-primary-100) 32%,
+    var(--color-sop-primary-300) 50%,
+    var(--color-sop-primary-100) 68%,
+    var(--color-sop-primary-100) 100%
+  );
   background-size: 220% 100%;
   animation: sop-skeleton-shimmer 1.8s ease-in-out infinite;
 }
 
 .sop-skeleton-shimmer-on-primary {
-  background: linear-gradient(105deg,
-      var(--color-sop-primary-200) 0%,
-      var(--color-sop-primary-200) 32%,
-      var(--color-sop-primary-400) 50%,
-      var(--color-sop-primary-200) 68%,
-      var(--color-sop-primary-200) 100%);
+  background: linear-gradient(
+    105deg,
+    var(--color-sop-primary-200) 0%,
+    var(--color-sop-primary-200) 32%,
+    var(--color-sop-primary-400) 50%,
+    var(--color-sop-primary-200) 68%,
+    var(--color-sop-primary-200) 100%
+  );
   background-size: 220% 100%;
   animation: sop-skeleton-shimmer 1.8s ease-in-out infinite;
   opacity: 0.9;
 }
 
 .sop-skeleton-shimmer-neutral {
-  background: linear-gradient(105deg,
-      var(--color-sop-neutral-gray-500) 0%,
-      var(--color-sop-neutral-gray-500) 32%,
-      var(--color-sop-neutral-gray-600) 50%,
-      var(--color-sop-neutral-gray-500) 68%,
-      var(--color-sop-neutral-gray-500) 100%);
+  background: linear-gradient(
+    105deg,
+    var(--color-sop-neutral-gray-500) 0%,
+    var(--color-sop-neutral-gray-500) 32%,
+    var(--color-sop-neutral-gray-600) 50%,
+    var(--color-sop-neutral-gray-500) 68%,
+    var(--color-sop-neutral-gray-500) 100%
+  );
   background-size: 220% 100%;
   animation: sop-skeleton-shimmer 1.8s ease-in-out infinite;
 }
 
 .sop-skeleton-shimmer-cta {
-  background: linear-gradient(105deg,
-      var(--color-sop-secondary-100) 0%,
-      var(--color-sop-secondary-100) 30%,
-      var(--color-sop-secondary-300) 50%,
-      var(--color-sop-secondary-100) 70%,
-      var(--color-sop-secondary-100) 100%);
+  background: linear-gradient(
+    105deg,
+    var(--color-sop-secondary-100) 0%,
+    var(--color-sop-secondary-100) 30%,
+    var(--color-sop-secondary-300) 50%,
+    var(--color-sop-secondary-100) 70%,
+    var(--color-sop-secondary-100) 100%
+  );
   background-size: 220% 100%;
   animation: sop-skeleton-shimmer 1.8s ease-in-out infinite;
 }
@@ -1012,12 +1024,14 @@ input[type='range'].slider-thumb:focus::-moz-range-thumb {
   left: 0;
   height: 100%;
   width: 42%;
-  background: linear-gradient(90deg,
-      transparent,
-      var(--color-sop-secondary-200),
-      var(--color-sop-secondary-400),
-      var(--color-sop-secondary-200),
-      transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-sop-secondary-200),
+    var(--color-sop-secondary-400),
+    var(--color-sop-secondary-200),
+    transparent
+  );
   animation: sop-nav-progress-slide 0.95s ease-in-out infinite;
 }
 

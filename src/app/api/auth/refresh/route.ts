@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return response;
   }
 
-  const tokens = await refreshTokensUpstream(refreshToken);
+  const tokens = await refreshTokensUpstream(refreshToken, request);
   if (!tokens) {
     const response = NextResponse.json({ ok: false }, { status: 401 });
     clearAuthCookies(response, request);

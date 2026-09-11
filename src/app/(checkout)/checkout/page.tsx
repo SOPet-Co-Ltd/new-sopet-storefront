@@ -192,7 +192,7 @@ export default function CheckoutPage() {
       <CheckoutPageReset />
       <CheckoutAutoApplyController />
       <CheckoutErrorToast />
-      <div className="lg:px-sop-80px flex flex-col px-0 lg:pb-sop-80px lg:pt-sop-20px">
+      <div className="lg:px-sop-80px flex flex-col px-0 pb-28 md:pb-0 lg:pb-sop-80px lg:pt-sop-20px">
         <div className="flex w-full flex-col gap-sop-16px xl:flex-row xl:items-start xl:gap-sop-20px">
           <div className="min-w-0 flex-1">
             <CheckoutSection

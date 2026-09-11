@@ -24,8 +24,11 @@ export function CheckoutMobileBottomBar({
   const totals = useCheckoutTotals();
 
   return (
-    <div className="block md:hidden" data-testid="checkout-mobile-bottom-bar">
-      <div className="mt-14 flex items-center justify-between rounded-tl-sop-20px rounded-tr-sop-20px bg-sop-base-white px-sop-32px py-sop-12px">
+    <div
+      className="fixed inset-x-0 bottom-0 z-30 md:hidden pb-[env(safe-area-inset-bottom,0px)]"
+      data-testid="checkout-mobile-bottom-bar"
+    >
+      <div className="flex items-center justify-between rounded-tl-sop-20px rounded-tr-sop-20px bg-sop-base-white px-sop-32px py-sop-12px shadow-[0_-6px_24px_rgba(34,34,41,0.12)]">
         <div className="flex flex-col">
           <label className="sop-body-sm-medium text-sop-neutral-gray-300">ยอดชำระเงิน</label>
           <label className="text-sop-secondary-600" data-testid="checkout-mobile-final-price">

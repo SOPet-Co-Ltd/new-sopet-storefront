@@ -3,6 +3,7 @@
 import { ApolloNextAppProvider } from '@apollo/client-integration-nextjs';
 import type { ReactNode } from 'react';
 import { Toaster } from 'sonner';
+import { GuestAddressImportOnLogin } from '@/components/providers/GuestAddressImportOnLogin';
 import { LoadingLottieWarmupProvider } from '@/components/organisms/GlobalLoadingStage';
 import { makeApolloClient } from '@/lib/graphql/client';
 import { AuthProvider } from '@/lib/providers/AuthProvider';
@@ -14,6 +15,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <LoadingLottieWarmupProvider>
       <ApolloNextAppProvider makeClient={makeApolloClient}>
         <AuthProvider>
+          <GuestAddressImportOnLogin />
           <CartProvider>
             <CheckoutProvider>
               {children}

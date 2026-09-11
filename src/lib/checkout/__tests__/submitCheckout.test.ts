@@ -1,6 +1,6 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { useCheckout } from '@/lib/hooks/useCheckout';
 import { server } from '@/test/mocks/server';
@@ -20,6 +20,26 @@ import {
   type SubmitCheckoutParams,
 } from '@/lib/checkout/submitCheckout';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
+import {
+  GUEST_CHECKOUT_REMEMBER_KEY,
+  loadGuestCheckoutRemember,
+} from '@/lib/checkout/guestCheckoutRemember';
+
+function createLocalStorageMock() {
+  const store = new Map<string, string>();
+  return {
+    getItem: vi.fn((key: string) => store.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      store.set(key, value);
+    }),
+    removeItem: vi.fn((key: string) => {
+      store.delete(key);
+    }),
+    clear: vi.fn(() => {
+      store.clear();
+    }),
+  };
+}
 
 const SHIPPING_OPTION_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
 
@@ -64,6 +84,14 @@ function createSubmitParams(overrides?: Partial<SubmitCheckoutParams>): SubmitCh
 }
 
 describe('submitCheckout', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createLocalStorageMock());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('blocks createOrder when step is shipping', async () => {
     const checkoutHook = createCheckoutHook();
     const params = createSubmitParams({ step: 'shipping', checkoutHook });
@@ -389,6 +417,52 @@ describe('submitCheckout', () => {
     ).rejects.toMatchObject({ code: 'order_failed' });
 
     expect(createOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it('persists guest checkout form to localStorage after successful createOrder', async () => {
+    await submitCheckout(createSubmitParams(), createSubmitCheckoutGuard());
+
+    expect(loadGuestCheckoutRemember()).toEqual({
+      v: 1,
+      form: guestForm,
+    });
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      GUEST_CHECKOUT_REMEMBER_KEY,
+      expect.any(String),
+    );
+  });
+
+  it('does not persist guest remember for authenticated checkout', async () => {
+    await submitCheckout(
+      createSubmitParams({
+        guestForm: null,
+        checkoutContext: {
+          isAuthenticated: true,
+          shippingByStoreId: {
+            [CATALOG_STORE_ID]: { shippingOptionId: SHIPPING_OPTION_ID },
+          },
+          selectedAddressId: 'saved-address-1',
+          promotionCode: null,
+          storePromotionCodes: [],
+          paymentMethod: 'promptpay',
+        },
+      }),
+      createSubmitCheckoutGuard(),
+    );
+
+    expect(loadGuestCheckoutRemember()).toBeNull();
+  });
+
+  it('does not persist guest remember when createOrder fails', async () => {
+    const checkoutHook = createCheckoutHook({
+      createOrder: vi.fn().mockRejectedValue(new Error('order failed')),
+    });
+
+    await expect(
+      submitCheckout(createSubmitParams({ checkoutHook }), createSubmitCheckoutGuard()),
+    ).rejects.toMatchObject({ code: 'order_failed' });
+
+    expect(loadGuestCheckoutRemember()).toBeNull();
   });
 });
 

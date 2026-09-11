@@ -18,10 +18,12 @@ import type {
   GuestCheckoutField,
   GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import { useGuestCheckoutRememberHydration } from '@/lib/checkout/useGuestCheckoutRememberHydration';
 import { clearBuyNowCheckout } from '@/lib/checkout/buyNowCheckout';
 import { clearAutoApplyAttempted } from '@/lib/checkout/autoApplyOnceGate';
 import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
+import { useAuth } from '@/lib/hooks/useAuth';
 import {
   BUY_NOW_CHECKOUT_MODE,
   useCheckoutCartSelection,
@@ -84,6 +86,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isBuyNowMode = searchParams.get('mode') === BUY_NOW_CHECKOUT_MODE;
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { selectedItemCount, selectedItems, selectedSubtotal, loading } =
     useCheckoutCartSelection();
   const { setAddress } = useCheckout();
@@ -117,6 +120,8 @@ export default function CheckoutPage() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<GuestCheckoutField, string>>>({});
   const [showFieldErrors, setShowFieldErrors] = useState(false);
   const [saveAddressChecked, setSaveAddressChecked] = useState(true);
+
+  useGuestCheckoutRememberHydration(isAuthenticated, authLoading, setGuestForm);
 
   const addressSubmitContext = useMemo<AddressSubmitContext>(
     () => ({

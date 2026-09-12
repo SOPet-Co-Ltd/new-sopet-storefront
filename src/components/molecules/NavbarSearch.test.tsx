@@ -23,6 +23,14 @@ describe('NavbarSearch', () => {
     window.sessionStorage.clear();
   });
 
+  it('renders a full-width search field without a 480px max-width cap', () => {
+    renderNavbarSearch();
+
+    const field = screen.getByTestId('navbar-search-field');
+    expect(field.className).toContain('w-full');
+    expect(field.className).not.toContain('max-w-[480px]');
+  });
+
   it('navigates to /search with q param on submit', async () => {
     const user = userEvent.setup();
 

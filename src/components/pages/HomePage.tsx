@@ -57,19 +57,21 @@ export default function HomePage({
       </header>
 
       <section className="relative w-full">
-        <section className="flex flex-col gap-5 md:gap-10 w-full p-4 lg:py-10 lg:px-20">
-          <div className="w-full">
-            <HomeRecentOrdersSection />
-          </div>
+        <section className="flex w-full flex-col p-4 lg:px-20 lg:py-10">
+          <div className="mx-auto flex w-full max-w-[1064px] flex-col gap-5 md:gap-10">
+            <div className="w-full">
+              <HomeRecentOrdersSection />
+            </div>
 
-          <div className="w-full">
-            <HomeCategories initialCategories={initialCategories} />
-          </div>
+            <div className="w-full">
+              <HomeCategories initialCategories={initialCategories} />
+            </div>
 
-          <div className="w-full">
-            <HomeRecommendedProductSection
-              initialRecommendedProducts={initialRecommendedProducts}
-            />
+            <div className="w-full">
+              <HomeRecommendedProductSection
+                initialRecommendedProducts={initialRecommendedProducts}
+              />
+            </div>
           </div>
         </section>
 

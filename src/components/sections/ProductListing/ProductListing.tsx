@@ -246,7 +246,7 @@ export function ProductListing({
                 catalogPrice,
               );
               return (
-                <li key={product.id} className="min-w-0 flex justify-center">
+                <li key={product.id} className="min-w-0">
                   <ProductCard
                     product={product}
                     priority={index < 4}
@@ -288,7 +288,7 @@ export function ProductListing({
             catalogPrice,
           );
           return (
-            <li key={product.id} className="min-w-0 flex justify-center">
+            <li key={product.id} className="min-w-0">
               <ProductCard
                 product={product}
                 priority={index < 4}

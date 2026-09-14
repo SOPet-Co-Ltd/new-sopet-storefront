@@ -26,7 +26,7 @@ function RecommendSkeletonGrid() {
       {Array.from({ length: 12 }).map((_, index) => (
         <li
           key={index}
-          className="h-[280px] w-[168px] animate-pulse rounded-sop-16px bg-sop-neutral-gray-600 md:w-[223px]"
+          className="h-[280px] w-full animate-pulse rounded-sop-16px bg-sop-neutral-gray-600 md:h-[320px]"
         />
       ))}
     </ul>
@@ -105,7 +105,7 @@ export function RecommendProductListing({
       </p>
       <ul className={`mt-6 ${PRODUCT_CARD_GRID_CLASS}`}>
         {products.map((product, index) => (
-          <li key={product.id} className="flex min-w-0 justify-center">
+          <li key={product.id} className="min-w-0">
             <ProductCard product={product} priority={index < 4} />
           </li>
         ))}

@@ -23,7 +23,7 @@ const CAROUSEL_LAYOUT_MAX_PRODUCTS = 10;
 const RESPONSIVE_GRID_COLUMNS =
   'md:grid-cols-3 md:gap-4 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5 xl:gap-10';
 
-const PRODUCT_CAROUSEL_CLASS = `flex gap-4 overflow-x-auto md:grid md:justify-items-center md:overflow-visible ${RESPONSIVE_GRID_COLUMNS}`;
+const PRODUCT_CAROUSEL_CLASS = `flex gap-4 overflow-x-auto md:grid md:justify-items-stretch md:overflow-visible ${RESPONSIVE_GRID_COLUMNS}`;
 
 function getGridProductVisibilityClass(index: number): string | undefined {
   if (index < 2) return undefined;
@@ -39,7 +39,7 @@ function ProductSkeletonRow() {
       {Array.from({ length: 5 }).map((_, index) => (
         <div
           key={index}
-          className="h-[280px] w-[168px] shrink-0 rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse md:w-[223px]"
+          className="h-[280px] w-[168px] shrink-0 animate-pulse rounded-sop-16px bg-sop-neutral-gray-600 md:h-[320px] md:w-[223px]"
         />
       ))}
     </div>
@@ -259,7 +259,7 @@ export function HomeProductSection({
               catalogPrice,
             );
             return (
-              <div key={product.id} className="shrink-0">
+              <div key={product.id} className="w-[168px] shrink-0 md:w-full">
                 <ProductCard
                   product={product}
                   campaignCompareAt={pricing?.compareAt ?? null}

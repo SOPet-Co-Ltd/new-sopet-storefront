@@ -3,7 +3,10 @@
 import { useQuery } from '@apollo/client/react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { PlatformBannersDocument } from '@/lib/graphql/generated/graphql';
+import {
+  PlatformBannersDocument,
+  type PlatformBannersQuery,
+} from '@/lib/graphql/generated/graphql';
 import { useBannerCarousel } from './useBannerCarousel';
 
 const isExternalHref = (href: string): boolean => /^https?:\/\//i.test(href);
@@ -17,10 +20,20 @@ function BannerSkeleton() {
   );
 }
 
-export function BannerSection() {
-  const { data, loading, error, refetch } = useQuery(PlatformBannersDocument);
+type BannerSectionProps = {
+  initialBanners?: PlatformBannersQuery['platformBanners'];
+};
 
-  const banners = (data?.platformBanners ?? [])
+export function BannerSection({ initialBanners }: BannerSectionProps = {}) {
+  // Skip client-side query when SSR already provided banner data.
+  // Without this, the browser had to wait for a full Apollo round-trip (~2700ms)
+  // before it could discover the LCP banner image URL, causing extremely slow LCP.
+  const { data, loading, error, refetch } = useQuery(PlatformBannersDocument, {
+    skip: Boolean(initialBanners),
+  });
+
+  const bannerSource = initialBanners ?? data?.platformBanners ?? [];
+  const banners = bannerSource
     .filter((banner) => banner.isActive)
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((banner) => ({
@@ -49,7 +62,9 @@ export function BannerSection() {
     preventClickAfterDrag,
   } = useBannerCarousel({ banners });
 
-  if (loading) {
+  const showLoading = !initialBanners && loading;
+
+  if (showLoading) {
     return (
       <section className="w-full flex flex-col gap-sop-12px" aria-busy="true">
         <BannerSkeleton />
@@ -57,7 +72,7 @@ export function BannerSection() {
     );
   }
 
-  if (error) {
+  if (error && !initialBanners) {
     return (
       <section className="w-full px-4 py-2">
         <button
@@ -174,7 +189,7 @@ export function BannerSection() {
 
         {hasLoop && (
           <div className="absolute right-sop-32px bottom-sop-16px rounded-sop-100px bg-sop-neutral-grayalpha-900 px-sop-12px py-sop-4px">
-            <div className="flex items-center justify-center gap-sop-8px">
+            <div className="flex items-center justify-center gap-sop-4px">
               {banners.map((banner, index) => {
                 const isActive = index + 1 === currentIndex;
 
@@ -183,14 +198,18 @@ export function BannerSection() {
                     type="button"
                     key={banner.id}
                     onClick={() => goToIndex(index)}
-                    className={`h-sop-8px rounded-sop-100px transition-all ${
-                      isActive
-                        ? 'w-sop-24px bg-sop-primary-500'
-                        : 'w-sop-8px bg-sop-neutral-gray-400'
-                    }`}
+                    className="flex min-h-[24px] min-w-[24px] items-center justify-center p-1"
                     aria-label={`ไปแบนเนอร์ ${index + 1}`}
                     aria-current={isActive ? 'true' : 'false'}
-                  />
+                  >
+                    <span
+                      className={`h-sop-8px rounded-sop-100px transition-all block ${
+                        isActive
+                          ? 'w-sop-24px bg-sop-primary-500'
+                          : 'w-sop-8px bg-sop-neutral-gray-400'
+                      }`}
+                    />
+                  </button>
                 );
               })}
             </div>

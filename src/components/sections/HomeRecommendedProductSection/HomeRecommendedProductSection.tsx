@@ -19,7 +19,7 @@ function RecommendedSkeletonGrid() {
       {Array.from({ length: 10 }).map((_, index) => (
         <li
           key={index}
-          className="w-[168px] md:w-[223px] h-[280px] rounded-sop-16px bg-sop-neutral-gray-600 animate-pulse"
+          className="h-[280px] w-full animate-pulse rounded-sop-16px bg-sop-neutral-gray-600 md:h-[320px]"
         />
       ))}
     </ul>

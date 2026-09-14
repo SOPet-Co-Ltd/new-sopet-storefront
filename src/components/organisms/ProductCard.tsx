@@ -144,7 +144,7 @@ function ProductCardImage({
 }) {
   const imageContainerClass = compact
     ? 'relative h-[136px] w-[136px] shrink-0 overflow-hidden bg-sop-additionalblue-300'
-    : 'relative h-[168px] w-[168px] shrink-0 overflow-hidden bg-sop-additionalblue-300 md:h-sop-224px md:w-sop-224px';
+    : 'relative aspect-square w-full overflow-hidden bg-sop-additionalblue-300';
 
   return (
     <div className={imageContainerClass}>
@@ -156,7 +156,7 @@ function ProductCardImage({
           fill
           priority={priority}
           quality={75}
-          sizes={compact ? '136px' : '(max-width: 768px) 168px, 224px'}
+          sizes={compact ? '136px' : '(max-width: 768px) 50vw, 197px'}
           className="pointer-events-none object-cover object-center select-none"
           draggable={false}
         />
@@ -276,9 +276,7 @@ export default function ProductCard({
     prefetchProductById(product.id);
   };
 
-  const cardWidthClass = compact
-    ? 'w-[136px] max-w-[136px]'
-    : 'w-[168px] max-w-[168px] md:w-sop-224px md:max-w-sop-224px';
+  const cardWidthClass = compact ? 'w-[136px] max-w-[136px]' : 'w-full';
 
   return (
     <Link
@@ -287,7 +285,9 @@ export default function ProductCard({
       prefetch
       aria-label={`ดู ${product.name}`}
       title={`ดู ${product.name}`}
-      className={['block shrink-0', className].filter(Boolean).join(' ')}
+      className={[compact ? 'block shrink-0' : 'block w-full min-w-0', className]
+        .filter(Boolean)
+        .join(' ')}
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
     >

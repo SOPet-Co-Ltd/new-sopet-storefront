@@ -118,12 +118,13 @@ export function NavbarSearch() {
       <div
         data-testid="navbar-search-field"
         className={cn(
-          'sop-body-sm-regular flex h-9 w-full min-w-0 max-w-[480px] items-center gap-2 rounded-full',
-          'bg-sop-neutral-gray-500 px-3 md:px-4',
+          'sop-body-sm-regular flex h-12 w-full min-w-0 items-center gap-1 rounded-sop-24',
+          'border border-sop-neutral-grayalpha-100 bg-sop-neutral-gray-500 pl-4 pr-2 py-1.5',
+          'shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
           'focus-within:ring-2 focus-within:ring-sop-primary-400 focus-within:ring-offset-1',
         )}
       >
-        <SearchIcon size={{ mobile: 20, desktop: 20 }} color="#454547" aria-hidden="true" />
+        <SearchIcon size={{ mobile: 20, desktop: 20 }} color="#949495" aria-hidden="true" />
         <input
           ref={inputRef}
           type="search"
@@ -155,12 +156,12 @@ export function NavbarSearch() {
           enterKeyHint="search"
           aria-label={SEARCH_LABEL}
           className={cn(
-            'sop-body-sm-regular min-w-0 flex-1 appearance-none border-0 bg-transparent outline-none',
+            'sop-body-md-regular min-w-0 flex-1 appearance-none border-0 bg-transparent outline-none',
             'px-1 py-1',
             'text-sop-neutral-gray-100 placeholder:text-sop-neutral-gray-400',
           )}
         />
-        <Button type="submit" variant="primary" size="md" className="shrink-0 px-3 md:px-sop-32px">
+        <Button type="submit" variant="primary" size="md" className="shrink-0 px-sop-32px">
           ค้นหา
         </Button>
       </div>

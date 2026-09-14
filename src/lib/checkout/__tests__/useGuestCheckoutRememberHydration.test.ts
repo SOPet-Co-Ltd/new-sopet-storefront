@@ -5,9 +5,12 @@ import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidat
 import { useGuestCheckoutRememberHydration } from '@/lib/checkout/useGuestCheckoutRememberHydration';
 
 const { mockLoad } = vi.hoisted(() => ({
-  mockLoad: vi.fn(() => null as ReturnType<
-    typeof import('@/lib/checkout/guestCheckoutRemember').loadGuestCheckoutRemember
-  >),
+  mockLoad: vi.fn(
+    () =>
+      null as ReturnType<
+        typeof import('@/lib/checkout/guestCheckoutRemember').loadGuestCheckoutRemember
+      >,
+  ),
 }));
 
 vi.mock('@/lib/checkout/guestCheckoutRemember', () => ({

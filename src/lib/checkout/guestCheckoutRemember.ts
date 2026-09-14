@@ -127,10 +127,7 @@ export function markGuestCheckoutRememberImported(phone: string): void {
   writeStorage(JSON.stringify(payload));
 }
 
-export function matchesRememberedContactPhone(
-  accountPhone: string,
-  contactPhone: string,
-): boolean {
+export function matchesRememberedContactPhone(accountPhone: string, contactPhone: string): boolean {
   const a = normalizeThaiPhoneNumber(accountPhone);
   const b = normalizeThaiPhoneNumber(contactPhone);
   if (!a || !b) {

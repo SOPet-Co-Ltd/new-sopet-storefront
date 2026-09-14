@@ -102,9 +102,9 @@ describe('guestCheckoutRemember', () => {
     };
 
     expect(isEquivalentSavedAddress(saved, validForm)).toBe(true);
-    expect(
-      isEquivalentSavedAddress({ ...saved, addressLine1: '999 Other Rd' }, validForm),
-    ).toBe(false);
+    expect(isEquivalentSavedAddress({ ...saved, addressLine1: '999 Other Rd' }, validForm)).toBe(
+      false,
+    );
   });
 
   it('shouldImport is true when phone matches and not yet imported for that phone', () => {

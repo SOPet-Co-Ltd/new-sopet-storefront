@@ -216,9 +216,13 @@ function UserMenuDrawer({
   const displayName = customer ? getDisplayName(customer) : '';
   const showAuth = isAuthenticated && Boolean(customer);
 
+  // Keep drawer mounted as soon as open becomes true (exit animation unmounts later).
+  if (open && !mounted) {
+    setMounted(true);
+  }
+
   useEffect(() => {
     if (open) {
-      setMounted(true);
       document.body.style.overflow = 'hidden';
       let cancelled = false;
       const frame = requestAnimationFrame(() => {
@@ -234,13 +238,16 @@ function UserMenuDrawer({
       };
     }
 
-    setVisible(false);
+    const hideFrame = requestAnimationFrame(() => {
+      setVisible(false);
+    });
     const timeout = window.setTimeout(() => {
       setMounted(false);
       document.body.style.overflow = '';
     }, DRAWER_ANIMATION_MS);
 
     return () => {
+      cancelAnimationFrame(hideFrame);
       window.clearTimeout(timeout);
     };
   }, [open]);

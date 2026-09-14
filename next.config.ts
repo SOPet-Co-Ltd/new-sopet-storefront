@@ -67,10 +67,10 @@ const productionCsp = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  // Next.js + Omise.js + GTM/GA require script hosts; tighten further when CMP lands.
-  "script-src 'self' 'unsafe-inline' https://cdn.omise.co https://www.googletagmanager.com https://www.google-analytics.com",
-  "connect-src 'self' https://api.omise.co https://vault.omise.co https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
-  "frame-src 'self' https://cdn.omise.co https://www.googletagmanager.com",
+  // Next.js + Omise.js + GTM/GA + Vercel Preview require script hosts; tighten further when CMP lands.
+  "script-src 'self' 'unsafe-inline' https://cdn.omise.co https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live",
+  "connect-src 'self' https://api.omise.co https://vault.omise.co https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://vercel.live https://*.vercel.live",
+  "frame-src 'self' https://cdn.omise.co https://www.googletagmanager.com https://vercel.live",
   "form-action 'self'",
 ].join('; ');
 

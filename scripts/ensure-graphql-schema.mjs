@@ -2,7 +2,11 @@ import { access, mkdir, writeFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { dirname } from 'node:path';
 
-const LOCAL_SCHEMA_CANDIDATES = ['../sopet-backend/src/schema.gql', 'sopet-backend/src/schema.gql'];
+const LOCAL_SCHEMA_CANDIDATES = [
+  '../new-sopet-backend/src/schema.gql',
+  '../sopet-backend/src/schema.gql',
+  'sopet-backend/src/schema.gql',
+];
 
 const FETCHED_SCHEMA_PATH = 'sopet-backend/src/schema.gql';
 

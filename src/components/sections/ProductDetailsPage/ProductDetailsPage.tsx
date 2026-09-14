@@ -171,13 +171,13 @@ export default function ProductDetailsPage({
   const breadcrumbs = breadcrumbItems;
 
   return (
-    <div data-testid="product-details-page" className="flex flex-col gap-2 md:gap-5">
+    <div data-testid="product-details-page" className="flex min-w-0 flex-col gap-2 md:gap-5">
       <div className="py-2">
         <Breadcrumbs items={breadcrumbs} />
       </div>
 
       <article aria-labelledby="product-title">
-        <div className="-mx-4 grid grid-cols-1 gap-4 rounded-none bg-sop-base-white px-4 pb-4 md:mx-0 md:px-4 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-6 lg:py-5">
+        <div className="-mx-4 grid min-w-0 grid-cols-1 gap-4 overflow-x-hidden rounded-none bg-sop-base-white px-4 pb-4 md:mx-0 md:px-4 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-6 lg:py-5">
           <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
           <ProductDetails
             product={product}

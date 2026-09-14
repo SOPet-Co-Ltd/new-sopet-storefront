@@ -105,6 +105,7 @@ export const Modal = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="ปิด"
             className="absolute -top-14 right-4 translate-x-1/2 z-9999 flex h-10 w-10 items-center justify-center rounded-full bg-sop-base-white shadow-lg text-sop-base-black cursor-pointer"
           >
             <XIcon size={{ mobile: 18 }} color="#454547" />
@@ -126,6 +127,7 @@ export const Modal = ({
             <button
               type="button"
               onClick={onClose}
+              aria-label="ปิด"
               className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-sop-base-white shadow-lg text-sop-base-black cursor-pointer"
             >
               <XIcon size={{ mobile: 16 }} color="#454547" />

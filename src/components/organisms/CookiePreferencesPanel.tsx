@@ -157,12 +157,11 @@ export function CookiePreferencesPanel({ open, onClose }: CookiePreferencesPanel
       <div className="p-sop-20px sm:p-sop-24px">
         <div className="flex items-start gap-sop-16px pr-10 sm:gap-sop-20px sm:pr-8">
           <Image
-            src="/images/cookie/cookie-banner.png"
+            src="/images/cookie/cookie-banner.webp"
             alt="ตั้งค่าคุกกี้"
             width={128}
             height={128}
             className="hidden h-sop-128px w-sop-128px shrink-0 object-contain md:block"
-            priority
           />
 
           <div className="flex-1 pt-1">

@@ -42,7 +42,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
           src={imageSrc}
           alt={`หมวดหมู่ - ${category.name}`}
           fill
-          sizes="(min-width: 1024px) 16vw, (min-width: 768px) 25vw, 50vw"
+          sizes="(min-width: 1024px) 64px, (min-width: 768px) 80px, 80px"
           className="object-contain"
           onError={() => setImageError(true)}
         />

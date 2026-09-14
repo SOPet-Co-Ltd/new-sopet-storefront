@@ -49,7 +49,7 @@ const FOOTER_LINKS = [
 const LINE_OA_TITLE = ['ลูกค้า Sopet แนะนำการรักษา +', 'ติดตามการใช้ยา 24 ชม'];
 
 function FooterSectionHeading({ children }: { children: string }) {
-  return <h4 className="sop-body-lg-medium text-sop-base-black">{children}</h4>;
+  return <h3 className="sop-body-lg-medium text-sop-base-black">{children}</h3>;
 }
 
 export function Footer() {
@@ -78,7 +78,13 @@ export function Footer() {
             </Link>
             <div className="flex items-center gap-sop-16px">
               {SOCIAL_LINKS.map(({ name, href, Icon }) => (
-                <Link key={name} href={href} target="_blank" rel="noopener noreferrer">
+                <Link
+                  key={name}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={name}
+                >
                   <Icon size={{ mobile: 24, desktop: 24 }} />
                 </Link>
               ))}

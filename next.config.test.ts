@@ -42,8 +42,22 @@ describe('next.config security headers', () => {
 });
 
 describe('next.config images', () => {
-  it('skips Vercel Image Optimization so product and cart images load from the CDN', () => {
-    expect(nextConfig.images?.unoptimized).toBe(true);
+  it('enables Next.js Image Optimization', () => {
+    expect(nextConfig.images?.unoptimized).not.toBe(true);
+  });
+
+  it('allows local MinIO (OrbStack) private IPs for next/image', () => {
+    expect(nextConfig.images?.dangerouslyAllowLocalIP).toBe(true);
+    expect(nextConfig.images?.remotePatterns).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          protocol: 'http',
+          hostname: 'minio.sopet-backend.orb.local',
+          port: '9000',
+          pathname: '/sopet-ecommerce-files/**',
+        }),
+      ]),
+    );
   });
 
   it('allows Cloudflare R2 public buckets and production CDN', () => {

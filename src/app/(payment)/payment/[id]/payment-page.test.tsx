@@ -109,13 +109,22 @@ const sampleFailedCardPayment = {
   authorizeUri: null,
 };
 
+const samplePendingBankTransferPayment = {
+  ...samplePendingPayment,
+  paymentMethod: 'bank_transfer',
+  qrCodeUrl: null,
+  authorizeUri: null,
+  expiresAt: null,
+};
+
 const paymentState = {
   payment: samplePendingPayment as
     | typeof samplePendingPayment
     | typeof samplePaidPayment
     | typeof samplePendingCardPayment
     | typeof sampleFailedCardPayment
-    | typeof sampleRetryPendingPayment,
+    | typeof sampleRetryPendingPayment
+    | typeof samplePendingBankTransferPayment,
 };
 
 vi.mock('@/lib/hooks/usePayment', () => ({

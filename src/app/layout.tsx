@@ -3,6 +3,7 @@ import { Google_Sans } from 'next/font/google';
 import { ConsentGatedAnalytics } from '@/components/analytics/ConsentGatedAnalytics';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 import { CookieConsentBanner } from '@/components/organisms/CookieConsentBanner';
+import { ChatWithAdminFloatingButton } from '@/components/molecules/ChatWithAdminFloatingButton/ChatWithAdminFloatingButton';
 import { AppProviders } from '@/lib/providers';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
 import { getSiteConfig } from '@/lib/seo/metadata';
@@ -47,10 +48,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th" className={`${googleSans.variable} ${googleSans.className} h-full antialiased`}>
+      <head>
+        <link rel="dns-prefetch" href="https://pub-2bf64eff3b144315b312782329635c26.r2.dev" />
+      </head>
       <body className="flex min-h-dvh flex-col bg-sop-primary-100">
         <ConsentGatedAnalytics />
         <AppProviders>
           <AnalyticsProvider>{children}</AnalyticsProvider>
+          <ChatWithAdminFloatingButton />
           <CookieConsentBanner />
         </AppProviders>
       </body>

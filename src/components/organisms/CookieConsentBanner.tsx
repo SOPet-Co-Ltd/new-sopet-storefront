@@ -147,7 +147,7 @@ export function CookieConsentBanner() {
                 Desktop Cookie Image
                 ======================================== */}
             <Image
-              src="/images/cookie/cookie-banner.png"
+              src="/images/cookie/cookie-banner.webp"
               alt=""
               width={96}
               height={96}
@@ -156,7 +156,6 @@ export function CookieConsentBanner() {
                 'relative z-10 hidden shrink-0 object-contain',
                 'md:block md:h-sop-96px md:w-sop-96px',
               )}
-              priority
             />
 
             {/* ========================================
@@ -215,7 +214,7 @@ export function CookieConsentBanner() {
                 Mobile Cookie Decoration
                 ======================================== */}
             <Image
-              src="/images/cookie/cookie-banner.png"
+              src="/images/cookie/cookie-banner.webp"
               alt=""
               width={48}
               height={48}

@@ -108,6 +108,34 @@ describe('getProductCardCompareAtPrice', () => {
 });
 
 describe('ProductCard', () => {
+  it('stretches to full width in default (non-compact) mode', () => {
+    const { container } = render(
+      <ProductCard product={buildProduct({ name: 'fluid card', basePrice: 100 })} />,
+    );
+
+    const link = screen.getByRole('link', { name: 'ดู fluid card' });
+    expect(link.className).toContain('w-full');
+    expect(link.className).toContain('min-w-0');
+    expect(link.className).not.toContain('shrink-0');
+
+    const card = container.querySelector('a > div');
+    expect(card?.className).toContain('w-full');
+    expect(card?.className).not.toContain('w-[168px]');
+    expect(card?.className).not.toContain('md:w-sop-224px');
+  });
+
+  it('keeps fixed width in compact mode', () => {
+    const { container } = render(
+      <ProductCard product={buildProduct({ name: 'compact card', basePrice: 100 })} compact />,
+    );
+
+    const link = screen.getByRole('link', { name: 'ดู compact card' });
+    expect(link.className).toContain('shrink-0');
+
+    const card = container.querySelector('a > div');
+    expect(card?.className).toContain('w-[136px]');
+  });
+
   it('shows campaign sale unit and honest compare-at when provided', () => {
     render(
       <ProductCard

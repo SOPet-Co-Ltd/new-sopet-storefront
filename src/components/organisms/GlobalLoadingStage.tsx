@@ -1,6 +1,6 @@
 'use client';
 
-import { useLottie } from 'lottie-react';
+import dynamic from 'next/dynamic';
 import {
   createContext,
   useCallback,
@@ -10,7 +10,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import runningDogAnimation from '@/assets/lottie/runningDog.json';
 
 type LoadingOverlayContextValue = {
   /** Boot-time Lottie instance has painted (SVG ready). */
@@ -20,6 +19,10 @@ type LoadingOverlayContextValue = {
 };
 
 const LoadingOverlayContext = createContext<LoadingOverlayContextValue | null>(null);
+
+const LottiePlayer = dynamic(() => import('./LottiePlayer'), {
+  ssr: false,
+});
 
 /**
  * Boots one Lottie player on first hydrate (kept alive for the session).
@@ -38,15 +41,9 @@ export function LoadingLottieWarmupProvider({ children }: { children: ReactNode 
     setHoldCount((count) => Math.max(0, count - 1));
   }, []);
 
-  const { View } = useLottie(
-    {
-      animationData: runningDogAnimation,
-      loop: true,
-      autoplay: true,
-      onDOMLoaded: () => setReady(true),
-    },
-    { width: 262, height: 131 },
-  );
+  const handleReady = useCallback(() => {
+    setReady(true);
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -77,7 +74,7 @@ export function LoadingLottieWarmupProvider({ children }: { children: ReactNode 
             revealContent ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          {View}
+          {requested ? <LottiePlayer onReady={handleReady} /> : null}
           <label className="sop-body-lg-medium text-sop-secondary-500 text-center">
             กำลังโหลด ...
           </label>

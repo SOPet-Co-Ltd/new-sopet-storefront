@@ -423,7 +423,13 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
 
   return (
     <aside
-      className={cn('overflow-hidden rounded-sop-20 bg-white pb-6 shadow-xs', className)}
+      className={cn(
+        'overflow-hidden rounded-sop-20 bg-white pb-6 shadow-xs',
+        'lg:sticky lg:top-[calc(6.8125rem+env(safe-area-inset-top,0px)+1rem)]',
+        'lg:max-h-[calc(100dvh-(6.8125rem+env(safe-area-inset-top,0px))-2rem)] lg:overflow-y-auto',
+        'lg:[-ms-overflow-style:none] lg:scrollbar-none lg:[&::-webkit-scrollbar]:hidden',
+        className,
+      )}
       data-testid="search-filter-sidebar"
     >
       <div className="flex h-16 items-center gap-2 rounded-t-sop-20 bg-sop-additionalblue-400 px-5 py-3">

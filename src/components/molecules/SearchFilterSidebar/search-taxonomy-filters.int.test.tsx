@@ -36,6 +36,21 @@ beforeEach(() => {
 });
 
 describe('SearchFilterSidebar taxonomy filters', () => {
+  it('applies desktop sticky scroll classes under the fixed header', () => {
+    render(<SearchFilterSidebar />, { wrapper: createWrapper() });
+
+    const sidebar = screen.getByTestId('search-filter-sidebar');
+    expect(sidebar.className).toMatch(/lg:sticky/);
+    expect(sidebar.className).toMatch(/lg:overflow-y-auto/);
+    expect(sidebar.className).toMatch(/lg:scrollbar-none/);
+    expect(sidebar.className).toMatch(
+      /lg:top-\[calc\(6\.8125rem\+env\(safe-area-inset-top,0px\)\+1rem\)\]/,
+    );
+    expect(sidebar.className).toMatch(
+      /lg:max-h-\[calc\(100dvh-\(6\.8125rem\+env\(safe-area-inset-top,0px\)\)-2rem\)\]/,
+    );
+  });
+
   it('keeps filter sections collapsed by default', () => {
     render(<SearchFilterSidebar />, { wrapper: createWrapper() });
 

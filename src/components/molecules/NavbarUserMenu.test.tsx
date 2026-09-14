@@ -2,15 +2,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { NavbarUserMenu } from './NavbarUserMenu';
-import { getNavItems } from '@/components/templates/AccountLayout/accountNavConfig';
 
 vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: vi.fn(),
-}));
-
-vi.mock('@/lib/account/prefetchAccountPage', () => ({
-  createAccountPagePrefetchHandlers: () => ({}),
-  prefetchAccountPage: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -38,19 +32,21 @@ const authenticatedAuth = {
   logout: vi.fn(),
 };
 
+const guestAuth = {
+  customer: null,
+  isAuthenticated: false,
+  isLoading: false,
+  pendingDeletion: false,
+  sendOtp: vi.fn(),
+  verifyOtp: vi.fn(),
+  changeCustomerPhone: vi.fn(),
+  reactivateAccount: vi.fn(),
+  logout: vi.fn(),
+};
+
 describe('NavbarUserMenu', () => {
   it('renders nothing when guest on desktop (auth CTAs live in promo bar)', () => {
-    mockedUseAuth.mockReturnValue({
-      customer: null,
-      isAuthenticated: false,
-      isLoading: false,
-      pendingDeletion: false,
-      sendOtp: vi.fn(),
-      verifyOtp: vi.fn(),
-      changeCustomerPhone: vi.fn(),
-      reactivateAccount: vi.fn(),
-      logout: vi.fn(),
-    });
+    mockedUseAuth.mockReturnValue(guestAuth);
 
     const { container } = render(<NavbarUserMenu variant="desktop" />);
 
@@ -67,36 +63,7 @@ describe('NavbarUserMenu', () => {
     expect(trigger).toHaveTextContent('สมชาย ใจดี');
   });
 
-  it('opens side drawer with navbar segments when desktop trigger is clicked', async () => {
-    const user = userEvent.setup();
-    mockedUseAuth.mockReturnValue(authenticatedAuth);
-
-    const expectedItems = getNavItems('showInNavbarMenu');
-    expect(expectedItems).toHaveLength(7);
-
-    render(<NavbarUserMenu variant="desktop" />);
-
-    await user.click(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย ใจดี/ }));
-
-    expect(screen.getByRole('dialog', { name: 'เมนูผู้ใช้' })).toBeInTheDocument();
-
-    const menuLinks = screen
-      .getAllByRole('link')
-      .filter((link) => link.getAttribute('href')?.startsWith('/user/'));
-
-    expect(menuLinks).toHaveLength(7);
-
-    expectedItems.forEach((item, index) => {
-      expect(menuLinks[index]).toHaveAttribute('href', item.href);
-      expect(menuLinks[index]).toHaveTextContent(item.label);
-    });
-
-    expect(
-      screen.queryByRole('link', { name: /wishlist|รายการที่อยากได้/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('renders segment icons via NAVBAR_SEGMENT_ICONS overlay', async () => {
+  it('opens authenticated drawer with profile card and new nav items', async () => {
     const user = userEvent.setup();
     mockedUseAuth.mockReturnValue(authenticatedAuth);
 
@@ -104,11 +71,51 @@ describe('NavbarUserMenu', () => {
 
     await user.click(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย ใจดี/ }));
 
-    const profileLink = screen.getByRole('link', { name: 'ข้อมูลส่วนตัว' });
-    expect(profileLink.querySelector('svg')).toBeTruthy();
+    const dialog = await screen.findByRole('dialog', { name: 'เมนูผู้ใช้' });
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveTextContent('สมชาย ใจดี');
+    expect(dialog).toHaveTextContent('สมาชิก Sopet');
+    expect(screen.getByRole('link', { name: 'บัญชีของฉัน' })).toHaveAttribute(
+      'href',
+      '/user/profile',
+    );
+
+    expect(screen.getByRole('link', { name: /ตะกร้าสินค้า/ })).toHaveAttribute('href', '/cart');
+    expect(screen.getByRole('link', { name: /การแจ้งเตือน/ })).toHaveAttribute(
+      'href',
+      '/user/notifications',
+    );
+    expect(screen.getByRole('link', { name: /รายการโปรด/ })).toHaveAttribute(
+      'href',
+      '/user/favorites',
+    );
+    expect(screen.getByRole('link', { name: /ศูนย์ช่วยเหลือ/ })).toHaveAttribute(
+      'href',
+      'https://line.me/R/ti/p/@sopet',
+    );
+    expect(screen.getByRole('button', { name: /ออกจากระบบ/ })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'ข้อมูลส่วนตัว' })).not.toBeInTheDocument();
   });
 
-  it('opens and closes mobile user menu drawer with full navigation items', async () => {
+  it('opens guest mobile drawer with login CTA and without logout', async () => {
+    const user = userEvent.setup();
+    mockedUseAuth.mockReturnValue(guestAuth);
+
+    render(<NavbarUserMenu variant="mobile" />);
+
+    await user.click(screen.getByRole('button', { name: 'เปิดเมนูผู้ใช้' }));
+
+    expect(await screen.findByRole('dialog', { name: 'เมนูผู้ใช้' })).toBeInTheDocument();
+    expect(screen.getByText('ยินดีต้อนรับสู่ Sopet 🐾')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'เข้าสู่ระบบ | ลงทะเบียน' })).toHaveAttribute(
+      'href',
+      '/login',
+    );
+    expect(screen.getByRole('link', { name: /ตะกร้าสินค้า/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /ออกจากระบบ/ })).not.toBeInTheDocument();
+  });
+
+  it('opens and closes mobile user menu drawer', async () => {
     const user = userEvent.setup();
     mockedUseAuth.mockReturnValue(authenticatedAuth);
 
@@ -119,7 +126,7 @@ describe('NavbarUserMenu', () => {
 
     await user.click(openButton);
 
-    expect(screen.getByRole('dialog', { name: 'เมนูผู้ใช้' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'เมนูผู้ใช้' })).toBeInTheDocument();
     expect(screen.getByText('สมชาย ใจดี')).toBeInTheDocument();
 
     const closeButtons = screen.getAllByRole('button', { name: 'ปิดเมนูผู้ใช้' });

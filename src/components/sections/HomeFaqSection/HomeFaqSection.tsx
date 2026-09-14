@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { DownArrowIcon } from '@/components/atoms/icons/filled/DownArrowIcon';
 
@@ -60,37 +60,18 @@ type HomeFaqSectionProps = {
 
 export function HomeFaqSection({ heading = 'คำถามที่พบบ่อย', items }: HomeFaqSectionProps) {
   const [openItemId, setOpenItemId] = useState<string | null>(items[0]?.id ?? null);
-  const contentRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [contentHeights, setContentHeights] = useState<Record<string, number>>({});
-
-  const measureHeights = useCallback(() => {
-    const nextHeights = items.reduce<Record<string, number>>((acc, item) => {
-      acc[item.id] = contentRefs.current[item.id]?.scrollHeight ?? 0;
-      return acc;
-    }, {});
-
-    setContentHeights(nextHeights);
-  }, [items]);
-
-  useEffect(() => {
-    measureHeights();
-    window.addEventListener('resize', measureHeights);
-
-    return () => {
-      window.removeEventListener('resize', measureHeights);
-    };
-  }, [measureHeights]);
 
   const toggleItem = (itemId: string) => {
     setOpenItemId((prevItemId) => (prevItemId === itemId ? null : itemId));
   };
 
   return (
-    <div className="relative flex w-full flex-col items-center py-sop-32px px-sop-12px md:py-sop-64px md:px-sop-24px">
-      {/* Soft ambient background glow */}
+    <div className="relative left-1/2 flex w-screen max-w-[100vw] -translate-x-1/2 flex-col items-center overflow-hidden px-sop-12px py-sop-32px md:px-sop-24px md:py-sop-64px">
+      {/* Red ambient glow */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-95 w-125 sm:w-175 md:w-225 rounded-full bg-linear-to-r from-red-200/50 via-red-200/50 to-red-200/50 blur-[100px] opacity-80"
+        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-95 w-125 sm:w-175 md:w-225 rounded-full bg-linear-to-r from-red-200/50 via-red-200/50 to-red-200/50 blur-[100px] opacity-80
+    "
       />
 
       {/* Heading */}
@@ -108,11 +89,10 @@ export function HomeFaqSection({ heading = 'คำถามที่พบบ่
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[260px] sm:h-[320px] md:h-[380px] w-[320px] sm:w-[480px] md:w-[620px] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-orange-400/45 via-amber-300/30 to-transparent blur-[50px] sm:blur-[70px] md:blur-[80px]"
         />
         <Image
-          src="/images/faq/sop-faq-dog.png"
+          src="/images/faq/sop-faq-dog.webp"
           alt="SOPet Pets"
           width={520}
           height={220}
-          priority
           className="relative z-10 h-auto w-auto max-w-[280px] sm:max-w-[380px] md:max-w-[480px]"
         />
       </div>
@@ -154,22 +134,16 @@ export function HomeFaqSection({ heading = 'คำถามที่พบบ่
                 id={panelId}
                 role="region"
                 aria-labelledby={buttonId}
-                className="overflow-hidden"
-                style={{
-                  maxHeight: isOpen ? `${contentHeights[item.id] ?? 0}px` : '0px',
-                  opacity: isOpen ? 1 : 0,
-                  transition: 'max-height 0.3s ease-in-out, opacity 0.2s ease-in-out',
-                }}
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+                  isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
               >
-                <div
-                  ref={(node) => {
-                    contentRefs.current[item.id] = node;
-                  }}
-                  className="pb-4 md:pb-5"
-                >
-                  <p className="sop-body-sm-regular md:sop-body-md-regular text-sop-neutral-gray-300 leading-relaxed whitespace-pre-line">
-                    {item.answer}
-                  </p>
+                <div className="overflow-hidden">
+                  <div className="pb-4 md:pb-5">
+                    <p className="sop-body-sm-regular md:sop-body-md-regular text-sop-neutral-gray-300 leading-relaxed whitespace-pre-line">
+                      {item.answer}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

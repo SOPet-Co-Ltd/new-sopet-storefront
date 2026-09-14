@@ -5,8 +5,10 @@ import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { getClient } from '@/lib/graphql/apollo-rsc';
 import {
   ApprovedCategoriesDocument,
+  PlatformBannersDocument,
   RecommendedProductsDocument,
   type ApprovedCategoriesQuery,
+  type PlatformBannersQuery,
   type RecommendedProductsQuery,
 } from '@/lib/graphql/generated/graphql';
 import {
@@ -33,9 +35,10 @@ export default async function Home() {
 
   let initialCategories: ApprovedCategoriesQuery['approvedCategories'] | undefined;
   let initialRecommendedProducts: RecommendedProductsQuery['recommendedProducts'] | undefined;
+  let initialBanners: PlatformBannersQuery['platformBanners'] | undefined;
 
   const preload = await runSsrPreloadQueries('home', async () => {
-    const [categoriesResult, recommendedResult] = await Promise.all([
+    const [categoriesResult, recommendedResult, bannersResult] = await Promise.all([
       getClient().query({
         query: ApprovedCategoriesDocument,
         variables: categoriesVariables,
@@ -44,17 +47,22 @@ export default async function Home() {
         query: RecommendedProductsDocument,
         variables: recommendedVariables,
       }),
+      getClient().query({
+        query: PlatformBannersDocument,
+      }),
     ]);
 
     return {
       categories: categoriesResult.data?.approvedCategories,
       recommendedProducts: recommendedResult.data?.recommendedProducts,
+      banners: bannersResult.data?.platformBanners,
     };
   });
 
   if (preload.ok) {
     initialCategories = preload.data.categories;
     initialRecommendedProducts = preload.data.recommendedProducts;
+    initialBanners = preload.data.banners;
   }
 
   const siteConfig = getSiteConfig();
@@ -67,6 +75,7 @@ export default async function Home() {
       <HomePage
         initialCategories={initialCategories}
         initialRecommendedProducts={initialRecommendedProducts}
+        initialBanners={initialBanners}
       />
     </>
   );

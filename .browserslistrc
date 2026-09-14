@@ -1,0 +1,15 @@
+# Target modern browsers only — avoids legacy polyfills (~14 KB savings per Lighthouse)
+# "Baseline" features like Array.at, flat, flatMap, Object.fromEntries, Object.hasOwn,
+# String.trimStart/trimEnd are natively supported in all these versions.
+[production]
+last 2 Chrome versions
+last 2 Edge versions
+last 2 Firefox versions
+last 2 Safari versions
+last 2 iOS versions
+not dead
+
+[development]
+last 1 Chrome version
+last 1 Firefox version
+last 1 Safari version

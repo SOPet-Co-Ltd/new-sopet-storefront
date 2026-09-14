@@ -17,14 +17,21 @@ import { ProductListingSkeleton } from './ProductListingSkeleton';
 type CategoryPLPProps = {
   categorySlug: string;
   categoryFilter?: string;
+  categoryName?: string;
   initialProducts?: ProductsQuery['products']['items'];
   initialPage?: number;
 };
 
-function CategoryBreadcrumbs({ categorySlug }: { categorySlug: string }) {
+function CategoryBreadcrumbs({
+  categorySlug,
+  categoryName,
+}: {
+  categorySlug: string;
+  categoryName?: string;
+}) {
   const { categories, loading } = useCategories();
   const category = resolveCategoryBySlug(categories, categorySlug);
-  const currentLabel = loading ? categorySlug : (category?.name ?? categorySlug);
+  const currentLabel = category?.name ?? categoryName ?? categorySlug;
 
   return (
     <Breadcrumbs
@@ -37,10 +44,16 @@ function CategoryBreadcrumbs({ categorySlug }: { categorySlug: string }) {
   );
 }
 
-function CategoryHeader({ categorySlug }: { categorySlug: string }) {
+function CategoryHeader({
+  categorySlug,
+  categoryName,
+}: {
+  categorySlug: string;
+  categoryName?: string;
+}) {
   const { categories, loading } = useCategories();
   const category = resolveCategoryBySlug(categories, categorySlug);
-  const title = loading ? categorySlug : (category?.name ?? categorySlug);
+  const title = category?.name ?? categoryName ?? categorySlug;
 
   return (
     <div className="mb-4">
@@ -52,6 +65,7 @@ function CategoryHeader({ categorySlug }: { categorySlug: string }) {
 export function CategoryPLP({
   categorySlug,
   categoryFilter: initialCategoryFilter,
+  categoryName,
   initialProducts,
   initialPage,
 }: CategoryPLPProps) {
@@ -66,8 +80,8 @@ export function CategoryPLP({
 
   return (
     <>
-      <CategoryBreadcrumbs categorySlug={categorySlug} />
-      <CategoryHeader categorySlug={categorySlug} />
+      <CategoryBreadcrumbs categorySlug={categorySlug} categoryName={categoryName} />
+      <CategoryHeader categorySlug={categorySlug} categoryName={categoryName} />
       <SearchResultsLayout>
         {categoryUnresolvable ? (
           <EmptySearchResults message="ไม่พบสินค้าในหมวดหมู่นี้" />

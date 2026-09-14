@@ -42,8 +42,8 @@ describe('next.config security headers', () => {
 });
 
 describe('next.config images', () => {
-  it('skips Vercel Image Optimization so product and cart images load from the CDN', () => {
-    expect(nextConfig.images?.unoptimized).toBe(true);
+  it('enables Next.js Image Optimization', () => {
+    expect(nextConfig.images?.unoptimized).not.toBe(true);
   });
 
   it('allows Cloudflare R2 public buckets and production CDN', () => {

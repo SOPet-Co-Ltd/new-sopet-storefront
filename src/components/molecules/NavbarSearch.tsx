@@ -3,6 +3,7 @@
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { Button } from '@/components/atoms/Button';
 import { SearchSuggestionsDropdown } from '@/components/molecules/SearchSuggestionsDropdown/SearchSuggestionsDropdown';
 import { useNavbarSearchCombobox, type ComboboxOption } from '@/lib/hooks/useNavbarSearchCombobox';
 import { useRecentSearches } from '@/lib/hooks/useRecentSearches';
@@ -115,13 +116,14 @@ export function NavbarSearch() {
         {SEARCH_LABEL}
       </label>
       <div
+        data-testid="navbar-search-field"
         className={cn(
-          'sop-body-sm-regular flex h-9 w-full min-w-[200px] max-w-[480px] items-center gap-2 rounded-full',
+          'sop-body-sm-regular flex h-9 w-full min-w-0 max-w-[480px] items-center gap-2 rounded-full',
           'bg-sop-neutral-gray-500 px-3 md:px-4',
           'focus-within:ring-2 focus-within:ring-sop-primary-400 focus-within:ring-offset-1',
         )}
       >
-        <SearchIcon size={{ mobile: 16, desktop: 18 }} color="#454547" aria-hidden="true" />
+        <SearchIcon size={{ mobile: 20, desktop: 20 }} color="#454547" aria-hidden="true" />
         <input
           ref={inputRef}
           type="search"
@@ -158,6 +160,9 @@ export function NavbarSearch() {
             'text-sop-neutral-gray-100 placeholder:text-sop-neutral-gray-400',
           )}
         />
+        <Button type="submit" variant="primary" size="md" className="shrink-0 px-3 md:px-sop-32px">
+          ค้นหา
+        </Button>
       </div>
       <SearchSuggestionsDropdown
         open={isOpen}
@@ -172,9 +177,6 @@ export function NavbarSearch() {
         onRecentSelect={navigateToSearch}
         onClearRecent={clearRecentSearches}
       />
-      <button type="submit" className="sr-only">
-        ค้นหา
-      </button>
     </form>
   );
 }

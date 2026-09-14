@@ -22,6 +22,15 @@ function cdnRemotePattern(cdnUrl: string): RemotePattern | null {
 
 function imageRemotePatterns(): RemotePattern[] {
   const patterns: RemotePattern[] = [
+    // Local MinIO accessed directly from browser
+    {
+      protocol: 'http',
+      hostname: 'localhost',
+      port: '9000',
+      pathname: '/sopet-ecommerce-files/**',
+    },
+
+    // Local MinIO internal hostname
     {
       protocol: 'http',
       hostname: 'minio.sopet-backend.orb.local',
@@ -67,10 +76,10 @@ const productionCsp = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  // Next.js + Omise.js + GTM/GA require script hosts; tighten further when CMP lands.
-  "script-src 'self' 'unsafe-inline' https://cdn.omise.co https://www.googletagmanager.com https://www.google-analytics.com",
-  "connect-src 'self' https://api.omise.co https://vault.omise.co https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
-  "frame-src 'self' https://cdn.omise.co https://www.googletagmanager.com",
+  // Next.js + Omise.js + GTM/GA + Vercel Preview require script hosts; tighten further when CMP lands.
+  "script-src 'self' 'unsafe-inline' https://cdn.omise.co https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live",
+  "connect-src 'self' https://api.omise.co https://vault.omise.co https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://vercel.live https://*.vercel.live",
+  "frame-src 'self' https://cdn.omise.co https://www.googletagmanager.com https://vercel.live",
   "form-action 'self'",
 ].join('; ');
 
@@ -128,7 +137,7 @@ const nextConfig: NextConfig = {
     contentDispositionType: 'attachment',
     // Serve original CDN/R2 URLs. Vercel Image Optimization returns 402
     // OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED once the transform quota is hit.
-    unoptimized: true,
+    // unoptimized: true,
   },
 };
 

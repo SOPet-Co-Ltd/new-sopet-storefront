@@ -15,13 +15,13 @@ type BreadcrumbsProps = {
 
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
-    <nav className={cn('flex', className)} aria-label="breadcrumb">
-      <ol className="inline-flex items-center gap-2">
+    <nav className={cn('flex min-w-0 max-w-full', className)} aria-label="breadcrumb">
+      <ol className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
         {items.map(({ path, label }, index) => {
           const isCurrent = index === items.length - 1;
 
           return (
-            <li key={`${path}-${index}`} className="inline-flex items-center">
+            <li key={`${path}-${index}`} className="inline-flex min-w-0 max-w-full items-center">
               {index > 0 ? (
                 <span className="px-2 text-sop-neutral-gray-400" aria-hidden="true">
                   &gt;
@@ -29,7 +29,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
               ) : null}
               {isCurrent ? (
                 <span
-                  className="inline-flex items-center sop-breadcrumb text-sop-neutral-gray-200"
+                  className="inline-flex min-w-0 max-w-full items-center break-words sop-breadcrumb text-sop-neutral-gray-200"
                   aria-current="page"
                 >
                   {label}

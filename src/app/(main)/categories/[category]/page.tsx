@@ -118,6 +118,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <CategoryPLP
           categorySlug={categorySlug}
           categoryFilter={categoryFilter}
+          categoryName={categoryName}
           initialProducts={initialProducts}
           initialPage={currentPage}
         />

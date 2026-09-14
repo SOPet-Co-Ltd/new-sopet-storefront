@@ -1,19 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { BackIcon, LineSquareCustomIcon, QrAddLineOAIcon } from '@/components/atoms/icons';
 import { cn } from '@/lib/utils';
 
 const LINE_OA_URL = 'https://line.me/R/ti/p/@sopet';
 const LINE_ID = '@sopet';
 
-function useOverlapDetection(buttonRef: React.RefObject<HTMLDivElement | null>) {
+function useOverlapDetection(
+  buttonRef: React.RefObject<HTMLDivElement | null>,
+  pathname: string | null,
+) {
   const [overlapping, setOverlapping] = useState(false);
   useEffect(() => {
     const button = buttonRef.current;
     const header = document.querySelector('header');
     const footer = document.querySelector('footer');
-    if (!button || !header || !footer) return;
+    if (!button) return;
+    if (!header && !footer) return;
 
     let rafId = 0;
     const intersects = (a: DOMRect, b: DOMRect) =>
@@ -21,10 +26,9 @@ function useOverlapDetection(buttonRef: React.RefObject<HTMLDivElement | null>) 
 
     const check = () => {
       const br = button.getBoundingClientRect();
-      setOverlapping(
-        intersects(br, header.getBoundingClientRect()) ||
-          intersects(br, footer.getBoundingClientRect()),
-      );
+      const headerIntersects = header ? intersects(br, header.getBoundingClientRect()) : false;
+      const footerIntersects = footer ? intersects(br, footer.getBoundingClientRect()) : false;
+      setOverlapping(headerIntersects || footerIntersects);
     };
     const schedule = () => {
       cancelAnimationFrame(rafId);
@@ -33,8 +37,8 @@ function useOverlapDetection(buttonRef: React.RefObject<HTMLDivElement | null>) 
 
     const ro = new ResizeObserver(schedule);
     ro.observe(button);
-    ro.observe(header);
-    ro.observe(footer);
+    if (header) ro.observe(header);
+    if (footer) ro.observe(footer);
     schedule();
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
@@ -44,17 +48,18 @@ function useOverlapDetection(buttonRef: React.RefObject<HTMLDivElement | null>) 
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
     };
-  }, [buttonRef]);
+  }, [buttonRef, pathname]);
   return overlapping;
 }
 
 export function ChatWithAdminFloatingButton() {
+  const pathname = usePathname();
   const buttonRef = useRef<HTMLDivElement | null>(null);
   const lineButtonRef = useRef<HTMLButtonElement | null>(null);
   const backButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isQrOpen, setIsQrOpen] = useState(false);
 
-  const overlapping = useOverlapDetection(buttonRef);
+  const overlapping = useOverlapDetection(buttonRef, pathname);
 
   useEffect(() => {
     if (!isQrOpen) return;
@@ -74,6 +79,13 @@ export function ChatWithAdminFloatingButton() {
     }
   }, [isQrOpen]);
 
+  const isLoginPage = pathname === '/login' || pathname?.startsWith('/login/');
+  if (isLoginPage) {
+    return null;
+  }
+
+  const isCheckoutPage = pathname === '/checkout' || pathname?.startsWith('/checkout/');
+
   const statusDot = (hidden?: string) => (
     <div
       aria-hidden="true"
@@ -89,6 +101,7 @@ export function ChatWithAdminFloatingButton() {
       ref={buttonRef}
       className={cn(
         'fixed z-20 bottom-4 right-2 md:bottom-10 md:right-10 transition-all duration-300 ease-out',
+        isCheckoutPage ? 'bottom-20' : 'bottom-4',
         overlapping ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100',
       )}
     >

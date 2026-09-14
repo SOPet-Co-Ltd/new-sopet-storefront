@@ -52,8 +52,8 @@ function PromoBar() {
   // ] as const;
 
   return (
-    <div className="sop-gradient-01 px-sop-4px md:px-sop-48px py-sop-4px flex h-10 items-center justify-center md:gap-3">
-      <p className="sop-body-sm-regular md:sop-body-md-regular text-sop-base-white">
+    <div className="sop-gradient-01 flex h-10 min-w-0 items-center justify-center overflow-hidden px-2 md:gap-3 md:px-sop-48px">
+      <p className="sop-body-sm-regular md:sop-body-md-regular min-w-0 truncate text-center text-sop-base-white">
         Sopet สนับสนุนโดยสถาบันนวัตกรรมบูรณาการแห่งจุฬาฯ (CSII)
       </p>
       {/* {promoItems.map(({ icon: Icon, label }) => (
@@ -77,13 +77,13 @@ export function Navbar() {
   return (
     <section>
       <PromoBar />
-      <div className="flex items-center justify-between bg-sop-neutral-whitealpha-700 px-4 py-2 md:px-20 md:py-3">
-        <div className="flex w-full items-center justify-start gap-2 md:gap-6">
-          <Link href="/" aria-label="SOPet หน้าหลัก">
+      <div className="flex min-w-0 items-center justify-between bg-sop-neutral-whitealpha-700 px-4 py-2 md:px-20 md:py-3">
+        <div className="flex w-full min-w-0 items-center justify-start gap-2 md:gap-6">
+          <Link href="/" aria-label="SOPet หน้าหลัก" className="shrink-0">
             <SOPetLogo size={{ mobile: 45, desktop: 45 }} aria-hidden="true" />
           </Link>
           <NavbarSearch />
-          <Link href="/user/notifications" aria-label="การแจ้งเตือน">
+          <Link href="/user/notifications" aria-label="การแจ้งเตือน" className="shrink-0">
             <p className="relative">
               <UserManagementBellIcon
                 size={{ mobile: 18, desktop: 18 }}
@@ -93,7 +93,9 @@ export function Navbar() {
               <UnreadBadge />
             </p>
           </Link>
-          <NavbarCartButton />
+          <div className="shrink-0">
+            <NavbarCartButton />
+          </div>
           <NavbarUserMenu variant="desktop" />
           <NavbarUserMenu variant="mobile" />
         </div>

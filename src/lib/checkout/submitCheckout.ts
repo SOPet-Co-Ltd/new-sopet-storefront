@@ -3,6 +3,7 @@ import {
   type CreateOrderCheckoutContext,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import { saveGuestCheckoutRemember } from '@/lib/checkout/guestCheckoutRemember';
 import {
   mapCheckoutPaymentMethodForApi,
   isNonOmiseApiPaymentMethod,
@@ -155,6 +156,11 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
 
   if (!order?.id) {
     throw new SubmitCheckoutError('ไม่สามารถสร้างคำสั่งซื้อได้', 'order_failed');
+  }
+
+  // Remember guest contact + shipping for same-browser prefill / login import.
+  if (!params.checkoutContext.isAuthenticated && params.guestForm) {
+    saveGuestCheckoutRemember(params.guestForm);
   }
 
   if (order.guestPayToken) {

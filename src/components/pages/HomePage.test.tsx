@@ -181,9 +181,9 @@ describe('HomePage', () => {
     renderHomePage();
 
     expect(await screen.findByRole('heading', { name: 'หมวดหมู่สินค้า' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'สินค้าแนะนำ' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'แบรนด์ที่เข้าร่วม' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'คำถามที่พบบ่อย' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'สินค้าแนะนำ' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'แบรนด์ที่เข้าร่วม' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'คำถามที่พบบ่อย' })).toBeInTheDocument();
   });
 
   it('links category cards to category PLP routes', async () => {

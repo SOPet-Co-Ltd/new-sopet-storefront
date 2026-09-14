@@ -132,6 +132,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     qualities: [75, 85],
+    dangerouslyAllowLocalIP: true,
     remotePatterns: imageRemotePatterns(),
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

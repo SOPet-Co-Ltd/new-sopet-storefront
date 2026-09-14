@@ -401,7 +401,7 @@ function NavbarUserMenuMobile() {
   );
 
   return (
-    <div className="block md:hidden">
+    <div className="block shrink-0 md:hidden">
       <div className="flex items-center justify-center">
         <button
           type="button"

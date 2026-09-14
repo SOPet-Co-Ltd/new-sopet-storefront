@@ -118,8 +118,8 @@ export function NavbarSearch() {
       <div
         data-testid="navbar-search-field"
         className={cn(
-          'sop-body-sm-regular flex h-12 w-full min-w-[200px] items-center gap-1 rounded-sop-24',
-          'border border-sop-neutral-grayalpha-100 bg-sop-neutral-gray-500 pl-4 pr-2 shadow-sm',
+          'sop-body-sm-regular flex h-9 w-full min-w-0 max-w-[480px] items-center gap-2 rounded-full',
+          'bg-sop-neutral-gray-500 px-3 md:px-4',
           'focus-within:ring-2 focus-within:ring-sop-primary-400 focus-within:ring-offset-1',
         )}
       >

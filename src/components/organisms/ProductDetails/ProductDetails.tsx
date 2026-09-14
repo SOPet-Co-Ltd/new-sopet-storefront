@@ -66,7 +66,7 @@ export function ProductDetails({
   }, [product.basePrice, product.variants]);
 
   return (
-    <div className="flex flex-col gap-4 px-4 lg:gap-8 lg:px-0">
+    <div className="flex min-w-0 flex-col gap-4 lg:gap-8">
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
           <h1

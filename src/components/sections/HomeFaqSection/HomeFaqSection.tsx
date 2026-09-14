@@ -66,11 +66,12 @@ export function HomeFaqSection({ heading = 'คำถามที่พบบ่
   };
 
   return (
-    <div className="relative flex w-full flex-col items-center py-sop-32px px-sop-12px md:py-sop-64px md:px-sop-24px">
-      {/* Soft ambient background glow */}
+    <div className="relative left-1/2 flex w-screen max-w-[100vw] -translate-x-1/2 flex-col items-center overflow-hidden px-sop-12px py-sop-32px md:px-sop-24px md:py-sop-64px">
+      {/* Red ambient glow */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-95 w-125 sm:w-175 md:w-225 rounded-full bg-linear-to-r from-red-200/50 via-red-200/50 to-red-200/50 blur-[100px] opacity-80"
+        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-95 w-125 sm:w-175 md:w-225 rounded-full bg-linear-to-r from-red-200/50 via-red-200/50 to-red-200/50 blur-[100px] opacity-80
+    "
       />
 
       {/* Heading */}

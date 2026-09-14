@@ -73,8 +73,10 @@ export default function HomePage({
           </div>
         </section>
 
-        <section className="w-full lg:px-20 lg:py-10 p-0 flex flex-col gap-10 bg-sop-base-white overflow-hidden">
-          <HomeSponsorsSection />
+        <section className="flex w-full flex-col gap-10 overflow-hidden bg-sop-base-white p-0 lg:py-10">
+          <div className="w-full lg:px-20">
+            <HomeSponsorsSection />
+          </div>
           <HomeFaqSection items={HOME_FAQ_ITEMS} />
         </section>
       </section>

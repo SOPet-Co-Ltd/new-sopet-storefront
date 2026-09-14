@@ -50,6 +50,18 @@ describe('RootLayout', () => {
     expect(document.documentElement.getAttribute('lang')).toBe('th');
   });
 
+  it('renders ChatWithAdminFloatingButton in RootLayout', () => {
+    act(() => {
+      root.render(
+        <RootLayout>
+          <div>Page content</div>
+        </RootLayout>,
+      );
+    });
+
+    expect(container.querySelector('[aria-label="ติดต่อแอดมินผ่าน LINE"]')).not.toBeNull();
+  });
+
   it('exports Thai metadata defaults', () => {
     expect(metadata.title).toMatchObject({
       default: 'Sopet',

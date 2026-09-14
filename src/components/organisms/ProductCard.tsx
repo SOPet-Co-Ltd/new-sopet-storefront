@@ -155,7 +155,7 @@ function ProductCardImage({
           alt={product.name}
           fill
           priority={priority}
-          quality={85}
+          quality={75}
           sizes={compact ? '136px' : '(max-width: 768px) 168px, 224px'}
           className="pointer-events-none object-cover object-center select-none"
           draggable={false}

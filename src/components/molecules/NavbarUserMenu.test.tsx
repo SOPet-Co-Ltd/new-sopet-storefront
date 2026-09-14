@@ -39,7 +39,7 @@ const authenticatedAuth = {
 };
 
 describe('NavbarUserMenu', () => {
-  it('shows login link when guest on desktop', () => {
+  it('renders nothing when guest on desktop (auth CTAs live in promo bar)', () => {
     mockedUseAuth.mockReturnValue({
       customer: null,
       isAuthenticated: false,
@@ -52,20 +52,22 @@ describe('NavbarUserMenu', () => {
       logout: vi.fn(),
     });
 
-    render(<NavbarUserMenu variant="desktop" />);
+    const { container } = render(<NavbarUserMenu variant="desktop" />);
 
-    expect(screen.getByRole('link', { name: 'เข้าสู่ระบบ' })).toHaveAttribute('href', '/login');
+    expect(container).toBeEmptyDOMElement();
   });
 
-  it('shows account menu trigger when authenticated on desktop', () => {
+  it('shows promo-bar account menu trigger when authenticated on desktop', () => {
     mockedUseAuth.mockReturnValue(authenticatedAuth);
 
     render(<NavbarUserMenu variant="desktop" />);
 
-    expect(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย/ })).toBeInTheDocument();
+    const trigger = screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย ใจดี/ });
+    expect(trigger).toBeInTheDocument();
+    expect(trigger).toHaveTextContent('สมชาย ใจดี');
   });
 
-  it('renders exactly 7 navbar segments with correct hrefs and order', async () => {
+  it('opens side drawer with navbar segments when desktop trigger is clicked', async () => {
     const user = userEvent.setup();
     mockedUseAuth.mockReturnValue(authenticatedAuth);
 
@@ -74,7 +76,9 @@ describe('NavbarUserMenu', () => {
 
     render(<NavbarUserMenu variant="desktop" />);
 
-    await user.click(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย/ }));
+    await user.click(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย ใจดี/ }));
+
+    expect(screen.getByRole('dialog', { name: 'เมนูผู้ใช้' })).toBeInTheDocument();
 
     const menuLinks = screen
       .getAllByRole('link')
@@ -98,7 +102,7 @@ describe('NavbarUserMenu', () => {
 
     render(<NavbarUserMenu variant="desktop" />);
 
-    await user.click(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย/ }));
+    await user.click(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย ใจดี/ }));
 
     const profileLink = screen.getByRole('link', { name: 'ข้อมูลส่วนตัว' });
     expect(profileLink.querySelector('svg')).toBeTruthy();
@@ -116,7 +120,7 @@ describe('NavbarUserMenu', () => {
     await user.click(openButton);
 
     expect(screen.getByRole('dialog', { name: 'เมนูผู้ใช้' })).toBeInTheDocument();
-    expect(screen.getByText('สมชาย')).toBeInTheDocument();
+    expect(screen.getByText('สมชาย ใจดี')).toBeInTheDocument();
 
     const closeButtons = screen.getAllByRole('button', { name: 'ปิดเมนูผู้ใช้' });
     expect(closeButtons.length).toBeGreaterThanOrEqual(1);

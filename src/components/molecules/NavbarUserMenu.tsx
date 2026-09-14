@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import {
   useEffect,
   useId,
-  useRef,
   useState,
   useSyncExternalStore,
   type ComponentType,
@@ -27,11 +26,9 @@ import {
   type AccountNavItem,
 } from '@/components/templates/AccountLayout/accountNavConfig';
 
-import { Button } from '../atoms/Button';
 import type { FilledIconProps } from '../atoms/icons/FilledIcon';
 import {
   CloseIcon,
-  DownArrowIcon,
   MenuNavIcon,
   ProfileIcon,
   SignInIcon,
@@ -71,20 +68,20 @@ function getDisplayName(customer: CustomerProfile): string {
   return customer.fullName?.trim() || customer.email?.trim() || customer.phone || '';
 }
 
-function getFirstName(displayName: string): string {
-  return displayName.split(' ')[0] || displayName;
-}
-
 function UserAvatar({
   customer,
   size = 'xsmall',
 }: {
   customer: CustomerProfile;
-  size?: 'xsmall' | 'small';
+  size?: 'promo' | 'xsmall' | 'small';
 }) {
   const displayName = getDisplayName(customer);
   const sizeClasses =
-    size === 'xsmall' ? 'h-sop-28px w-sop-28px text-sm' : 'h-sop-56px w-sop-56px text-sm';
+    size === 'promo'
+      ? 'h-6 w-6 text-xs'
+      : size === 'xsmall'
+        ? 'h-sop-28px w-sop-28px text-sm'
+        : 'h-sop-56px w-sop-56px text-sm';
 
   return (
     <div
@@ -106,30 +103,7 @@ function UserAvatar({
   );
 }
 
-function DesktopDropdownItem({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: ReactNode;
-  label: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="flex w-full cursor-pointer items-center gap-sop-12px px-sop-16px py-2.5 text-left hover:bg-sop-neutral-gray-500"
-      onClick={() => {
-        void onClick?.();
-      }}
-    >
-      {icon}
-      <p className="sop-body-sm-regular">{label}</p>
-    </button>
-  );
-}
-
-function MobileListItem({
+function DrawerListItem({
   icon,
   label,
   onClick,
@@ -160,15 +134,7 @@ function MobileListItem({
   );
 }
 
-function NavbarMenuLink({
-  item,
-  onNavigate,
-  mobile,
-}: {
-  item: AccountNavItem;
-  onNavigate: () => void;
-  mobile?: boolean;
-}) {
+function NavbarMenuLink({ item, onNavigate }: { item: AccountNavItem; onNavigate: () => void }) {
   const router = useRouter();
   const segment = item.segment ?? '';
   const Icon = NAVBAR_SEGMENT_ICONS[segment];
@@ -176,29 +142,15 @@ function NavbarMenuLink({
     router.prefetch(item.href),
   );
 
-  if (mobile) {
-    return (
-      <Link
-        href={item.href}
-        onClick={onNavigate}
-        className={cn(
-          'flex w-full items-center gap-3 px-4 py-2.5',
-          MOBILE_COLORED_SEGMENTS.has(segment) && 'bg-sop-primary-200',
-          MOBILE_SEPARATOR_SEGMENTS.has(segment) && 'border-b border-sop-neutral-gray-500',
-        )}
-        {...prefetchHandlers}
-      >
-        {Icon ? <Icon size={{ mobile: 14, desktop: 14 }} color="#454547" /> : null}
-        <p className="sop-body-sm-regular">{item.label}</p>
-      </Link>
-    );
-  }
-
   return (
     <Link
       href={item.href}
       onClick={onNavigate}
-      className="flex w-full cursor-pointer items-center gap-sop-12px px-sop-16px py-2.5 hover:bg-sop-neutral-gray-500"
+      className={cn(
+        'flex w-full items-center gap-3 px-4 py-2.5',
+        MOBILE_COLORED_SEGMENTS.has(segment) && 'bg-sop-primary-200',
+        MOBILE_SEPARATOR_SEGMENTS.has(segment) && 'border-b border-sop-neutral-gray-500',
+      )}
       {...prefetchHandlers}
     >
       {Icon ? <Icon size={{ mobile: 14, desktop: 14 }} color="#454547" /> : null}
@@ -207,125 +159,58 @@ function NavbarMenuLink({
   );
 }
 
-function NavbarUserMenuDesktop() {
-  const { customer, isAuthenticated, isLoading, logout } = useAuth();
+function UserMenuDrawer({
+  open,
+  onClose,
+  panelId,
+  customer,
+  isAuthenticated,
+  logout,
+}: {
+  open: boolean;
+  onClose: () => void;
+  panelId: string;
+  customer: CustomerProfile | null;
+  isAuthenticated: boolean;
+  logout: () => Promise<void>;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    NAVBAR_MENU_ITEMS.forEach((item) => {
-      router.prefetch(item.href);
-      prefetchAccountPage(item.href);
-    });
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [open, router]);
-
-  if (isLoading) {
-    return (
-      <div className="hidden h-sop-36px w-[76px] animate-pulse rounded-sop-32 bg-sop-neutral-gray-500 md:block" />
-    );
-  }
-
-  if (!isAuthenticated || !customer) {
-    return (
-      <Link href="/login" className="hidden md:block">
-        <Button className="hidden md:block" size="md" variant="primary">
-          เข้าสู่ระบบ
-        </Button>
-      </Link>
-    );
-  }
-
-  const displayName = getDisplayName(customer);
-  const firstName = getFirstName(displayName);
-
-  return (
-    <div ref={menuRef} className="relative hidden md:block">
-      <button
-        type="button"
-        className="flex cursor-pointer items-center gap-sop-8px"
-        aria-expanded={open}
-        aria-haspopup="true"
-        aria-label={`เมนูผู้ใช้: ${firstName}`}
-        onClick={() => setOpen((current) => !current)}
-      >
-        <UserAvatar customer={customer} />
-        <span className="sop-body-md-regular hidden max-w-[120px] truncate text-sop-neutral-gray-300 md:inline-flex">
-          {firstName}
-        </span>
-        <DownArrowIcon size={{ mobile: 16, desktop: 16 }} color="#454547" aria-hidden="true" />
-      </button>
-
-      {open && (
-        <div className="absolute right-0 z-50 mt-2 w-[240px] overflow-hidden rounded-sop-8px border border-sop-neutral-gray-500 bg-sop-neutral-gray-600 shadow-lg">
-          {NAVBAR_MENU_ITEMS.map((item) => (
-            <NavbarMenuLink key={item.href} item={item} onNavigate={() => setOpen(false)} />
-          ))}
-          <DesktopDropdownItem
-            icon={<SignOutIcon size={{ mobile: 14, desktop: 14 }} color="#454547" />}
-            label="ออกจากระบบ"
-            onClick={async () => {
-              setOpen(false);
-              await logout();
-            }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function NavbarUserMenuMobile() {
-  const { customer, isAuthenticated, isLoading, logout } = useAuth();
-  const [open, setOpen] = useState(false);
   const isClient = useSyncExternalStore(
     subscribeIsClient,
     () => true,
     () => false,
   );
-  const panelId = useId();
+  const displayName = customer ? getDisplayName(customer) : '';
 
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
+      NAVBAR_MENU_ITEMS.forEach((item) => {
+        router.prefetch(item.href);
+        prefetchAccountPage(item.href);
+      });
     } else {
       document.body.style.overflow = '';
     }
     return () => {
       document.body.style.overflow = '';
     };
-  }, [open]);
+  }, [open, router]);
 
-  if (isLoading) {
-    return (
-      <div className="block h-4 w-4 animate-pulse rounded-full bg-sop-neutral-gray-500 md:hidden" />
-    );
-  }
+  useEffect(() => {
+    if (!open) return;
 
-  const displayName = customer ? getDisplayName(customer) : '';
-  const firstName = getFirstName(displayName);
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [open, onClose]);
 
   const drawerContent = (
     <div
@@ -335,7 +220,7 @@ function NavbarUserMenuMobile() {
         'fixed inset-0 z-50 bg-black/40 transition-opacity duration-200 ease-out',
         open ? 'opacity-100' : 'pointer-events-none opacity-0',
       )}
-      onClick={() => setOpen(false)}
+      onClick={onClose}
     >
       <section
         id={panelId}
@@ -352,9 +237,9 @@ function NavbarUserMenuMobile() {
         <div className="flex h-[92px] items-end justify-end px-[17px] py-[21px]">
           <button
             type="button"
-            className="inline-flex aspect-square min-h-[32px] min-w-[32px] items-center justify-center rounded-xl bg-sop-primary-500 p-sop-8px cursor-pointer"
+            className="inline-flex aspect-square min-h-[32px] min-w-[32px] cursor-pointer items-center justify-center rounded-xl bg-sop-primary-500 p-sop-8px"
             aria-label="ปิดเมนูผู้ใช้"
-            onClick={() => setOpen(false)}
+            onClick={onClose}
           >
             <CloseIcon size={{ mobile: 16, desktop: 16 }} color="#fff" />
           </button>
@@ -364,7 +249,7 @@ function NavbarUserMenuMobile() {
           {!isAuthenticated || !customer ? (
             <Link
               href="/login"
-              onClick={() => setOpen(false)}
+              onClick={onClose}
               className="flex w-full items-center gap-3 bg-sop-primary-200 px-4 py-2.5"
             >
               <SignInIcon size={{ mobile: 14, desktop: 14 }} color="#454547" />
@@ -374,22 +259,17 @@ function NavbarUserMenuMobile() {
             <>
               <div className="mb-5 flex h-sop-56px items-center gap-sop-16px px-4">
                 <UserAvatar customer={customer} size="small" />
-                <span className="sop-body-sm-regular">{firstName}</span>
+                <span className="sop-body-sm-regular">{displayName}</span>
               </div>
               {NAVBAR_MENU_ITEMS.map((item) => (
-                <NavbarMenuLink
-                  key={item.href}
-                  item={item}
-                  mobile
-                  onNavigate={() => setOpen(false)}
-                />
+                <NavbarMenuLink key={item.href} item={item} onNavigate={onClose} />
               ))}
-              <MobileListItem
+              <DrawerListItem
                 icon={<SignOutIcon size={{ mobile: 14, desktop: 14 }} color="#454547" />}
                 label="ออกจากระบบ"
                 separator
                 onClick={async () => {
-                  setOpen(false);
+                  onClose();
                   await logout();
                 }}
               />
@@ -399,6 +279,69 @@ function NavbarUserMenuMobile() {
       </section>
     </div>
   );
+
+  if (!isClient) {
+    return null;
+  }
+
+  return createPortal(drawerContent, document.body);
+}
+
+function NavbarUserMenuDesktop() {
+  const { customer, isAuthenticated, isLoading, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+
+  if (isLoading) {
+    return (
+      <div className="hidden h-6 w-[120px] animate-pulse rounded-sop-36 bg-sop-base-white/30 md:block" />
+    );
+  }
+
+  // Guest auth CTAs live in the promo bar; keep desktop menu for authenticated users only.
+  if (!isAuthenticated || !customer) {
+    return null;
+  }
+
+  const displayName = getDisplayName(customer);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="hidden cursor-pointer items-center justify-center gap-2 rounded-sop-36 px-3 py-2 text-sop-base-white md:inline-flex"
+        aria-expanded={open}
+        aria-controls={panelId}
+        aria-haspopup="dialog"
+        aria-label={`เมนูผู้ใช้: ${displayName}`}
+        onClick={() => setOpen(true)}
+      >
+        <UserAvatar customer={customer} size="promo" />
+        <span className="sop-body-sm-medium max-w-[120px] truncate">{displayName}</span>
+      </button>
+
+      <UserMenuDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        panelId={panelId}
+        customer={customer}
+        isAuthenticated={isAuthenticated}
+        logout={logout}
+      />
+    </>
+  );
+}
+
+function NavbarUserMenuMobile() {
+  const { customer, isAuthenticated, isLoading, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+
+  if (isLoading) {
+    return (
+      <div className="block h-4 w-4 animate-pulse rounded-full bg-sop-neutral-gray-500 md:hidden" />
+    );
+  }
 
   return (
     <div className="block shrink-0 md:hidden">
@@ -414,7 +357,14 @@ function NavbarUserMenuMobile() {
         </button>
       </div>
 
-      {isClient ? createPortal(drawerContent, document.body) : null}
+      <UserMenuDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        panelId={panelId}
+        customer={customer}
+        isAuthenticated={isAuthenticated}
+        logout={logout}
+      />
     </div>
   );
 }

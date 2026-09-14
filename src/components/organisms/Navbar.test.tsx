@@ -80,4 +80,44 @@ describe('Navbar', () => {
     expect(screen.queryByRole('link', { name: /coupons/i })).not.toBeInTheDocument();
     expect(document.body.innerHTML).not.toContain('/coupons');
   });
+
+  it('shows membership promo copy and LINE track-status CTA', () => {
+    render(<Navbar />);
+
+    expect(screen.getByText(/สมัครสมาชิก/)).toBeInTheDocument();
+    expect(screen.getByText(/รับสิทธิพิเศษเฉพาะคนรักสัตว์เลี้ยงตัวจริง/)).toBeInTheDocument();
+
+    const trackStatus = screen.getByRole('link', { name: 'ติดตามสถานะผ่าน LINE' });
+    expect(trackStatus).toHaveAttribute('href', 'https://line.me/R/ti/p/@sopet');
+    expect(trackStatus).toHaveAttribute('target', '_blank');
+
+    expect(screen.getByRole('link', { name: 'เข้าสู่ระบบ | ลงทะเบียน' })).toHaveAttribute(
+      'href',
+      '/login',
+    );
+  });
+
+  it('shows promo-bar user menu when authenticated and hides guest login link', () => {
+    mockedUseAuth.mockReturnValue({
+      customer: {
+        id: 'cust-1',
+        phone: '0812345678',
+        email: 'test@example.com',
+        fullName: 'สมชาย ใจดี',
+      },
+      isAuthenticated: true,
+      isLoading: false,
+      pendingDeletion: false,
+      sendOtp: vi.fn(),
+      verifyOtp: vi.fn(),
+      changeCustomerPhone: vi.fn(),
+      reactivateAccount: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    render(<Navbar />);
+
+    expect(screen.queryByRole('link', { name: 'เข้าสู่ระบบ | ลงทะเบียน' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย ใจดี/ })).toBeInTheDocument();
+  });
 });

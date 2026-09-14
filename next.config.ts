@@ -22,6 +22,15 @@ function cdnRemotePattern(cdnUrl: string): RemotePattern | null {
 
 function imageRemotePatterns(): RemotePattern[] {
   const patterns: RemotePattern[] = [
+    // Local MinIO accessed directly from browser
+    {
+      protocol: 'http',
+      hostname: 'localhost',
+      port: '9000',
+      pathname: '/sopet-ecommerce-files/**',
+    },
+
+    // Local MinIO internal hostname
     {
       protocol: 'http',
       hostname: 'minio.sopet-backend.orb.local',
@@ -128,7 +137,7 @@ const nextConfig: NextConfig = {
     contentDispositionType: 'attachment',
     // Serve original CDN/R2 URLs. Vercel Image Optimization returns 402
     // OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED once the transform quota is hit.
-    unoptimized: true,
+    // unoptimized: true,
   },
 };
 

@@ -28,7 +28,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
   return (
     <Link
       href={href}
-      className="flex h-16 w-full flex-row items-center overflow-hidden rounded-sop-20 border border-sop-additionalblue-200 bg-sop-additionalblue-100 px-5 py-3 transition-opacity hover:opacity-90"
+      className="flex h-16 w-full flex-row items-center overflow-hidden rounded-sop-20 border border-sop-additionalblue-200 bg-sop-additionalblue-100 px-5 py-3 transition-opacity hover:opacity-90 relative"
       aria-label={`ดูหมวดหมู่ ${category.name}`}
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
@@ -47,6 +47,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
           onError={() => setImageError(true)}
         />
       </div>
+      <div className="absolute -right-10.75 -bottom-10.75 h-21.5 w-21.5 rounded-full bg-sop-neutral-orangealpha-300"></div>
     </Link>
   );
 }

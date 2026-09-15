@@ -61,4 +61,32 @@ describe('Breadcrumbs', () => {
 
     expect(container.querySelectorAll('ol > li')).toHaveLength(2);
   });
+
+  it('keeps the trail on one line and truncates a long current label with title', () => {
+    const longLabel =
+      'Royal canin hepatic dog 6 kg อาหารสุนัข โรคตับ เพื่อลดการทำลายตับ ลดความเป็นพิษในตับ';
+
+    const { container } = render(
+      <Breadcrumbs
+        items={[
+          { label: 'หน้าแรก', path: '/' },
+          { label: 'อาหารสัตว์', path: '/categories/pet-food' },
+          { label: longLabel, path: '/product/prod-001' },
+        ]}
+      />,
+    );
+
+    const list = container.querySelector('ol');
+    expect(list).toHaveClass('flex-nowrap');
+
+    const items = container.querySelectorAll('ol > li');
+    expect(items[0]).toHaveClass('shrink-0');
+    expect(items[1]).toHaveClass('shrink-0');
+    expect(items[2]).toHaveClass('min-w-0', 'flex-1', 'overflow-hidden');
+
+    const currentItem = screen.getByText(longLabel);
+    expect(currentItem).toHaveAttribute('aria-current', 'page');
+    expect(currentItem).toHaveAttribute('title', longLabel);
+    expect(currentItem).toHaveClass('truncate');
+  });
 });

@@ -28,21 +28,21 @@ export function CategoryCard({ category }: CategoryCardProps) {
   return (
     <Link
       href={href}
-      className="flex h-16 w-full flex-row items-center overflow-hidden rounded-sop-20 border border-sop-additionalblue-200 bg-sop-additionalblue-100 px-5 py-3 transition-opacity hover:opacity-90 relative"
+      className="relative flex h-16 w-full flex-row items-stretch overflow-hidden rounded-sop-20 border border-sop-additionalblue-200 bg-sop-additionalblue-100 transition-opacity hover:opacity-90"
       aria-label={`ดูหมวดหมู่ ${category.name}`}
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
     >
-      <span className="min-w-0 flex-1 sop-body-sm-medium text-sop-neutral-gray-200 line-clamp-2">
+      <span className="w-[70%] min-w-0 self-center pl-5 sop-body-sm-medium text-sop-neutral-gray-200 line-clamp-2">
         {category.name}
       </span>
-      <div className="relative h-full w-[40%] shrink-0">
+      <div className="relative h-full w-[30%] shrink-0">
         <Image
           loading="lazy"
           src={imageSrc}
           alt={`หมวดหมู่ - ${category.name}`}
           fill
-          sizes="(min-width: 1024px) 64px, (min-width: 768px) 80px, 80px"
+          sizes="(min-width: 1024px) 43px, (min-width: 768px) 48px, 48px"
           className="object-contain"
           onError={() => setImageError(true)}
         />

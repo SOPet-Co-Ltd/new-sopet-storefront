@@ -81,7 +81,7 @@ export default function HomePage({
         </section>
         <section className="flex w-full flex-col">
           <div className="bg-sop-base-white">
-            <div className="mx-auto w-full max-w-[1064px] py-4 lg:py-20">
+            <div className="mx-auto w-full max-w-[1064px] px-4 py-4 lg:px-0 lg:py-20">
               <HomeWhySopetSection />
             </div>
           </div>

@@ -1,0 +1,1 @@
+export { HomeWhySopetSection } from './HomeWhySopetSection';

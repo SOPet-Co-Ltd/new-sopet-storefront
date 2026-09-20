@@ -46,16 +46,16 @@ function WhySopetCard({
         <p className="sop-body-lg-regular">{description}</p>
       </div>
 
-      {/* Mobile: well is a stage; photo sits on it and can rise above the well top */}
-      <div className="relative mt-5 w-full pt-16 md:hidden">
+      {/* Mobile: well stage; photo can rise above the well top into pt-* space */}
+      <div className="relative mt-5 w-full pt-14 md:hidden">
         <div className={cn('h-[180px] w-full rounded-sop-36', wellClassName)} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 top-0">{mobileMedia}</div>
       </div>
 
-      {/* Desktop: fixed well with Figma overlays */}
+      {/* Desktop: fixed well; clip subjects to the rounded well (matches design) */}
       <div
         className={cn(
-          'relative hidden h-[180px] w-[223px] shrink-0 overflow-visible rounded-sop-36 md:block',
+          'relative hidden h-[180px] w-[223px] shrink-0 overflow-hidden rounded-sop-36 md:block',
           wellClassName,
         )}
       >
@@ -92,15 +92,17 @@ export function HomeWhySopetSection() {
           wellClassName="bg-sop-secondary-400 md:w-[247px]"
           mobileMedia={
             <>
-              <PlusMark className="absolute left-[12%] top-[42%] size-7 text-white/90" />
-              <PlusMark className="absolute right-[14%] top-[48%] size-5 text-white/80" />
-              <div className="absolute bottom-0 left-1/2 h-[225px] w-[280px] -translate-x-1/2">
+              <PlusMark className="absolute left-[10%] top-[48%] size-7 text-white/90" />
+              <PlusMark className="absolute right-[12%] top-[52%] size-5 text-white/80" />
+              {/* Head peeks above well; bottom flush with well */}
+              <div className="absolute bottom-0 left-1/2 h-[236px] w-[220px] -translate-x-1/2">
                 <Image
-                  src={`${ASSET_BASE}/vet.png`}
+                  src={`${ASSET_BASE}/vet.webp`}
                   alt=""
                   fill
-                  className="object-cover object-[70%_100%]"
-                  sizes="280px"
+                  unoptimized
+                  className="object-contain object-bottom"
+                  sizes="220px"
                   aria-hidden
                 />
               </div>
@@ -108,22 +110,16 @@ export function HomeWhySopetSection() {
           }
           desktopMedia={
             <>
-              <div className="pointer-events-none absolute left-[-8px] top-[-104px] size-[355px]">
-                {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
-                <img
-                  src={`${ASSET_BASE}/vet-plus.svg`}
-                  alt=""
-                  className="size-full max-w-none"
-                  aria-hidden
-                />
-              </div>
-              <div className="pointer-events-none absolute bottom-[-21px] right-[-90px] h-[225px] w-[337px]">
+              <PlusMark className="absolute left-[8%] top-[40%] z-10 size-6 text-white/90" />
+              <PlusMark className="absolute right-[10%] top-[46%] z-10 size-5 text-white/80" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 top-0">
                 <Image
-                  src={`${ASSET_BASE}/vet.png`}
+                  src={`${ASSET_BASE}/vet.webp`}
                   alt=""
                   fill
-                  className="object-cover object-right-bottom"
-                  sizes="337px"
+                  unoptimized
+                  className="object-contain object-bottom"
+                  sizes="247px"
                   aria-hidden
                 />
               </div>
@@ -144,7 +140,7 @@ export function HomeWhySopetSection() {
           wellClassName="bg-sop-neutral-orangealpha-400"
           mobileMedia={
             <>
-              <div className="absolute left-[10%] top-[46%] size-7 -translate-y-1/2">
+              <div className="absolute bottom-[18%] left-[8%] size-7">
                 {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                 <img
                   src={`${ASSET_BASE}/consult-icons.svg`}
@@ -153,7 +149,7 @@ export function HomeWhySopetSection() {
                   aria-hidden
                 />
               </div>
-              <div className="absolute right-[10%] top-[40%] size-7">
+              <div className="absolute right-[8%] top-[38%] size-7">
                 {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                 <img
                   src={`${ASSET_BASE}/consult-phone.svg`}
@@ -162,13 +158,14 @@ export function HomeWhySopetSection() {
                   aria-hidden
                 />
               </div>
-              <div className="absolute bottom-0 left-1/2 h-[220px] w-[200px] -translate-x-1/2">
+              <div className="absolute bottom-0 left-1/2 h-[230px] w-[190px] -translate-x-1/2">
                 <Image
-                  src={`${ASSET_BASE}/consult.png`}
+                  src={`${ASSET_BASE}/consult.webp`}
                   alt=""
                   fill
-                  className="object-cover object-[88%_15%]"
-                  sizes="200px"
+                  unoptimized
+                  className="object-contain object-bottom"
+                  sizes="190px"
                   aria-hidden
                 />
               </div>
@@ -176,16 +173,7 @@ export function HomeWhySopetSection() {
           }
           desktopMedia={
             <>
-              <div className="pointer-events-none absolute bottom-0 right-[-21px] h-[204px] w-[337px] overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element -- Figma crop offsets require raw img sizing */}
-                <img
-                  src={`${ASSET_BASE}/consult.png`}
-                  alt=""
-                  className="absolute left-[-89.91%] top-[-15.7%] h-[137.29%] w-[207.51%] max-w-none object-cover"
-                  aria-hidden
-                />
-              </div>
-              <div className="pointer-events-none absolute bottom-[38%] left-[8%] size-[27px]">
+              <div className="pointer-events-none absolute bottom-[18%] left-[6%] z-10 size-[27px]">
                 {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                 <img
                   src={`${ASSET_BASE}/consult-icons.svg`}
@@ -194,12 +182,23 @@ export function HomeWhySopetSection() {
                   aria-hidden
                 />
               </div>
-              <div className="pointer-events-none absolute right-[6%] top-[14%] h-[28px] w-[29px]">
+              <div className="pointer-events-none absolute right-[6%] top-[14%] z-10 size-[28px]">
                 {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                 <img
                   src={`${ASSET_BASE}/consult-phone.svg`}
                   alt=""
                   className="size-full"
+                  aria-hidden
+                />
+              </div>
+              <div className="pointer-events-none absolute inset-x-[6%] bottom-0 top-0">
+                <Image
+                  src={`${ASSET_BASE}/consult.webp`}
+                  alt=""
+                  fill
+                  unoptimized
+                  className="object-contain object-bottom"
+                  sizes="223px"
                   aria-hidden
                 />
               </div>
@@ -220,7 +219,7 @@ export function HomeWhySopetSection() {
           wellClassName="bg-sop-neutral-orangealpha-600"
           mobileMedia={
             <>
-              <div className="absolute left-[12%] top-1/2 size-6 -translate-y-1/2">
+              <div className="absolute bottom-[22%] left-[10%] size-6">
                 {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                 <img
                   src={`${ASSET_BASE}/verify-star.svg`}
@@ -229,7 +228,7 @@ export function HomeWhySopetSection() {
                   aria-hidden
                 />
               </div>
-              <div className="absolute right-[12%] top-[38%] size-8">
+              <div className="absolute right-[10%] top-[36%] size-8">
                 {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                 <img
                   src={`${ASSET_BASE}/verify-shield.svg`}
@@ -238,31 +237,33 @@ export function HomeWhySopetSection() {
                   aria-hidden
                 />
               </div>
-              <div className="absolute bottom-[-8px] left-1/2 h-[200px] w-[160px] -translate-x-1/2">
-                <Image
-                  src={`${ASSET_BASE}/verify.png`}
-                  alt=""
-                  fill
-                  className="object-contain"
-                  sizes="160px"
-                  aria-hidden
-                />
+              <div className="absolute inset-x-0 bottom-0 top-14 flex items-center justify-center">
+                <div className="relative h-[155px] w-[130px]">
+                  <Image
+                    src={`${ASSET_BASE}/verify.webp`}
+                    alt=""
+                    fill
+                    unoptimized
+                    className="object-contain"
+                    sizes="130px"
+                    aria-hidden
+                  />
+                </div>
               </div>
             </>
           }
           desktopMedia={
             <>
-              <div className="pointer-events-none absolute left-[38px] top-[25px] h-[172px] w-[143px]">
-                <Image
-                  src={`${ASSET_BASE}/verify.png`}
+              <div className="pointer-events-none absolute left-[8%] top-[62%] z-10 size-[26px]">
+                {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
+                <img
+                  src={`${ASSET_BASE}/verify-star.svg`}
                   alt=""
-                  fill
-                  className="object-contain object-bottom"
-                  sizes="143px"
+                  className="size-full"
                   aria-hidden
                 />
               </div>
-              <div className="pointer-events-none absolute right-[6%] top-[17px] size-[41px]">
+              <div className="pointer-events-none absolute right-[6%] top-[10%] z-10 size-[36px]">
                 {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                 <img
                   src={`${ASSET_BASE}/verify-shield.svg`}
@@ -271,14 +272,18 @@ export function HomeWhySopetSection() {
                   aria-hidden
                 />
               </div>
-              <div className="pointer-events-none absolute left-[20px] top-[121px] size-[26px]">
-                {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
-                <img
-                  src={`${ASSET_BASE}/verify-star.svg`}
-                  alt=""
-                  className="size-full"
-                  aria-hidden
-                />
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="relative h-[150px] w-[125px]">
+                  <Image
+                    src={`${ASSET_BASE}/verify.webp`}
+                    alt=""
+                    fill
+                    unoptimized
+                    className="object-contain"
+                    sizes="125px"
+                    aria-hidden
+                  />
+                </div>
               </div>
             </>
           }
@@ -294,10 +299,10 @@ export function HomeWhySopetSection() {
             </>
           }
           cardClassName="bg-sop-additionalblue-200"
-          wellClassName="bg-sop-additionalblue-300"
+          wellClassName="bg-sop-additionalblue-300 overflow-visible"
           mobileMedia={
             <>
-              <div className="absolute left-[8%] top-[42%] flex size-11 items-center justify-center">
+              <div className="absolute left-[6%] top-[46%] flex size-11 items-center justify-center">
                 <div className="size-9 rotate-[56deg]">
                   {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                   <img
@@ -308,7 +313,7 @@ export function HomeWhySopetSection() {
                   />
                 </div>
               </div>
-              <div className="absolute right-[8%] top-[44%] flex size-11 items-center justify-center">
+              <div className="absolute bottom-[14%] right-[6%] flex size-11 items-center justify-center">
                 <div className="size-9 -rotate-[15deg]">
                   {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                   <img
@@ -319,13 +324,15 @@ export function HomeWhySopetSection() {
                   />
                 </div>
               </div>
-              <div className="absolute bottom-0 left-1/2 h-[225px] w-[260px] -translate-x-1/2">
+              {/* Tall frame so head clearly clears the well top */}
+              <div className="absolute bottom-0 left-1/2 h-[250px] w-[210px] -translate-x-1/2">
                 <Image
-                  src={`${ASSET_BASE}/discount.png`}
+                  src={`${ASSET_BASE}/discount.webp`}
                   alt=""
                   fill
-                  className="object-cover object-[78%_100%]"
-                  sizes="260px"
+                  unoptimized
+                  className="object-contain object-bottom"
+                  sizes="210px"
                   aria-hidden
                 />
               </div>
@@ -333,17 +340,8 @@ export function HomeWhySopetSection() {
           }
           desktopMedia={
             <>
-              <div className="pointer-events-none absolute bottom-0 right-[-54px] h-[239px] w-[358px] overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element -- Figma crop offsets require raw img sizing */}
-                <img
-                  src={`${ASSET_BASE}/discount.png`}
-                  alt=""
-                  className="absolute left-[-34.82%] top-0 h-full w-[118.46%] max-w-none object-cover"
-                  aria-hidden
-                />
-              </div>
-              <div className="pointer-events-none absolute bottom-[58%] left-[4%] flex size-[62px] items-center justify-center">
-                <div className="size-[44px] rotate-[56deg]">
+              <div className="pointer-events-none absolute bottom-[48%] left-[4%] z-10 flex size-[48px] items-center justify-center">
+                <div className="size-[36px] rotate-[56deg]">
                   {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                   <img
                     src={`${ASSET_BASE}/discount-tag.svg`}
@@ -353,8 +351,8 @@ export function HomeWhySopetSection() {
                   />
                 </div>
               </div>
-              <div className="pointer-events-none absolute right-[2%] top-[48%] flex size-[59px] items-center justify-center">
-                <div className="size-12 -rotate-[15deg]">
+              <div className="pointer-events-none absolute bottom-[10%] right-[4%] z-10 flex size-[48px] items-center justify-center">
+                <div className="size-10 -rotate-[15deg]">
                   {/* eslint-disable-next-line @next/next/no-img-element -- decorative SVG from design export */}
                   <img
                     src={`${ASSET_BASE}/discount-gift.svg`}
@@ -363,6 +361,18 @@ export function HomeWhySopetSection() {
                     aria-hidden
                   />
                 </div>
+              </div>
+              {/* Smaller centered subject; bottom-aligned in the well */}
+              <div className="pointer-events-none absolute bottom-0 left-1/2 h-[210px] w-[210px] -translate-x-1/2">
+                <Image
+                  src={`${ASSET_BASE}/discount.webp`}
+                  alt=""
+                  fill
+                  unoptimized
+                  className="object-contain object-bottom"
+                  sizes="210px"
+                  aria-hidden
+                />
               </div>
             </>
           }

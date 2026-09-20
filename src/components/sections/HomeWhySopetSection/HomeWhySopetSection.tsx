@@ -52,10 +52,10 @@ function WhySopetCard({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 top-0">{mobileMedia}</div>
       </div>
 
-      {/* Desktop: fixed well; clip subjects to the rounded well (matches design) */}
+      {/* Desktop: well stays put; subjects can overflow and clip to the card */}
       <div
         className={cn(
-          'relative hidden h-[180px] w-[223px] shrink-0 overflow-hidden rounded-sop-36 md:block',
+          'relative hidden h-[180px] w-[223px] shrink-0 overflow-visible rounded-sop-36 md:block',
           wellClassName,
         )}
       >
@@ -95,7 +95,7 @@ export function HomeWhySopetSection() {
               <PlusMark className="absolute left-[10%] top-[48%] size-7 text-white/90" />
               <PlusMark className="absolute right-[12%] top-[52%] size-5 text-white/80" />
               {/* Head peeks above well; bottom flush with well */}
-              <div className="absolute bottom-0 left-1/2 h-[236px] w-[220px] -translate-x-1/2">
+              <div className="absolute -bottom-[21px] left-1/2 h-[236px] w-[220px] -translate-x-1/2">
                 <Image
                   src={`${ASSET_BASE}/vet.webp`}
                   alt=""
@@ -112,14 +112,14 @@ export function HomeWhySopetSection() {
             <>
               <PlusMark className="absolute left-[8%] top-[40%] z-10 size-6 text-white/90" />
               <PlusMark className="absolute right-[10%] top-[46%] z-10 size-5 text-white/80" />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 top-0">
+              <div className="pointer-events-none absolute -bottom-5 left-1/2 z-20 h-[220px] w-[280px] -translate-x-1/2">
                 <Image
                   src={`${ASSET_BASE}/vet.webp`}
                   alt=""
                   fill
                   unoptimized
                   className="object-contain object-bottom"
-                  sizes="247px"
+                  sizes="280px"
                   aria-hidden
                 />
               </div>
@@ -191,14 +191,14 @@ export function HomeWhySopetSection() {
                   aria-hidden
                 />
               </div>
-              <div className="pointer-events-none absolute inset-x-[6%] bottom-0 top-0">
+              <div className="pointer-events-none absolute bottom-0 left-1/2 z-20 h-[200px] w-[230px] -translate-x-1/2">
                 <Image
                   src={`${ASSET_BASE}/consult.webp`}
                   alt=""
                   fill
                   unoptimized
                   className="object-contain object-bottom"
-                  sizes="223px"
+                  sizes="230px"
                   aria-hidden
                 />
               </div>
@@ -299,7 +299,7 @@ export function HomeWhySopetSection() {
             </>
           }
           cardClassName="bg-sop-additionalblue-200"
-          wellClassName="bg-sop-additionalblue-300 overflow-visible"
+          wellClassName="bg-sop-additionalblue-300"
           mobileMedia={
             <>
               <div className="absolute left-[6%] top-[46%] flex size-11 items-center justify-center">
@@ -362,15 +362,14 @@ export function HomeWhySopetSection() {
                   />
                 </div>
               </div>
-              {/* Smaller centered subject; bottom-aligned in the well */}
-              <div className="pointer-events-none absolute bottom-0 left-1/2 h-[210px] w-[210px] -translate-x-1/2">
+              <div className="pointer-events-none absolute bottom-0 left-1/2 z-20 h-[200px] w-[220px] -translate-x-1/2">
                 <Image
                   src={`${ASSET_BASE}/discount.webp`}
                   alt=""
                   fill
                   unoptimized
                   className="object-contain object-bottom"
-                  sizes="210px"
+                  sizes="220px"
                   aria-hidden
                 />
               </div>

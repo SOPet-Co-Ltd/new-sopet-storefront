@@ -12,7 +12,7 @@ export function Header() {
     <>
       <header
         aria-label="Site header"
-        className="fixed inset-x-0 top-0 z-40 w-full max-w-full overflow-x-hidden bg-sop-primary-100/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md"
+        className="fixed inset-x-0 top-0 z-40 w-full bg-sop-primary-100/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md"
       >
         <Navbar />
       </header>

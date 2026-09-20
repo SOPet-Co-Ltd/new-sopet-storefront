@@ -73,8 +73,8 @@ function LoginPhoneForm({ notice, onSuccess }: { notice: LoginNotice; onSuccess:
     try {
       setLoading(true);
       setError(null);
-      await sendOtp(normalizedPhone);
-      storeOtpPhone(normalizedPhone);
+      const otpResult = await sendOtp(normalizedPhone);
+      storeOtpPhone(normalizedPhone, otpResult.referenceCode);
       onSuccess();
       router.push('/login/otp');
     } catch (submitError) {
@@ -107,6 +107,7 @@ function LoginPhoneForm({ notice, onSuccess }: { notice: LoginNotice; onSuccess:
         <ThaiPhoneInput
           placeholder="กรอกเบอร์โทรศัพท์"
           value={phone}
+          size="lg"
           variant="flat"
           aria-label="เบอร์โทรศัพท์"
           state={error ? 'error' : 'default'}
@@ -221,7 +222,7 @@ export function LoginModal() {
 
         <div className="flex h-full w-full flex-col overflow-hidden bg-sop-base-white md:flex-row md:rounded-sop-24 md:shadow-lg">
           {/* Mobile image */}
-          <div className="relative h-[42%] min-h-[200px] w-full shrink-0 md:hidden">
+          <div className="relative aspect-square w-full max-h-[375px] shrink-0 overflow-hidden md:hidden">
             <LoginImagePanel imageUrl={mobileImageUrl} altText={altText} />
           </div>
 
@@ -230,7 +231,8 @@ export function LoginModal() {
             <LoginImagePanel imageUrl={desktopImageUrl} altText={altText} />
           </div>
 
-          <div className="relative -mt-6 flex flex-1 flex-col rounded-t-sop-24 bg-sop-base-white px-6 pb-8 pt-8 md:mt-0 md:w-1/2 md:flex-none md:justify-center md:rounded-none md:px-10 md:py-8">
+          {/* Mobile sheet: rounded top tucks slightly over the banner */}
+          <div className="relative z-10 -mt-6 flex flex-1 flex-col rounded-t-sop-24px bg-sop-base-white px-6 pb-8 pt-8 md:mt-0 md:w-1/2 md:flex-none md:justify-center md:rounded-none md:px-10 md:py-8">
             <LoginPhoneForm notice={notice} onSuccess={closeLoginModal} />
           </div>
         </div>

@@ -162,10 +162,18 @@ function registerHomeHandlers(options?: {
 
 const ApolloTestWrapper = createApolloTestWrapper();
 
-function renderHomePage() {
+function renderHomePage(
+  props: {
+    initialRecommendedProducts?: (typeof SAMPLE_PRODUCT)[];
+    initialCategories?: typeof SAMPLE_CATEGORIES;
+  } = {},
+) {
   return render(
     <ApolloTestWrapper>
-      <HomePage />
+      <HomePage
+        initialCategories={props.initialCategories ?? SAMPLE_CATEGORIES}
+        initialRecommendedProducts={props.initialRecommendedProducts ?? [SAMPLE_PRODUCT]}
+      />
     </ApolloTestWrapper>,
   );
 }

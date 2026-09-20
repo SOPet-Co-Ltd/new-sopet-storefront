@@ -89,7 +89,7 @@ describe('route group layouts', () => {
     container.remove();
   });
 
-  it('AuthLayout wraps children in a main landmark', () => {
+  it('AuthLayout wraps children in a full-height container', () => {
     act(() => {
       root.render(
         <AuthLayout>
@@ -98,7 +98,7 @@ describe('route group layouts', () => {
       );
     });
 
-    expect(container.querySelector('main')).not.toBeNull();
+    expect(container.querySelector('.min-h-dvh')).not.toBeNull();
     expect(container.querySelector('[data-testid="auth-child"]')).not.toBeNull();
   });
 

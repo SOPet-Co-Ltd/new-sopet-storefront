@@ -936,7 +936,7 @@ export type Mutation = {
   revokeAdminInvitation: AdminInvitationType;
   revokeStoreApiKey: Scalars['Boolean']['output'];
   revokeStoreInvitation: StoreMemberInvitationType;
-  sendCustomerOtp: MessagePayload;
+  sendCustomerOtp: SendCustomerOtpPayload;
   sendTestEmailContentTemplate: Scalars['Boolean']['output'];
   setAdminActive: AdminTeamMemberType;
   setCategoryImage: CategoryType;
@@ -2926,6 +2926,12 @@ export type SearchSynonymType = {
 
 export type SendCustomerOtpInput = {
   phone: Scalars['String']['input'];
+};
+
+export type SendCustomerOtpPayload = {
+  __typename?: 'SendCustomerOtpPayload';
+  message: Scalars['String']['output'];
+  referenceCode: Scalars['String']['output'];
 };
 
 export type SendTestEmailContentTemplateInput = {

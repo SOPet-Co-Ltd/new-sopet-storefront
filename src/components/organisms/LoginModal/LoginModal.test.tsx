@@ -7,7 +7,7 @@ import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from '@/test/mocks/server';
 
 const push = vi.fn();
-const sendOtp = vi.fn().mockResolvedValue({ message: 'ok' });
+const sendOtp = vi.fn().mockResolvedValue({ message: 'ok', referenceCode: '526547' });
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace: vi.fn() }),
@@ -54,9 +54,7 @@ function OpenButton() {
 function renderModal(ui?: React.ReactNode) {
   return render(
     <ApolloWrapper>
-      <LoginModalProvider>
-        {ui ?? <OpenButton />}
-      </LoginModalProvider>
+      <LoginModalProvider>{ui ?? <OpenButton />}</LoginModalProvider>
     </ApolloWrapper>,
   );
 }
@@ -118,7 +116,7 @@ describe('LoginModal', () => {
 
     await waitFor(() => {
       expect(sendOtp).toHaveBeenCalledWith('0812345678');
-      expect(storeOtpPhone).toHaveBeenCalledWith('0812345678');
+      expect(storeOtpPhone).toHaveBeenCalledWith('0812345678', '526547');
       expect(push).toHaveBeenCalledWith('/login/otp');
     });
   });

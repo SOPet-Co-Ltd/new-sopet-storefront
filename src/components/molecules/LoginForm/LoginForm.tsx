@@ -41,8 +41,8 @@ export function LoginForm({ notice = null }: LoginFormProps) {
     try {
       setLoading(true);
       setError(null);
-      await sendOtp(normalizedPhone);
-      storeOtpPhone(normalizedPhone);
+      const otpResult = await sendOtp(normalizedPhone);
+      storeOtpPhone(normalizedPhone, otpResult.referenceCode);
       router.push('/login/otp');
     } catch (submitError) {
       setError(getErrorMessage(submitError, 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));

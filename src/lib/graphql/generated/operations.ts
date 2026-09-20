@@ -131,7 +131,9 @@ export type SendCustomerOtpMutationVariables = Exact<{
   input: Types.SendCustomerOtpInput;
 }>;
 
-export type SendCustomerOtpMutation = { sendCustomerOtp: { message: string } };
+export type SendCustomerOtpMutation = {
+  sendCustomerOtp: { message: string; referenceCode: string };
+};
 
 export type VerifyCustomerOtpMutationVariables = Exact<{
   input: Types.VerifyCustomerOtpInput;
@@ -2785,7 +2787,10 @@ export const SendCustomerOtpDocument = {
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'message' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'message' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'referenceCode' } },
+              ],
             },
           },
         ],

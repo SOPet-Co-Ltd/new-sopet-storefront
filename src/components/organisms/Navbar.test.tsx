@@ -103,7 +103,7 @@ describe('Navbar', () => {
 
     expect(screen.getByText(/สมัครสมาชิก/)).toBeInTheDocument();
     expect(
-      screen.getByText(/Sopet สนับสนุนโดยสถาบันนวัตกรรมบูรณาการแห่งจุฬาฯ (CSII)/),
+      screen.getByText(/Sopet สนับสนุนโดยสถาบันนวัตกรรมบูรณาการแห่งจุฬาฯ \(CSII\)/),
     ).toBeInTheDocument();
 
     const trackStatus = screen.getByRole('link', { name: 'ติดตามสถานะผ่าน LINE' });

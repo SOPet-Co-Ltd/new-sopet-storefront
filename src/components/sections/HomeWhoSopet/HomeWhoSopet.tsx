@@ -37,12 +37,10 @@ function StatNumber({ value, isVisible }: { value: string; isVisible: boolean })
     if (!isVisible || hasAnimatedRef.current || target === 0) return;
     hasAnimatedRef.current = true;
 
-    // Skip animation if user prefers reduced motion
     if (
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
     ) {
-      setDisplayValue(value);
       return;
     }
 

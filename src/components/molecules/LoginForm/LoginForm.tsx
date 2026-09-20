@@ -13,7 +13,7 @@ import { storeOtpPhone } from '@/lib/auth/otpPhone';
 
 export type LoginNotice = 'sessionRequired' | 'sessionExpired' | null;
 
-const NOTICE_MESSAGES: Record<Exclude<LoginNotice, null>, string> = {
+export const NOTICE_MESSAGES: Record<Exclude<LoginNotice, null>, string> = {
   sessionRequired: 'กรุณาเข้าสู่ระบบเพื่อใช้งานส่วนนี้',
   sessionExpired: 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
 };

@@ -45,3 +45,11 @@ query PlatformSettings {
     supportEmail
   }
 }
+
+query LoginPageImages {
+  loginPageImages {
+    desktopImageUrl
+    mobileImageUrl
+    altText
+  }
+}

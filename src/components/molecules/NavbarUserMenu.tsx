@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom';
 const subscribeIsClient = () => () => {};
 
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLoginModal } from '@/lib/providers/LoginModalProvider';
 import { cn } from '@/lib/utils';
 import type { CustomerProfile } from '@/lib/graphql/generated/graphql';
 
@@ -206,6 +207,7 @@ function UserMenuDrawer({
   isAuthenticated: boolean;
   logout: () => Promise<void>;
 }) {
+  const { openLoginModal } = useLoginModal();
   const isClient = useSyncExternalStore(
     subscribeIsClient,
     () => true,
@@ -358,13 +360,16 @@ function UserMenuDrawer({
                 </p>
               </div>
               <div className="flex flex-col gap-2">
-                <Link
-                  href="/login"
-                  onClick={onClose}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-sop-36 bg-sop-primary-500 px-3 sop-body-md-medium text-sop-base-white"
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    openLoginModal();
+                  }}
+                  className="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-sop-36 bg-sop-primary-500 px-3 sop-body-md-medium text-sop-base-white"
                 >
                   เข้าสู่ระบบ | ลงทะเบียน
-                </Link>
+                </button>
                 <LineTrackButton />
               </div>
             </div>

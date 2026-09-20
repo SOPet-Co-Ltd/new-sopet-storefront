@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Navbar } from './Navbar';
 
@@ -8,6 +9,10 @@ vi.mock('@/lib/hooks/useAuth', () => ({
 
 vi.mock('@/lib/providers/CartProvider', () => ({
   useCart: vi.fn(),
+}));
+
+vi.mock('@/lib/providers/LoginModalProvider', () => ({
+  useLoginModal: vi.fn(),
 }));
 
 vi.mock('../molecules/UnreadBadge', () => ({
@@ -24,12 +29,22 @@ vi.mock('next/navigation', () => ({
 
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/providers/CartProvider';
+import { useLoginModal } from '@/lib/providers/LoginModalProvider';
 
 const mockedUseAuth = vi.mocked(useAuth);
 const mockedUseCart = vi.mocked(useCart);
+const mockedUseLoginModal = vi.mocked(useLoginModal);
+const openLoginModal = vi.fn();
 
 describe('Navbar', () => {
   beforeEach(() => {
+    openLoginModal.mockClear();
+    mockedUseLoginModal.mockReturnValue({
+      isOpen: false,
+      notice: null,
+      openLoginModal,
+      closeLoginModal: vi.fn(),
+    });
     mockedUseAuth.mockReturnValue({
       customer: null,
       isAuthenticated: false,
@@ -69,6 +84,7 @@ describe('Navbar', () => {
       refetch: vi.fn(),
     });
   });
+
   it('links cart to /cart and omits /coupons links', () => {
     render(<Navbar />);
 
@@ -81,23 +97,24 @@ describe('Navbar', () => {
     expect(document.body.innerHTML).not.toContain('/coupons');
   });
 
-  it('shows membership promo copy and LINE track-status CTA', () => {
+  it('shows membership promo copy and opens login modal from CTA', async () => {
+    const user = userEvent.setup();
     render(<Navbar />);
 
     expect(screen.getByText(/สมัครสมาชิก/)).toBeInTheDocument();
-    expect(screen.getByText(/รับสิทธิพิเศษเฉพาะคนรักสัตว์เลี้ยงตัวจริง/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sopet สนับสนุนโดยสถาบันนวัตกรรมบูรณาการแห่งจุฬาฯ (CSII)/),
+    ).toBeInTheDocument();
 
     const trackStatus = screen.getByRole('link', { name: 'ติดตามสถานะผ่าน LINE' });
     expect(trackStatus).toHaveAttribute('href', 'https://line.me/R/ti/p/@sopet');
     expect(trackStatus).toHaveAttribute('target', '_blank');
 
-    expect(screen.getByRole('link', { name: 'เข้าสู่ระบบ | ลงทะเบียน' })).toHaveAttribute(
-      'href',
-      '/login',
-    );
+    await user.click(screen.getByRole('button', { name: 'เข้าสู่ระบบ | ลงทะเบียน' }));
+    expect(openLoginModal).toHaveBeenCalled();
   });
 
-  it('shows promo-bar user menu when authenticated and hides guest login link', () => {
+  it('shows promo-bar user menu when authenticated and hides guest login button', () => {
     mockedUseAuth.mockReturnValue({
       customer: {
         id: 'cust-1',
@@ -117,7 +134,9 @@ describe('Navbar', () => {
 
     render(<Navbar />);
 
-    expect(screen.queryByRole('link', { name: 'เข้าสู่ระบบ | ลงทะเบียน' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'เข้าสู่ระบบ | ลงทะเบียน' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /เมนูผู้ใช้: สมชาย ใจดี/ })).toBeInTheDocument();
   });
 });

@@ -9,6 +9,7 @@ import { makeApolloClient } from '@/lib/graphql/client';
 import { AuthProvider } from '@/lib/providers/AuthProvider';
 import { CartProvider } from '@/lib/providers/CartProvider';
 import { CheckoutProvider } from '@/lib/providers/CheckoutProvider';
+import { LoginModalProvider } from '@/lib/providers/LoginModalProvider';
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
@@ -16,12 +17,14 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <ApolloNextAppProvider makeClient={makeApolloClient}>
         <AuthProvider>
           <GuestAddressImportOnLogin />
-          <CartProvider>
-            <CheckoutProvider>
-              {children}
-              <Toaster position="top-right" />
-            </CheckoutProvider>
-          </CartProvider>
+          <LoginModalProvider>
+            <CartProvider>
+              <CheckoutProvider>
+                {children}
+                <Toaster position="top-right" />
+              </CheckoutProvider>
+            </CartProvider>
+          </LoginModalProvider>
         </AuthProvider>
       </ApolloNextAppProvider>
     </LoadingLottieWarmupProvider>

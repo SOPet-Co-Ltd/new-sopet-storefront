@@ -131,7 +131,9 @@ export type SendCustomerOtpMutationVariables = Exact<{
   input: Types.SendCustomerOtpInput;
 }>;
 
-export type SendCustomerOtpMutation = { sendCustomerOtp: { message: string } };
+export type SendCustomerOtpMutation = {
+  sendCustomerOtp: { message: string; referenceCode: string };
+};
 
 export type VerifyCustomerOtpMutationVariables = Exact<{
   input: Types.VerifyCustomerOtpInput;
@@ -1053,6 +1055,16 @@ export type PlatformSettingsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type PlatformSettingsQuery = {
   platformSettings: { currency: string; storefrontUrl: string; supportEmail: string };
+};
+
+export type LoginPageImagesQueryVariables = Exact<{ [key: string]: never }>;
+
+export type LoginPageImagesQuery = {
+  loginPageImages: {
+    desktopImageUrl: string | null;
+    mobileImageUrl: string | null;
+    altText: string | null;
+  };
 };
 
 export type ProductDetailFieldsFragment = {
@@ -2775,7 +2787,10 @@ export const SendCustomerOtpDocument = {
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'message' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'message' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'referenceCode' } },
+              ],
             },
           },
         ],
@@ -4309,6 +4324,33 @@ export const PlatformSettingsDocument = {
     },
   ],
 } as unknown as DocumentNode<PlatformSettingsQuery, PlatformSettingsQueryVariables>;
+export const LoginPageImagesDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'LoginPageImages' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'loginPageImages' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'desktopImageUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'mobileImageUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'altText' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LoginPageImagesQuery, LoginPageImagesQueryVariables>;
 export const ProductBySlugDocument = {
   kind: 'Document',
   definitions: [

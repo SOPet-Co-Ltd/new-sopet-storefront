@@ -1,10 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NavbarUserMenu } from './NavbarUserMenu';
 
 vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: vi.fn(),
+}));
+
+vi.mock('@/lib/providers/LoginModalProvider', () => ({
+  useLoginModal: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -12,8 +16,11 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLoginModal } from '@/lib/providers/LoginModalProvider';
 
 const mockedUseAuth = vi.mocked(useAuth);
+const mockedUseLoginModal = vi.mocked(useLoginModal);
+const openLoginModal = vi.fn();
 
 const authenticatedAuth = {
   customer: {
@@ -45,6 +52,16 @@ const guestAuth = {
 };
 
 describe('NavbarUserMenu', () => {
+  beforeEach(() => {
+    openLoginModal.mockClear();
+    mockedUseLoginModal.mockReturnValue({
+      isOpen: false,
+      notice: null,
+      openLoginModal,
+      closeLoginModal: vi.fn(),
+    });
+  });
+
   it('renders nothing when guest on desktop (auth CTAs live in promo bar)', () => {
     mockedUseAuth.mockReturnValue(guestAuth);
 
@@ -107,12 +124,10 @@ describe('NavbarUserMenu', () => {
 
     expect(await screen.findByRole('dialog', { name: 'เมนูผู้ใช้' })).toBeInTheDocument();
     expect(screen.getByText('ยินดีต้อนรับสู่ Sopet 🐾')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'เข้าสู่ระบบ | ลงทะเบียน' })).toHaveAttribute(
-      'href',
-      '/login',
-    );
     expect(screen.getByRole('link', { name: /ตะกร้าสินค้า/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /ออกจากระบบ/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'เข้าสู่ระบบ | ลงทะเบียน' }));
+    expect(openLoginModal).toHaveBeenCalled();
   });
 
   it('opens and closes mobile user menu drawer', async () => {

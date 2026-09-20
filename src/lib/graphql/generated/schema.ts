@@ -346,6 +346,36 @@ export type BankTransferSettingsType = {
   enabled: Scalars['Boolean']['output'];
 };
 
+export type BatchApproveReviewFailureType = {
+  __typename?: 'BatchApproveReviewFailureType';
+  code: Scalars['String']['output'];
+  message: Scalars['String']['output'];
+  reviewId: Scalars['String']['output'];
+};
+
+export type BatchApproveReviewsResultType = {
+  __typename?: 'BatchApproveReviewsResultType';
+  approvedCount: Scalars['Int']['output'];
+  approvedIds: Array<Scalars['String']['output']>;
+  failedCount: Scalars['Int']['output'];
+  failures: Array<BatchApproveReviewFailureType>;
+};
+
+export type BatchPublishProductFailureType = {
+  __typename?: 'BatchPublishProductFailureType';
+  code: Scalars['String']['output'];
+  message: Scalars['String']['output'];
+  productId: Scalars['String']['output'];
+};
+
+export type BatchPublishProductsResultType = {
+  __typename?: 'BatchPublishProductsResultType';
+  failedCount: Scalars['Int']['output'];
+  failures: Array<BatchPublishProductFailureType>;
+  publishedCount: Scalars['Int']['output'];
+  publishedIds: Array<Scalars['String']['output']>;
+};
+
 export type BrandType = {
   __typename?: 'BrandType';
   approvalStatus: Scalars['String']['output'];
@@ -811,6 +841,7 @@ export type Mutation = {
   approveCategory: CategoryType;
   approvePetType: PetTypeType;
   approveReview: ReviewType;
+  approveReviews: BatchApproveReviewsResultType;
   approveStore: StoreType;
   approveStoreReactivationRequest: StoreReactivationRequestType;
   approveStoreRequest: StoreRequestType;
@@ -875,6 +906,7 @@ export type Mutation = {
   mergeCart: CartType;
   previewEmailContentTemplate: EmailPreviewResultType;
   publishProduct: ProductType;
+  publishProducts: BatchPublishProductsResultType;
   reactivateAccount: CustomerAuthPayload;
   refreshToken: AuthTokens;
   registerStore: VendorAuthPayload;
@@ -904,7 +936,7 @@ export type Mutation = {
   revokeAdminInvitation: AdminInvitationType;
   revokeStoreApiKey: Scalars['Boolean']['output'];
   revokeStoreInvitation: StoreMemberInvitationType;
-  sendCustomerOtp: MessagePayload;
+  sendCustomerOtp: SendCustomerOtpPayload;
   sendTestEmailContentTemplate: Scalars['Boolean']['output'];
   setAdminActive: AdminTeamMemberType;
   setCategoryImage: CategoryType;
@@ -1042,6 +1074,10 @@ export type MutationApprovePetTypeArgs = {
 
 export type MutationApproveReviewArgs = {
   id: Scalars['String']['input'];
+};
+
+export type MutationApproveReviewsArgs = {
+  ids: Array<Scalars['String']['input']>;
 };
 
 export type MutationApproveStoreArgs = {
@@ -1285,6 +1321,10 @@ export type MutationPreviewEmailContentTemplateArgs = {
 
 export type MutationPublishProductArgs = {
   id: Scalars['String']['input'];
+};
+
+export type MutationPublishProductsArgs = {
+  ids: Array<Scalars['String']['input']>;
 };
 
 export type MutationReactivateAccountArgs = {
@@ -1893,6 +1933,12 @@ export type PayoutType = {
   storeId: Scalars['String']['output'];
 };
 
+export type PendingImportedReviewIdsType = {
+  __typename?: 'PendingImportedReviewIdsType';
+  ids: Array<Scalars['String']['output']>;
+  total: Scalars['Int']['output'];
+};
+
 export type PetTypeType = {
   __typename?: 'PetTypeType';
   approvalStatus: Scalars['String']['output'];
@@ -2177,6 +2223,7 @@ export type Query = {
   pendingBankTransferOrders: OrderConnection;
   pendingBrands: Array<BrandType>;
   pendingCategories: Array<CategoryType>;
+  pendingImportedReviewIds: PendingImportedReviewIdsType;
   pendingImportedReviews: AdminImportedReviewConnection;
   pendingManualPayouts: AdminManualPayoutConnection;
   pendingPetTypes: Array<PetTypeType>;
@@ -2244,6 +2291,8 @@ export type Query = {
   vendorOrders: Array<OrderType>;
   vendorProduct: ProductType;
   vendorProducts: ProductConnection;
+  vendorPublishableProductIds: VendorPublishableProductIdsType;
+  vendorPublishableProducts: ProductConnection;
 };
 
 export type QueryActiveSaleCampaignItemsArgs = {
@@ -2630,6 +2679,16 @@ export type QueryVendorProductsArgs = {
   tag?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type QueryVendorPublishableProductIdsArgs = {
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryVendorPublishableProductsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type ReactivateAccountInput = {
   reactivationToken: Scalars['String']['input'];
 };
@@ -2867,6 +2926,12 @@ export type SearchSynonymType = {
 
 export type SendCustomerOtpInput = {
   phone: Scalars['String']['input'];
+};
+
+export type SendCustomerOtpPayload = {
+  __typename?: 'SendCustomerOtpPayload';
+  message: Scalars['String']['output'];
+  referenceCode: Scalars['String']['output'];
 };
 
 export type SendTestEmailContentTemplateInput = {
@@ -3563,6 +3628,12 @@ export type VendorInvitationType = {
 export type VendorLoginInput = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
+};
+
+export type VendorPublishableProductIdsType = {
+  __typename?: 'VendorPublishableProductIdsType';
+  ids: Array<Scalars['String']['output']>;
+  total: Scalars['Int']['output'];
 };
 
 export type VendorStoreType = {

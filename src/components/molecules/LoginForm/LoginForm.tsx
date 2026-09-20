@@ -13,7 +13,7 @@ import { storeOtpPhone } from '@/lib/auth/otpPhone';
 
 export type LoginNotice = 'sessionRequired' | 'sessionExpired' | null;
 
-const NOTICE_MESSAGES: Record<Exclude<LoginNotice, null>, string> = {
+export const NOTICE_MESSAGES: Record<Exclude<LoginNotice, null>, string> = {
   sessionRequired: 'กรุณาเข้าสู่ระบบเพื่อใช้งานส่วนนี้',
   sessionExpired: 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง',
 };
@@ -41,8 +41,8 @@ export function LoginForm({ notice = null }: LoginFormProps) {
     try {
       setLoading(true);
       setError(null);
-      await sendOtp(normalizedPhone);
-      storeOtpPhone(normalizedPhone);
+      const otpResult = await sendOtp(normalizedPhone);
+      storeOtpPhone(normalizedPhone, otpResult.referenceCode);
       router.push('/login/otp');
     } catch (submitError) {
       setError(getErrorMessage(submitError, 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));

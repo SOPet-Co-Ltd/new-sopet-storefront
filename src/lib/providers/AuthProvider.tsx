@@ -19,7 +19,7 @@ import {
   ChangeCustomerPhoneDocument,
   type CustomerAuthPayload,
   type CustomerProfile,
-  type MessagePayload,
+  type SendCustomerOtpPayload,
 } from '@/lib/graphql/generated/graphql';
 import { clearTokens, hasClientSession, setOnAuthFailure } from '@/lib/graphql/authLink';
 import { clearAutoApplyAttempted } from '@/lib/checkout/autoApplyOnceGate';
@@ -30,7 +30,7 @@ export type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   pendingDeletion: boolean;
-  sendOtp: (phone: string) => Promise<MessagePayload>;
+  sendOtp: (phone: string) => Promise<SendCustomerOtpPayload>;
   verifyOtp: (phone: string, code: string) => Promise<CustomerAuthPayload>;
   changeCustomerPhone: (phone: string, code: string) => Promise<CustomerAuthPayload>;
   reactivateAccount: (token: string) => Promise<void>;
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [handleAuthFailure]);
 
   const sendOtp = useCallback(
-    async (phone: string): Promise<MessagePayload> => {
+    async (phone: string): Promise<SendCustomerOtpPayload> => {
       const result = await sendOtpMutation({
         variables: { input: { phone } },
       });

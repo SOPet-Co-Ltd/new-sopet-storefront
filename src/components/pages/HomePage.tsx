@@ -44,6 +44,11 @@ const HomeWhySopetSection = dynamic(
   { ssr: true },
 );
 
+const HomeWhoSopet = dynamic(
+  () => import('@/components/sections/HomeWhoSopet').then((mod) => mod.HomeWhoSopet),
+  { ssr: true },
+);
+
 export type HomePageProps = {
   initialCategories?: Category[];
   initialRecommendedProducts?: RecommendedProductsQuery['recommendedProducts'];
@@ -85,7 +90,11 @@ export default function HomePage({
               <HomeWhySopetSection />
             </div>
           </div>
-          <div className="bg-sop-primary-100">test</div>
+          <div className="bg-sop-primary-100">
+            <div className="mx-auto w-full max-w-[1064px] px-4 py-10 lg:px-0 lg:py-20">
+              <HomeWhoSopet />
+            </div>
+          </div>
         </section>
 
         <section className="flex w-full flex-col gap-10 overflow-hidden bg-sop-base-white p-0 lg:py-10">

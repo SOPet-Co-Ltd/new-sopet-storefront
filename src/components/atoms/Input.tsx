@@ -7,7 +7,7 @@ import { EyeIcon, EyeSlashIcon } from './icons/inline';
 type InputState = 'default' | 'hover' | 'hovered' | 'filled' | 'selected' | 'disabled' | 'error';
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
-  size?: 'md' | 'sm';
+  size?: 'md' | 'sm' | 'lg';
   state?: InputState;
   variant?: 'flat' | 'bordered' | 'underlined';
   textSize?: 'sm' | 'xs';
@@ -80,6 +80,7 @@ export function Input({
   const sizeClasses = {
     sm: 'text-xs h-8',
     md: 'text-sm h-10',
+    lg: 'text-sm h-11',
   } as const;
 
   const textSizeClasses = {

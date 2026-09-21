@@ -46,7 +46,7 @@ export function SearchSuggestionsDropdown({
 
   return (
     <div
-      className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-lg border border-sop-neutral-gray-400 bg-white shadow-lg"
+      className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-[min(80vh,480px)] overflow-y-auto rounded-lg border border-sop-neutral-gray-400 bg-white shadow-lg"
       data-testid="search-suggestions-dropdown"
     >
       {showRecent ? (

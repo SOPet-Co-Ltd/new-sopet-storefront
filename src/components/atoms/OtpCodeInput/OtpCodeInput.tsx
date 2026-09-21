@@ -122,7 +122,7 @@ export function OtpCodeInput({
     <div data-testid={testId} className="w-full">
       <div
         id={groupId}
-        className="flex justify-between gap-sop-8px"
+        className="flex items-start justify-center gap-3"
         role="group"
         aria-label="รหัส OTP 6 หลัก"
         aria-required="true"
@@ -153,12 +153,12 @@ export function OtpCodeInput({
             onPaste={handlePaste}
             onFocus={(event) => event.target.select()}
             className={cn(
-              'h-12 min-h-12 w-full min-w-12 max-w-[52px] touch-manipulation rounded-sop-12px border bg-sop-base-white text-center sop-headline-sm-medium text-sop-neutral-gray-200',
-              'transition-all duration-150',
+              'h-14 min-h-14 w-14 min-w-14 shrink-0 rounded-[8px] border bg-sop-base-white text-center sop-headline-sm-medium text-sop-neutral-gray-200',
+              'px-2 py-3 transition-all duration-150 touch-manipulation',
               'focus:border-sop-primary-500 focus:outline-none focus:ring-1 focus:ring-sop-primary-500',
               error
                 ? 'border-sop-system-error-400 ring-1 ring-sop-system-error-400'
-                : 'border-sop-neutral-grayalpha-300',
+                : 'border-sop-neutral-grayalpha-400',
               disabled && 'cursor-not-allowed opacity-40',
             )}
           />

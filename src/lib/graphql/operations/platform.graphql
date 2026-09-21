@@ -45,3 +45,20 @@ query PlatformSettings {
     supportEmail
   }
 }
+
+query LoginPageImages {
+  loginPageImages {
+    desktopImageUrl
+    mobileImageUrl
+    altText
+  }
+}
+
+query StorefrontMaintenance {
+  storefrontMaintenance {
+    enabled
+    reason
+    customMessage
+    untilAt
+  }
+}

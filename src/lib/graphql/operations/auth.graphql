@@ -8,6 +8,7 @@ mutation RefreshToken($input: RefreshTokenInput!) {
 mutation SendCustomerOtp($input: SendCustomerOtpInput!) {
   sendCustomerOtp(input: $input) {
     message
+    referenceCode
   }
 }
 

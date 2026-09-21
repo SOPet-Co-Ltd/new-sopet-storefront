@@ -8,6 +8,7 @@ import { NavbarUserMenu } from '../molecules/NavbarUserMenu';
 import { UnreadBadge } from '../molecules/UnreadBadge';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/providers/CartProvider';
+import { useLoginModal } from '@/lib/providers/LoginModalProvider';
 
 const LINE_OA_URL = 'https://line.me/R/ti/p/@sopet';
 
@@ -36,25 +37,27 @@ function NavbarCartButton() {
 
 function PromoBar() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { openLoginModal } = useLoginModal();
 
   return (
     <div className="sop-gradient-01 flex h-12 min-w-0 items-center justify-center overflow-hidden px-2 md:justify-between md:gap-3 md:px-sop-48px">
       <p className="sop-body-sm-regular min-w-0 truncate text-center text-sop-base-white md:text-left">
         <span className="sop-body-sm-medium">สมัครสมาชิก</span>
-        {' รับสิทธิพิเศษเฉพาะคนรักสัตว์เลี้ยงตัวจริง'}
+        {'Sopet สนับสนุนโดยสถาบันนวัตกรรมบูรณาการแห่งจุฬาฯ (CSII)'}
       </p>
       {isLoading ? (
         <div className="hidden h-6 w-[120px] animate-pulse rounded-sop-36 bg-sop-base-white/30 md:block" />
       ) : isAuthenticated ? (
         <NavbarUserMenu variant="desktop" />
       ) : (
-        <Link
-          href="/login"
-          className="hidden items-center gap-2 sop-body-sm-regular text-sop-base-white md:inline-flex"
+        <button
+          type="button"
+          onClick={() => openLoginModal()}
+          className="hidden cursor-pointer items-center gap-2 sop-body-sm-regular text-sop-base-white md:inline-flex"
         >
           <ProfileIcon size={{ mobile: 24, desktop: 24 }} color="#FFFFFF" aria-hidden="true" />
           เข้าสู่ระบบ | ลงทะเบียน
-        </Link>
+        </button>
       )}
     </div>
   );

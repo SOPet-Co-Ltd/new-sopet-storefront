@@ -1067,6 +1067,17 @@ export type LoginPageImagesQuery = {
   };
 };
 
+export type StorefrontMaintenanceQueryVariables = Exact<{ [key: string]: never }>;
+
+export type StorefrontMaintenanceQuery = {
+  storefrontMaintenance: {
+    enabled: boolean;
+    reason: string | null;
+    customMessage: string | null;
+    untilAt: string | null;
+  };
+};
+
 export type ProductDetailFieldsFragment = {
   id: string;
   slug: string;
@@ -4351,6 +4362,34 @@ export const LoginPageImagesDocument = {
     },
   ],
 } as unknown as DocumentNode<LoginPageImagesQuery, LoginPageImagesQueryVariables>;
+export const StorefrontMaintenanceDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'StorefrontMaintenance' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'storefrontMaintenance' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'enabled' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'customMessage' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'untilAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<StorefrontMaintenanceQuery, StorefrontMaintenanceQueryVariables>;
 export const ProductBySlugDocument = {
   kind: 'Document',
   definitions: [

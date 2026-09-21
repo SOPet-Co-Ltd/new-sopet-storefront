@@ -53,3 +53,12 @@ query LoginPageImages {
     altText
   }
 }
+
+query StorefrontMaintenance {
+  storefrontMaintenance {
+    enabled
+    reason
+    customMessage
+    untilAt
+  }
+}

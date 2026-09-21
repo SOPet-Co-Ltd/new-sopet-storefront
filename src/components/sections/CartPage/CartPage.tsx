@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/atoms/Checkbox';
 import { InfoIcon } from '@/components/atoms/icons/outline/InfoIcon';
 import { CartSuspendedLinesRemovedBanner } from '@/components/molecules/CartSuspendedLinesRemovedBanner/CartSuspendedLinesRemovedBanner';
 import { CartEmptyState } from '@/components/sections/CartPage/CartEmptyState';
+import { CartRecommendedProductSection } from '@/components/sections/CartPage/CartRecommendedProductSection';
 import { CartItemRow } from '@/components/organisms/CartItemRow/CartItemRow';
 import { useCart } from '@/lib/providers/CartProvider';
 
@@ -73,14 +74,26 @@ export default function CartPage() {
 
   if (itemsByStore.length === 0) {
     return (
-      <main
-        className="container mx-auto flex min-h-[calc(100dvh-12rem)] flex-col px-4 py-8 lg:min-h-[calc(100dvh-10rem)] lg:px-20"
-        data-testid="cart-empty"
-      >
+      <main className="mx-auto w-full py-8 pb-16" data-testid="cart-empty">
         {showSuspendedBanner ? (
-          <CartSuspendedLinesRemovedBanner onDismiss={() => setBannerDismissed(true)} />
+          <div className="px-4 lg:px-[81.5px]">
+            <CartSuspendedLinesRemovedBanner onDismiss={() => setBannerDismissed(true)} />
+          </div>
         ) : null}
-        <CartEmptyState />
+        <div className="px-4 lg:px-[81.5px]">
+          <h1 className="mb-6 sop-headline-md-medium text-sop-neutral-gray-300">ตะกร้าสินค้า</h1>
+        </div>
+        <div className="flex flex-col gap-6">
+          {/* Mobile: edge-to-edge; lg+: 81.5px side insets */}
+          <div className="lg:px-[81.5px]">
+            <CartEmptyState />
+          </div>
+          <div className="px-4 lg:px-[81.5px]">
+            <div className="mx-auto w-full max-w-[1064px]">
+              <CartRecommendedProductSection />
+            </div>
+          </div>
+        </div>
       </main>
     );
   }

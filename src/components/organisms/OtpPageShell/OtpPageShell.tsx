@@ -4,8 +4,8 @@ import Image from 'next/image';
 import { ArrowLeftIcon } from '@/components/atoms/icons';
 import { cn } from '@/lib/utils';
 
-const DESKTOP_SCENE = '/images/login/desktop_otp_request.png';
-const MOBILE_BANNER = '/images/login/mobile_otp_request.png';
+const DESKTOP_SCENE = '/images/login/desktop_otp_request.webp';
+const MOBILE_BANNER = '/images/login/mobile_otp_request.webp';
 
 type OtpPageShellProps = {
   children: React.ReactNode;

@@ -492,6 +492,7 @@ export type CreatePaymentInput = {
   omiseToken?: InputMaybe<Scalars['String']['input']>;
   orderId: Scalars['String']['input'];
   paymentMethod: Scalars['String']['input'];
+  platformType?: InputMaybe<Scalars['String']['input']>;
   savedPaymentMethodId?: InputMaybe<Scalars['String']['input']>;
 };
 

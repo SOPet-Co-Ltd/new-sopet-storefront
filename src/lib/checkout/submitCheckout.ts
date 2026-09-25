@@ -10,6 +10,10 @@ import {
 } from '@/lib/checkout/checkoutPaymentMethod';
 import { persistGuestPayToken } from '@/lib/payment/guestPayToken';
 import {
+  isOmiseWalletApiPaymentMethod,
+  resolveOmiseWalletPlatformType,
+} from '@/lib/payment/walletDevice';
+import {
   extractPromotionErrorCode,
   isCreateOrderHardEligibilityCode,
   PromotionValidationError,
@@ -171,12 +175,17 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     params.checkoutContext.paymentMethod ?? order.paymentMethod,
   );
 
+  const walletFields = isOmiseWalletApiPaymentMethod(apiPaymentMethod)
+    ? { platformType: resolveOmiseWalletPlatformType() }
+    : {};
+
   const paymentInput = {
     orderId: order.id,
     amount: order.total,
     paymentMethod: apiPaymentMethod,
     currency: 'THB' as const,
     ...(order.guestPayToken ? { guestPayToken: order.guestPayToken } : {}),
+    ...walletFields,
     ...(isNonOmiseApiPaymentMethod(apiPaymentMethod)
       ? {}
       : params.savedPaymentMethodId

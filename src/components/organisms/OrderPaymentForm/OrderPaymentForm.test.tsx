@@ -467,7 +467,7 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
     expect(onRetryPayment).not.toHaveBeenCalled();
   });
 

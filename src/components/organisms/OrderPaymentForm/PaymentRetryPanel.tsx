@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/atoms/Button';
 import { PlusIcon, QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/atoms/icons';
@@ -24,8 +25,8 @@ import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
 
 export type PaymentRetrySubmitInput = {
-  /** Mid-QR / recovery: PromptPay, card, or bank transfer when platform-enabled. */
-  paymentMethod: 'promptpay' | 'credit_card' | 'bank_transfer';
+  /** Mid-QR / recovery: PromptPay, card, wallets, or bank transfer when platform-enabled. */
+  paymentMethod: 'promptpay' | 'credit_card' | 'bank_transfer' | 'truemoney' | 'shopeepay';
   omiseToken?: string;
   savedPaymentMethodId?: string;
 };
@@ -67,7 +68,7 @@ const BASE_PAYMENT_OPTIONS: PaymentOption[] = [
   },
   {
     value: 'card',
-    label: 'บัตรเครดิต/บัตรเดบิต',
+    label: 'Credit / Debit Card (บัตรเครดิต / เดบิต)',
     icon: <SubtractIcon size={{ mobile: 28 }} color="#9C6ADE" />,
   },
 ];
@@ -77,6 +78,37 @@ const BANK_TRANSFER_OPTION: PaymentOption = {
   label: 'Bank Account (บัญชีธนาคาร)',
   icon: <WalletIcon size={{ mobile: 28 }} color="#9C6ADE" />,
 };
+
+const WALLET_PAYMENT_OPTIONS: PaymentOption[] = [
+  {
+    value: 'truemoney',
+    label: 'TrueMoney Wallet',
+    icon: (
+      <Image
+        src="/images/payment/truemoney.png"
+        alt=""
+        width={112}
+        height={112}
+        unoptimized
+        className="h-7 w-7 object-contain"
+      />
+    ),
+  },
+  {
+    value: 'shopeepay',
+    label: 'Shopee Pay',
+    icon: (
+      <Image
+        src="/images/payment/shopeepay.png"
+        alt=""
+        width={150}
+        height={112}
+        unoptimized
+        className="h-7 w-7 object-contain"
+      />
+    ),
+  },
+];
 
 function resolveDefaultSavedCardId(
   paymentMethods: ReturnType<typeof usePaymentMethods>['paymentMethods'],
@@ -107,13 +139,13 @@ export function PaymentRetryPanel({
   const visibleOptions = useMemo(() => {
     let options = hidePromptPay
       ? BASE_PAYMENT_OPTIONS.filter((option) => option.value !== 'promptpay')
-      : BASE_PAYMENT_OPTIONS;
+      : [...BASE_PAYMENT_OPTIONS];
 
     if (bankTransferAvailable && !hideBankTransfer) {
       options = [...options, BANK_TRANSFER_OPTION];
     }
 
-    return options;
+    return [...options, ...WALLET_PAYMENT_OPTIONS];
   }, [bankTransferAvailable, hideBankTransfer, hidePromptPay]);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(() => {

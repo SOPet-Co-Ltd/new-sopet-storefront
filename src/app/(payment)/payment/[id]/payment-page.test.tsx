@@ -146,7 +146,7 @@ async function submitPromptPayRetry(user: ReturnType<typeof userEvent.setup>) {
 
 /** Mid-QR hides PromptPay — switch via card + Omise token. */
 async function submitMidQrCardRetry(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i }));
+  await user.click(screen.getByRole('radio', { name: /Credit \/ Debit Card/i }));
   await user.type(screen.getByTestId('card-number-input'), '4111111111111111');
   await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
   await user.type(screen.getByTestId('card-expiry-input'), '12/30');
@@ -460,7 +460,7 @@ describe('PaymentPage', () => {
     await expandMidQrChangeMethod(user);
 
     expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
   });
 

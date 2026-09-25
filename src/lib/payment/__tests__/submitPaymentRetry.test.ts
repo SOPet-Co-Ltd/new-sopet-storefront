@@ -65,6 +65,41 @@ describe('submitPaymentRetry', () => {
     });
   });
 
+  it('includes platformType for TrueMoney/ShopeePay JumpApp', () => {
+    const originalUa = navigator.userAgent;
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+    });
+
+    expect(buildPaymentRetryInput(context, { paymentMethod: 'truemoney' })).toEqual({
+      orderId: 'order-1',
+      amount: 540,
+      currency: 'THB',
+      paymentMethod: 'truemoney',
+      platformType: 'IOS',
+    });
+
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+    });
+
+    expect(buildPaymentRetryInput(context, { paymentMethod: 'shopeepay' })).toEqual({
+      orderId: 'order-1',
+      amount: 540,
+      currency: 'THB',
+      paymentMethod: 'shopeepay',
+      platformType: 'WEB',
+    });
+
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () => originalUa,
+    });
+  });
+
   it('resolveNewPaymentId accepts a distinct id and rejects same/missing', () => {
     expect(resolveNewPaymentId('payment-old', 'payment-new')).toBe('payment-new');
 

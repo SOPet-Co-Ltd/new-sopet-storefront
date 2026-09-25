@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/atoms/Button';
 import {
@@ -42,7 +43,7 @@ const BASE_PAYMENT_OPTIONS: PaymentOption[] = [
   },
   {
     value: 'card',
-    label: 'บัตรเครดิต/บัตรเดบิต',
+    label: 'Credit / Debit Card (บัตรเครดิต / เดบิต)',
     icon: <SubtractIcon size={{ mobile: 28 }} color="#9C6ADE" />,
   },
 ];
@@ -52,6 +53,37 @@ const BANK_TRANSFER_OPTION: PaymentOption = {
   label: 'Bank Account (บัญชีธนาคาร)',
   icon: <WalletIcon size={{ mobile: 28 }} color="#9C6ADE" />,
 };
+
+const WALLET_PAYMENT_OPTIONS: PaymentOption[] = [
+  {
+    value: 'truemoney',
+    label: 'TrueMoney Wallet',
+    icon: (
+      <Image
+        src="/images/payment/truemoney.png"
+        alt=""
+        width={112}
+        height={112}
+        unoptimized
+        className="h-7 w-7 object-contain"
+      />
+    ),
+  },
+  {
+    value: 'shopeepay',
+    label: 'Shopee Pay',
+    icon: (
+      <Image
+        src="/images/payment/shopeepay.png"
+        alt=""
+        width={150}
+        height={112}
+        unoptimized
+        className="h-7 w-7 object-contain"
+      />
+    ),
+  },
+];
 
 type CardEntryMode = 'saved' | 'new';
 
@@ -120,8 +152,8 @@ export function CheckoutPaymentSelection() {
   const paymentOptions = useMemo(
     () =>
       bankTransferAvailable
-        ? [...BASE_PAYMENT_OPTIONS, BANK_TRANSFER_OPTION]
-        : BASE_PAYMENT_OPTIONS,
+        ? [...BASE_PAYMENT_OPTIONS, BANK_TRANSFER_OPTION, ...WALLET_PAYMENT_OPTIONS]
+        : [...BASE_PAYMENT_OPTIONS, ...WALLET_PAYMENT_OPTIONS],
     [bankTransferAvailable],
   );
   const [cardForm, setCardForm] = useState<CheckoutCardFormState>(EMPTY_CHECKOUT_CARD_FORM);

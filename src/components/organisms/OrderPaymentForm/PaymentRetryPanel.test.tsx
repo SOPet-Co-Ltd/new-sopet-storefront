@@ -56,7 +56,7 @@ describe('PaymentRetryPanel', () => {
 
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByTestId('payment-method-bank_transfer')).not.toBeInTheDocument();
@@ -137,7 +137,7 @@ describe('PaymentRetryPanel', () => {
     renderWithApollo(<PaymentRetryPanel hidePromptPay />);
 
     expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
   });
 
   it('heading uses text-gray-900 for AA contrast (UI Spec lock)', () => {

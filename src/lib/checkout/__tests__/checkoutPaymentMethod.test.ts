@@ -11,5 +11,7 @@ describe('mapCheckoutPaymentMethodForApi', () => {
     expect(mapCheckoutPaymentMethodForApi('credit_card')).toBe('credit_card');
     expect(mapCheckoutPaymentMethodForApi('cod')).toBe('cod');
     expect(mapCheckoutPaymentMethodForApi('bank_transfer')).toBe('bank_transfer');
+    expect(mapCheckoutPaymentMethodForApi('truemoney')).toBe('truemoney');
+    expect(mapCheckoutPaymentMethodForApi('shopeepay')).toBe('shopeepay');
   });
 });

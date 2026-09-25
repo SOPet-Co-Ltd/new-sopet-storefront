@@ -8,6 +8,11 @@ const DEFAULT_HOST_SUFFIXES: readonly string[] = [
   // Documented EMV 3DS ACS / method-URL intermediaries (suffix match)
   'cardinalcommerce.com',
   'arcot.com',
+  // Wallet offsite hosts occasionally returned after Omise authorize handoff
+  'truemoney.com',
+  'wallet.truemoney.co.th',
+  'shopee.co.th',
+  'shopeepay.co.th',
 ];
 
 function hostMatchesSuffix(hostname: string, suffix: string): boolean {

@@ -124,7 +124,7 @@ async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>)
 
 /** Mid-QR hides PromptPay — switch via card + Omise token (same as payment-page.test). */
 async function submitMidQrCardRetry(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i }));
+  await user.click(screen.getByRole('radio', { name: /Credit \/ Debit Card/i }));
   await user.type(screen.getByTestId('card-number-input'), '4111111111111111');
   await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
   await user.type(screen.getByTestId('card-expiry-input'), '12/30');
@@ -202,7 +202,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(
         screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i }),
       ).not.toBeInTheDocument();
-      expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
       expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
     });
 
@@ -258,7 +258,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      await user.click(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i }));
+      await user.click(screen.getByRole('radio', { name: /Credit \/ Debit Card/i }));
       await user.type(screen.getByTestId('card-number-input'), '4111111111111111');
       await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
       await user.type(screen.getByTestId('card-expiry-input'), '12/30');

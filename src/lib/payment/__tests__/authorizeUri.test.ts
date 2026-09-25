@@ -25,6 +25,12 @@ describe('isAllowed3dsAuthorizeUri', () => {
     expect(isAllowed3dsAuthorizeUri('https://secure4.arcot.com/acspage/cap')).toBe(true);
   });
 
+  it('allows wallet offsite host suffixes', () => {
+    expect(isAllowed3dsAuthorizeUri('https://pay.truemoney.com/redirect')).toBe(true);
+    expect(isAllowed3dsAuthorizeUri('https://wallet.truemoney.co.th/pay')).toBe(true);
+    expect(isAllowed3dsAuthorizeUri('https://pay.shopee.co.th/wallet')).toBe(true);
+  });
+
   it('rejects http and non-http schemes', () => {
     expect(isAllowed3dsAuthorizeUri('http://pay.omise.co/offsites/ofsp_test/pay')).toBe(false);
     expect(isAllowed3dsAuthorizeUri('javascript:alert(1)')).toBe(false);

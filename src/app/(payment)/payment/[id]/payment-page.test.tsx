@@ -325,7 +325,6 @@ describe('PaymentPage', () => {
     await waitFor(() => {
       expect(mockCreatePayment).toHaveBeenCalledWith({
         orderId: CHECKOUT_ORDER_ID,
-        amount: samplePendingCardPayment.amount,
         currency: 'THB',
         paymentMethod: 'promptpay',
       });
@@ -433,7 +432,6 @@ describe('PaymentPage', () => {
     await waitFor(() => {
       expect(mockCreatePayment).toHaveBeenCalledWith({
         orderId: CHECKOUT_ORDER_ID,
-        amount: samplePendingPayment.amount,
         currency: 'THB',
         paymentMethod: 'credit_card',
         omiseToken: 'tok_test_mid_qr',

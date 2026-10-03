@@ -178,7 +178,6 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(createVariables).toMatchObject({
         input: {
           orderId: CHECKOUT_ORDER_ID,
-          amount: midQrLivePayment.amount,
           currency: 'THB',
           paymentMethod: 'credit_card',
           omiseToken: 'tok_test_mid_qr',

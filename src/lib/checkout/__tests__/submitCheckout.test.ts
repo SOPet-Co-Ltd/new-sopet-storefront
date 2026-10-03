@@ -171,7 +171,6 @@ describe('submitCheckout', () => {
     expect(createOrder).toHaveBeenCalledTimes(1);
     expect(createPayment).toHaveBeenCalledWith({
       orderId: CHECKOUT_ORDER_ID,
-      amount: sampleOrder.total,
       paymentMethod: 'promptpay',
       currency: 'THB',
     });

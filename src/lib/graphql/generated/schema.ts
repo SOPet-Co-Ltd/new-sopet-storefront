@@ -486,7 +486,7 @@ export type CreateOrderInput = {
 };
 
 export type CreatePaymentInput = {
-  amount: Scalars['Float']['input'];
+  amount?: InputMaybe<Scalars['Float']['input']>;
   currency?: Scalars['String']['input'];
   guestPayToken?: InputMaybe<Scalars['String']['input']>;
   omiseToken?: InputMaybe<Scalars['String']['input']>;
@@ -3198,6 +3198,7 @@ export type SyncProductVariantItemInput = {
   attributes: Scalars['String']['input'];
   compareAtPrice?: InputMaybe<Scalars['Float']['input']>;
   id?: InputMaybe<Scalars['String']['input']>;
+  price?: InputMaybe<Scalars['Float']['input']>;
   priceModifier?: InputMaybe<Scalars['Float']['input']>;
   sku: Scalars['String']['input'];
   stockQuantity: Scalars['Int']['input'];

@@ -31,7 +31,6 @@ describe('submitPaymentRetry', () => {
       }),
     ).toEqual({
       orderId: 'order-1',
-      amount: 540,
       currency: 'THB',
       paymentMethod: 'credit_card',
       omiseToken: 'tokn_test',
@@ -44,7 +43,6 @@ describe('submitPaymentRetry', () => {
       }),
     ).toEqual({
       orderId: 'order-1',
-      amount: 540,
       currency: 'THB',
       paymentMethod: 'credit_card',
       savedPaymentMethodId: 'saved-1',
@@ -52,14 +50,12 @@ describe('submitPaymentRetry', () => {
 
     expect(buildPaymentRetryInput(context, { paymentMethod: 'promptpay' })).toEqual({
       orderId: 'order-1',
-      amount: 540,
       currency: 'THB',
       paymentMethod: 'promptpay',
     });
 
     expect(buildPaymentRetryInput(context, { paymentMethod: 'bank_transfer' })).toEqual({
       orderId: 'order-1',
-      amount: 540,
       currency: 'THB',
       paymentMethod: 'bank_transfer',
     });
@@ -74,7 +70,6 @@ describe('submitPaymentRetry', () => {
 
     expect(buildPaymentRetryInput(context, { paymentMethod: 'truemoney' })).toEqual({
       orderId: 'order-1',
-      amount: 540,
       currency: 'THB',
       paymentMethod: 'truemoney',
       platformType: 'IOS',
@@ -88,7 +83,6 @@ describe('submitPaymentRetry', () => {
 
     expect(buildPaymentRetryInput(context, { paymentMethod: 'shopeepay' })).toEqual({
       orderId: 'order-1',
-      amount: 540,
       currency: 'THB',
       paymentMethod: 'shopeepay',
       platformType: 'WEB',
@@ -118,7 +112,6 @@ describe('submitPaymentRetry', () => {
     sessionStorage.setItem('sopet_guest_pay:order-1', 'token-xyz');
     expect(buildPaymentRetryInput(context, { paymentMethod: 'promptpay' })).toEqual({
       orderId: 'order-1',
-      amount: 540,
       currency: 'THB',
       paymentMethod: 'promptpay',
       guestPayToken: 'token-xyz',

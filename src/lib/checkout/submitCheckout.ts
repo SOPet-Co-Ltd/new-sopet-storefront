@@ -181,7 +181,6 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
 
   const paymentInput = {
     orderId: order.id,
-    amount: order.total,
     paymentMethod: apiPaymentMethod,
     currency: 'THB' as const,
     ...(order.guestPayToken ? { guestPayToken: order.guestPayToken } : {}),

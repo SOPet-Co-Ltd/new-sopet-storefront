@@ -42,7 +42,6 @@ export function buildPaymentRetryInput(
 
   return {
     orderId: context.orderId,
-    amount: context.amount,
     currency: context.currency || 'THB',
     paymentMethod: submit.paymentMethod,
     ...(guestPayToken ? { guestPayToken } : {}),

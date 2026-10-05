@@ -50,6 +50,7 @@ describe('UserNotificationsPage', () => {
     vi.mocked(useNotifications).mockReturnValue({
       notifications: mockNotifications,
       loading: false,
+      error: undefined,
       refetch: vi.fn(),
     } as ReturnType<typeof useNotifications>);
   });
@@ -107,6 +108,7 @@ describe('UserNotificationsPage', () => {
         },
       ],
       loading: false,
+      error: undefined,
       refetch: vi.fn(),
     } as ReturnType<typeof useNotifications>);
 

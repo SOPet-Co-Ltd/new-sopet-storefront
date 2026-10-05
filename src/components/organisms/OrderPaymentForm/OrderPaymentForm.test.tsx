@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm/OrderPaymentForm';
@@ -65,6 +65,7 @@ describe('OrderPaymentForm', () => {
   afterEach(() => {
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
+    vi.useRealTimers();
   });
 
   it('renders QR image when qrCodeUrl is present and payment has not expired', () => {
@@ -84,14 +85,12 @@ describe('OrderPaymentForm', () => {
       'src',
       'https://example.com/qr.png',
     );
-    expect(screen.getByText('แสกนเพื่อชำระเงินผ่านแอปธนาคารใดก็ได้')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'สแกน QR เพื่อชำระเงิน' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'บันทึก QR Code' })).toBeInTheDocument();
     expect(screen.queryByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).not.toBeInTheDocument();
   });
 
-  it('checks payment status from backend when status button is clicked on QR wait', async () => {
-    const user = userEvent.setup();
-    const onCheckStatus = vi.fn().mockResolvedValue(undefined);
-
+  it('does not show a status check button on the QR wait screen', () => {
     renderForm(
       <OrderPaymentForm
         payment={{
@@ -101,30 +100,48 @@ describe('OrderPaymentForm', () => {
         }}
         loading={false}
         error={undefined}
-        onCheckStatus={onCheckStatus}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }));
-    expect(onCheckStatus).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not show status check button when onCheckStatus is omitted', () => {
-    renderForm(
-      <OrderPaymentForm
-        payment={{
-          ...basePayment,
-          qrCodeUrl: 'https://example.com/qr.png',
-          expiresAt: futureExpiresAt,
-        }}
-        loading={false}
-        error={undefined}
+        onCheckStatus={vi.fn()}
       />,
     );
 
     expect(
       screen.queryByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }),
     ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ชำระเงินเสร็จสิ้น' })).toBeDisabled();
+  });
+
+  it('enables ชำระเงินเสร็จสิ้น after 5 seconds and completes payment', () => {
+    vi.useFakeTimers();
+    const onPromptPayComplete = vi.fn();
+
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+        onPromptPayComplete={onPromptPayComplete}
+      />,
+    );
+
+    const complete = screen.getByRole('button', { name: 'ชำระเงินเสร็จสิ้น' });
+    expect(complete).toBeDisabled();
+
+    act(() => {
+      vi.advanceTimersByTime(4_999);
+    });
+    expect(complete).toBeDisabled();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(complete).toBeEnabled();
+
+    fireEvent.click(complete);
+    expect(onPromptPayComplete).toHaveBeenCalledTimes(1);
   });
 
   it('shows retry panel when pending PromptPay QR countdown has expired', () => {
@@ -433,7 +450,7 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    const cta = screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' });
+    const cta = screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' });
     expect(cta).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
@@ -456,9 +473,9 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }));
 
-    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
       'aria-expanded',
       'true',
     );
@@ -483,14 +500,14 @@ describe('OrderPaymentForm', () => {
       <OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }));
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
 
     unmount();
 
     renderForm(<OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />);
 
-    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
       'aria-expanded',
       'false',
     );

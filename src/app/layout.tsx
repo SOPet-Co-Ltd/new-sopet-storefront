@@ -26,8 +26,8 @@ export function buildRootMetadata(): Metadata {
   return {
     metadataBase: new URL(baseUrl),
     title: {
-      template: `%s | ${siteName}`,
-      default: siteName,
+      template: `${siteName} | %s`,
+      default: 'siteName',
     },
     description: DEFAULT_SITE_DESCRIPTION,
     openGraph: {

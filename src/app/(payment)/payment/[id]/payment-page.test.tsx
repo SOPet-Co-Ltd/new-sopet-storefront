@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -158,7 +158,7 @@ async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>)
   await waitFor(() => {
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
   });
-  await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+  await user.click(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }));
   expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
 }
@@ -179,6 +179,7 @@ describe('PaymentPage', () => {
   afterEach(() => {
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
+    vi.useRealTimers();
   });
 
   it('redirects to thank-you when subscription reports paid status', async () => {
@@ -266,8 +267,7 @@ describe('PaymentPage', () => {
     expect(paymentState.payment.status).toBe('pending');
   });
 
-  it('PromptPay status check does not navigate to thank-you while pending', async () => {
-    const user = userEvent.setup();
+  it('PromptPay QR wait keeps ชำระเงินเสร็จสิ้น disabled and does not navigate yet', async () => {
     paymentState.payment = samplePendingPayment;
 
     render(<PaymentPage />, { wrapper: createWrapper() });
@@ -276,9 +276,29 @@ describe('PaymentPage', () => {
       expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }));
-
+    expect(screen.getByRole('button', { name: 'ชำระเงินเสร็จสิ้น' })).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }),
+    ).not.toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+  });
+
+  it('PromptPay ชำระเงินเสร็จสิ้น redirects to thank-you after 5 seconds', () => {
+    vi.useFakeTimers();
+    paymentState.payment = samplePendingPayment;
+
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    const complete = screen.getByRole('button', { name: 'ชำระเงินเสร็จสิ้น' });
+    expect(complete).toBeDisabled();
+
+    act(() => {
+      vi.advanceTimersByTime(5_000);
+    });
+    expect(complete).toBeEnabled();
+
+    fireEvent.click(complete);
+    expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
   });
 
   it('falls back to paymentByOrderId when payment id lookup is not found', async () => {
@@ -524,7 +544,7 @@ describe('PaymentPage', () => {
     });
     expect(mockPush).not.toHaveBeenCalled();
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
       'aria-expanded',
       'true',
     );

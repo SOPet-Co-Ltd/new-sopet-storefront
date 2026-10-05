@@ -42,14 +42,13 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
             {store.name}
           </p>
         </Link>
-        <button
-          type="button"
-          onClick={handleFollow}
-          className="shrink-0 sop-body-xs-regular md:sop-body-md-regular py-1.5 md:px-8 px-5 border rounded-full border-sop-primary-500 text-sop-primary-500 cursor-pointer"
+        <Link
+          href={`/sellers/${store.slug}`}
+          className="shrink-0 rounded-full border border-sop-secondary-500 px-5 py-1.5 text-xs font-medium text-sop-secondary-500 transition-colors hover:bg-sop-secondary-100 md:px-8 md:text-sm"
           data-testid="seller-follow-button"
         >
-          ติดตาม
-        </button>
+          ดูร้านค้า
+        </Link>
       </div>
     </div>
   );

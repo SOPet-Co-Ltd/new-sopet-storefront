@@ -47,21 +47,28 @@ export function ProductShowPrice({ product, selectedOptions }: ProductShowPriceP
         ? Math.round(((compareAtPrice - displayPrice) / compareAtPrice) * 100)
         : 0;
 
+  const savedAmount = hasDiscount ? compareAtPrice - displayPrice : 0;
+
   return (
-    <div>
-      <div className="flex flex-wrap items-baseline gap-1">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-baseline gap-3">
         {hasPrice ? (
           <>
             <span
-              className="rounded-sop-8 bg-sop-secondary-500 px-2 py-0 text-sop-base-white sop-headline-sm-medium lg:sop-headline-md-medium"
+              className="text-2xl font-bold text-sop-secondary-500 lg:text-3xl"
               data-testid="variant-price"
             >
               ฿{formatPrice(displayPrice)}
             </span>
             {hasDiscount && (
-              <span className="sop-strike-md-regular text-sop-neutral-grayalpha-400 lg:sop-strike-lg-regular">
-                ฿{formatPrice(compareAtPrice)}
-              </span>
+              <>
+                <span className="text-sm font-normal text-sop-neutral-grayalpha-400 line-through lg:text-lg">
+                  ฿{formatPrice(compareAtPrice)}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-[#FFF0ED] px-2.5 py-0.5 text-xs font-semibold text-sop-secondary-500">
+                  ประหยัด ฿{Math.round(savedAmount).toLocaleString('th-TH')}
+                </span>
+              </>
             )}
           </>
         ) : (

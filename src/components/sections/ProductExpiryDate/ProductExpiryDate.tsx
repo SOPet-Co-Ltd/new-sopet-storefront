@@ -8,12 +8,10 @@ export function ProductExpiryDate({ expiryDate }: ProductExpiryDateProps) {
   if (!expiryDate) return null;
 
   return (
-    <div className="flex w-full">
-      <div className="flex w-full items-center gap-2 rounded-sop-8 bg-sop-primary-100 px-2 py-[9px]">
-        <JarOfPillsIcon size={{ mobile: 24, desktop: 24 }} />
-        <p className="sop-body-md-medium text-sop-primary-700 lg:sop-body-lg-medium">
-          วันหมดอายุ : {expiryDate}
-        </p>
+    <div className="flex w-full lg:hidden">
+      <div className="flex w-full items-center gap-2 rounded-sop-8 bg-sop-primary-100 px-3 py-2 text-sop-primary-700">
+        <JarOfPillsIcon size={{ mobile: 20, desktop: 20 }} />
+        <p className="sop-body-sm-medium text-sop-primary-700">วันหมดอายุ : {expiryDate}</p>
       </div>
     </div>
   );

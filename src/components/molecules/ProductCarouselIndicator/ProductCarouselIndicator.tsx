@@ -46,17 +46,17 @@ export function ProductCarouselIndicator({
         onClick={onPrev}
         aria-label="Previous image"
         className={cn(
-          'flex size-8 shrink-0 items-center justify-center',
-          selectedIndex === 0 ? 'opacity-50 cursor-not-allowed' : '',
+          'flex size-9 shrink-0 items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 bg-white transition-colors hover:bg-sop-neutral-gray-500',
+          selectedIndex === 0 ? 'cursor-not-allowed opacity-40' : 'cursor-pointer',
         )}
         disabled={selectedIndex === 0}
       >
-        <LeftArrowIcon size={{ mobile: 20, desktop: 20 }} strokeWidth={1} color="#949495" />
+        <LeftArrowIcon size={{ mobile: 14, desktop: 14 }} strokeWidth={1.5} color="#949495" />
       </button>
 
       <div className="min-w-0 flex-1 overflow-hidden" aria-label="Product image thumbnails">
         <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             {slides.map((slide, index) => (
               <button
                 key={slide.id}
@@ -72,8 +72,10 @@ export function ProductCarouselIndicator({
                   width={80}
                   height={80}
                   className={cn(
-                    'size-20 border-4 object-cover transition-colors duration-300',
-                    selectedIndex === index ? 'border-sop-secondary-500' : 'border-transparent',
+                    'size-[72px] rounded-sop-16px object-cover transition-all duration-200 lg:size-20',
+                    selectedIndex === index
+                      ? 'border-2 border-sop-primary-500 shadow-xs'
+                      : 'border-2 border-transparent opacity-80 hover:opacity-100',
                   )}
                   draggable={false}
                 />
@@ -88,12 +90,12 @@ export function ProductCarouselIndicator({
         onClick={onNext}
         aria-label="Next image"
         className={cn(
-          'flex size-8 shrink-0 items-center justify-center',
-          selectedIndex === slides.length - 1 ? 'opacity-50 cursor-not-allowed' : '',
-          selectedIndex === 0 ? 'cursor-not-allowed' : '',
+          'flex size-9 shrink-0 items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 bg-white transition-colors hover:bg-sop-neutral-gray-500',
+          selectedIndex === slides.length - 1 ? 'cursor-not-allowed opacity-40' : 'cursor-pointer',
         )}
+        disabled={selectedIndex === slides.length - 1}
       >
-        <RightArrowIcon size={{ mobile: 20, desktop: 20 }} strokeWidth={1} color="#949495" />
+        <RightArrowIcon size={{ mobile: 14, desktop: 14 }} strokeWidth={1.5} color="#949495" />
       </button>
     </div>
   );

@@ -22,23 +22,21 @@ export function ProductReviewStars({
   totalReviews,
   soldCount = 0,
 }: ProductReviewStarsProps) {
+  const displayRating = averageRating > 0 ? averageRating : 0;
+
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      <div className="flex items-center gap-3">
-        <div className="hidden lg:flex">
-          <RenderStars averageRating={averageRating} size={24} />
-        </div>
-        <div className="flex lg:hidden">
-          <RenderStars averageRating={averageRating} size={16} />
-        </div>
-        <p className="sop-body-sm-regular text-sop-neutral-gray-400 lg:sop-body-lg-regular">
-          {averageRating} ({totalReviews} รีวิว)
-        </p>
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-2">
+        <RenderStars averageRating={displayRating} size={18} />
+        <span className="text-sm font-semibold text-sop-neutral-gray-200">{displayRating}</span>
+        <span className="text-sm text-sop-neutral-gray-400">
+          ({formatSoldCount(totalReviews)} รีวิว)
+        </span>
       </div>
-      <div className="h-4 w-px bg-sop-neutral-grayalpha-200 lg:h-8" aria-hidden />
-      <p className="sop-body-sm-regular text-sop-neutral-gray-400 lg:sop-body-lg-regular">
+      <div className="h-3.5 w-px bg-sop-neutral-grayalpha-300" aria-hidden />
+      <span className="text-sm text-sop-neutral-gray-400">
         ขายแล้ว {formatSoldCount(soldCount)} ชิ้น
-      </p>
+      </span>
     </div>
   );
 }

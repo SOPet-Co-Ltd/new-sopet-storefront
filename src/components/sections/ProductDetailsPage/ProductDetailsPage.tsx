@@ -177,7 +177,7 @@ export default function ProductDetailsPage({
       </div>
 
       <article aria-labelledby="product-title">
-        <div className="-mx-4 grid min-w-0 grid-cols-1 gap-4 overflow-x-hidden rounded-none bg-sop-base-white px-4 pb-4 md:mx-0 md:px-4 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-6 lg:py-5">
+        <div className="-mx-4 grid min-w-0 grid-cols-1 gap-6 overflow-x-hidden lg:rounded-sop-32px md:rounded-sop-32px rounded-none border border-[#F0EDF5] bg-sop-base-white p-4 shadow-xs md:mx-0 md:p-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-8 lg:p-8">
           <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
           <ProductDetails
             product={product}

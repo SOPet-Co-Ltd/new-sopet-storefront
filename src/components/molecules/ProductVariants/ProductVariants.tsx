@@ -29,15 +29,12 @@ export function ProductVariants({
         const fieldsetId = `variant-${optionKey}`;
 
         return (
-          <div key={optionKey} className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-5">
-            <p
-              id={`${fieldsetId}-label`}
-              className="sop-body-md-regular text-sop-neutral-gray-400 lg:w-[90px] lg:shrink-0 lg:sop-body-lg-regular"
-            >
+          <div key={optionKey} className="flex flex-col gap-2">
+            <p id={`${fieldsetId}-label`} className="text-sm font-medium text-sop-neutral-gray-400">
               {formatOptionLabel(optionKey)}
             </p>
             <fieldset
-              className="flex min-w-0 flex-wrap gap-3"
+              className="flex min-w-0 flex-wrap gap-2.5"
               aria-labelledby={`${fieldsetId}-label`}
             >
               <legend className="sr-only">เลือก{formatOptionLabel(optionKey)}</legend>
@@ -52,10 +49,10 @@ export function ProductVariants({
                     key={value}
                     htmlFor={inputId}
                     className={cn(
-                      'inline-flex min-h-[36px] cursor-pointer items-center gap-2 rounded-sop-36 border px-4 py-1 shadow-xs sop-body-xs-regular',
+                      'inline-flex min-h-[40px] cursor-pointer items-center justify-center rounded-sop-12px px-5 py-2 text-sm transition-all',
                       isSelected
-                        ? 'border-sop-secondary-500 bg-sop-base-white text-sop-secondary-500'
-                        : 'border-sop-neutral-grayalpha-100 bg-sop-neutral-gray-500 text-sop-neutral-gray-200',
+                        ? 'border-2 border-sop-primary-500 bg-sop-base-white font-medium text-sop-primary-500 shadow-xs'
+                        : 'border border-transparent bg-sop-neutral-gray-500 text-sop-neutral-gray-200 hover:bg-sop-neutral-grayalpha-100',
                       isDisabled && 'cursor-not-allowed opacity-40',
                     )}
                   >

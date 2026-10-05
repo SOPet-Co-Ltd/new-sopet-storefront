@@ -9,6 +9,7 @@ import {
   stripMarkdownForMeta,
   truncateDescription,
 } from './metadata';
+import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_TITLE } from '@/lib/seo/constants';
 import { CATALOG_PRODUCT_ID, sampleProductDetail } from '@/test/mocks/fixtures/catalog';
 
 const ORIGINAL_ENV = { ...process.env };
@@ -97,6 +98,12 @@ describe('buildHomeMetadata', () => {
 
     const metadata = buildHomeMetadata();
 
+    expect(metadata.title).toEqual({ absolute: DEFAULT_SITE_TITLE });
+    expect(metadata.description).toBe(DEFAULT_SITE_DESCRIPTION);
+    expect(metadata.openGraph).toMatchObject({
+      title: DEFAULT_SITE_TITLE,
+      description: DEFAULT_SITE_DESCRIPTION,
+    });
     expect(metadata.openGraph?.images).toEqual([
       { url: 'https://www.sopet.org/og/default-og.jpg' },
     ]);

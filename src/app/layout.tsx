@@ -5,7 +5,7 @@ import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 import { CookieConsentBanner } from '@/components/organisms/CookieConsentBanner';
 import { ChatWithAdminFloatingButton } from '@/components/molecules/ChatWithAdminFloatingButton/ChatWithAdminFloatingButton';
 import { AppProviders } from '@/lib/providers';
-import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
+import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_TITLE } from '@/lib/seo/constants';
 import { getSiteConfig } from '@/lib/seo/metadata';
 import './globals.css';
 
@@ -27,7 +27,7 @@ export function buildRootMetadata(): Metadata {
     metadataBase: new URL(baseUrl),
     title: {
       template: `${siteName} | %s`,
-      default: 'siteName',
+      default: DEFAULT_SITE_TITLE,
     },
     description: DEFAULT_SITE_DESCRIPTION,
     openGraph: {

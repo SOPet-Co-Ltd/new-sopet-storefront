@@ -107,13 +107,13 @@ async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>)
   await waitFor(() => {
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
   });
-  const cta = screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' });
+  const cta = screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' });
   expect(cta).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
 
   await user.click(cta);
 
-  expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+  expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
     'aria-expanded',
     'true',
   );
@@ -178,7 +178,6 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(createVariables).toMatchObject({
         input: {
           orderId: CHECKOUT_ORDER_ID,
-          amount: midQrLivePayment.amount,
           currency: 'THB',
           paymentMethod: 'credit_card',
           omiseToken: 'tok_test_mid_qr',
@@ -240,7 +239,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       });
       expect(mockPush).not.toHaveBeenCalled();
       expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+      expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
         'aria-expanded',
         'true',
       );
@@ -294,7 +293,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toBeInTheDocument();
 
       await submitMidQrCardRetry(user);
 

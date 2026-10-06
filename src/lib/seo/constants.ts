@@ -5,8 +5,13 @@ export const DEFAULT_BASE_URL = 'http://localhost:3000';
 export const DEFAULT_SITE_NAME = 'Sopet';
 export const DEFAULT_DESCRIPTION_MAX_LENGTH = 160;
 
+export const DEFAULT_SITE_TITLE_SEGMENT =
+  'ยาสัตว์ออนไลน์ ของแท้ Nexgard, Apoquel, Cardisure และอีก 100 แบรนด์';
+
+export const DEFAULT_SITE_TITLE = `${DEFAULT_SITE_NAME} | ${DEFAULT_SITE_TITLE_SEGMENT}`;
+
 export const DEFAULT_SITE_DESCRIPTION =
-  'Sopet คือแพลตฟอร์มค้นหายาและสินค้าสำหรับสัตว์เลี้ยงจากโรงพยาบาลและร้านขายยาทั่วไทย เปรียบเทียบราคา รับโค้ดส่วนลด และจัดส่งรวดเร็ว';
+  'โซเพ็ท สนับสนุนโดยสถาบันนวัตกรรมแห่งจุฬาฯพร้อมปรึกษาสัตวแพทย์ ยาสัตว์ อาหารสัตว์ อาหารเสริม ยาเห็บ ยาหมัด Revolution, Bravecto, Nexgard ส่งด่วน 1-2 วัน ราคาถูกที่สุดในไทย';
 
 /** Default OG image path — TBD-03 placeholder until final creative (task 20). */
 export const DEFAULT_OG_IMAGE_PATH = '/og/default-og.jpg';

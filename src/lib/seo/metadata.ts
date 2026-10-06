@@ -6,6 +6,8 @@ import {
   DEFAULT_OG_IMAGE_PATH,
   DEFAULT_SITE_DESCRIPTION,
   DEFAULT_SITE_NAME,
+  DEFAULT_SITE_TITLE,
+  DEFAULT_SITE_TITLE_SEGMENT,
 } from './constants';
 import { getSearchIndexation, isProductIndexable } from './indexability';
 
@@ -122,13 +124,27 @@ export function buildPageMetadata(input: PageMetadataInput): Metadata {
 }
 
 export function buildHomeMetadata(): Metadata {
-  const { siteName } = getSiteConfig();
-
-  return buildPageMetadata({
-    title: siteName,
+  const metadata = buildPageMetadata({
+    title: DEFAULT_SITE_TITLE_SEGMENT,
     description: DEFAULT_SITE_DESCRIPTION,
     path: '/',
   });
+
+  return {
+    ...metadata,
+    title: { absolute: DEFAULT_SITE_TITLE },
+    description: DEFAULT_SITE_DESCRIPTION,
+    openGraph: {
+      ...metadata.openGraph,
+      title: DEFAULT_SITE_TITLE,
+      description: DEFAULT_SITE_DESCRIPTION,
+    },
+    twitter: {
+      ...metadata.twitter,
+      title: DEFAULT_SITE_TITLE,
+      description: DEFAULT_SITE_DESCRIPTION,
+    },
+  };
 }
 
 export function buildProductMetadata(

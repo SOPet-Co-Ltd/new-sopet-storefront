@@ -66,7 +66,7 @@ export function HomeFaqSection({ heading = 'คำถามที่พบบ่
   };
 
   return (
-    <div className="relative left-1/2 flex w-screen max-w-[100vw] -translate-x-1/2 flex-col items-center overflow-hidden px-sop-12px py-sop-32px md:px-sop-24px md:py-sop-64px">
+    <div className="relative flex w-full max-w-full flex-col items-center overflow-hidden px-sop-12px py-sop-32px md:px-sop-24px md:py-sop-64px">
       {/* Red ambient glow */}
       <div
         aria-hidden="true"

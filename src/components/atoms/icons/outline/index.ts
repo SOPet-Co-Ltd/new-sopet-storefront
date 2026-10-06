@@ -17,6 +17,7 @@ export { QrAddLineOAIcon, type QrAddLineOAIconProps } from './QrAddLineOAIcon';
 export { QRCodeIcon, type QRCodeIconProps } from './QRCodeIcon';
 export { SaleIcon, type SaleIconProps } from './SaleIcon';
 export { SearchIcon, type SearchIconProps } from './SearchIcon';
+export { ShareArrowIcon, type ShareArrowIconProps } from './ShareArrowIcon';
 export { ShieldCheckIcon, type ShieldCheckIconProps } from './ShieldCheckIcon';
 export { SOPetLogo, type SOPetLogoProps } from './SOPetLogo';
 export { SpinnerIcon, type SpinnerIconProps } from './SpinnerIcon';

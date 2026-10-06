@@ -7,6 +7,7 @@ import { CloseIcon } from '@/components/atoms/icons/filled/CloseIcon';
 import { LeftArrowIcon } from '@/components/atoms/icons/filled/LeftArrowIcon';
 import { RightArrowIcon } from '@/components/atoms/icons/filled/RightArrowIcon';
 import { ProductCarouselIndicator } from '@/components/molecules/ProductCarouselIndicator/ProductCarouselIndicator';
+import { ProductGalleryTrustBadges } from '@/components/molecules/ProductGalleryTrustBadges/ProductGalleryTrustBadges';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 
 type ProductImage = NonNullable<ProductDetail['images']>[number];
@@ -168,75 +169,113 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
       </div>
 
       {isLightboxOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-sop-neutral-grayalpha-500 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={handleCloseLightbox}
+        >
+          {/* Close button */}
           <button
             type="button"
             onClick={handleCloseLightbox}
-            className="absolute top-4 right-4 z-10 w-[30px] h-[30px] flex items-center justify-center rounded-full bg-sop-neutral-gray-300 hover:bg-sop-neutral-gray-400 transition-colors"
+            className="absolute top-4 right-4 z-10 w-[36px] h-[36px] flex items-center justify-center rounded-full bg-sop-neutral-gray-300 hover:bg-sop-neutral-gray-400 transition-colors"
             aria-label="Close lightbox"
           >
             <CloseIcon size={{ mobile: 20, desktop: 20 }} color="#f5f5f5" />
           </button>
 
-          {gallerySlides.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={scrollPrev}
-                disabled={!canScrollPrev}
-                className="absolute left-4 z-10 w-[30px] h-[30px] flex items-center justify-center rounded-full bg-sop-neutral-whitealpha-700 hover:bg-sop-neutral-whitealpha-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Previous image"
-              >
-                <LeftArrowIcon size={{ mobile: 8, desktop: 8 }} color="#211f23" />
-              </button>
-              <button
-                type="button"
-                onClick={scrollNext}
-                disabled={!canScrollNext}
-                className="absolute right-4 z-10 w-[30px] h-[30px] flex items-center justify-center rounded-full bg-sop-neutral-whitealpha-700 hover:bg-sop-neutral-whitealpha-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Next image"
-              >
-                <RightArrowIcon size={{ mobile: 8, desktop: 8 }} color="#211f23" />
-              </button>
-            </>
-          )}
-
+          {/* Main layout: image + vertical thumbnail strip */}
           <div
-            className="w-full h-full flex items-center justify-center px-4 md:px-8 lg:px-16"
-            onClick={(event) => {
-              event.stopPropagation();
-            }}
+            className="flex flex-col md:flex-row items-center gap-sop-24px md:gap-sop-40px px-4 w-full max-w-[700px]"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="overflow-hidden w-full h-full max-w-[85vw] max-h-[85vh]"
-              ref={lightboxEmblaRef}
-            >
-              <div className="flex h-full">
-                {gallerySlides.map((slide) => (
-                  <div
+            {/* Image area */}
+            <div className="relative flex-1 min-w-0">
+              {/* Prev button */}
+              {gallerySlides.length > 1 && (
+                <button
+                  type="button"
+                  onClick={scrollPrev}
+                  disabled={!canScrollPrev}
+                  className="absolute left-6 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-[36px] h-[36px] flex items-center justify-center rounded-full bg-sop-neutral-whitealpha-700 hover:bg-sop-neutral-whitealpha-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  aria-label="Previous image"
+                >
+                  <LeftArrowIcon size={{ mobile: 10, desktop: 10 }} color="#211f23" />
+                </button>
+              )}
+
+              {/* Carousel */}
+              <div className="overflow-hidden rounded-2xl" ref={lightboxEmblaRef}>
+                <div className="flex">
+                  {gallerySlides.map((slide) => (
+                    <div key={slide.id} className="flex-[0_0_100%] min-w-0">
+                      {/* Image */}
+                      <div className="relative aspect-square w-full overflow-hidden">
+                        <Image
+                          src={slide.imageUrl}
+                          alt="Product image"
+                          width={600}
+                          height={600}
+                          className="size-full object-cover object-center"
+                          draggable={false}
+                          sizes="(min-width: 768px) 500px, 80vw"
+                        />
+                      </div>
+                      {/* Trust badges */}
+                      <ProductGalleryTrustBadges />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Next button */}
+              {gallerySlides.length > 1 && (
+                <button
+                  type="button"
+                  onClick={scrollNext}
+                  disabled={!canScrollNext}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 translate-x-1/2 z-5 w-[36px] h-[36px] flex items-center justify-center rounded-full bg-sop-neutral-whitealpha-700 hover:bg-sop-neutral-whitealpha-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  aria-label="Next image"
+                >
+                  <RightArrowIcon size={{ mobile: 10, desktop: 10 }} color="#211f23" />
+                </button>
+              )}
+            </div>
+
+            {/* Vertical thumbnail strip (hidden on small screens) */}
+            {gallerySlides.length > 1 && (
+              <div
+                className="flex flex-row md:flex-col justify-center md:justify-start gap-2 overflow-x-auto md:overflow-y-auto md:overflow-x-hidden w-full md:w-auto max-h-[85vh] shrink-0"
+                style={{ scrollbarWidth: 'none' }}
+              >
+                {gallerySlides.map((slide, index) => (
+                  <button
                     key={slide.id}
-                    className="flex-[0_0_100%] min-w-0 flex items-center justify-center h-full"
+                    type="button"
+                    onClick={() => lightboxEmblaApi?.scrollTo(index)}
+                    aria-label={`เลือกรูปที่ ${index + 1}`}
+                    aria-current={lightboxSelectedIndex === index ? 'true' : undefined}
+                    className={[
+                      'shrink-0 overflow-hidden rounded-xl transition-all duration-200 w-[64px] md:w-[80px]',
+                      lightboxSelectedIndex === index
+                        ? 'ring-2 ring-sop-primary-500 opacity-100'
+                        : 'opacity-60 hover:opacity-90',
+                    ].join(' ')}
                   >
-                    <Image
-                      src={slide.imageUrl}
-                      alt="Product image"
-                      width={2000}
-                      height={2000}
-                      className="w-full h-full max-w-full max-h-full object-contain"
-                      draggable={false}
-                      sizes="100vw"
-                    />
-                  </div>
+                    <div className="relative aspect-square w-full overflow-hidden">
+                      <Image
+                        src={slide.imageUrl}
+                        alt={`Product thumbnail ${index + 1}`}
+                        width={80}
+                        height={80}
+                        className="size-full object-cover object-center"
+                        draggable={false}
+                      />
+                    </div>
+                  </button>
                 ))}
               </div>
-            </div>
+            )}
           </div>
-
-          {gallerySlides.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 sop-body-sm-regular text-sop-base-white">
-              {lightboxSelectedIndex + 1}/{gallerySlides.length}
-            </div>
-          )}
         </div>
       )}
     </>

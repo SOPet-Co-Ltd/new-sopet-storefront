@@ -220,8 +220,8 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
                           sizes="(min-width: 768px) 500px, 80vw"
                         />
                       </div>
-                      {/* Trust badges */}
-                      <ProductGalleryTrustBadges />
+                      {/* Trust badges ค่อยเอากลับมาถ้าอยากให้มี */}
+                      {/* <ProductGalleryTrustBadges /> */}
                     </div>
                   ))}
                 </div>

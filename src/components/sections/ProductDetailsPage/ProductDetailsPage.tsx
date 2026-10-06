@@ -188,7 +188,9 @@ export default function ProductDetailsPage({
         </div>
       </article>
 
-      <ProductDetailsSeller store={product.store} />
+      <div className="-mx-4 md:mx-0">
+        <ProductDetailsSeller store={product.store} />
+      </div>
 
       <ProductDetailDescription description={product.description} />
 

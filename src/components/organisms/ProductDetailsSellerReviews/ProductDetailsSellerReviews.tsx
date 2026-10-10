@@ -80,7 +80,7 @@ function ProductDetailsSellerReviewsContent({
   const [ratingFilter, setRatingFilter] = useState<string | null>(() =>
     searchParams.get(RATING_QUERY_KEY),
   );
-  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(4);
 
   const starCounts = useMemo(() => computeStarCounts(productReviews), [productReviews]);
   const withImageCount = useMemo(
@@ -95,12 +95,12 @@ function ProductDetailsSellerReviewsContent({
     () => filterReviews(productReviews, ratingFilter),
     [productReviews, ratingFilter],
   );
-  const totalPages = Math.max(1, Math.ceil(filteredReviews.length / REVIEWS_PER_PAGE));
-  const safePage = Math.min(currentPage, totalPages);
-  const paginatedReviews = filteredReviews.slice(
-    (safePage - 1) * REVIEWS_PER_PAGE,
-    safePage * REVIEWS_PER_PAGE,
-  );
+
+  const visibleReviews = useMemo(() => {
+    return filteredReviews.slice(0, visibleCount);
+  }, [filteredReviews, visibleCount]);
+
+  const remainingCount = filteredReviews.length - visibleCount;
 
   if (loading) {
     return (
@@ -157,19 +157,25 @@ function ProductDetailsSellerReviewsContent({
             selectedRating={ratingFilter}
             onFilterChange={(value) => {
               setRatingFilter(value);
-              setCurrentPage(1);
+              setVisibleCount(4);
             }}
           />
         </div>
       </div>
 
       <div className="mt-7 space-y-4">
-        <ReviewComments productReviews={paginatedReviews} />
-        <ProductReviewPagination
-          page={safePage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+        <ReviewComments productReviews={visibleReviews} />
+        {remainingCount > 0 && (
+          <div className="flex justify-center mt-6">
+            <button
+              type="button"
+              className="inline-flex min-w-[200px] items-center justify-center rounded-full border border-sop-neutral-grayalpha-300 bg-white px-6 py-3 sop-body-md-medium text-sop-neutral-gray-400 transition-colors hover:bg-sop-neutral-grayalpha-100"
+              onClick={() => setVisibleCount((prev) => prev + 10)}
+            >
+              ดูรีวิวเพิ่มเติม ({remainingCount.toLocaleString()})
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

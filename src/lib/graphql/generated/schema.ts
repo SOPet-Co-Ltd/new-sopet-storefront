@@ -683,6 +683,7 @@ export type CustomerReviewType = {
   productSlug?: Maybe<Scalars['String']['output']>;
   rating: Scalars['Int']['output'];
   status: Scalars['String']['output'];
+  variantOptions?: Maybe<Scalars['String']['output']>;
 };
 
 export type CustomerReviewableItemType = {
@@ -2785,6 +2786,7 @@ export type ReviewType = {
   reply?: Maybe<ReviewReplyType>;
   source: Scalars['String']['output'];
   status: Scalars['String']['output'];
+  variantOptions?: Maybe<Scalars['String']['output']>;
 };
 
 export type SaleCampaignItemInput = {
@@ -3062,6 +3064,7 @@ export type StoreProductReviewType = {
   productSlug?: Maybe<Scalars['String']['output']>;
   rating: Scalars['Int']['output'];
   reply?: Maybe<ReviewReplyType>;
+  variantOptions?: Maybe<Scalars['String']['output']>;
 };
 
 export type StoreReactivationRequestImageType = {

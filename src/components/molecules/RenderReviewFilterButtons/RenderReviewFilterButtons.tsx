@@ -13,6 +13,8 @@ type RenderReviewFilterButtonsProps = {
     5: number;
   };
   totalReviews: number;
+  withImageCount: number;
+  withCommentCount: number;
   selectedRating?: string | null;
   onFilterChange?: (value: string | null) => void;
 };
@@ -22,6 +24,8 @@ const RATING_QUERY_KEY = 'prf';
 export function RenderReviewFilterButtons({
   starCounts,
   totalReviews,
+  withImageCount,
+  withCommentCount,
   selectedRating: controlledRating,
   onFilterChange,
 }: RenderReviewFilterButtonsProps) {
@@ -36,23 +40,23 @@ export function RenderReviewFilterButtons({
   const { allFilter, starFilters, miscFilters } = useMemo(() => {
     const starFilterButtons = [5, 4, 3, 2, 1].map((rating) => ({
       value: String(rating),
-      label: `${rating} ดาว ${starCounts[rating as 1 | 2 | 3 | 4 | 5]}`,
+      label: `${rating} ดาว (${starCounts[rating as 1 | 2 | 3 | 4 | 5]})`,
     }));
 
     const miscFilterButtons = [
-      { value: 'oc', label: 'เฉพาะความคิดเห็น' },
-      { value: 'wi', label: 'มีรูปภาพ' },
+      { value: 'wi', label: `มีรูปภาพ (${withImageCount})` },
+      { value: 'oc', label: `ความคิดเห็น (${withCommentCount})` },
     ];
 
     return {
       allFilter: {
         value: null as string | null,
-        label: `รีวิวทั้งหมด (${totalReviews})`,
+        label: `ทั้งหมด (${totalReviews})`,
       },
       starFilters: starFilterButtons,
       miscFilters: miscFilterButtons,
     };
-  }, [starCounts, totalReviews]);
+  }, [starCounts, totalReviews, withImageCount, withCommentCount]);
 
   const handleFilterClick = useCallback(
     (value: string | null) => {
@@ -82,8 +86,9 @@ export function RenderReviewFilterButtons({
   );
 
   return (
-    <div className="flex flex-col lg:gap-4 gap-3 flex-wrap">
-      <div className="flex gap-4 lg:gap-y-4 gap-y-3 flex-wrap">
+    <div className="flex flex-col gap-3">
+      {/* Row 1: All + misc filters */}
+      <div className="flex gap-2 flex-wrap">
         <Button
           type="button"
           onClick={() => handleFilterClick(allFilter.value)}
@@ -93,7 +98,7 @@ export function RenderReviewFilterButtons({
           {allFilter.label}
         </Button>
 
-        {starFilters.map((filter) => {
+        {miscFilters.map((filter) => {
           const isActive = selectedRating === filter.value;
           return (
             <Button
@@ -109,8 +114,9 @@ export function RenderReviewFilterButtons({
         })}
       </div>
 
-      <div className="flex gap-4">
-        {miscFilters.map((filter) => {
+      {/* Row 2+: Star filters */}
+      <div className="flex gap-2 flex-wrap">
+        {starFilters.map((filter) => {
           const isActive = selectedRating === filter.value;
           return (
             <Button

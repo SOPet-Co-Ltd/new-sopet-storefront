@@ -1,6 +1,7 @@
 import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 
@@ -54,7 +55,7 @@ export function ProductDescriptionContent({ description }: ProductDescriptionCon
   return (
     <div data-testid="product-markdown-content">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
         rehypePlugins={hasHtmlMarkup(description) ? [rehypeRaw, rehypeSanitize] : [rehypeSanitize]}
         components={productMarkdownComponents}
       >

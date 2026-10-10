@@ -120,7 +120,7 @@ function ProductDetailsSellerReviewsContent({
     >
       <div className="flex items-center gap-sop-8px pb-sop-20px">
         <StarIcon
-          size={{ mobile: 24, desktop: 32 }}
+          size={{ mobile: 32, desktop: 32 }}
           color="#FFFFFF"
           className="p-sop-8px bg-sop-primary-500 rounded-full"
         />

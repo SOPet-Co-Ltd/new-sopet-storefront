@@ -12,7 +12,7 @@ export function ProductDetailDescription({ description }: ProductDetailDescripti
     <div className="-mx-4 bg-sop-base-white p-4 rounded-none md:mx-0 md:rounded-sop-16px">
       <div className="flex items-center gap-sop-8px pb-sop-20px">
         <ClipboardListIcon
-          size={{ mobile: 24, desktop: 32 }}
+          size={{ mobile: 32, desktop: 32 }}
           color="#FFFFFF"
           className="p-sop-8px bg-sop-primary-500 rounded-full"
         />

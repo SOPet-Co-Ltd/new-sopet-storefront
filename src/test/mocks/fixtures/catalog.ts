@@ -99,6 +99,7 @@ export const sampleProductReview = {
   status: 'approved',
   createdAt: '2026-01-01T00:00:00.000Z',
   customerName: 'Test Customer',
+  variantOptions: null,
   images: [],
   reply: null,
 };
@@ -124,6 +125,7 @@ export const sampleStoreReview = {
   comment: 'Great product',
   createdAt: '2026-01-01T00:00:00.000Z',
   customerName: 'Test Customer',
+  variantOptions: null,
   reply: null,
   images: [],
 };

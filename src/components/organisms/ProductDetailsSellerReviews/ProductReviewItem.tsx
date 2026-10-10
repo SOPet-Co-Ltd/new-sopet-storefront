@@ -62,7 +62,7 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
 
         {variantText ? (
           <div className="flex shrink-0 items-center gap-2 rounded-full bg-sop-neutral-gray-500 px-sop-16px py-sop-8px">
-            <span className="sop-body-xs-medium text-sop-neutral-gray-200 whitespace-nowrap">
+            <span className="sop-body-xs-medium text-sop-neutral-gray-300 whitespace-nowrap">
               ตัวเลือก : {variantText}
             </span>
           </div>
@@ -82,7 +82,7 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
       <div className="mt-3 flex justify-end">
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-full border border-sop-neutral-grayalpha-200 px-3 py-1 sop-body-xs-regular text-sop-neutral-gray-400 transition-colors hover:border-sop-neutral-grayalpha-300 hover:text-sop-neutral-gray-300"
+          className="flex items-center gap-1.5 rounded-full border border-sop-neutral-grayalpha-200 px-3 py-1 sop-body-xs-regular text-sop-neutral-gray-300 transition-colors hover:border-sop-neutral-grayalpha-300 hover:text-sop-neutral-gray-300"
           aria-label="มีประโยชน์"
         >
           <svg

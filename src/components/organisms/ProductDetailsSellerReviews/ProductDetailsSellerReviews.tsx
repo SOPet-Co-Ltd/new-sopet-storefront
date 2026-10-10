@@ -166,14 +166,16 @@ function ProductDetailsSellerReviewsContent({
       <div className="mt-7 space-y-4">
         <ReviewComments productReviews={visibleReviews} />
         {remainingCount > 0 && (
-          <div className="flex justify-center mt-6">
-            <button
-              type="button"
-              className="inline-flex min-w-[200px] items-center justify-center rounded-full border border-sop-neutral-grayalpha-300 bg-white px-6 py-3 sop-body-md-medium text-sop-neutral-gray-400 transition-colors hover:bg-sop-neutral-grayalpha-100"
-              onClick={() => setVisibleCount((prev) => prev + 10)}
-            >
-              ดูรีวิวเพิ่มเติม ({remainingCount.toLocaleString()})
-            </button>
+          <div className="border-t border-sop-neutral-grayalpha-200 pt-6">
+            <div className="flex justify-center">
+              <button
+                type="button"
+                className="inline-flex min-w-[200px] items-center justify-center rounded-full border border-sop-neutral-grayalpha-300 bg-white px-6 py-3 sop-body-md-medium text-sop-neutral-gray-200 transition-colors hover:bg-sop-neutral-grayalpha-100"
+                onClick={() => setVisibleCount((prev) => prev + 10)}
+              >
+                ดูรีวิวเพิ่มเติม ({remainingCount.toLocaleString()})
+              </button>
+            </div>
           </div>
         )}
       </div>

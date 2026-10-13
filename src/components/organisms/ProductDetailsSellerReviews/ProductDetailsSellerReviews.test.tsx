@@ -72,7 +72,7 @@ describe('ProductDetailsSellerReviews', () => {
       <ProductDetailsSellerReviews productReviews={reviews} averageRating={5} totalReviews={2} />,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'เฉพาะความคิดเห็น' }));
+    await userEvent.click(screen.getByRole('button', { name: /ความคิดเห็น/ }));
 
     expect(screen.getByTestId('product-review-item-review-with-comment')).toBeInTheDocument();
     expect(screen.queryByTestId('product-review-item-review-no-comment')).not.toBeInTheDocument();
@@ -88,7 +88,7 @@ describe('ProductDetailsSellerReviews', () => {
       <ProductDetailsSellerReviews productReviews={reviews} averageRating={5} totalReviews={2} />,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'มีรูปภาพ' }));
+    await userEvent.click(screen.getByRole('button', { name: /มีรูปภาพ/ }));
 
     expect(
       screen.getByTestId(`product-review-item-${sampleProductReviewWithImages.id}`),
@@ -96,26 +96,52 @@ describe('ProductDetailsSellerReviews', () => {
     expect(screen.queryByTestId('product-review-item-review-no-images')).not.toBeInTheDocument();
   });
 
-  it('shows 10 reviews per page with numbered pagination', async () => {
-    const reviews = Array.from({ length: 11 }, (_, index) => ({
+  it('shows 4 reviews initially and appends 10 more when clicking load more', async () => {
+    const reviews = Array.from({ length: 15 }, (_, index) => ({
       ...sampleProductReview,
       id: `review-page-${index + 1}`,
       comment: `Review ${index + 1}`,
     }));
 
     render(
-      <ProductDetailsSellerReviews productReviews={reviews} averageRating={5} totalReviews={11} />,
+      <ProductDetailsSellerReviews productReviews={reviews} averageRating={5} totalReviews={15} />,
     );
 
     expect(screen.getByTestId('product-review-item-review-page-1')).toBeInTheDocument();
-    expect(screen.getByTestId('product-review-item-review-page-10')).toBeInTheDocument();
-    expect(screen.queryByTestId('product-review-item-review-page-11')).not.toBeInTheDocument();
-    expect(screen.getByTestId('product-review-pagination')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '2' })).toBeInTheDocument();
+    expect(screen.getByTestId('product-review-item-review-page-4')).toBeInTheDocument();
+    expect(screen.queryByTestId('product-review-item-review-page-5')).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: '2' }));
+    const loadMoreButton = screen.getByRole('button', { name: /ดูรีวิวเพิ่มเติม \(11\)/ });
+    expect(loadMoreButton).toBeInTheDocument();
 
-    expect(screen.queryByTestId('product-review-item-review-page-1')).not.toBeInTheDocument();
-    expect(screen.getByTestId('product-review-item-review-page-11')).toBeInTheDocument();
+    await userEvent.click(loadMoreButton);
+
+    expect(screen.getByTestId('product-review-item-review-page-1')).toBeInTheDocument();
+    expect(screen.getByTestId('product-review-item-review-page-14')).toBeInTheDocument();
+    expect(screen.queryByTestId('product-review-item-review-page-15')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ดูรีวิวเพิ่มเติม \(1\)/ })).toBeInTheDocument();
+  });
+
+  it('renders variant options when present and omits when not present', () => {
+    const reviews = [
+      {
+        ...sampleProductReview,
+        id: 'review-with-variant',
+        variantOptions: '20-40 kg',
+      },
+      {
+        ...sampleProductReview,
+        id: 'review-without-variant',
+        variantOptions: null,
+      },
+    ];
+
+    render(
+      <ProductDetailsSellerReviews productReviews={reviews} averageRating={5} totalReviews={2} />,
+    );
+
+    expect(screen.getByText('ตัวเลือก : 20-40 kg')).toBeInTheDocument();
+    const noVariantArticle = screen.getByTestId('product-review-item-review-without-variant');
+    expect(noVariantArticle).not.toHaveTextContent('ตัวเลือก : 20-40 kg');
   });
 });

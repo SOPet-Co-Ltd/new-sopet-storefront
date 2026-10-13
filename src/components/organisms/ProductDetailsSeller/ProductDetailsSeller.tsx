@@ -45,7 +45,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
 
           <div className="flex flex-col gap-1 min-w-0">
             <Link href={`/sellers/${store.slug}`} className="min-w-0">
-              <p className="sop-headline-sm-bold text-sop-neutral-gray-100 truncate hover:underline">
+              <p className="sop-body-md-medium text-sop-neutral-gray-100 truncate hover:underline">
                 {store.name}
               </p>
             </Link>

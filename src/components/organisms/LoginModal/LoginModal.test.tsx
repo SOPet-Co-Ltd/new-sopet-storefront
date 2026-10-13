@@ -14,9 +14,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => (
+  default: ({ src, alt, unoptimized }: { src: string; alt: string; unoptimized?: boolean }) => (
     // eslint-disable-next-line @next/next/no-img-element -- test mock
-    <img src={src} alt={alt} {...props} />
+    <img src={src} alt={alt} data-unoptimized={unoptimized ? 'true' : 'false'} />
   ),
 }));
 
@@ -119,6 +119,35 @@ describe('LoginModal', () => {
       expect(storeOtpPhone).toHaveBeenCalledWith('0812345678', '526547');
       expect(push).toHaveBeenCalledWith('/login/otp');
     });
+  });
+
+  it('loads the login image from its original URL', async () => {
+    const user = userEvent.setup();
+    server.use(
+      graphql.query('LoginPageImages', () =>
+        HttpResponse.json({
+          data: {
+            loginPageImages: {
+              desktopImageUrl: 'https://cdn.sopet.org/login-images/desktop.webp',
+              mobileImageUrl: 'https://cdn.sopet.org/login-images/mobile.webp',
+              altText: 'SOPet login art',
+            },
+          },
+        }),
+      ),
+    );
+
+    renderModal();
+    await user.click(screen.getByRole('button', { name: 'open' }));
+
+    const images = await screen.findAllByRole('img', { name: 'SOPet login art' });
+    expect(images.map((image) => image.getAttribute('src')).sort()).toEqual([
+      'https://cdn.sopet.org/login-images/desktop.webp',
+      'https://cdn.sopet.org/login-images/mobile.webp',
+    ]);
+    for (const image of images) {
+      expect(image).toHaveAttribute('data-unoptimized', 'true');
+    }
   });
 
   it('shows image fallback when no login images', async () => {

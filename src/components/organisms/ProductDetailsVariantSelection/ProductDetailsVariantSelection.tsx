@@ -228,7 +228,7 @@ export default function ProductDetailsVariantSelection({
       />
 
       <div className="flex flex-col gap-3">
-        <div className="flex flex-nowrap items-center gap-2 lg:gap-3">
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 rounded-t-[24px] bg-white px-4 py-3 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] lg:static lg:z-auto lg:rounded-none lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none lg:flex-nowrap lg:gap-3">
           <Button
             ref={addToCartButtonRef}
             type="button"
@@ -237,7 +237,7 @@ export default function ProductDetailsVariantSelection({
             loading={isAddingToCart}
             size="xl"
             variant="secondary"
-            className="h-11 min-w-0 flex-1 rounded-full border border-sop-secondary-500 bg-sop-base-white text-xs font-medium text-sop-secondary-500 hover:bg-sop-secondary-100 lg:h-12 lg:border-2 lg:text-sm"
+            className="flex h-11 w-11 flex-shrink-0 !p-0 items-center justify-center rounded-full border border-sop-secondary-500 bg-white text-sop-secondary-500 hover:bg-sop-secondary-50 lg:h-12 lg:w-auto lg:min-w-0 lg:flex-1 lg:border-2 lg:bg-sop-base-white lg:px-4 lg:font-medium lg:text-sm lg:hover:bg-sop-secondary-100"
             aria-busy={isAddingToCart}
             aria-label={
               isAddingToCart
@@ -247,11 +247,11 @@ export default function ProductDetailsVariantSelection({
                   : `เพิ่ม ${product.name} ลงตะกร้า`
             }
           >
-            <span className="inline-flex items-center gap-1.5 lg:gap-2">
-              <span className="hidden lg:inline-block">
-                <Bag5Icon size={{ mobile: 20, desktop: 20 }} color="#ff6f61" />
+            <span className="inline-flex items-center justify-center gap-1.5 lg:gap-2">
+              <span className="inline-flex items-center justify-center">
+                <Bag5Icon size={{ mobile: 24, desktop: 20 }} color="#ff6f61" />
               </span>
-              <span>
+              <span className="hidden lg:inline">
                 {!hasAnyPrice
                   ? 'NOT AVAILABLE IN YOUR REGION'
                   : isOutOfStock
@@ -268,7 +268,7 @@ export default function ProductDetailsVariantSelection({
             loading={isBuyingNow}
             size="xl"
             variant="primary"
-            className="h-11 min-w-0 flex-1 rounded-full bg-sop-primary-500 font-medium text-xs text-white shadow-xs hover:bg-sop-primary-600 lg:h-12 lg:text-sm"
+            className="h-11 min-w-0 flex-1 rounded-full bg-sop-primary-500 font-medium text-sm text-white shadow-xs hover:bg-sop-primary-600 lg:h-12 lg:text-sm"
             aria-busy={isBuyingNow}
             aria-label={
               isBuyingNow
@@ -278,45 +278,43 @@ export default function ProductDetailsVariantSelection({
                   : `ซื้อ ${product.name} เลย`
             }
           >
-            <span className="lg:hidden">ซื้อสินค้า</span>
-            <span className="hidden lg:inline">ซื้อเลย</span>
+            ซื้อเลย
           </Button>
-
-          {/* On mobile: Share & Wishlist buttons in the action row */}
-          <div className="flex items-center gap-2 lg:hidden">
-            {onShare && (
-              <button
-                type="button"
-                onClick={onShare}
-                className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 text-sop-neutral-gray-300 transition-colors hover:bg-sop-neutral-gray-500"
-                aria-label={`แชร์ ${product.name}`}
-              >
-                <ShareArrowIcon size={{ mobile: 20, desktop: 20 }} color="#454547" />
-              </button>
-            )}
-            {onWishlist && (
-              <button
-                type="button"
-                onClick={onWishlist}
-                disabled={wishlistLoading}
-                aria-pressed={isWishlisted}
-                className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 transition-colors hover:bg-sop-neutral-gray-500 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label={
-                  isWishlisted
-                    ? `นำ ${product.name} ออกจากรายการโปรด`
-                    : `เพิ่ม ${product.name} ในรายการโปรด`
-                }
-              >
-                {isWishlisted ? (
-                  <HeartFillIcon size={{ mobile: 20, desktop: 20 }} color="#ff6f61" />
-                ) : (
-                  <HeartIcon size={{ mobile: 20, desktop: 20 }} color="#ff6f61" />
-                )}
-              </button>
-            )}
-          </div>
         </div>
 
+        {/* On mobile: Share & Wishlist buttons in the action row */}
+        <div className="flex items-center gap-2 lg:hidden">
+          {onShare && (
+            <button
+              type="button"
+              onClick={onShare}
+              className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 text-sop-neutral-gray-300 transition-colors hover:bg-sop-neutral-gray-500"
+              aria-label={`แชร์ ${product.name}`}
+            >
+              <ShareArrowIcon size={{ mobile: 20, desktop: 20 }} color="#454547" />
+            </button>
+          )}
+          {onWishlist && (
+            <button
+              type="button"
+              onClick={onWishlist}
+              disabled={wishlistLoading}
+              aria-pressed={isWishlisted}
+              className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 transition-colors hover:bg-sop-neutral-gray-500 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={
+                isWishlisted
+                  ? `นำ ${product.name} ออกจากรายการโปรด`
+                  : `เพิ่ม ${product.name} ในรายการโปรด`
+              }
+            >
+              {isWishlisted ? (
+                <HeartFillIcon size={{ mobile: 20, desktop: 20 }} color="#ff6f61" />
+              ) : (
+                <HeartIcon size={{ mobile: 20, desktop: 20 }} color="#ff6f61" />
+              )}
+            </button>
+          )}
+        </div>
         <div aria-live="polite" aria-atomic="true" className="sr-only">
           {isAddingToCart && 'กำลังเพิ่มสินค้าลงตะกร้า'}
 

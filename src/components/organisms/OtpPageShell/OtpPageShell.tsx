@@ -31,6 +31,7 @@ export function OtpPageShell({ children, onBack, className }: OtpPageShellProps)
           priority
           sizes="100vw"
           className="object-cover object-center"
+          unoptimized
         />
       </div>
 
@@ -46,6 +47,7 @@ export function OtpPageShell({ children, onBack, className }: OtpPageShellProps)
           priority
           sizes="100vw"
           className="object-cover object-center"
+          unoptimized
         />
       </div>
 

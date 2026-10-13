@@ -58,11 +58,10 @@ describe('Product reviews vendor reply fixture-e2e', () => {
     expect(repliedArticle).toContainElement(screen.getByTestId('vendor-reply-block'));
     expect(screen.getByText('Reply for customer 2')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '2' }));
+    await user.click(screen.getByRole('button', { name: /ดูรีวิวเพิ่มเติม/ }));
 
     const pageTwoArticle = screen.getByTestId('product-review-item-review-11');
     expect(pageTwoArticle).toBeInTheDocument();
-    expect(screen.queryByTestId('vendor-reply-block')).not.toBeInTheDocument();
   });
 
   it('omits vendor block when review has no reply', () => {

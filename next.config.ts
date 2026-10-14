@@ -138,7 +138,7 @@ const nextConfig: NextConfig = {
     contentDispositionType: 'attachment',
     // Serve original CDN/R2 URLs. Vercel Image Optimization returns 402
     // OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED once the transform quota is hit.
-    // unoptimized: true,
+    unoptimized: true,
   },
 };
 

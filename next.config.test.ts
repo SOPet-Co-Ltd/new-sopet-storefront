@@ -42,8 +42,8 @@ describe('next.config security headers', () => {
 });
 
 describe('next.config images', () => {
-  it('enables Next.js Image Optimization', () => {
-    expect(nextConfig.images?.unoptimized).not.toBe(true);
+  it('skips Vercel Image Optimization so product and cart images load from the CDN', () => {
+    expect(nextConfig.images?.unoptimized).toBe(true);
   });
 
   it('allows local MinIO (OrbStack) private IPs for next/image', () => {

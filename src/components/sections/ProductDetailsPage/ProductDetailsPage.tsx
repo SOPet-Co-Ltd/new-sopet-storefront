@@ -18,35 +18,16 @@ import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import type { ProductByIdQuery } from '@/lib/graphql/generated/graphql';
 import { useCategories } from '@/lib/hooks/useCategories';
 import { useProduct } from '@/lib/hooks/useProduct';
-import { useReviews } from '@/lib/hooks/useReviews';
+import { useReviews, type ProductReview } from '@/lib/hooks/useReviews';
 import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
 
 type ProductDetailsPageProps = {
   productId: string;
   initialProduct?: ProductByIdQuery['product'];
+  /** Server-fetched reviews so review text is present in the first HTML. */
+  initialProductReviews?: ProductReview[];
   variantSearchParams?: Record<string, string | string[] | undefined>;
 };
-
-function computeReviewSummary(
-  productReviews: { rating: number }[],
-  productAverageRating: number,
-  productReviewCount: number,
-) {
-  if (productReviews.length === 0) {
-    return {
-      averageRating: productAverageRating,
-      totalReviews: productReviewCount,
-    };
-  }
-
-  const totalReviews = productReviews.length;
-  const averageRating =
-    Math.round(
-      (productReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews) * 10,
-    ) / 10;
-
-  return { averageRating, totalReviews };
-}
 
 function ProductDetailsSkeleton() {
   return (
@@ -66,6 +47,7 @@ function ProductDetailsSkeleton() {
 export default function ProductDetailsPage({
   productId,
   initialProduct,
+  initialProductReviews,
   variantSearchParams,
 }: ProductDetailsPageProps) {
   const {
@@ -83,14 +65,16 @@ export default function ProductDetailsPage({
     productId: product?.id,
     storeId: product?.storeId,
     skip: !product,
+    initialProductReviews,
   });
 
+  // Keep the visible summary on product-level aggregates so it matches JSON-LD.
   const reviewSummary = useMemo(
     () =>
       product
-        ? computeReviewSummary(productReviews, product.averageRating, product.reviewCount)
+        ? { averageRating: product.averageRating, totalReviews: product.reviewCount }
         : { averageRating: 0, totalReviews: 0 },
-    [product, productReviews],
+    [product],
   );
 
   const [shareModalOpen, setShareModalOpen] = useState(false);

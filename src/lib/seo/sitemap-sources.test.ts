@@ -20,7 +20,7 @@ vi.mock('@/lib/graphql/apollo-rsc', async () => {
   };
 });
 
-import { POLICY_PATHS } from './constants';
+import { POLICY_PATHS, REGULATORY_PATHS } from './constants';
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -84,6 +84,10 @@ describe('collectSitemapUrls', () => {
 
     for (const policy of POLICY_PATHS) {
       expect(urls).toContain(`https://www.sopet.org/policy/${policy.pathSegment}`);
+    }
+
+    for (const page of REGULATORY_PATHS) {
+      expect(urls).toContain(`https://www.sopet.org${page.path}`);
     }
   });
 

@@ -28,6 +28,7 @@ const SAMPLE_PRODUCT_DETAIL = {
   description: 'High quality dog food for all breeds.',
   status: 'published',
   category: 'dog-food',
+  brandName: 'Premium Pet',
   tags: ['dog', 'food'],
   warning: null,
   expiryDate: null,

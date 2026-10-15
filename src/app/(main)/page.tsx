@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import HomePage from '@/components/pages/HomePage';
+import { HOME_FAQ_ITEMS } from '@/components/sections/HomeFaqSection/faq-items';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { getClient } from '@/lib/graphql/apollo-rsc';
 import {
@@ -16,7 +17,7 @@ import {
   buildRecommendedProductsVariables,
 } from '@/lib/graphql/query-variables';
 import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
-import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/seo/json-ld';
+import { buildFaqJsonLd, buildOrganizationJsonLd, buildWebSiteJsonLd } from '@/lib/seo/json-ld';
 import { buildHomeMetadata, getSiteConfig } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
@@ -68,10 +69,11 @@ export default async function Home() {
   const siteConfig = getSiteConfig();
   const organizationJsonLd = buildOrganizationJsonLd(siteConfig);
   const webSiteJsonLd = buildWebSiteJsonLd(siteConfig);
+  const faqJsonLd = buildFaqJsonLd(HOME_FAQ_ITEMS);
 
   return (
     <>
-      <JsonLdScript data={[organizationJsonLd, webSiteJsonLd]} />
+      <JsonLdScript data={[organizationJsonLd, webSiteJsonLd, faqJsonLd]} />
       <HomePage
         initialCategories={initialCategories}
         initialRecommendedProducts={initialRecommendedProducts}

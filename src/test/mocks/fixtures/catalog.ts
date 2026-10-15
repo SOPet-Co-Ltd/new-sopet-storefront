@@ -29,6 +29,7 @@ export const sampleProductDetail = {
   description: 'High quality dog food',
   status: 'published',
   category: 'dog-food',
+  brandName: 'Premium Pet',
   tags: ['dog', 'food'],
   warning: null,
   expiryDate: null,

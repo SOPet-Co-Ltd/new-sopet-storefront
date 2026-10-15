@@ -18,8 +18,17 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/components/sections/ProductDetailsPage', () => ({
-  default: ({ productId }: { productId: string }) => (
-    <div data-testid="product-details">{productId}</div>
+  default: ({
+    productId,
+    initialProductReviews,
+  }: {
+    productId: string;
+    initialProductReviews?: unknown[];
+  }) => (
+    <div data-testid="product-details">
+      {productId}
+      {initialProductReviews ? `:reviews-${initialProductReviews.length}` : ''}
+    </div>
   ),
 }));
 
@@ -66,5 +75,70 @@ describe('ProductPage SSR soft-degrade', () => {
       }),
     ).rejects.toThrow('NEXT_NOT_FOUND');
     expect(notFoundMock).toHaveBeenCalled();
+  });
+
+  it('still renders the product when the reviews query fails', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    queryMock
+      .mockResolvedValueOnce({
+        data: {
+          product: {
+            id: 'prod-1',
+            name: 'Test Product',
+            status: 'published',
+            category: null,
+            averageRating: 5,
+            reviewCount: 1,
+          },
+        },
+      })
+      .mockRejectedValueOnce(new Error('reviews unavailable'));
+
+    const { default: ProductPage } = await import('./page');
+    const element = await ProductPage({
+      params: Promise.resolve({ id: 'prod-1' }),
+      searchParams: Promise.resolve({}),
+    });
+    const html = renderToStaticMarkup(element as ReactNode);
+
+    expect(html).toContain('prod-1');
+    expect(html).toContain('reviews-0');
+    expect(notFoundMock).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith(
+      '[ssr-preload]',
+      'product-reviews',
+      expect.any(Error),
+    );
+  });
+
+  it('passes server-fetched reviews to the product page', async () => {
+    queryMock
+      .mockResolvedValueOnce({
+        data: {
+          product: {
+            id: 'prod-1',
+            name: 'Test Product',
+            status: 'published',
+            category: null,
+            averageRating: 5,
+            reviewCount: 1,
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          productReviews: [{ id: 'review-1', rating: 5, comment: 'Great', customerName: 'A' }],
+        },
+      });
+
+    const { default: ProductPage } = await import('./page');
+    const element = await ProductPage({
+      params: Promise.resolve({ id: 'prod-1' }),
+      searchParams: Promise.resolve({}),
+    });
+    const html = renderToStaticMarkup(element as ReactNode);
+
+    expect(html).toContain('prod-1');
+    expect(html).toContain('reviews-1');
   });
 });

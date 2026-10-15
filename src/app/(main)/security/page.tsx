@@ -5,10 +5,13 @@ import { buildPageMetadata } from '@/lib/seo/metadata';
 const SECURITY_CONTACT =
   process.env.NEXT_PUBLIC_SECURITY_CONTACT?.trim() || 'sopetofficial@gmail.com';
 
+const PAGE_TITLE = 'ศูนย์ความปลอดภัย';
+const PAGE_DESCRIPTION =
+  'แนวทางที่ Sopet ใช้ปกป้องผู้ซื้อ ผู้ขาย และการชำระเงิน รวมถึงการคุ้มครองข้อมูลส่วนบุคคลและช่องทางรายงานปัญหาด้านความปลอดภัย';
+
 export const metadata: Metadata = buildPageMetadata({
-  title: 'ศูนย์ความปลอดภัย',
-  description:
-    'แนวทางที่ Sopet ใช้ปกป้องผู้ซื้อ ผู้ขาย และการชำระเงิน รวมถึงการคุ้มครองข้อมูลส่วนบุคคลและช่องทางรายงานปัญหาด้านความปลอดภัย',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
   path: '/security',
   robots: { index: true, follow: true },
 });
@@ -99,5 +102,12 @@ Sopet ไม่จัดเก็บหมายเลขบัตรเต็�
 `;
 
 export default function SecurityTrustCenterPage() {
-  return <PolicyMarkdownLayout title="ศูนย์ความปลอดภัย" source={TRUST_CENTER} />;
+  return (
+    <PolicyMarkdownLayout
+      title={PAGE_TITLE}
+      source={TRUST_CENTER}
+      path="/security"
+      description={PAGE_DESCRIPTION}
+    />
+  );
 }

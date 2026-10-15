@@ -12,6 +12,7 @@ fragment ProductDetailFields on ProductType {
   soldCount
   status
   category
+  brandName
   tags
   warning
   expiryDate

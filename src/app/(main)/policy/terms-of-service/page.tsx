@@ -2,11 +2,14 @@ import type { Metadata } from 'next';
 import { PolicyMarkdownLayout } from '../PolicyMarkdownLayout';
 import { buildPolicyPageMetadata } from '../policy-metadata';
 
+const PAGE_TITLE = 'นโยบายการใช้งาน';
+const PAGE_DESCRIPTION =
+  'เงื่อนไขการให้บริการ ข้อกำหนดผู้ขายสินค้าสัตว์เลี้ยง และการใช้งานแพลตฟอร์ม Sopet ตามกฎหมายไทย';
+
 export const metadata: Metadata = buildPolicyPageMetadata({
   pathSegment: 'terms-of-service',
-  title: 'นโยบายการใช้งาน',
-  description:
-    'เงื่อนไขการให้บริการ ข้อกำหนดผู้ขายสินค้าสัตว์เลี้ยง และการใช้งานแพลตฟอร์ม Sopet ตามกฎหมายไทย',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
 });
 
 const TERMS_OF_SERVICE = `
@@ -488,5 +491,12 @@ Sopet มีดุลพินิจในการบังคับใช้�
 `;
 
 export default function TermsOfServicePage() {
-  return <PolicyMarkdownLayout title="นโยบายการใช้งาน" source={TERMS_OF_SERVICE} />;
+  return (
+    <PolicyMarkdownLayout
+      title={PAGE_TITLE}
+      source={TERMS_OF_SERVICE}
+      path="/policy/terms-of-service"
+      description={PAGE_DESCRIPTION}
+    />
+  );
 }

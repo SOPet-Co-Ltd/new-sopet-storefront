@@ -18,6 +18,8 @@ export type UseReviewsParams = {
   productId?: string;
   storeId?: string;
   skip?: boolean;
+  /** Server-fetched reviews for first paint (SSR). */
+  initialProductReviews?: ProductReview[];
 };
 
 export type UseReviewsResult = {
@@ -45,6 +47,7 @@ export function useReviews({
   productId,
   storeId,
   skip = false,
+  initialProductReviews,
 }: UseReviewsParams): UseReviewsResult {
   const skipProduct = skip || !productId;
   const skipStore = skip || !storeId;
@@ -78,15 +81,15 @@ export function useReviews({
   });
 
   const loading =
-    (!skipProduct && productLoading) ||
+    (!skipProduct && productLoading && initialProductReviews == null) ||
     (!skipStore && (storeSummaryLoading || storeReviewsLoading));
 
   return {
-    productReviews: productData?.productReviews ?? [],
+    productReviews: productData?.productReviews ?? initialProductReviews ?? [],
     storeReviews: storeReviewsData?.storeReviews ?? [],
     storeReviewSummary: storeData?.storeReviewSummary ?? null,
     loading,
-    productReviewsLoading: !skipProduct && productLoading,
+    productReviewsLoading: !skipProduct && productLoading && initialProductReviews == null,
     storeReviewSummaryLoading: !skipStore && storeSummaryLoading,
     storeReviewsLoading: !skipStore && storeReviewsLoading,
     error: toHookError(productError ?? storeSummaryError),

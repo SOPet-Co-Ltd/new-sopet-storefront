@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-import { POLICY_PATHS } from './constants';
+import { POLICY_PATHS, REGULATORY_PATHS } from './constants';
 import { fetchAllSitemapProducts, fetchApprovedCategories, fetchApprovedStores } from './fetch';
 import { buildAbsoluteUrl } from './metadata';
 
@@ -15,6 +15,10 @@ export async function collectSitemapUrls(): Promise<MetadataRoute.Sitemap> {
 
   for (const policy of POLICY_PATHS) {
     entries.push({ url: buildAbsoluteUrl(`/policy/${policy.pathSegment}`) });
+  }
+
+  for (const page of REGULATORY_PATHS) {
+    entries.push({ url: buildAbsoluteUrl(page.path) });
   }
 
   const [categories, products, stores] = await Promise.all([

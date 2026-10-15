@@ -3,7 +3,11 @@ import { notFound } from 'next/navigation';
 
 import ProductDetailsPage from '@/components/sections/ProductDetailsPage';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
-import { ProductByIdDocument } from '@/lib/graphql/generated/graphql';
+import {
+  ProductByIdDocument,
+  ProductReviewsDocument,
+  type ProductReviewsQuery,
+} from '@/lib/graphql/generated/graphql';
 import { getClient } from '@/lib/graphql/apollo-rsc';
 import { buildProductByIdVariables } from '@/lib/graphql/query-variables';
 import { runSsrPreloadQueries } from '@/lib/graphql/ssr-preload';
@@ -88,9 +92,21 @@ export default async function ProductPage({ params, searchParams }: Props) {
     notFound();
   }
 
+  const reviewsPreload = await runSsrPreloadQueries('product-reviews', async () => {
+    const result = await getClient().query({
+      query: ProductReviewsDocument,
+      variables: { productId: product.id },
+    });
+    return result.data?.productReviews ?? [];
+  });
+
+  const initialProductReviews: ProductReviewsQuery['productReviews'] = reviewsPreload.ok
+    ? reviewsPreload.data
+    : [];
+
   const productPath = `/product/${id}`;
   const pageUrl = buildAbsoluteUrl(productPath);
-  const productJsonLd = buildProductJsonLd(product, pageUrl);
+  const productJsonLd = buildProductJsonLd(product, pageUrl, initialProductReviews);
 
   const categories = await fetchApprovedCategories();
   const resolvedCategory =
@@ -119,6 +135,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         <ProductDetailsPage
           productId={id}
           initialProduct={product}
+          initialProductReviews={initialProductReviews}
           variantSearchParams={variantSearchParams}
         />
       </main>

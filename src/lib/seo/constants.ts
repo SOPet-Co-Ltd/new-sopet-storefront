@@ -36,3 +36,13 @@ export const POLICY_PATHS = [
       'เงื่อนไขการคืนเงินและคืนสินค้าสำหรับการสั่งซื้อผ่านแพลตฟอร์ม Sopet รวมถึงกรณีสินค้าชำรุด หมดอายุ และการคืนโดยไม่มีเหตุผล',
   },
 ] as const;
+
+/** Indexed trust/regulatory pages that are not under /policy/*. */
+export const REGULATORY_PATHS = [
+  {
+    path: '/security',
+    title: 'ศูนย์ความปลอดภัย',
+    description:
+      'แนวทางที่ Sopet ใช้ปกป้องผู้ซื้อ ผู้ขาย และการชำระเงิน รวมถึงการคุ้มครองข้อมูลส่วนบุคคลและช่องทางรายงานปัญหาด้านความปลอดภัย',
+  },
+] as const;

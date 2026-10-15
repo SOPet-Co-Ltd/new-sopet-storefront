@@ -14,7 +14,7 @@ import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
 import { fetchApprovedCategories } from '@/lib/seo/fetch';
 import { getCategoryIndexation } from '@/lib/seo/indexability';
-import { buildBreadcrumbJsonLd } from '@/lib/seo/json-ld';
+import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd } from '@/lib/seo/json-ld';
 import { buildAbsoluteUrl, buildCategoryMetadata, buildPageMetadata } from '@/lib/seo/metadata';
 
 export const revalidate = 60;
@@ -103,17 +103,25 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   const indexation = getCategoryIndexation(categorySlug, resolvedSearchParams);
   const categoryName = resolveCategoryFilterName(categories ?? [], categorySlug);
-  const breadcrumbJsonLd =
+  const pageUrl = buildAbsoluteUrl(indexation.canonicalPath);
+  const structuredData =
     indexation.indexable && categories
-      ? buildBreadcrumbJsonLd([
-          { name: 'หน้าแรก', url: buildAbsoluteUrl('/') },
-          { name: categoryName, url: buildAbsoluteUrl(indexation.canonicalPath) },
-        ])
+      ? [
+          buildCollectionPageJsonLd({
+            name: categoryName,
+            description: `เลือกซื้อ${categoryName}จากร้านค้าที่ได้รับการอนุมัติบน Sopet`,
+            url: pageUrl,
+          }),
+          buildBreadcrumbJsonLd([
+            { name: 'หน้าแรก', url: buildAbsoluteUrl('/') },
+            { name: categoryName, url: pageUrl },
+          ]),
+        ]
       : null;
 
   return (
     <>
-      {breadcrumbJsonLd ? <JsonLdScript data={breadcrumbJsonLd} /> : null}
+      {structuredData ? <JsonLdScript data={structuredData} /> : null}
       <main className="w-full px-4 py-4 lg:px-20">
         <CategoryPLP
           categorySlug={categorySlug}

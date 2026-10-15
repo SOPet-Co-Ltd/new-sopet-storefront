@@ -3,9 +3,15 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 
+import { JsonLdScript } from '@/components/seo/JsonLdScript';
+import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from '@/lib/seo/json-ld';
+import { buildAbsoluteUrl } from '@/lib/seo/metadata';
+
 type PolicyMarkdownLayoutProps = {
   title: string;
   source: string;
+  path: string;
+  description: string;
 };
 
 const policyMarkdownComponents: Components = {
@@ -63,11 +69,30 @@ function PolicyMarkdownContent({ source }: { source: string }) {
   );
 }
 
-export function PolicyMarkdownLayout({ title, source }: PolicyMarkdownLayoutProps) {
+export function PolicyMarkdownLayout({
+  title,
+  source,
+  path,
+  description,
+}: PolicyMarkdownLayoutProps) {
+  const pageUrl = buildAbsoluteUrl(path);
+  const webPageJsonLd = buildWebPageJsonLd({
+    name: title,
+    description,
+    url: pageUrl,
+  });
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: 'หน้าแรก', url: buildAbsoluteUrl('/') },
+    { name: title, url: pageUrl },
+  ]);
+
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8 md:py-12">
-      <h1 className="sop-headline-md-medium text-sop-primary-700 mb-8">{title}</h1>
-      <PolicyMarkdownContent source={source} />
-    </main>
+    <>
+      <JsonLdScript data={[webPageJsonLd, breadcrumbJsonLd]} />
+      <main className="mx-auto w-full max-w-3xl px-4 py-8 md:py-12">
+        <h1 className="sop-headline-md-medium text-sop-primary-700 mb-8">{title}</h1>
+        <PolicyMarkdownContent source={source} />
+      </main>
+    </>
   );
 }

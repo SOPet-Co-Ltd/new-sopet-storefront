@@ -1092,6 +1092,7 @@ export type ProductDetailFieldsFragment = {
   soldCount: number;
   status: string;
   category: string | null;
+  brandName: string | null;
   tags: Array<string>;
   warning: string | null;
   expiryDate: string | null;
@@ -1134,6 +1135,7 @@ export type ProductBySlugQuery = {
     soldCount: number;
     status: string;
     category: string | null;
+    brandName: string | null;
     tags: Array<string>;
     warning: string | null;
     expiryDate: string | null;
@@ -1176,6 +1178,7 @@ export type ProductByIdQuery = {
     soldCount: number;
     status: string;
     category: string | null;
+    brandName: string | null;
     tags: Array<string>;
     warning: string | null;
     expiryDate: string | null;
@@ -2290,6 +2293,7 @@ export const ProductDetailFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'soldCount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'status' } },
           { kind: 'Field', name: { kind: 'Name', value: 'category' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'brandName' } },
           { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
           { kind: 'Field', name: { kind: 'Name', value: 'warning' } },
           { kind: 'Field', name: { kind: 'Name', value: 'expiryDate' } },

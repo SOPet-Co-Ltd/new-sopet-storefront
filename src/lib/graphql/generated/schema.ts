@@ -2061,6 +2061,7 @@ export type ProductType = {
   averageRating: Scalars['Float']['output'];
   basePrice: Scalars['Float']['output'];
   brandId?: Maybe<Scalars['String']['output']>;
+  brandName?: Maybe<Scalars['String']['output']>;
   category?: Maybe<Scalars['String']['output']>;
   categoryId?: Maybe<Scalars['String']['output']>;
   compareAtPrice?: Maybe<Scalars['Float']['output']>;

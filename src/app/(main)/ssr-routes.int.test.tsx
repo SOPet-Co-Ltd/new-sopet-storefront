@@ -66,6 +66,7 @@ const SAMPLE_PRODUCT_DETAIL = {
   soldCount: 40,
   status: 'published',
   category: 'dog-food',
+  brandName: null,
   tags: [],
   warning: null,
   expiryDate: null,

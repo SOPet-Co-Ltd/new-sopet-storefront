@@ -2,14 +2,22 @@ import { createElement } from 'react';
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
-import { sampleProductDetail } from '@/test/mocks/fixtures/catalog';
+import {
+  sampleProductDetail,
+  sampleProductReview,
+  sampleProductReviewWithReply,
+} from '@/test/mocks/fixtures/catalog';
 import {
   buildBreadcrumbJsonLd,
+  buildCollectionPageJsonLd,
+  buildFaqJsonLd,
   buildOrganizationJsonLd,
   buildProductJsonLd,
+  buildWebPageJsonLd,
   buildWebSiteJsonLd,
   getDefaultOfferPrice,
   mapAvailability,
+  PRODUCT_JSON_LD_REVIEW_LIMIT,
 } from './json-ld';
 
 describe('getDefaultOfferPrice', () => {
@@ -105,7 +113,63 @@ describe('buildProductJsonLd', () => {
     expect(jsonLd.offers).toMatchObject({
       priceCurrency: 'THB',
       price: getDefaultOfferPrice(sampleProductDetail),
+      seller: {
+        '@type': 'Organization',
+        name: sampleProductDetail.store.name,
+        url: 'https://www.sopet.org/sellers/sopet-pet-shop',
+      },
     });
+    expect(jsonLd.brand).toEqual({
+      '@type': 'Brand',
+      name: 'Premium Pet',
+    });
+    expect(jsonLd.aggregateRating).toEqual({
+      '@type': 'AggregateRating',
+      ratingValue: sampleProductDetail.averageRating,
+      reviewCount: sampleProductDetail.reviewCount,
+      bestRating: 5,
+      worstRating: 1,
+    });
+  });
+
+  it('includes up to four Review entries from the server review list', () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
+
+    const pageUrl = 'https://www.sopet.org/product/prod-001';
+    const reviews = [
+      sampleProductReview,
+      sampleProductReviewWithReply,
+      { ...sampleProductReview, id: 'review-3', rating: 4, comment: 'Good' },
+      { ...sampleProductReview, id: 'review-4', rating: 3, comment: 'OK' },
+      { ...sampleProductReview, id: 'review-5', rating: 5, comment: 'Extra' },
+    ];
+    const jsonLd = buildProductJsonLd(sampleProductDetail, pageUrl, reviews);
+    const reviewEntries = jsonLd.review as Array<Record<string, unknown>>;
+
+    expect(reviewEntries).toHaveLength(PRODUCT_JSON_LD_REVIEW_LIMIT);
+    expect(reviewEntries[0]).toMatchObject({
+      '@type': 'Review',
+      author: { '@type': 'Person', name: sampleProductReview.customerName },
+      datePublished: sampleProductReview.createdAt,
+      reviewBody: sampleProductReview.comment,
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: sampleProductReview.rating,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    });
+  });
+
+  it('omits aggregateRating and review when the product has no reviews', () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
+
+    const pageUrl = 'https://www.sopet.org/product/prod-001';
+    const unreviewed = { ...sampleProductDetail, averageRating: 0, reviewCount: 0 };
+    const jsonLd = buildProductJsonLd(unreviewed, pageUrl, []);
+
+    expect(jsonLd.aggregateRating).toBeUndefined();
+    expect(jsonLd.review).toBeUndefined();
   });
 
   it('omits offers when price is zero', () => {
@@ -141,6 +205,88 @@ describe('buildProductJsonLd', () => {
       'https://www.sopet.org/images/dog-food.jpg',
       'https://www.sopet.org/images/dog-food-alt.jpg',
     ]);
+  });
+
+  it('uses the default variant SKU instead of the first variant', () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
+
+    const pageUrl = 'https://www.sopet.org/product/prod-001';
+    const productWithVariants = {
+      ...sampleProductDetail,
+      variants: [
+        {
+          id: 'v1',
+          sku: 'SKU-EXPENSIVE',
+          price: 900,
+          compareAtPrice: null,
+          stockQuantity: 10,
+          optionsJson: null,
+        },
+        {
+          id: 'v2',
+          sku: 'SKU-DEFAULT',
+          price: 750,
+          compareAtPrice: null,
+          stockQuantity: 5,
+          optionsJson: null,
+        },
+      ],
+    };
+    const jsonLd = buildProductJsonLd(productWithVariants, pageUrl);
+
+    expect(jsonLd.sku).toBe('SKU-DEFAULT');
+  });
+});
+
+describe('buildFaqJsonLd', () => {
+  it('builds FAQPage schema from FAQ items', () => {
+    const jsonLd = buildFaqJsonLd([
+      { question: 'ของแท้ไหม', answer: 'ยาและสินค้าของเรามาจากรพ.ที่จดทะเบียนถูกต้อง' },
+    ]);
+
+    expect(jsonLd['@type']).toBe('FAQPage');
+    expect(jsonLd.mainEntity).toEqual([
+      {
+        '@type': 'Question',
+        name: 'ของแท้ไหม',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'ยาและสินค้าของเรามาจากรพ.ที่จดทะเบียนถูกต้อง',
+        },
+      },
+    ]);
+  });
+});
+
+describe('buildWebPageJsonLd', () => {
+  it('builds WebPage schema for policy and regulatory pages', () => {
+    const jsonLd = buildWebPageJsonLd({
+      name: 'นโยบายความเป็นส่วนตัว',
+      description: 'วิธีที่ Sopet เก็บรวบรวม ใช้ และปกป้องข้อมูลส่วนบุคคลของคุณ',
+      url: 'https://www.sopet.org/policy/privacy-policy',
+    });
+
+    expect(jsonLd).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'นโยบายความเป็นส่วนตัว',
+      description: 'วิธีที่ Sopet เก็บรวบรวม ใช้ และปกป้องข้อมูลส่วนบุคคลของคุณ',
+      url: 'https://www.sopet.org/policy/privacy-policy',
+    });
+  });
+});
+
+describe('buildCollectionPageJsonLd', () => {
+  it('builds CollectionPage schema for category listings', () => {
+    const jsonLd = buildCollectionPageJsonLd({
+      name: 'Dog Food',
+      description: 'เลือกซื้อDog Foodจากร้านค้าที่ได้รับการอนุมัติบน Sopet',
+      url: 'https://www.sopet.org/categories/dog-food',
+    });
+
+    expect(jsonLd['@type']).toBe('CollectionPage');
+    expect(jsonLd.name).toBe('Dog Food');
+    expect(jsonLd.url).toBe('https://www.sopet.org/categories/dog-food');
   });
 });
 

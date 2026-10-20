@@ -252,7 +252,7 @@ export function ProductFloatingBuyCard({
             <>
               <div
                 data-testid="floating-variant-price"
-                className="text-2xl font-bold tracking-tight text-sop-secondary-500 lg:text-[28px]"
+                className="text-xl font-bold tracking-tight text-sop-secondary-600 "
               >
                 ฿{formatPrice(variantPrice)}
               </div>

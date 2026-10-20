@@ -49,9 +49,9 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
                 {store.name}
               </p>
             </Link>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#ECFDF3] px-2.5 py-0.5 w-fit">
+            <div className="inline-flex items-center gap-sop-4px rounded-full bg-sop-system-success-100 px-sop-12px py-sop-8px w-fit">
               <svg
-                className="h-3.5 w-3.5 text-[#12B76A] shrink-0"
+                className="h-sop-12px w-sop-12px text-sop-system-success-500 shrink-0"
                 viewBox="0 0 16 16"
                 fill="currentColor"
                 aria-hidden="true"
@@ -62,7 +62,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
                   clipRule="evenodd"
                 />
               </svg>
-              <span className="text-xs font-medium text-[#027A48]">ร้านค้าแนะนำ</span>
+              <span className="text-xs font-medium text-sop-system-success-500">ร้านค้าแนะนำ</span>
             </div>
           </div>
         </div>

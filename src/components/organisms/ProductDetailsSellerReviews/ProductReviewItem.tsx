@@ -61,7 +61,7 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
         </div>
 
         {variantText ? (
-          <div className="flex shrink-0 items-center gap-2 rounded-full bg-sop-neutral-gray-500 px-sop-16px py-sop-8px">
+          <div className="flex shrink-0 items-center gap-2 rounded-sop-12px bg-sop-neutral-gray-500 px-sop-16px py-sop-8px">
             <span className="sop-body-xs-medium text-sop-neutral-gray-300 whitespace-nowrap">
               ตัวเลือก : {variantText}
             </span>
@@ -70,14 +70,16 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
       </div>
 
       {review.comment ? (
-        <p className="mt-3 sop-body-md-regular text-sop-neutral-gray-300 leading-relaxed">
+        <p className="ml-12 mt-3 sop-body-sm-regular text-sop-neutral-gray-300 leading-relaxed">
           {review.comment}
         </p>
       ) : null}
 
-      <ReviewImagesGrid images={review.images} />
+      <div className="ml-12">
+        <ReviewImagesGrid images={review.images} />
 
-      {review.reply ? <VendorReplyBlock reply={review.reply} /> : null}
+        {review.reply ? <VendorReplyBlock reply={review.reply} /> : null}
+      </div>
 
       <div className="mt-3 flex justify-end">
         <button

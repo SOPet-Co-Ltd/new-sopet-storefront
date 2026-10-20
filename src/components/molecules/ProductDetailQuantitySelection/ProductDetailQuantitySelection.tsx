@@ -54,7 +54,7 @@ export function ProductDetailQuantitySelection({
             </div>
 
             <span
-              className="inline-flex items-center rounded-full bg-[#FFF0ED] px-2.5 py-1 text-xs font-medium text-[#FF4D4F]"
+              className="inline-flex items-center rounded-full bg-sop-secondary-100 px-sop-12px py-sop-4px sop-body-sm-regular font-medium text-sop-secondary-500"
               data-testid="variant-stock"
             >
               เหลือสินค้า {variantStock} ชิ้น

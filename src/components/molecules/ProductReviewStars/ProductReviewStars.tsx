@@ -28,14 +28,18 @@ export function ProductReviewStars({
     <div className="flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-2">
         <RenderStars averageRating={displayRating} size={18} />
-        <span className="text-sm font-semibold text-sop-neutral-gray-200">{displayRating}</span>
-        <span className="text-sm text-sop-neutral-gray-400">
+        <span className="sop-body-sm-regular text-sop-neutral-gray-300">{displayRating}</span>
+        <span className="sop-body-sm-regular text-sop-neutral-gray-400">
           ({formatSoldCount(totalReviews)} รีวิว)
         </span>
       </div>
       <div className="h-3.5 w-px bg-sop-neutral-grayalpha-300" aria-hidden />
-      <span className="text-sm text-sop-neutral-gray-400">
-        ขายแล้ว {formatSoldCount(soldCount)} ชิ้น
+      <span className="sop-body-sm-regular text-sop-neutral-gray-400">
+        ขายแล้ว{' '}
+        <span className="text-sop-neutral-gray-200 font-semibold">
+          {formatSoldCount(soldCount)}
+        </span>{' '}
+        ชิ้น
       </span>
     </div>
   );

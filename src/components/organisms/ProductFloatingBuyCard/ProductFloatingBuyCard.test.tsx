@@ -46,7 +46,6 @@ vi.mock('@/lib/providers/CartProvider', () => ({
 }));
 
 const SAMPLE_PRODUCT: ProductDetail = {
-  __typename: 'ProductType',
   id: 'prod-123',
   name: 'Bravecto บราเวคโต แบบเม็ด สุนัข 20-40 kg',
   slug: 'bravecto-20-40kg',
@@ -65,7 +64,6 @@ const SAMPLE_PRODUCT: ProductDetail = {
   warning: null,
   expiryDate: '12/12/2028',
   store: {
-    __typename: 'StoreType',
     id: 'store-1',
     name: 'Sopet Shop',
     slug: 'sopet-shop',

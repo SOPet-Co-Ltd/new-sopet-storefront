@@ -133,18 +133,15 @@ function ProductDetailsSellerReviewsContent({
         <div className="flex flex-col items-center justify-center gap-1 rounded-lg bg-sop-primary-100 p-4 md:min-w-[173px] md:shrink-0 md:p-6">
           <div className="flex items-baseline gap-1">
             <p
-              className="sop-headline-md-medium md:sop-display-sm-medium text-sop-system-warning-500"
+              className="sop-headline-md-medium md:sop-display-sm-medium text-sop-neutral-gray-200"
               data-testid="store-review-average"
             >
               {averageRating.toFixed(1)}
             </p>
             <span className="sop-body-sm-regular text-sop-neutral-gray-400">/5</span>
           </div>
-          <div className="hidden items-center gap-2 md:flex">
-            <RenderStars averageRating={averageRating} size={25} />
-          </div>
-          <div className="flex items-center gap-2 md:hidden">
-            <RenderStars averageRating={averageRating} size={19} />
+          <div className="flex items-center gap-2">
+            <RenderStars averageRating={averageRating} size={16} />
           </div>
         </div>
 

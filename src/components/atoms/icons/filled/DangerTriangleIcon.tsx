@@ -1,0 +1,16 @@
+import { FilledIcon, type FilledIconProps } from '../FilledIcon';
+
+export type DangerTriangleIconProps = Omit<FilledIconProps, 'children'>;
+
+/** From `temp/Danger Triangle.svg`. */
+export function DangerTriangleIcon({ color = 'currentColor', ...props }: DangerTriangleIconProps) {
+  return (
+    <FilledIcon viewBox="0 0 16 16" color={color} {...props}>
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M3.54106 7.17433C5.48663 3.72478 6.45942 2 7.99992 2C9.54042 2 10.5132 3.72477 12.4588 7.17432L12.7012 7.60418C14.318 10.4707 15.1264 11.904 14.3957 12.952C13.6651 14 11.8575 14 8.24236 14H7.75748C4.14229 14 2.3347 14 1.60409 12.952C0.87348 11.904 1.68186 10.4707 3.29862 7.60418L3.54106 7.17433ZM7.99992 4.83333C8.27606 4.83333 8.49992 5.05719 8.49992 5.33333V8.66667C8.49992 8.94281 8.27606 9.16667 7.99992 9.16667C7.72378 9.16667 7.49992 8.94281 7.49992 8.66667V5.33333C7.49992 5.05719 7.72378 4.83333 7.99992 4.83333ZM7.99992 11.3333C8.36811 11.3333 8.66658 11.0349 8.66658 10.6667C8.66658 10.2985 8.36811 10 7.99992 10C7.63173 10 7.33325 10.2985 7.33325 10.6667C7.33325 11.0349 7.63173 11.3333 7.99992 11.3333Z"
+      />
+    </FilledIcon>
+  );
+}

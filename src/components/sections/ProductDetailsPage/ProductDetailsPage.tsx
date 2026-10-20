@@ -217,7 +217,7 @@ export default function ProductDetailsPage({
             loading={reviewsLoading}
           />
 
-          <HomeFaqSection items={HOME_FAQ_ITEMS} />
+          {/* <HomeFaqSection items={HOME_FAQ_ITEMS} /> */}
         </div>
 
         <aside aria-label="สั่งซื้อด่วน" className="sticky top-36 z-30 hidden lg:block">

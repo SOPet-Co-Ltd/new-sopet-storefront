@@ -7,7 +7,14 @@ import { Breadcrumbs, type BreadcrumbItem } from '@/components/atoms/Breadcrumbs
 import { ProductDetails } from '@/components/organisms/ProductDetails/ProductDetails';
 import ProductDetailsSeller from '@/components/organisms/ProductDetailsSeller';
 import ProductDetailsSellerReviews from '@/components/organisms/ProductDetailsSellerReviews';
-import { getDefaultVariant } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
+import { ProductFloatingBuyCard } from '@/components/organisms/ProductFloatingBuyCard';
+import {
+  getDefaultVariant,
+  readClientSearchParams,
+  resolveSelectedOptionsFromSearchParams,
+  toSearchParamsGetter,
+  type VariantOptions,
+} from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 import { ProductGallery } from '@/components/organisms/ProductGallery/ProductGallery';
 import { ProductDetailDescription } from '@/components/sections/ProductDetailDescription/ProductDetailDescription';
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
@@ -78,6 +85,24 @@ export default function ProductDetailsPage({
   );
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedOptions, setSelectedOptions] = useState<VariantOptions>(() =>
+    resolveSelectedOptionsFromSearchParams(
+      product?.variants,
+      toSearchParamsGetter(variantSearchParams) ?? readClientSearchParams(),
+    ),
+  );
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const mainArticleRef = useRef<HTMLElement | null>(null);
+
+  const handleVariantChange = (
+    _variantId: string | null,
+    _price: number,
+    _stockQuantity: number,
+    quantity: number,
+  ) => {
+    setSelectedQuantity(quantity);
+  };
+
   const { categories } = useCategories();
   const trackedViewItemIdRef = useRef<string | null>(null);
 
@@ -160,34 +185,50 @@ export default function ProductDetailsPage({
         <Breadcrumbs items={breadcrumbs} />
       </div>
 
-      <article aria-labelledby="product-title">
+      <article aria-labelledby="product-title" ref={mainArticleRef}>
         <div className="-mx-4 grid min-w-0 grid-cols-1 gap-6 overflow-x-hidden lg:rounded-sop-32px md:rounded-sop-32px rounded-none border border-[#F0EDF5] bg-sop-base-white p-4 shadow-xs md:mx-0 md:p-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-8 lg:p-8">
           <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
           <ProductDetails
             product={product}
             variantSearchParams={variantSearchParams}
+            selectedOptions={selectedOptions}
+            onSelectedOptionsChange={setSelectedOptions}
+            onVariantChange={handleVariantChange}
             shareModalOpen={shareModalOpen}
             onShareModalOpenChange={setShareModalOpen}
           />
         </div>
       </article>
 
-      <div className="-mx-4 md:mx-0">
-        <ProductDetailsSeller store={product.store} />
+      <div className="grid grid-cols-1 items-start lg:grid-cols-[1fr_360px] lg:gap-8">
+        <div className="flex min-w-0 flex-col gap-2 md:gap-5">
+          <div className="-mx-4 md:mx-0">
+            <ProductDetailsSeller store={product.store} />
+          </div>
+
+          <ProductDetailDescription description={product.description} />
+
+          <ProductDetailWarning warning={product.warning} />
+
+          <ProductDetailsSellerReviews
+            productReviews={productReviews}
+            averageRating={reviewSummary.averageRating}
+            totalReviews={reviewSummary.totalReviews}
+            loading={reviewsLoading}
+          />
+
+          <HomeFaqSection items={HOME_FAQ_ITEMS} />
+        </div>
+
+        <aside aria-label="สั่งซื้อด่วน" className="sticky top-36 z-30 hidden lg:block">
+          <ProductFloatingBuyCard
+            product={product}
+            selectedOptions={selectedOptions}
+            productQuantity={selectedQuantity}
+            triggerRef={mainArticleRef}
+          />
+        </aside>
       </div>
-
-      <ProductDetailDescription description={product.description} />
-
-      <ProductDetailWarning warning={product.warning} />
-
-      <ProductDetailsSellerReviews
-        productReviews={productReviews}
-        averageRating={reviewSummary.averageRating}
-        totalReviews={reviewSummary.totalReviews}
-        loading={reviewsLoading}
-      />
-
-      <HomeFaqSection items={HOME_FAQ_ITEMS} />
 
       <div className="mt-2 flex flex-col gap-8 md:mt-3">
         <HomeProductSection

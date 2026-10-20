@@ -13,7 +13,9 @@ import { ProductShowPrice } from '@/components/sections/ProductShowPrice/Product
 
 import {
   getDefaultVariant,
+  readClientSearchParams,
   resolveSelectedOptionsFromSearchParams,
+  toSearchParamsGetter,
   type VariantOptions,
 } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 
@@ -25,6 +27,8 @@ type ProductDetailsProps = {
   product: ProductDetail;
   /** Raw Next.js `searchParams` so shared links like `?test=test` select on first paint. */
   variantSearchParams?: Record<string, string | string[] | undefined>;
+  selectedOptions?: VariantOptions;
+  onSelectedOptionsChange?: (options: VariantOptions) => void;
   onVariantChange?: (
     variantId: string | null,
     price: number,
@@ -35,37 +39,11 @@ type ProductDetailsProps = {
   onShareModalOpenChange?: (open: boolean) => void;
 };
 
-function toSearchParamsGetter(
-  raw: Record<string, string | string[] | undefined> | undefined,
-): Pick<URLSearchParams, 'get'> | null {
-  if (!raw) return null;
-
-  return {
-    get(key: string) {
-      const value = raw[key];
-
-      if (typeof value === 'string') {
-        return value;
-      }
-
-      if (Array.isArray(value) && typeof value[0] === 'string') {
-        return value[0];
-      }
-
-      return null;
-    },
-  };
-}
-
-function readClientSearchParams(): Pick<URLSearchParams, 'get'> | null {
-  if (typeof window === 'undefined') return null;
-
-  return new URLSearchParams(window.location.search);
-}
-
 export function ProductDetails({
   product,
   variantSearchParams,
+  selectedOptions: controlledSelectedOptions,
+  onSelectedOptionsChange: controlledOnSelectedOptionsChange,
   onVariantChange,
   shareModalOpen,
   onShareModalOpenChange,
@@ -76,12 +54,15 @@ export function ProductDetails({
 
   const { isFavorite, addFavorite, removeFavorite, loading: favoritesLoading } = useFavorites();
 
-  const [selectedOptions, setSelectedOptions] = useState<VariantOptions>(() =>
+  const [internalSelectedOptions, setInternalSelectedOptions] = useState<VariantOptions>(() =>
     resolveSelectedOptionsFromSearchParams(
       product.variants,
       toSearchParamsGetter(variantSearchParams) ?? readClientSearchParams(),
     ),
   );
+
+  const selectedOptions = controlledSelectedOptions ?? internalSelectedOptions;
+  const setSelectedOptions = controlledOnSelectedOptionsChange ?? setInternalSelectedOptions;
 
   const [wishlistPending, setWishlistPending] = useState(false);
 

@@ -137,3 +137,23 @@ export function resolveSelectedOptionsFromSearchParams(
 export function formatOptionLabel(key: string): string {
   return key.charAt(0).toUpperCase() + key.slice(1);
 }
+
+export function toSearchParamsGetter(
+  raw: Record<string, string | string[] | undefined> | undefined,
+): Pick<URLSearchParams, 'get'> | null {
+  if (!raw) return null;
+
+  return {
+    get(key: string) {
+      const value = raw[key];
+      if (typeof value === 'string') return value;
+      if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+      return null;
+    },
+  };
+}
+
+export function readClientSearchParams(): Pick<URLSearchParams, 'get'> | null {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search);
+}

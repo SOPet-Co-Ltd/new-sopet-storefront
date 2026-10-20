@@ -108,6 +108,7 @@ export { SopetSortIcon, type SopetSortIconProps } from './SopetSortIcon';
 export { SortIcon, type SortIconProps } from './SortIcon';
 export { SortUpDownIcon, type SortUpDownIconProps } from './SortUpDownIcon';
 export { SparkIcon, type SparkIconProps } from './SparkIcon';
+export { StarCircleIcon, type StarCircleIconProps } from './StarCircleIcon';
 export { StarFillIcon, type StarFillIconProps } from './StarFillIcon';
 export { StarIcon, type StarIconProps } from './StarIcon';
 export { SubtractIcon, type SubtractIconProps } from './SubtractIcon';

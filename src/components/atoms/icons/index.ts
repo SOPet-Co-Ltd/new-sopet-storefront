@@ -220,6 +220,8 @@ export {
   type SortUpDownIconProps,
   SparkIcon,
   type SparkIconProps,
+  StarCircleIcon,
+  type StarCircleIconProps,
   StarFillIcon,
   type StarFillIconProps,
   StarIcon,

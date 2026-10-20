@@ -180,7 +180,10 @@ export default function ProductDetailsPage({
   const breadcrumbs = breadcrumbItems;
 
   return (
-    <div data-testid="product-details-page" className="flex min-w-0 flex-col gap-2 md:gap-5">
+    <div
+      data-testid="product-details-page"
+      className="mx-auto flex w-full min-w-0 max-w-[1064px] flex-col gap-2 md:gap-5"
+    >
       <div className="py-2">
         <Breadcrumbs items={breadcrumbs} />
       </div>

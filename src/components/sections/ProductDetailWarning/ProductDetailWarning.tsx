@@ -1,4 +1,4 @@
-import { WarningIcon } from '@/components/atoms/icons/filled/WarningIcon';
+import { DangerTriangleIcon } from '@/components/atoms/icons/filled/DangerTriangleIcon';
 
 type ProductDetailWarningProps = {
   warning: string | null | undefined;
@@ -8,14 +8,20 @@ export function ProductDetailWarning({ warning }: ProductDetailWarningProps) {
   if (!warning) return null;
 
   return (
-    <div className="-mx-4 bg-sop-base-white p-4 rounded-none md:mx-0 md:rounded-sop-16px">
-      <div className="flex items-center gap-2 mb-2">
-        <WarningIcon size={{ mobile: 24, desktop: 24 }} />
-        <p className="md:sop-body-lg-medium sop-body-md-medium text-sop-primary-700">คำเตือน</p>
+    <section className="-mx-4 overflow-hidden rounded-none bg-sop-base-white md:mx-0 md:rounded-sop-20">
+      <div className="flex items-center px-sop-24px py-sop-20px">
+        <div className="flex items-center gap-sop-8px">
+          <span className="flex rounded-sop-20 bg-sop-system-warning-300 p-sop-8px">
+            <DangerTriangleIcon size={{ mobile: 16, desktop: 16 }} color="#FFFFFF" />
+          </span>
+          <h2 className="sop-body-md font-semibold text-sop-neutral-gray-200">คำเตือน</h2>
+        </div>
       </div>
-      <p className="md:sop-body-md-regular sop-body-sm-regular text-sop-neutral-gray-400">
-        {warning}
-      </p>
-    </div>
+      <div className="px-sop-24px pb-sop-24px">
+        <div className="rounded-sop-12 bg-sop-system-warning-100 p-sop-20px">
+          <p className="sop-body-md-medium text-sop-neutral-gray-200">{warning}</p>
+        </div>
+      </div>
+    </section>
   );
 }

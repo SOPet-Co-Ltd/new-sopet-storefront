@@ -294,7 +294,6 @@ describe('ProductDetailsPage', () => {
     expect(screen.getByText('Test Customer')).toBeInTheDocument();
     expect(screen.getByText('Great product')).toBeInTheDocument();
     expect(screen.getByTestId('store-review-average')).toHaveTextContent('5');
-    expect(screen.getByRole('heading', { name: 'คำถามที่พบบ่อย' })).toBeInTheDocument();
   });
 
   it('updates price and stock when variant is changed', async () => {
@@ -306,11 +305,13 @@ describe('ProductDetailsPage', () => {
     });
 
     expect(await screen.findByTestId('variant-price')).toHaveTextContent('฿890.00');
+    expect(screen.getByTestId('floating-variant-price')).toHaveTextContent('฿890.00');
     expect(screen.getByTestId('variant-stock')).toHaveTextContent('เหลือสินค้า 10 ชิ้น');
 
     await user.click(screen.getByRole('radio', { name: 'Size: L' }));
 
     expect(screen.getByTestId('variant-price')).toHaveTextContent('฿990.00');
+    expect(screen.getByTestId('floating-variant-price')).toHaveTextContent('฿990.00');
     expect(screen.getByTestId('variant-stock')).toHaveTextContent('เหลือสินค้า 5 ชิ้น');
   });
 

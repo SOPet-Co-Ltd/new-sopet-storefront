@@ -2,15 +2,15 @@
 
 import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ProductReviewPagination } from '@/components/molecules/ProductReviewPagination/ProductReviewPagination';
+// import { ProductReviewPagination } from '@/components/molecules/ProductReviewPagination/ProductReviewPagination';
 import { RenderReviewFilterButtons } from '@/components/molecules/RenderReviewFilterButtons/RenderReviewFilterButtons';
 import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
 import { cn } from '@/lib/utils';
 import type { ProductReview } from '@/lib/hooks/useReviews';
 import { ProductReviewItem } from './ProductReviewItem';
-import { StarIcon } from '@/components/atoms/icons';
+import { StarCircleIcon } from '@/components/atoms/icons';
 
-const REVIEWS_PER_PAGE = 10;
+// const REVIEWS_PER_PAGE = 10;
 const RATING_QUERY_KEY = 'prf';
 
 type ProductDetailsSellerReviewsProps = {
@@ -119,7 +119,7 @@ function ProductDetailsSellerReviewsContent({
       data-testid="product-reviews"
     >
       <div className="flex items-center gap-sop-8px pb-sop-20px">
-        <StarIcon
+        <StarCircleIcon
           size={{ mobile: 32, desktop: 32 }}
           color="#FFFFFF"
           className="p-sop-8px bg-sop-primary-500 rounded-full"

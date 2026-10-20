@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { SOPetLogo } from '@/components/atoms/icons';
+import { ChatDotsIcon, ShopVendorIcon } from '@/components/atoms/icons';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 
 type ProductDetailsSellerProps = {
@@ -75,21 +75,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-sop-neutral-grayalpha-200 bg-sop-base-white px-4 py-2.5 text-sm font-medium text-sop-neutral-gray-200 shadow-2xs transition-colors hover:bg-sop-neutral-gray-500 cursor-pointer"
             data-testid="seller-chat-button"
           >
-            <svg
-              className="h-4.5 w-4.5 text-sop-secondary-500 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              <path d="M8 10h.01" />
-              <path d="M12 10h.01" />
-              <path d="M16 10h.01" />
-            </svg>
+            <ChatDotsIcon size={{ mobile: 18, desktop: 18 }} color="#FF6F61" className="shrink-0" />
             <span>แชทพูดคุย</span>
           </button>
 
@@ -98,22 +84,11 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-sop-neutral-grayalpha-200 bg-sop-base-white px-4 py-2.5 text-sm font-medium text-sop-neutral-gray-200 shadow-2xs transition-colors hover:bg-sop-neutral-gray-500"
             data-testid="seller-store-link"
           >
-            <svg
-              className="h-4.5 w-4.5 text-sop-secondary-500 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-              <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
-              <path d="M2 7h20" />
-              <path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" />
-            </svg>
+            <ShopVendorIcon
+              size={{ mobile: 18, desktop: 18 }}
+              color="#FF6F61"
+              className="shrink-0"
+            />
             <span>ไปยังร้านค้า</span>
           </Link>
         </div>

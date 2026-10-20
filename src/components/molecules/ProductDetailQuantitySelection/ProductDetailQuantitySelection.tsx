@@ -1,7 +1,7 @@
 import { type SetStateAction } from 'react';
-import { TimeIcon } from '@/components/atoms/icons/filled/TimeIcon';
-import { MinusSquareIcon } from '@/components/atoms/icons/inline/MinusSquareIcon';
-import { PlusSquareIcon } from '@/components/atoms/icons/inline/PlusSquareIcon';
+import { ClockChainIcon } from '@/components/atoms/icons/filled/ClockChainIcon';
+import { MinusStrokeIcon } from '@/components/atoms/icons/outline/MinusStrokeIcon';
+import { PlusStrokeIcon } from '@/components/atoms/icons/outline/PlusStrokeIcon';
 
 type ProductDetailQuantitySelectionProps = {
   variantStock: number;
@@ -23,27 +23,24 @@ export function ProductDetailQuantitySelection({
 
         <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center rounded-sop-8px bg-sop-neutral-gray-500 p-1">
+            <div className="flex h-[42px] min-w-[138px] items-center justify-between overflow-hidden rounded-sop-12px border border-[rgba(34,34,41,0.04)] bg-sop-base-white">
               <button
                 type="button"
-                className="flex size-7 cursor-pointer items-center justify-center rounded-md text-sop-neutral-gray-400 transition-colors hover:text-sop-neutral-gray-200 disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex cursor-pointer items-center bg-[rgba(34,34,41,0.04)] p-2 text-sop-neutral-gray-400 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-30"
                 disabled={productQuantity <= 1}
                 onClick={() => setProductQuantity((quantity) => (quantity > 1 ? quantity - 1 : 1))}
                 aria-label="ลดจำนวน"
               >
-                <MinusSquareIcon
-                  size={{ mobile: 20, desktop: 20 }}
-                  color={productQuantity <= 1 ? '#D1D5DB' : '#6B7280'}
-                />
+                <MinusStrokeIcon size={{ mobile: 24, desktop: 24 }} color="#949495" />
               </button>
 
-              <span className="min-w-8 text-center text-sm font-medium text-sop-neutral-gray-200">
+              <span className="flex-1 text-center sop-body-sm font-semibold text-sop-neutral-gray-300">
                 {productQuantity}
               </span>
 
               <button
                 type="button"
-                className="flex size-7 cursor-pointer items-center justify-center rounded-md text-sop-neutral-gray-400 transition-colors hover:text-sop-neutral-gray-200 disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex cursor-pointer items-center bg-[rgba(34,34,41,0.04)] p-2 text-sop-neutral-gray-400 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-30"
                 disabled={productQuantity >= variantStock}
                 onClick={() =>
                   setProductQuantity((quantity) =>
@@ -52,15 +49,12 @@ export function ProductDetailQuantitySelection({
                 }
                 aria-label="เพิ่มจำนวน"
               >
-                <PlusSquareIcon
-                  size={{ mobile: 20, desktop: 20 }}
-                  color={productQuantity >= variantStock ? '#D1D5DB' : '#6B7280'}
-                />
+                <PlusStrokeIcon size={{ mobile: 24, desktop: 24 }} color="#949495" />
               </button>
             </div>
 
             <span
-              className="inline-flex items-center rounded-md bg-[#FFF0ED] px-2.5 py-1 text-xs font-medium text-[#FF4D4F]"
+              className="inline-flex items-center rounded-full bg-[#FFF0ED] px-2.5 py-1 text-xs font-medium text-[#FF4D4F]"
               data-testid="variant-stock"
             >
               เหลือสินค้า {variantStock} ชิ้น
@@ -70,7 +64,7 @@ export function ProductDetailQuantitySelection({
           {expiryDate ? (
             <div>
               <div className="mt-sop-20px inline-flex items-center gap-1.5 rounded-full border border-sop-neutral-grayalpha-200 px-3 py-1 text-xs text-sop-neutral-gray-300 lg:mt-0">
-                <TimeIcon size={{ mobile: 16, desktop: 16 }} color="#6b7280" />
+                <ClockChainIcon size={{ mobile: 16, desktop: 16 }} color="#6b7280" />
                 <span>หมดอายุ : {expiryDate}</span>
               </div>
             </div>

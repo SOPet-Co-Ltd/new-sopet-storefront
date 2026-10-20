@@ -2,7 +2,7 @@
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { notFound } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
 import { ProductDetails } from '@/components/organisms/ProductDetails/ProductDetails';
 import ProductDetailsSeller from '@/components/organisms/ProductDetailsSeller';
@@ -18,7 +18,6 @@ import {
 import { ProductGallery } from '@/components/organisms/ProductGallery/ProductGallery';
 import { ProductDetailDescription } from '@/components/sections/ProductDetailDescription/ProductDetailDescription';
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
-import { HomeFaqSection, HOME_FAQ_ITEMS } from '@/components/sections/HomeFaqSection';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
 import { trackViewItem } from '@/lib/analytics';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
@@ -27,6 +26,7 @@ import { useCategories } from '@/lib/hooks/useCategories';
 import { useProduct } from '@/lib/hooks/useProduct';
 import { useReviews, type ProductReview } from '@/lib/hooks/useReviews';
 import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
+import { cn } from '@/lib/utils';
 
 type ProductDetailsPageProps = {
   productId: string;
@@ -92,7 +92,12 @@ export default function ProductDetailsPage({
     ),
   );
   const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [isFloatingBuyVisible, setIsFloatingBuyVisible] = useState(false);
   const mainArticleRef = useRef<HTMLElement | null>(null);
+
+  const handleFloatingBuyVisibilityChange = useCallback((visible: boolean) => {
+    setIsFloatingBuyVisible(visible);
+  }, []);
 
   const handleVariantChange = (
     _variantId: string | null,
@@ -180,7 +185,10 @@ export default function ProductDetailsPage({
   const breadcrumbs = breadcrumbItems;
 
   return (
-    <div data-testid="product-details-page" className="flex min-w-0 flex-col gap-2 md:gap-5">
+    <div
+      data-testid="product-details-page"
+      className="mx-auto flex w-full min-w-0 max-w-[1064px] flex-col gap-2 md:gap-5"
+    >
       <div className="py-2">
         <Breadcrumbs items={breadcrumbs} />
       </div>
@@ -200,7 +208,14 @@ export default function ProductDetailsPage({
         </div>
       </article>
 
-      <div className="grid grid-cols-1 items-start lg:grid-cols-[1fr_360px] lg:gap-8">
+      <div
+        className={cn(
+          'grid grid-cols-1 items-start transition-[grid-template-columns,gap] duration-300 ease-out',
+          isFloatingBuyVisible
+            ? 'lg:grid-cols-[1fr_360px] lg:gap-8'
+            : 'lg:grid-cols-[1fr_0px] lg:gap-0',
+        )}
+      >
         <div className="flex min-w-0 flex-col gap-2 md:gap-5">
           <div className="-mx-4 md:mx-0">
             <ProductDetailsSeller store={product.store} />
@@ -216,16 +231,23 @@ export default function ProductDetailsPage({
             totalReviews={reviewSummary.totalReviews}
             loading={reviewsLoading}
           />
-
-          {/* <HomeFaqSection items={HOME_FAQ_ITEMS} /> */}
         </div>
 
-        <aside aria-label="สั่งซื้อด่วน" className="sticky top-36 z-30 hidden lg:block">
+        <aside
+          aria-label="สั่งซื้อด่วน"
+          className={cn(
+            'sticky top-36 z-30 hidden min-w-0 bg-transparent lg:block',
+            // Clip only while collapsed so the 360px card cannot force the track open;
+            // leave overflow visible when open so the card shadow is not cut off.
+            !isFloatingBuyVisible && 'overflow-hidden',
+          )}
+        >
           <ProductFloatingBuyCard
             product={product}
             selectedOptions={selectedOptions}
             productQuantity={selectedQuantity}
             triggerRef={mainArticleRef}
+            onVisibilityChange={handleFloatingBuyVisibilityChange}
           />
         </aside>
       </div>

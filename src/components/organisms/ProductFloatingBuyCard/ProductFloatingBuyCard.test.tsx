@@ -213,4 +213,34 @@ describe('ProductFloatingBuyCard', () => {
       'pointer-events-auto',
     );
   });
+
+  it('notifies parent when visibility changes via onVisibilityChange', async () => {
+    const onVisibilityChange = vi.fn();
+    const { rerender } = renderComponent({
+      forceVisible: false,
+      onVisibilityChange,
+    });
+
+    await waitFor(() => {
+      expect(onVisibilityChange).toHaveBeenCalledWith(false);
+    });
+
+    const ApolloWrapper = createApolloTestWrapper();
+    rerender(
+      <ApolloWrapper>
+        <CartProvider>
+          <ProductFloatingBuyCard
+            product={SAMPLE_PRODUCT}
+            selectedOptions={{ size: '20-40 kg' }}
+            forceVisible={true}
+            onVisibilityChange={onVisibilityChange}
+          />
+        </CartProvider>
+      </ApolloWrapper>,
+    );
+
+    await waitFor(() => {
+      expect(onVisibilityChange).toHaveBeenCalledWith(true);
+    });
+  });
 });

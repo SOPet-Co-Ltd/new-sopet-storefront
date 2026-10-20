@@ -30,6 +30,8 @@ export type ProductFloatingBuyCardProps = {
   triggerRef?: React.RefObject<HTMLElement | null>;
   /** Force visibility for testing or snapshot renders */
   forceVisible?: boolean;
+  /** Notifies parent when scroll-driven visibility changes (e.g. to squeeze the details column) */
+  onVisibilityChange?: (visible: boolean) => void;
   className?: string;
 };
 
@@ -46,6 +48,7 @@ export function ProductFloatingBuyCard({
   productQuantity = 1,
   triggerRef,
   forceVisible,
+  onVisibilityChange,
   className,
 }: ProductFloatingBuyCardProps) {
   const router = useRouter();
@@ -56,6 +59,10 @@ export function ProductFloatingBuyCard({
   const isVisible = forceVisible !== undefined ? forceVisible : internalVisible;
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
+
+  useEffect(() => {
+    onVisibilityChange?.(isVisible);
+  }, [isVisible, onVisibilityChange]);
 
   // Scroll detection / Intersection Observer to fade in when user scrolls past triggerRef
   useEffect(() => {

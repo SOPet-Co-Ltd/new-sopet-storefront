@@ -82,7 +82,7 @@ export function ProductFloatingBuyCard({
           if (!entry) return;
           // When target is not intersecting and is above the viewport, show the card
           const isAboveViewport = entry.boundingClientRect.bottom <= 120;
-          setIsVisible(!entry.isIntersecting && isAboveViewport);
+          setInternalVisible(!entry.isIntersecting && isAboveViewport);
         },
         {
           rootMargin: '-80px 0px 0px 0px',

@@ -111,6 +111,16 @@ describe('validateAuthInlineShippingForm', () => {
     expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
   });
 
+  it('returns a Thai error when contact phone is not a mobile prefix (1912345678)', () => {
+    const result = validateAuthInlineShippingForm({
+      ...validGuestForm,
+      contactPhone: '1912345678',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
+  });
+
   it('passes when contact phone and shipping fields are valid', () => {
     const result = validateAuthInlineShippingForm(validGuestForm);
 

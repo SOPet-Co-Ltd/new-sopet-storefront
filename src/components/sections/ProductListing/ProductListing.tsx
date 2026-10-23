@@ -80,8 +80,11 @@ export function ProductListing({
   );
   const [initialListingParamsKey] = useState(listingParamsKey);
   const listingParamsChanged = listingParamsKey !== initialListingParamsKey;
-  const { sortBy, sortOrder } =
-    variant === 'search' ? parseSearchSort(sortParam) : { sortBy: undefined, sortOrder: undefined };
+  // Category PLP shares search sort controls; seller store listings stay unsorted.
+  const enableSort = variant === 'search' || (Boolean(category) && !storeId);
+  const { sortBy, sortOrder } = enableSort
+    ? parseSearchSort(sortParam)
+    : { sortBy: undefined, sortOrder: undefined };
   const limit = limitProp ?? (variant === 'search' ? SEARCH_PRODUCT_LIMIT : DEFAULT_PRODUCT_LIMIT);
   const searchContext = useSearchContext();
   const sessionId = useSessionId(variant === 'search');
@@ -216,7 +219,7 @@ export function ProductListing({
   }
 
   if (products.length === 0) {
-    if (variant === 'search') {
+    if (enableSort) {
       return (
         <div data-testid="product-listing">
           {heading && (
@@ -238,9 +241,11 @@ export function ProductListing({
     return <EmptySearchResults />;
   }
 
-  if (variant === 'search') {
+  if (enableSort) {
+    const totalLabel = variant === 'search' ? `สินค้าทั้งหมด (${total})` : `สินค้าทั้งหมด ${total}`;
+
     return (
-      <div data-testid="product-listing">
+      <div className={cn(variant !== 'search' && 'py-4')} data-testid="product-listing">
         {heading && <h1 className="sop-headline-md-medium text-sop-neutral-gray-300">{heading}</h1>}
 
         <div className={cn(heading && 'mt-10')}>
@@ -252,8 +257,15 @@ export function ProductListing({
           />
         </div>
 
-        <div className="mt-6 pt-7">
-          <p className="sop-body-lg-medium text-sop-neutral-gray-200">สินค้าทั้งหมด ({total})</p>
+        <div className={cn('mt-6', variant === 'search' && 'pt-7')}>
+          <p
+            className={cn(
+              'sop-body-lg-medium',
+              variant === 'search' ? 'text-sop-neutral-gray-200' : 'text-sop-neutral-gray-300',
+            )}
+          >
+            {totalLabel}
+          </p>
 
           <ul className={cn('mt-6', PRODUCT_CARD_GRID_CLASS)}>
             {products.map((product, index) => {

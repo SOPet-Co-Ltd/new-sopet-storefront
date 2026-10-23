@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { SearchSortValue } from '@/components/molecules/SearchSortBar';
 import { ProductsDocument, type ProductsQuery } from '@/lib/graphql/generated/graphql';
 import { getClient } from '@/lib/graphql/apollo-rsc';
 import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
@@ -9,6 +10,7 @@ import {
   resolveCategoryFilterName,
 } from '@/lib/routing/categoryRoutes';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
+import { parseSearchSort } from '@/lib/search/searchSort';
 import { CategoryPLP } from '@/components/sections/ProductListing';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
@@ -23,6 +25,7 @@ type Props = {
   params: Promise<{ category: string }>;
   searchParams: Promise<{
     page?: string;
+    sort?: string;
     petType?: string;
     brand?: string;
     tag?: string;
@@ -60,9 +63,10 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { category: rawCategory } = await params;
   const resolvedSearchParams = await searchParams;
-  const { page: pageParam, petType, brand, tag, minPrice, maxPrice } = resolvedSearchParams;
+  const { page: pageParam, sort, petType, brand, tag, minPrice, maxPrice } = resolvedSearchParams;
   const categorySlug = decodeRouteParam(rawCategory);
   const currentPage = Math.max(1, Number(pageParam ?? 1));
+  const { sortBy, sortOrder } = parseSearchSort(sort as SearchSortValue | null);
   const filters = parseSearchFilters({
     get: (key) => {
       if (key === 'petType') return petType ?? null;
@@ -84,6 +88,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const variables = buildProductsListingVariables({
     category: categoryFilter,
     page: currentPage,
+    sortBy,
+    sortOrder,
     ...toProductsFilterVariables(filters),
   });
 

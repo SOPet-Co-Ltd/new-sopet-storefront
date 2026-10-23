@@ -186,8 +186,7 @@ export function useCheckoutSubmit(
         }
 
         const resolvedAddressId = overrideAddressId ?? checkoutContext.selectedAddressId;
-        const useInlineShippingForm =
-          !isGuestCheckout && !resolvedAddressId && guestForm != null;
+        const useInlineShippingForm = !isGuestCheckout && !resolvedAddressId && guestForm != null;
 
         const result = await submitCheckout(
           {

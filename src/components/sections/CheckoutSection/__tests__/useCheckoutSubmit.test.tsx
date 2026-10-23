@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
+import { hasClientSession } from '@/lib/graphql/authLink';
 import { useCheckoutSubmit } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 
 const mockPush = vi.fn();
@@ -18,8 +19,18 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
+const authState = {
+  isAuthenticated: true,
+  isLoading: false,
+  customer: null as { id: string } | null,
+};
+
 vi.mock('@/lib/hooks/useAuth', () => ({
-  useAuth: () => ({ isAuthenticated: true, isLoading: false }),
+  useAuth: () => authState,
+}));
+
+vi.mock('@/lib/graphql/authLink', () => ({
+  hasClientSession: vi.fn(() => true),
 }));
 
 vi.mock('@/lib/hooks/usePaymentMethods', () => ({
@@ -92,6 +103,9 @@ const guestForm: GuestCheckoutFormState = {
 describe('useCheckoutSubmit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    authState.isAuthenticated = true;
+    authState.customer = null;
+    vi.mocked(hasClientSession).mockReturnValue(true);
     checkoutState.step = 'review';
     checkoutState.selectedAddressId = null;
     checkoutState.isSubmitting = false;
@@ -133,6 +147,35 @@ describe('useCheckoutSubmit', () => {
     expect(mockCreateOrder).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('redirects to login when session cleared on member checkout (SF-CHK-115)', async () => {
+    authState.isAuthenticated = false;
+    vi.mocked(hasClientSession).mockReturnValue(false);
+    checkoutState.selectedAddressId = 'addr-1';
+
+    const { result } = renderHook(() =>
+      useCheckoutSubmit(guestForm, {
+        addressSubmitContext: {
+          createAddress: mockCreateAddress,
+          setAddress: vi.fn(),
+          saveAddressChecked: true,
+          setFieldErrors: vi.fn(),
+          setShowFieldErrors: vi.fn(),
+          addressQueryError: undefined,
+          addressQueryLoading: false,
+          addressCount: 1,
+        },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(mockPush).toHaveBeenCalledWith('/login?returnUrl=%2Fcheckout');
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it('skips createAddress when save-address is unchecked (SF-CHK-044)', async () => {

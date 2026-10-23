@@ -308,6 +308,8 @@ export function toCreateOrderInput(
   if (checkoutContext.isAuthenticated) {
     if (checkoutContext.selectedAddressId) {
       input.savedAddressId = checkoutContext.selectedAddressId;
+    } else if (formState) {
+      input.shippingAddress = mapShippingAddress(formState);
     }
 
     return input;

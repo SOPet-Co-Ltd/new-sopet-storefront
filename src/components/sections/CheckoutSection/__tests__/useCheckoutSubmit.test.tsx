@@ -19,6 +19,14 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
+const mockClearPendingCheckout = vi.fn();
+const mockSetPendingCheckout = vi.fn();
+vi.mock('@/lib/checkout/pendingCheckout', () => ({
+  clearPendingCheckout: () => mockClearPendingCheckout(),
+  setPendingCheckout: (pending: unknown) => mockSetPendingCheckout(pending),
+  getPendingCheckout: vi.fn(),
+}));
+
 const authState = {
   isAuthenticated: true,
   isLoading: false,
@@ -213,5 +221,30 @@ describe('useCheckoutSubmit', () => {
     };
     expect(orderInput.shippingAddress?.recipientName).toBe('Somchai');
     expect(orderInput.savedAddressId).toBeUndefined();
+  });
+
+  it('clears prior pending payment before create so reload cannot resume old QR (SF-CHK-110)', async () => {
+    checkoutState.selectedAddressId = 'addr-1';
+
+    const { result } = renderHook(() =>
+      useCheckoutSubmit(null, {
+        addressSubmitContext: {
+          createAddress: mockCreateAddress,
+          setAddress: vi.fn(),
+          saveAddressChecked: false,
+          setFieldErrors: vi.fn(),
+          setShowFieldErrors: vi.fn(),
+          addressQueryError: undefined,
+          addressQueryLoading: false,
+          addressCount: 1,
+        },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(mockClearPendingCheckout).toHaveBeenCalled();
   });
 });

@@ -172,6 +172,14 @@ export function validateAuthInlineShippingForm(
 ): GuestCheckoutValidationResult {
   const errors = validateShippingFields(formState);
 
+  const contactPhoneError = validatePhoneField(
+    formState.contactPhone,
+    GUEST_PHONE_REQUIRED_MESSAGE,
+  );
+  if (contactPhoneError) {
+    errors.guestPhone = contactPhoneError;
+  }
+
   return {
     valid: Object.keys(errors).length === 0,
     errors,

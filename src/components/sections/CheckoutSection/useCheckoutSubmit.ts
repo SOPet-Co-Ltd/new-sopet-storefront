@@ -231,6 +231,10 @@ export function useCheckoutSubmit(
         // Keep UI locked until unmount/reset so a slow navigation cannot double-submit.
         return true;
       } catch (error) {
+        if (error instanceof SubmitCheckoutError && error.code === 'cart_stale') {
+          await refetch();
+        }
+
         const message =
           error instanceof SubmitCheckoutError
             ? error.message

@@ -675,8 +675,10 @@ export function getUnavailablePromotionWarning(
       return formatPromotionConditionText(promotion, storeSubtotal);
     }
     case 'UNKNOWN':
-    default:
-      return formatPromotionConditionText(promotion, storeSubtotal) ?? UNKNOWN_UNAVAILABLE_WARNING;
+    default: {
+      const conditionText = formatPromotionConditionText(promotion, storeSubtotal)?.trim();
+      return conditionText || UNKNOWN_UNAVAILABLE_WARNING;
+    }
   }
 }
 

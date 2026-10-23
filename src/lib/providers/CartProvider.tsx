@@ -34,6 +34,9 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { ensureSessionId, hydrateSessionId, rotateSessionId } from '@/lib/session';
 import { mapStoreSuspendedCartError } from '@/lib/store-suspension/mapSuspensionErrors';
 
+const QUANTITY_CAPPED_WARNING_CODE = 'QUANTITY_CAPPED';
+const QUANTITY_CAPPED_TOAST_MESSAGE = 'ปรับจำนวนสินค้าตามสต็อกที่มีแล้ว';
+
 export type CartWarning = NonNullable<CartQuery['cart']['warnings']>[number];
 
 export type CartContextValue = {
@@ -189,6 +192,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => warnings.some((warning) => warning.code === SUSPENDED_STORE_ITEM_REMOVED_WARNING_CODE),
     [warnings],
   );
+
+  const quantityCapToastKeyRef = useRef('');
+  useEffect(() => {
+    const capped = warnings.filter((warning) => warning.code === QUANTITY_CAPPED_WARNING_CODE);
+    if (capped.length === 0) {
+      return;
+    }
+    const key = capped.map((warning) => `${warning.variantId ?? ''}:${warning.message}`).join('|');
+    if (key === quantityCapToastKeyRef.current) {
+      return;
+    }
+    quantityCapToastKeyRef.current = key;
+    toast.message(QUANTITY_CAPPED_TOAST_MESSAGE);
+  }, [warnings]);
 
   const itemsByStore = useMemo(() => groupCartItemsByStore(items), [items]);
   const itemCount = useMemo(() => computeCartItemCount(items), [items]);

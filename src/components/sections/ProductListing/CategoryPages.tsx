@@ -75,12 +75,12 @@ export function CategoryPLP({
 }: CategoryPLPProps) {
   const { categories, loading } = useCategories();
   const resolvedCategory = !loading ? resolveCategoryBySlug(categories, categorySlug) : undefined;
-  const categoryUnresolvable = !loading && !resolvedCategory;
+  // Keep SSR listing when the client taxonomy miss-matches; empty only with no server filter.
+  const categoryUnresolvable = !loading && !resolvedCategory && !initialCategoryFilter;
   const awaitingCategoryResolution = loading && !initialCategoryFilter;
-  const categoryFilter =
-    loading && initialCategoryFilter
-      ? initialCategoryFilter
-      : resolveCategoryFilterName(categories, categorySlug);
+  const categoryFilter = resolvedCategory
+    ? resolveCategoryFilterName(categories, categorySlug)
+    : (initialCategoryFilter ?? resolveCategoryFilterName(categories, categorySlug));
 
   return (
     <>

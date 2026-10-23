@@ -134,4 +134,41 @@ describe('useCheckoutSubmit', () => {
     expect(toast.error).toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
   });
+
+  it('skips createAddress when save-address is unchecked (SF-CHK-044)', async () => {
+    mockCreateOrder.mockResolvedValue({
+      id: 'ord-1',
+      orderNumber: 'ORD-TEST',
+      paymentMethod: 'promptpay',
+    });
+    mockCreatePayment.mockResolvedValue({ id: 'pay-1' });
+
+    const { result } = renderHook(() =>
+      useCheckoutSubmit(guestForm, {
+        addressSubmitContext: {
+          createAddress: mockCreateAddress,
+          setAddress: vi.fn(),
+          saveAddressChecked: false,
+          setFieldErrors: vi.fn(),
+          setShowFieldErrors: vi.fn(),
+          addressQueryError: undefined,
+          addressQueryLoading: false,
+          addressCount: 0,
+        },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(mockCreateAddress).not.toHaveBeenCalled();
+    expect(mockCreateOrder).toHaveBeenCalled();
+    const orderInput = mockCreateOrder.mock.calls[0]?.[0] as {
+      shippingAddress?: { recipientName?: string };
+      savedAddressId?: string;
+    };
+    expect(orderInput.shippingAddress?.recipientName).toBe('Somchai');
+    expect(orderInput.savedAddressId).toBeUndefined();
+  });
 });

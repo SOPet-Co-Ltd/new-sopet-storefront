@@ -185,16 +185,20 @@ export function useCheckoutSubmit(
           }
         }
 
+        const resolvedAddressId = overrideAddressId ?? checkoutContext.selectedAddressId;
+        const useInlineShippingForm =
+          !isGuestCheckout && !resolvedAddressId && guestForm != null;
+
         const result = await submitCheckout(
           {
             step,
             checkoutContext: {
               ...checkoutContext,
-              selectedAddressId: overrideAddressId ?? checkoutContext.selectedAddressId,
+              selectedAddressId: resolvedAddressId,
               sessionId: isGuestCheckout ? ensureSessionId() : null,
             },
             cart: { items, includeCartItemIds: !isBuyNow },
-            guestForm: isGuestCheckout ? guestForm : null,
+            guestForm: isGuestCheckout || useInlineShippingForm ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
             omiseToken: finalOmiseToken,
@@ -273,16 +277,23 @@ export function useCheckoutSubmit(
         return;
       }
 
-      const createAddress = addressSubmitContext?.createAddress;
-      if (!createAddress) {
-        toast.error('ไม่สามารถบันทึกที่อยู่ได้');
-        return;
-      }
-
       if (!beginSubmitting()) {
         return;
       }
 
+      if (!addressSubmitContext.saveAddressChecked) {
+        try {
+          const ok = await executeSubmit(null);
+          if (!ok) {
+            endSubmitting();
+          }
+        } catch {
+          endSubmitting();
+        }
+        return;
+      }
+
+      const createAddress = addressSubmitContext.createAddress;
       try {
         const created = await createAddress(
           mapGuestFormToCreateAddressInput(guestForm, {

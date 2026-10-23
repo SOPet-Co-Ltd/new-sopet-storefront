@@ -217,6 +217,19 @@ describe('toCreateOrderInput', () => {
     ]);
   });
 
+  it('uses one-time shippingAddress for authenticated checkout without saved address (SF-CHK-044)', () => {
+    const input = toCreateOrderInput(validGuestForm, sampleCart, {
+      ...authenticatedCheckoutContext,
+      selectedAddressId: null,
+    });
+
+    expect(input.savedAddressId).toBeUndefined();
+    expect(input.shippingAddress).toEqual(
+      expect.objectContaining({ recipientName: 'Somchai' }),
+    );
+    expect(input.guestPhone).toBeUndefined();
+  });
+
   it('omits cartItemIds for buy-now checkout so the cart is not mutated', () => {
     const input = toCreateOrderInput(
       validGuestForm,

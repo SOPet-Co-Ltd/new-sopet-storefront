@@ -115,6 +115,11 @@ function validateOptionalEmail(value: string | undefined): string | undefined {
     return INVALID_EMAIL_MESSAGE;
   }
 
+  // Reject markup / XSS-like payloads (angle brackets, quotes) before pattern match.
+  if (/[<>"'`]/.test(trimmed)) {
+    return INVALID_EMAIL_MESSAGE;
+  }
+
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailPattern.test(trimmed) ? undefined : INVALID_EMAIL_MESSAGE;
 }
@@ -182,6 +187,11 @@ export function validateAuthInlineShippingForm(
   );
   if (contactPhoneError) {
     errors.guestPhone = contactPhoneError;
+  }
+
+  const emailError = validateOptionalEmail(formState.email);
+  if (emailError) {
+    errors.email = emailError;
   }
 
   return {

@@ -122,6 +122,16 @@ describe('validateGuestCheckoutForm', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
   });
+
+  it('returns a Thai error when optional email looks like XSS markup', () => {
+    const result = validateGuestCheckoutForm({
+      ...validGuestForm,
+      email: '<script>alert("XSS")</script>@x.com',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
 });
 
 describe('validateAuthInlineShippingForm', () => {
@@ -160,6 +170,16 @@ describe('validateAuthInlineShippingForm', () => {
 
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual({});
+  });
+
+  it('returns a Thai error when auth contact email looks like XSS markup', () => {
+    const result = validateAuthInlineShippingForm({
+      ...validGuestForm,
+      email: '<script>alert("XSS")</script>@x.com',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
   });
 });
 

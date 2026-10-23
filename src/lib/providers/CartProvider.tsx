@@ -314,22 +314,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(
     async (variantId: string, quantity = 1) => {
       const activeSessionId = getSessionIdForCart();
-      await runCartMutation(
-        async () => {
-          const result = await addToCartMutation({
-            variables: {
-              input: {
-                variantId,
-                quantity,
-                sessionId: isAuthenticated ? undefined : activeSessionId,
-              },
+      await runCartMutation(async () => {
+        const result = await addToCartMutation({
+          variables: {
+            input: {
+              variantId,
+              quantity,
+              sessionId: isAuthenticated ? undefined : activeSessionId,
             },
-          });
-          toast.success('เพิ่มสินค้าลงตะกร้าแล้ว');
-          return result;
-        },
-        'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้',
-      );
+          },
+        });
+        toast.success('เพิ่มสินค้าลงตะกร้าแล้ว');
+        return result;
+      }, 'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้');
     },
     [addToCartMutation, isAuthenticated, runCartMutation],
   );

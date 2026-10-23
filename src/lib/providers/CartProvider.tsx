@@ -328,11 +328,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateItem = useCallback(
     async (itemId: string, quantity: number) => {
+      const activeSessionId = getSessionIdForCart();
+      const sessionArg = isAuthenticated ? undefined : activeSessionId;
+
       if (quantity <= 0) {
+        await runCartMutation(
+          () =>
+            removeCartItemMutation({
+              variables: {
+                input: {
+                  itemId,
+                  sessionId: sessionArg,
+                },
+              },
+            }),
+          'ไม่สามารถลบสินค้าออกจากตะกร้าได้',
+        );
+        toast.success('ลบสินค้าออกจากตะกร้าแล้ว');
         return;
       }
 
-      const activeSessionId = getSessionIdForCart();
       await runCartMutation(
         () =>
           updateCartItemMutation({
@@ -340,14 +355,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
               input: {
                 itemId,
                 quantity,
-                sessionId: isAuthenticated ? undefined : activeSessionId,
+                sessionId: sessionArg,
               },
             },
           }),
         'ไม่สามารถอัปเดตจำนวนสินค้าได้',
       );
     },
-    [isAuthenticated, runCartMutation, updateCartItemMutation],
+    [isAuthenticated, removeCartItemMutation, runCartMutation, updateCartItemMutation],
   );
 
   // The backend has no dedicated "change variant" mutation. Changing only the

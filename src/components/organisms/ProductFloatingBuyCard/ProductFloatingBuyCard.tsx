@@ -221,10 +221,10 @@ export function ProductFloatingBuyCard({
       data-testid="product-floating-buy-card"
       aria-hidden={!isVisible}
       className={cn(
-        'w-full max-w-[360px] rounded-3xl border border-[#F0EDF5] bg-sop-base-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 ease-out',
+        'w-full max-w-[360px] rounded-3xl border border-[#F0EDF5] bg-sop-base-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform]',
         isVisible
           ? 'opacity-100 translate-y-0 pointer-events-auto'
-          : 'opacity-0 translate-y-4 pointer-events-none',
+          : 'opacity-0 translate-y-3 pointer-events-none',
         className,
       )}
     >

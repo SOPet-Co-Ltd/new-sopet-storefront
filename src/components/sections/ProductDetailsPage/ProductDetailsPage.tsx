@@ -210,9 +210,9 @@ export default function ProductDetailsPage({
 
       <div
         className={cn(
-          'grid grid-cols-1 items-start transition-[grid-template-columns,gap] duration-300 ease-out',
+          'grid grid-cols-1 items-start transition-[grid-template-columns,gap] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]',
           isFloatingBuyVisible
-            ? 'lg:grid-cols-[1fr_360px] lg:gap-8'
+            ? 'lg:grid-cols-[1fr_360px] lg:gap-5'
             : 'lg:grid-cols-[1fr_0px] lg:gap-0',
         )}
       >

@@ -5,10 +5,13 @@ import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { NavbarSearch } from './NavbarSearch';
 
 const push = vi.fn();
+let searchParams = new URLSearchParams();
+
 const renderNavbarSearch = () => render(<NavbarSearch />, { wrapper: createApolloTestWrapper() });
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push }),
+  useSearchParams: () => searchParams,
 }));
 
 vi.mock('next/image', () => ({
@@ -20,6 +23,7 @@ vi.mock('next/image', () => ({
 describe('NavbarSearch', () => {
   beforeEach(() => {
     push.mockClear();
+    searchParams = new URLSearchParams();
     window.sessionStorage.clear();
   });
 
@@ -31,6 +35,38 @@ describe('NavbarSearch', () => {
     expect(field.className).not.toContain('max-w-[480px]');
     expect(field.className).toContain('h-12');
     expect(field.className).toContain('border-sop-neutral-grayalpha-100');
+  });
+
+  it('prefills the search input from the URL q param', () => {
+    searchParams = new URLSearchParams({ q: 'test' });
+
+    renderNavbarSearch();
+
+    expect(screen.getByRole('combobox', { name: 'ค้นหาสินค้า' })).toHaveValue('test');
+  });
+
+  it('updates the search input when the URL q param changes', () => {
+    searchParams = new URLSearchParams({ q: 'test' });
+    const { rerender } = render(<NavbarSearch />, { wrapper: createApolloTestWrapper() });
+
+    expect(screen.getByRole('combobox', { name: 'ค้นหาสินค้า' })).toHaveValue('test');
+
+    searchParams = new URLSearchParams({ q: 'dog food' });
+    rerender(<NavbarSearch />);
+
+    expect(screen.getByRole('combobox', { name: 'ค้นหาสินค้า' })).toHaveValue('dog food');
+  });
+
+  it('clears the search input when the URL q param is removed', () => {
+    searchParams = new URLSearchParams({ q: 'test' });
+    const { rerender } = render(<NavbarSearch />, { wrapper: createApolloTestWrapper() });
+
+    expect(screen.getByRole('combobox', { name: 'ค้นหาสินค้า' })).toHaveValue('test');
+
+    searchParams = new URLSearchParams();
+    rerender(<NavbarSearch />);
+
+    expect(screen.getByRole('combobox', { name: 'ค้นหาสินค้า' })).toHaveValue('');
   });
 
   it('navigates to /search with q param on submit', async () => {

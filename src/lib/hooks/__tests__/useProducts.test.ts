@@ -45,6 +45,7 @@ describe('useProducts', () => {
     expect(result.current.total).toBe(1);
     expect(result.current.page).toBe(1);
     expect(result.current.limit).toBe(24);
+    expect(result.current.hasPagination).toBe(true);
   });
 
   // AC: Phase 1 search — products(search:) returns matching items

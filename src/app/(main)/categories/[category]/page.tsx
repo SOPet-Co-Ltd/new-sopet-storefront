@@ -88,17 +88,21 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   });
 
   let initialProducts: ProductsQuery['products']['items'] | undefined;
+  let initialTotal: number | undefined;
+  let initialTotalPages: number | undefined;
 
   const preload = await runSsrPreloadQueries('category', async () => {
     const result = await getClient().query({
       query: ProductsDocument,
       variables,
     });
-    return result.data?.products.items;
+    return result.data?.products;
   });
 
-  if (preload.ok) {
-    initialProducts = preload.data;
+  if (preload.ok && preload.data) {
+    initialProducts = preload.data.items;
+    initialTotal = preload.data.pagination.total;
+    initialTotalPages = preload.data.pagination.totalPages;
   }
 
   const indexation = getCategoryIndexation(categorySlug, resolvedSearchParams);
@@ -128,6 +132,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           categoryFilter={categoryFilter}
           categoryName={categoryName}
           initialProducts={initialProducts}
+          initialTotal={initialTotal}
+          initialTotalPages={initialTotalPages}
           initialPage={currentPage}
         />
       </main>

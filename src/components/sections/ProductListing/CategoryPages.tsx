@@ -19,6 +19,8 @@ type CategoryPLPProps = {
   categoryFilter?: string;
   categoryName?: string;
   initialProducts?: ProductsQuery['products']['items'];
+  initialTotal?: number;
+  initialTotalPages?: number;
   initialPage?: number;
 };
 
@@ -67,6 +69,8 @@ export function CategoryPLP({
   categoryFilter: initialCategoryFilter,
   categoryName,
   initialProducts,
+  initialTotal,
+  initialTotalPages,
   initialPage,
 }: CategoryPLPProps) {
   const { categories, loading } = useCategories();
@@ -92,6 +96,8 @@ export function CategoryPLP({
             <ProductListing
               category={categoryFilter}
               initialProducts={initialProducts}
+              initialTotal={initialTotal}
+              initialTotalPages={initialTotalPages}
               initialPage={initialPage}
             />
           </Suspense>

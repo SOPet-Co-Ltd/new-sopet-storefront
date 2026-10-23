@@ -9,9 +9,15 @@ import { SearchResultsLayout } from '@/components/sections/SearchResultsLayout';
 
 type SearchResultsContentProps = {
   initialProducts?: ProductsQuery['products']['items'];
+  initialTotal?: number;
+  initialTotalPages?: number;
 };
 
-function SearchResultsContent({ initialProducts }: SearchResultsContentProps) {
+function SearchResultsContent({
+  initialProducts,
+  initialTotal,
+  initialTotalPages,
+}: SearchResultsContentProps) {
   const searchParams = useSearchParams();
   const q = searchParams.get('q')?.trim() ?? '';
 
@@ -21,15 +27,23 @@ function SearchResultsContent({ initialProducts }: SearchResultsContentProps) {
       heading={q ? `ผลการค้นหาทั้งหมด "${q}"` : undefined}
       variant="search"
       initialProducts={initialProducts}
+      initialTotal={initialTotal}
+      initialTotalPages={initialTotalPages}
     />
   );
 }
 
 type SearchResultsPageProps = {
   initialProducts?: ProductsQuery['products']['items'];
+  initialTotal?: number;
+  initialTotalPages?: number;
 };
 
-export function SearchResultsPage({ initialProducts }: SearchResultsPageProps = {}) {
+export function SearchResultsPage({
+  initialProducts,
+  initialTotal,
+  initialTotalPages,
+}: SearchResultsPageProps = {}) {
   return (
     <main
       className="w-full min-h-[calc(100vh-109px)] px-4 py-4 lg:px-20"
@@ -43,7 +57,11 @@ export function SearchResultsPage({ initialProducts }: SearchResultsPageProps = 
         }
       >
         <SearchResultsLayout>
-          <SearchResultsContent initialProducts={initialProducts} />
+          <SearchResultsContent
+            initialProducts={initialProducts}
+            initialTotal={initialTotal}
+            initialTotalPages={initialTotalPages}
+          />
         </SearchResultsLayout>
       </Suspense>
     </main>

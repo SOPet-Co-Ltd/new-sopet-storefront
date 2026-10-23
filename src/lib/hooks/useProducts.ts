@@ -36,6 +36,8 @@ export type UseProductsResult = {
   page: number;
   limit: number;
   totalPages: number;
+  /** False until the client products query returns pagination (avoids SSR count flash of 0). */
+  hasPagination: boolean;
   loading: boolean;
   error: Error | undefined;
   fetchMore: (nextPage?: number) => Promise<unknown>;
@@ -131,6 +133,7 @@ export function useProducts({
     page: pagination?.page ?? page,
     limit: pagination?.limit ?? limit,
     totalPages: pagination?.totalPages ?? 0,
+    hasPagination: pagination !== undefined,
     loading: !skip && loading,
     error: toHookError(error),
     fetchMore,

@@ -20,6 +20,7 @@ import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/sear
 import { cn } from '@/lib/utils';
 import { ProductListingSkeleton } from './ProductListingSkeleton';
 import { PRODUCT_CARD_GRID_CLASS } from './productListingGrid';
+import { resolveListingTotal, resolveListingTotalPages } from './resolveListingPagination';
 
 const DEFAULT_PRODUCT_LIMIT = 24;
 const SEARCH_PRODUCT_LIMIT = 40;
@@ -33,6 +34,8 @@ export type ProductListingProps = {
   variant?: 'default' | 'search';
   limit?: number;
   initialProducts?: ProductsQuery['products']['items'];
+  initialTotal?: number;
+  initialTotalPages?: number;
   initialPage?: number;
   skip?: boolean;
 };
@@ -46,6 +49,8 @@ export function ProductListing({
   variant = 'default',
   limit: limitProp,
   initialProducts,
+  initialTotal,
+  initialTotalPages,
   initialPage = 1,
   skip = false,
 }: ProductListingProps) {
@@ -123,8 +128,9 @@ export function ProductListing({
 
   const {
     products: fetchedProducts,
-    total,
-    totalPages,
+    total: fetchedTotal,
+    totalPages: fetchedTotalPages,
+    hasPagination,
     loading,
     error,
     refetch,
@@ -148,6 +154,18 @@ export function ProductListing({
   const products =
     useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;
+  const total = resolveListingTotal({
+    hasPagination,
+    useInitialProducts,
+    fetchedTotal,
+    initialTotal,
+  });
+  const totalPages = resolveListingTotalPages({
+    hasPagination,
+    useInitialProducts,
+    fetchedTotalPages,
+    initialTotalPages,
+  });
 
   const productIds = useMemo(() => products.map((product) => product.id), [products]);
   const { getCampaignPricing } = useCampaignCompareAtLookup(productIds);

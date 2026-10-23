@@ -48,10 +48,26 @@ export function CartItemRow({
   const unitPrice = getCartItemUnitPrice(item);
   const variantLabel = parseVariantLabel(item.productVariant?.optionsJson);
   const stockQuantity = item.productVariant?.stockQuantity ?? 0;
-  const canDecrement = !disabled && item.quantity >= 1;
-  const canIncrement = !disabled && item.quantity < stockQuantity;
+  // Optimistic qty so rapid +/- clicks accumulate before server catch-up (SF-CART-020).
+  // Sync from props during render (not in an effect) when the server quantity catches up.
+  const [displayQuantity, setDisplayQuantity] = useState(item.quantity);
+  const [syncedQuantity, setSyncedQuantity] = useState(item.quantity);
+  if (item.quantity !== syncedQuantity) {
+    setSyncedQuantity(item.quantity);
+    setDisplayQuantity(item.quantity);
+  }
+  const canDecrement = !disabled && displayQuantity >= 1;
+  const canIncrement = !disabled && displayQuantity < stockQuantity;
   const productName = product?.name ?? 'สินค้า';
   const [variantModalOpen, setVariantModalOpen] = useState(false);
+
+  const bumpQuantity = (delta: number) => {
+    setDisplayQuantity((prev) => {
+      const next = Math.min(Math.max(prev + delta, 0), stockQuantity);
+      void onUpdateQuantity(item.id, next);
+      return next;
+    });
+  };
 
   return (
     <div
@@ -133,7 +149,7 @@ export function CartItemRow({
               disabled={!canDecrement}
               className="cursor-pointer disabled:cursor-not-allowed"
               aria-label="ลดจำนวน"
-              onClick={() => void onUpdateQuantity(item.id, item.quantity - 1)}
+              onClick={() => bumpQuantity(-1)}
             >
               <MinusSquareIcon
                 size={{ mobile: 24 }}
@@ -142,14 +158,14 @@ export function CartItemRow({
               />
             </button>
             <span className="inline-block w-8 shrink-0 text-center sop-body-sm-regular text-sop-neutral-gray-300">
-              {item.quantity}
+              {displayQuantity}
             </span>
             <button
               type="button"
               disabled={!canIncrement}
               className="cursor-pointer disabled:cursor-not-allowed"
               aria-label="เพิ่มจำนวน"
-              onClick={() => void onUpdateQuantity(item.id, item.quantity + 1)}
+              onClick={() => bumpQuantity(1)}
             >
               <PlusSquareIcon
                 size={{ mobile: 24 }}

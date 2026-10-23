@@ -72,4 +72,20 @@ describe('CartItemRow quantity controls', () => {
 
     expect(screen.getByRole('button', { name: 'ลดจำนวน' })).toBeDisabled();
   });
+
+  it('accumulates rapid increment clicks to the final qty (SF-CART-020)', async () => {
+    const user = userEvent.setup();
+    const { onUpdateQuantity } = renderRow({ quantity: 1 });
+
+    const increment = screen.getByRole('button', { name: 'เพิ่มจำนวน' });
+    await user.click(increment);
+    await user.click(increment);
+    await user.click(increment);
+
+    expect(onUpdateQuantity).toHaveBeenCalledTimes(3);
+    expect(onUpdateQuantity).toHaveBeenNthCalledWith(1, sampleCartItem.id, 2);
+    expect(onUpdateQuantity).toHaveBeenNthCalledWith(2, sampleCartItem.id, 3);
+    expect(onUpdateQuantity).toHaveBeenNthCalledWith(3, sampleCartItem.id, 4);
+    expect(screen.getByText('4')).toBeInTheDocument();
+  });
 });

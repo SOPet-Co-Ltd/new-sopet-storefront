@@ -5,6 +5,7 @@ import type { CartQuery } from '@/lib/graphql/generated/graphql';
 import {
   getCustomerContactPrefill,
   toCreateOrderInput,
+  validateAuthInlineShippingForm,
   validateGuestCheckoutForm,
   type CreateOrderCheckoutContext,
   type GuestCheckoutFormState,
@@ -86,6 +87,35 @@ describe('validateGuestCheckoutForm', () => {
 
     expect(result.valid).toBe(false);
     expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
+  });
+});
+
+describe('validateAuthInlineShippingForm', () => {
+  it('returns a Thai error when contact phone is missing', () => {
+    const result = validateAuthInlineShippingForm({
+      ...validGuestForm,
+      contactPhone: '',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ของคุณ');
+  });
+
+  it('returns a Thai error when contact phone has only 9 digits', () => {
+    const result = validateAuthInlineShippingForm({
+      ...validGuestForm,
+      contactPhone: '081234567',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
+  });
+
+  it('passes when contact phone and shipping fields are valid', () => {
+    const result = validateAuthInlineShippingForm(validGuestForm);
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual({});
   });
 });
 

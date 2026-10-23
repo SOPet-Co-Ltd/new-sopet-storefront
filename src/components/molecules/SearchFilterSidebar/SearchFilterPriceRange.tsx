@@ -27,8 +27,14 @@ function formatBaht(value: number): string {
   return `฿${formatPriceLabel(value)}`;
 }
 
-function parsePriceInput(raw: string): number | null {
-  const digits = raw.replace(/[^\d]/g, '');
+/** Parse typed price; leading minus clamps to 0 (negative prices are invalid). */
+export function parsePriceInput(raw: string): number | null {
+  const normalized = raw.replace(/,/g, '').trim();
+  if (!normalized) return null;
+  if (normalized.startsWith('-')) {
+    return SEARCH_FILTER_PRICE_MIN;
+  }
+  const digits = normalized.replace(/[^\d]/g, '');
   if (!digits) return null;
   return clampPrice(Number(digits));
 }

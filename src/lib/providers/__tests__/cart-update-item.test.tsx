@@ -82,6 +82,22 @@ function CartActionsProbe() {
   );
 }
 
+function CartRapidUpdateProbe() {
+  const { updateItem } = useCart();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void updateItem(sampleCartItem.id, 2);
+        void updateItem(sampleCartItem.id, 3);
+        void updateItem(sampleCartItem.id, 5);
+      }}
+    >
+      rapid-update
+    </button>
+  );
+}
+
 describe('CartProvider updateItem', () => {
   it('removes the cart line when quantity would become zero', async () => {
     updateCartItemMutation.mockClear();
@@ -107,5 +123,37 @@ describe('CartProvider updateItem', () => {
       });
     });
     expect(updateCartItemMutation).not.toHaveBeenCalled();
+  });
+
+  it('coalesces rapid updateItem calls to the latest quantity (SF-CART-020)', async () => {
+    updateCartItemMutation.mockClear();
+    removeCartItemMutation.mockClear();
+    updateCartItemMutation.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve({ data: { updateCartItem: sampleCart } }), 30);
+        }),
+    );
+
+    const user = userEvent.setup();
+    render(
+      <CartProvider>
+        <CartRapidUpdateProbe />
+      </CartProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'rapid-update' }));
+
+    await waitFor(() => {
+      expect(updateCartItemMutation).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      const quantities = updateCartItemMutation.mock.calls.map(
+        (call) =>
+          (call[0] as { variables: { input: { quantity: number } } }).variables.input.quantity,
+      );
+      expect(quantities[quantities.length - 1]).toBe(5);
+    });
   });
 });

@@ -108,6 +108,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Serialize cart mutations against explicit refetches so a slow in-flight Cart
   // response cannot land after a mutation and wipe the items the mutation wrote.
   const cartOpLockRef = useRef(Promise.resolve());
+  /** Latest absolute qty requested per line while update mutations are in flight. */
+  const quantityIntentRef = useRef(new Map<string, number>());
 
   // `sessionId` is null during SSR / before BFF hydrate, which flips the
   // derived `loading` state between the server and the first client render.
@@ -285,10 +287,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     async (operation: () => Promise<unknown>, errorMessage: string) => {
       await withCartOpLock(async () => {
         try {
-          const result = (await operation()) as {
-            errors?: Array<{ message: string; extensions?: { code?: unknown } }>;
-          };
-          if (result.errors?.length) {
+          const result = (await operation()) as
+            | {
+                errors?: Array<{ message: string; extensions?: { code?: unknown } }>;
+              }
+            | undefined
+            | null;
+          if (result?.errors?.length) {
             throw Object.assign(new Error(result.errors[0]?.message ?? errorMessage), {
               errors: result.errors,
             });
@@ -328,39 +333,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateItem = useCallback(
     async (itemId: string, quantity: number) => {
+      // Coalesce rapid +/- clicks: always apply the latest absolute intent under the
+      // cart lock so intermediate stale bases (item.quantity + 1) are not lost (SF-CART-020).
+      quantityIntentRef.current.set(itemId, quantity);
+
       const activeSessionId = getSessionIdForCart();
       const sessionArg = isAuthenticated ? undefined : activeSessionId;
 
-      if (quantity <= 0) {
-        await runCartMutation(
-          () =>
-            removeCartItemMutation({
-              variables: {
-                input: {
-                  itemId,
-                  sessionId: sessionArg,
-                },
-              },
-            }),
-          'ไม่สามารถลบสินค้าออกจากตะกร้าได้',
-        );
-        toast.success('ลบสินค้าออกจากตะกร้าแล้ว');
-        return;
-      }
+      await runCartMutation(async () => {
+        const target = quantityIntentRef.current.get(itemId);
+        if (target === undefined) {
+          return {};
+        }
+        quantityIntentRef.current.delete(itemId);
 
-      await runCartMutation(
-        () =>
-          updateCartItemMutation({
+        if (target <= 0) {
+          const result = await removeCartItemMutation({
             variables: {
               input: {
                 itemId,
-                quantity,
                 sessionId: sessionArg,
               },
             },
-          }),
-        'ไม่สามารถอัปเดตจำนวนสินค้าได้',
-      );
+          });
+          toast.success('ลบสินค้าออกจากตะกร้าแล้ว');
+          return result;
+        }
+
+        return updateCartItemMutation({
+          variables: {
+            input: {
+              itemId,
+              quantity: target,
+              sessionId: sessionArg,
+            },
+          },
+        });
+      }, 'ไม่สามารถอัปเดตจำนวนสินค้าได้');
     },
     [isAuthenticated, removeCartItemMutation, runCartMutation, updateCartItemMutation],
   );

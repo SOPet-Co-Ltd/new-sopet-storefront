@@ -27,6 +27,10 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.CARD_TOKEN_REQUIRED]: 'กรุณากรอกข้อมูลบัตรให้ครบถ้วน',
   [ERROR_CODES.CART_IDENTITY_REQUIRED]: 'ไม่สามารถระบุตะกร้าสินค้าได้ กรุณาลองใหม่อีกครั้ง',
   [ERROR_CODES.CART_ITEM_NOT_FOUND]: 'ไม่พบรายการในตะกร้า',
+  [ERROR_CODES.CART_ITEMS_MISMATCH]:
+    'รายการในตะกร้าไม่ตรงกับสรุปคำสั่งซื้อ กรุณาตรวจสอบตะกร้าแล้วลองอีกครั้ง',
+  [ERROR_CODES.CART_ITEMS_STALE]:
+    'มีรายการถูกลบออกจากตะกร้าแล้ว กรุณาตรวจสอบสรุปคำสั่งซื้ออีกครั้ง',
   [ERROR_CODES.CATEGORY_IMAGE_REQUIRED]: 'ต้องอัปโหลดรูปภาพหมวดหมู่ก่อนอนุมัติ',
   [ERROR_CODES.CATEGORY_NOT_APPROVED]: 'หมวดหมู่ยังไม่ได้รับอนุมัติ',
   [ERROR_CODES.CATEGORY_NOT_FOUND]: 'ไม่พบหมวดหมู่',
@@ -309,6 +313,8 @@ const CODE_GROUPS: Record<string, ErrorCode[]> = {
     ERROR_CODES.ADDRESS_NOT_FOUND,
     ERROR_CODES.CART_IDENTITY_REQUIRED,
     ERROR_CODES.CART_ITEM_NOT_FOUND,
+    ERROR_CODES.CART_ITEMS_MISMATCH,
+    ERROR_CODES.CART_ITEMS_STALE,
     ERROR_CODES.GUEST_PHONE_REQUIRED,
     ERROR_CODES.INSUFFICIENT_STOCK,
     ERROR_CODES.INVALID_ADDRESS,

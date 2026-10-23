@@ -27,16 +27,36 @@ import {
   ORDER_CONTAINS_SUSPENDED_STORE_ERROR_CODE,
   STORE_SUSPENSION_HOLD_COPY,
 } from '@/lib/constants/storeSuspensionHoldCopy';
-import { getErrorMessage } from '@/lib/errors/getErrorMessage';
+import { ERROR_CODES } from '@/lib/errors/errorCodes';
+import {
+  extractErrorCode,
+  getErrorMessage,
+  getErrorMessageByCode,
+} from '@/lib/errors/getErrorMessage';
 import { mapCheckoutSuspendedStoreError } from '@/lib/store-suspension/mapSuspensionErrors';
+
+export type SubmitCheckoutErrorCode =
+  'invalid_step' | 'promotion_invalid' | 'order_failed' | 'payment_failed' | 'cart_stale';
 
 export class SubmitCheckoutError extends Error {
   constructor(
     message: string,
-    public readonly code: 'invalid_step' | 'promotion_invalid' | 'order_failed' | 'payment_failed',
+    public readonly code: SubmitCheckoutErrorCode,
   ) {
     super(message);
     this.name = 'SubmitCheckoutError';
+  }
+}
+
+const CART_LINE_SYNC_ERROR_CODES = new Set<string>([
+  ERROR_CODES.CART_ITEMS_STALE,
+  ERROR_CODES.CART_ITEMS_MISMATCH,
+]);
+
+function throwIfCartLineOutOfSync(error: unknown): void {
+  const code = extractErrorCode(error);
+  if (code && CART_LINE_SYNC_ERROR_CODES.has(code)) {
+    throw new SubmitCheckoutError(getErrorMessageByCode(code), 'cart_stale');
   }
 }
 
@@ -119,6 +139,8 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
   try {
     order = await params.checkoutHook.createOrder(orderInput);
   } catch (error) {
+    throwIfCartLineOutOfSync(error);
+
     const suspendedMessage = mapCheckoutSuspendedStoreError(error);
     if (suspendedMessage) {
       throw new SubmitCheckoutError(suspendedMessage, 'order_failed');
@@ -147,6 +169,8 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
         storePromotionCodes: undefined,
       });
     } catch (retryError) {
+      throwIfCartLineOutOfSync(retryError);
+
       const retrySuspended = mapCheckoutSuspendedStoreError(retryError);
       if (retrySuspended) {
         throw new SubmitCheckoutError(retrySuspended, 'order_failed');

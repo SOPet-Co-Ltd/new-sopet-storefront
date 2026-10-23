@@ -48,7 +48,7 @@ export function CartItemRow({
   const unitPrice = getCartItemUnitPrice(item);
   const variantLabel = parseVariantLabel(item.productVariant?.optionsJson);
   const stockQuantity = item.productVariant?.stockQuantity ?? 0;
-  const canDecrement = !disabled && item.quantity > 1;
+  const canDecrement = !disabled && item.quantity >= 1;
   const canIncrement = !disabled && item.quantity < stockQuantity;
   const productName = product?.name ?? 'สินค้า';
   const [variantModalOpen, setVariantModalOpen] = useState(false);

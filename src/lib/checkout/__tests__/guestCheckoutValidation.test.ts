@@ -122,6 +122,16 @@ describe('validateGuestCheckoutForm', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
   });
+
+  it('returns a Thai error when optional email contains angle brackets (XSS-like)', () => {
+    const result = validateGuestCheckoutForm({
+      ...validGuestForm,
+      email: '<script>@evil.com',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
 });
 
 describe('validateAuthInlineShippingForm', () => {

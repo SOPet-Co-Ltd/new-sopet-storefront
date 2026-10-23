@@ -15,6 +15,7 @@ import { useCampaignCompareAtLookup } from '@/lib/hooks/useCampaignCompareAtLook
 import { useProducts } from '@/lib/hooks/useProducts';
 import { useSearchContext } from '@/lib/hooks/useSearchContext';
 import { useSessionId } from '@/lib/hooks/useSessionId';
+import { parseListingPageParam } from '@/lib/search/parseListingPageParam';
 import { parseSearchSort } from '@/lib/search/searchSort';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { cn } from '@/lib/utils';
@@ -57,7 +58,7 @@ export function ProductListing({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const currentPage = Math.max(1, Number(searchParams.get('page') ?? 1));
+  const requestedPage = parseListingPageParam(searchParams.get('page'));
   const sortParam = searchParams.get('sort') as SearchSortValue | null;
   const searchFilters = parseSearchFilters(searchParams);
   const filterVariables = toProductsFilterVariables(searchFilters);
@@ -70,13 +71,13 @@ export function ProductListing({
         storeId: storeId ?? null,
         tag: effectiveTag ?? null,
         sort: sortParam,
-        page: currentPage,
+        page: requestedPage,
         petTypeIds: filterVariables.petTypeIds ?? null,
         brandIds: filterVariables.brandIds ?? null,
         minPrice: filterVariables.minPrice ?? null,
         maxPrice: filterVariables.maxPrice ?? null,
       }),
-    [category, search, storeId, effectiveTag, sortParam, currentPage, filterVariables],
+    [category, search, storeId, effectiveTag, sortParam, requestedPage, filterVariables],
   );
   const [initialListingParamsKey] = useState(listingParamsKey);
   const listingParamsChanged = listingParamsKey !== initialListingParamsKey;
@@ -143,7 +144,7 @@ export function ProductListing({
     storeId,
     ...filterVariables,
     tag: effectiveTag,
-    page: currentPage,
+    page: requestedPage,
     limit,
     sortBy,
     sortOrder,
@@ -153,7 +154,7 @@ export function ProductListing({
   });
 
   const useInitialProducts =
-    currentPage === initialPage && initialProducts !== undefined && !listingParamsChanged;
+    requestedPage === initialPage && initialProducts !== undefined && !listingParamsChanged;
   const products =
     useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;
@@ -169,9 +170,26 @@ export function ProductListing({
     fetchedTotalPages,
     initialTotalPages,
   });
+  // Clamp the displayed page once totalPages is known (avoids "หน้า 999/2").
+  const currentPage = totalPages > 0 ? Math.min(requestedPage, totalPages) : requestedPage;
 
   const productIds = useMemo(() => products.map((product) => product.id), [products]);
   const { getCampaignPricing } = useCampaignCompareAtLookup(productIds);
+
+  useEffect(() => {
+    if (totalPages < 1 || requestedPage <= totalPages) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (totalPages <= 1) {
+      params.delete('page');
+    } else {
+      params.set('page', String(totalPages));
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [totalPages, requestedPage, pathname, router, searchParams]);
 
   useEffect(() => {
     if (!listingPrefetch || totalPages <= 1 || currentPage >= totalPages) {

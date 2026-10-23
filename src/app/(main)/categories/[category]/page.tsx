@@ -9,6 +9,7 @@ import {
   resolveCategoryBySlug,
   resolveCategoryFilterName,
 } from '@/lib/routing/categoryRoutes';
+import { parseListingPageParam } from '@/lib/search/parseListingPageParam';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { parseSearchSort } from '@/lib/search/searchSort';
 import { CategoryPLP } from '@/components/sections/ProductListing';
@@ -65,7 +66,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const resolvedSearchParams = await searchParams;
   const { page: pageParam, sort, petType, brand, tag, minPrice, maxPrice } = resolvedSearchParams;
   const categorySlug = decodeRouteParam(rawCategory);
-  const currentPage = Math.max(1, Number(pageParam ?? 1));
+  const currentPage = parseListingPageParam(pageParam);
   const { sortBy, sortOrder } = parseSearchSort(sort as SearchSortValue | null);
   const filters = parseSearchFilters({
     get: (key) => {

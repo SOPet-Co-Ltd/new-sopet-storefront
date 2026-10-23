@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/atoms/Button';
@@ -14,12 +14,11 @@ import {
 } from '@/lib/graphql/generated/graphql';
 import { createSearchFilterSectionPrefetchHandlers } from '@/lib/catalog/prefetchSearchFilterTaxonomy';
 import { cn } from '@/lib/utils';
-import { parseSearchFilters } from '@/lib/search/searchFilters';
+import { hasInvertedPriceParams, parseSearchFilters } from '@/lib/search/searchFilters';
 import {
   SEARCH_FILTER_PRICE_MAX,
   SEARCH_FILTER_PRICE_MIN,
   SearchFilterPriceRange,
-  orderPriceRange,
 } from './SearchFilterPriceRange';
 
 const FILTER_SECTIONS = [
@@ -207,6 +206,7 @@ function SearchFilterPriceSection({
 }) {
   const [minPrice, setMinPrice] = useState(initialMinPrice);
   const [maxPrice, setMaxPrice] = useState(initialMaxPrice);
+  const isInvalidRange = minPrice > maxPrice;
 
   const handleClearPrice = useCallback(() => {
     const clearedMinPrice = SEARCH_FILTER_PRICE_MIN;
@@ -222,13 +222,13 @@ function SearchFilterPriceSection({
   }, [pushFilters, urlFilters]);
 
   const handleApplyPrice = useCallback(() => {
-    const ordered = orderPriceRange(minPrice, maxPrice);
-    setMinPrice(ordered.minPrice);
-    setMaxPrice(ordered.maxPrice);
+    if (minPrice > maxPrice) {
+      return;
+    }
     pushFilters({
       ...urlFilters,
-      minPrice: ordered.minPrice,
-      maxPrice: ordered.maxPrice,
+      minPrice,
+      maxPrice,
     });
   }, [maxPrice, minPrice, pushFilters, urlFilters]);
 
@@ -256,6 +256,7 @@ function SearchFilterPriceSection({
           type="button"
           size="sm"
           rounded="full"
+          disabled={isInvalidRange}
           className="h-8 w-[130px] min-w-[130px] border-transparent bg-sop-additionalblue-400 text-sop-neutral-grayfixed-600 hover:bg-sop-additionalblue-500"
           onClick={handleApplyPrice}
         >
@@ -328,6 +329,18 @@ export function SearchFilterSidebar({ className }: SearchFilterSidebarProps) {
     }),
     [searchParams],
   );
+
+  useEffect(() => {
+    if (!hasInvertedPriceParams(searchParams)) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('minPrice');
+    params.delete('maxPrice');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [pathname, router, searchParams]);
 
   const [selectedPetTypeIds, setSelectedPetTypeIds] = useState<Set<string>>(
     () => urlFilters.petTypeIds,

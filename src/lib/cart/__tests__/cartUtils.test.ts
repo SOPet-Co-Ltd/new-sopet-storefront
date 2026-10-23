@@ -4,6 +4,7 @@ import {
   computeCartSubtotal,
   getCartItemCompareAtPrice,
   groupCartItemsByStore,
+  isCartItemOutOfStock,
 } from '@/lib/cart/cartUtils';
 import { sampleCartItem } from '@/test/mocks/fixtures/cart';
 
@@ -37,5 +38,17 @@ describe('cartUtils', () => {
           : null,
       }),
     ).toBeNull();
+  });
+
+  it('detects out-of-stock cart lines (SF-CART-034)', () => {
+    expect(isCartItemOutOfStock(sampleCartItem)).toBe(false);
+    expect(
+      isCartItemOutOfStock({
+        ...sampleCartItem,
+        productVariant: sampleCartItem.productVariant
+          ? { ...sampleCartItem.productVariant, stockQuantity: 0 }
+          : null,
+      }),
+    ).toBe(true);
   });
 });

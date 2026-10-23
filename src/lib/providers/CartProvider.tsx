@@ -25,6 +25,7 @@ import {
   computeCartItemCount,
   computeCartSubtotal,
   groupCartItemsByStore,
+  isCartItemOutOfStock,
   type StoreCartGroup,
 } from '@/lib/cart/cartUtils';
 import { SUSPENDED_STORE_ITEM_REMOVED_WARNING_CODE } from '@/lib/constants/storeSuspensionHoldCopy';
@@ -211,40 +212,62 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [deselectedIds]);
 
+  const selectableItems = useMemo(
+    () => items.filter((item) => !isCartItemOutOfStock(item)),
+    [items],
+  );
+
+  // Out-of-stock lines cannot be checked out — keep them out of the selection set.
   const selectedItems = useMemo(
-    () => items.filter((item) => !deselectedIds.has(item.id)),
-    [items, deselectedIds],
+    () => selectableItems.filter((item) => !deselectedIds.has(item.id)),
+    [selectableItems, deselectedIds],
   );
   const selectedItemsByStore = useMemo(() => groupCartItemsByStore(selectedItems), [selectedItems]);
   const selectedItemCount = useMemo(() => computeCartItemCount(selectedItems), [selectedItems]);
   const selectedSubtotal = useMemo(() => computeCartSubtotal(selectedItems), [selectedItems]);
-  const allItemsSelected = items.length > 0 && items.every((item) => !deselectedIds.has(item.id));
+  const allItemsSelected =
+    selectableItems.length > 0 && selectableItems.every((item) => !deselectedIds.has(item.id));
 
   const isItemSelected = useCallback(
-    (itemId: string) => !deselectedIds.has(itemId),
-    [deselectedIds],
+    (itemId: string) => {
+      const item = items.find((entry) => entry.id === itemId);
+      if (item && isCartItemOutOfStock(item)) {
+        return false;
+      }
+      return !deselectedIds.has(itemId);
+    },
+    [deselectedIds, items],
   );
 
   const isStoreSelected = useCallback(
     (storeId: string) => {
       const group = itemsByStore.find((entry) => entry.storeId === storeId);
       if (!group || group.items.length === 0) return false;
-      return group.items.every((item) => !deselectedIds.has(item.id));
+      const selectable = group.items.filter((item) => !isCartItemOutOfStock(item));
+      if (selectable.length === 0) return false;
+      return selectable.every((item) => !deselectedIds.has(item.id));
     },
     [itemsByStore, deselectedIds],
   );
 
-  const toggleItemSelected = useCallback((itemId: string) => {
-    setDeselectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(itemId)) {
-        next.delete(itemId);
-      } else {
-        next.add(itemId);
+  const toggleItemSelected = useCallback(
+    (itemId: string) => {
+      const item = items.find((entry) => entry.id === itemId);
+      if (item && isCartItemOutOfStock(item)) {
+        return;
       }
-      return next;
-    });
-  }, []);
+      setDeselectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(itemId)) {
+          next.delete(itemId);
+        } else {
+          next.add(itemId);
+        }
+        return next;
+      });
+    },
+    [items],
+  );
 
   const setStoreSelected = useCallback(
     (storeId: string, selected: boolean) => {
@@ -253,6 +276,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setDeselectedIds((prev) => {
         const next = new Set(prev);
         for (const item of group.items) {
+          if (isCartItemOutOfStock(item)) {
+            next.add(item.id);
+            continue;
+          }
           if (selected) {
             next.delete(item.id);
           } else {
@@ -267,7 +294,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const setAllSelected = useCallback(
     (selected: boolean) => {
-      setDeselectedIds(() => (selected ? new Set() : new Set(items.map((item) => item.id))));
+      setDeselectedIds(() => {
+        if (!selected) {
+          return new Set(items.map((item) => item.id));
+        }
+        // Keep OOS lines deselected when selecting all.
+        return new Set(items.filter((item) => isCartItemOutOfStock(item)).map((item) => item.id));
+      });
     },
     [items],
   );

@@ -88,6 +88,16 @@ describe('validateGuestCheckoutForm', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
   });
+
+  it('returns a Thai error when optional email is incomplete (abc@)', () => {
+    const result = validateGuestCheckoutForm({
+      ...validGuestForm,
+      email: 'abc@',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
 });
 
 describe('validateAuthInlineShippingForm', () => {

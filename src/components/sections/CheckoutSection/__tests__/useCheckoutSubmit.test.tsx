@@ -1,0 +1,137 @@
+import { renderHook, act } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { toast } from 'sonner';
+import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
+import { useCheckoutSubmit } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
+
+const mockPush = vi.fn();
+const mockCreateOrder = vi.fn();
+const mockCreatePayment = vi.fn();
+const mockCreateAddress = vi.fn();
+const mockRefetch = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush, replace: vi.fn() }),
+}));
+
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}));
+
+vi.mock('@/lib/hooks/useAuth', () => ({
+  useAuth: () => ({ isAuthenticated: true, isLoading: false }),
+}));
+
+vi.mock('@/lib/hooks/usePaymentMethods', () => ({
+  usePaymentMethods: () => ({
+    paymentMethods: [],
+    addPaymentMethod: vi.fn(),
+  }),
+}));
+
+vi.mock('@/lib/hooks/useCheckoutCartSelection', () => ({
+  useCheckoutCartSelection: () => ({
+    selectedItems: [
+      {
+        id: 'ci-1',
+        variantId: 'var-1',
+        quantity: 1,
+        productVariant: {
+          price: 100,
+          product: { id: 'prod-1' },
+        },
+      },
+    ],
+    selectedSubtotal: 100,
+    refetch: mockRefetch,
+    pruneDeselectedIds: vi.fn(),
+    isBuyNow: false,
+    clearBuyNow: vi.fn(),
+  }),
+}));
+
+vi.mock('@/lib/hooks/useCheckout', () => ({
+  useCheckout: () => ({
+    validatePromotion: vi.fn(),
+    createOrder: mockCreateOrder,
+    createPayment: mockCreatePayment,
+  }),
+}));
+
+const checkoutState = {
+  step: 'review' as const,
+  shippingByStoreId: { 'store-1': { shippingOptionId: 'ship-1' } },
+  selectedAddressId: null as string | null,
+  promotionCode: null,
+  storePromotionsByStoreId: {},
+  paymentMethod: 'promptpay' as const,
+  isSubmitting: false,
+  setIsSubmitting: vi.fn(),
+  setStep: vi.fn(),
+  setAddress: vi.fn(),
+  canAdvanceToPayment: () => true,
+  canAdvanceToReview: () => true,
+};
+
+vi.mock('@/lib/providers/CheckoutProvider', () => ({
+  useCheckout: () => checkoutState,
+}));
+
+const guestForm: GuestCheckoutFormState = {
+  contactPhone: '0812345678',
+  recipientFullName: 'Somchai',
+  recipientPhone: '0812345678',
+  address: '123 Sukhumvit',
+  district: 'Wattana',
+  subDistrict: 'Khlong Tan Nuea',
+  province: 'Bangkok',
+  postalCode: '10110',
+  email: '',
+};
+
+describe('useCheckoutSubmit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    checkoutState.step = 'review';
+    checkoutState.selectedAddressId = null;
+    checkoutState.isSubmitting = false;
+    mockCreateAddress.mockReset();
+    mockCreateOrder.mockReset();
+    mockCreatePayment.mockReset();
+  });
+
+  it('shows toast when createAddress rejects long recipient name (SF-CHK-026)', async () => {
+    mockCreateAddress.mockRejectedValue(
+      Object.assign(new Error('recipientName must be shorter'), {
+        graphQLErrors: [{ extensions: { code: 'VALIDATION_ERROR' } }],
+      }),
+    );
+
+    const setFieldErrors = vi.fn();
+    const setShowFieldErrors = vi.fn();
+
+    const { result } = renderHook(() =>
+      useCheckoutSubmit(guestForm, {
+        addressSubmitContext: {
+          createAddress: mockCreateAddress,
+          setAddress: vi.fn(),
+          saveAddressChecked: true,
+          setFieldErrors,
+          setShowFieldErrors,
+          addressQueryError: undefined,
+          addressQueryLoading: false,
+          addressCount: 0,
+        },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(mockCreateAddress).toHaveBeenCalled();
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+});

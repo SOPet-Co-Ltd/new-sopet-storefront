@@ -52,7 +52,9 @@ let bridge: CheckoutCardPaymentBridge | null = null;
 type CardPaymentValidityListener = () => void;
 const cardPaymentValidityListeners = new Set<CardPaymentValidityListener>();
 
-export function subscribeCheckoutCardPaymentValidity(listener: CardPaymentValidityListener): () => void {
+export function subscribeCheckoutCardPaymentValidity(
+  listener: CardPaymentValidityListener,
+): () => void {
   cardPaymentValidityListeners.add(listener);
   return () => {
     cardPaymentValidityListeners.delete(listener);
@@ -148,11 +150,7 @@ function buildTokenizeInput(form: CheckoutCardFormState): TokenizeCardInput {
 export function validateCheckoutCardForm(form: CheckoutCardFormState): string | null {
   const fieldErrors = getCheckoutCardFieldErrors(form, { showEmptyRequired: true });
   const firstError =
-    fieldErrors.cardNumber ??
-    fieldErrors.cardName ??
-    fieldErrors.expiry ??
-    fieldErrors.cvv ??
-    null;
+    fieldErrors.cardNumber ?? fieldErrors.cardName ?? fieldErrors.expiry ?? fieldErrors.cvv ?? null;
 
   if (firstError) {
     return firstError;

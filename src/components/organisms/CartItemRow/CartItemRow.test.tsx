@@ -88,4 +88,10 @@ describe('CartItemRow quantity controls', () => {
     expect(onUpdateQuantity).toHaveBeenNthCalledWith(3, sampleCartItem.id, 4);
     expect(screen.getByText('4')).toBeInTheDocument();
   });
+
+  it('formats unit price with two decimal places', () => {
+    renderRow();
+
+    expect(screen.getByText('฿890.00')).toBeInTheDocument();
+  });
 });

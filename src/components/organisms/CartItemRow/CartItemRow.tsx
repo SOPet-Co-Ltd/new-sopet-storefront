@@ -22,6 +22,13 @@ type CartItemRowProps = {
   onRemove: (itemId: string) => Promise<void>;
 };
 
+function formatPrice(value: number): string {
+  return value.toLocaleString('th-TH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 function parseVariantLabel(optionsJson: string | null | undefined): string {
   if (!optionsJson) return '';
 
@@ -140,7 +147,7 @@ export function CartItemRow({
 
         <div className="flex items-center justify-between gap-3 lg:justify-end lg:gap-6">
           <p className="sop-body-md-medium text-sop-secondary-600 lg:order-1 lg:w-24 lg:text-right">
-            ฿{unitPrice.toLocaleString('th-TH')}
+            ฿{formatPrice(unitPrice)}
           </p>
 
           <div className="flex items-center gap-3 lg:order-2">

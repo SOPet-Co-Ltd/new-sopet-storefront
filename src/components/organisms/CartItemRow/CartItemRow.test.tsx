@@ -94,4 +94,31 @@ describe('CartItemRow quantity controls', () => {
 
     expect(screen.getByText('฿890.00')).toBeInTheDocument();
   });
+
+  it('flags out-of-stock items and disables selection (SF-CART-034)', () => {
+    const onToggleSelect = vi.fn();
+    const onUpdateQuantity = vi.fn().mockResolvedValue(undefined);
+    const oosItem = {
+      ...sampleCartItem,
+      productVariant: sampleCartItem.productVariant
+        ? { ...sampleCartItem.productVariant, stockQuantity: 0 }
+        : null,
+    };
+
+    render(
+      <CartItemRow
+        item={oosItem}
+        selected
+        onToggleSelect={onToggleSelect}
+        onUpdateQuantity={onUpdateQuantity}
+        onChangeVariant={vi.fn().mockResolvedValue(undefined)}
+        onRemove={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    expect(screen.getByTestId(`cart-item-oos-${oosItem.id}`)).toHaveTextContent('สินค้าหมด');
+    expect(screen.getByRole('button', { name: 'ลดจำนวน' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'เพิ่มจำนวน' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /เลือก/ })).toBeDisabled();
+  });
 });

@@ -36,7 +36,12 @@ import {
 import { mapCheckoutSuspendedStoreError } from '@/lib/store-suspension/mapSuspensionErrors';
 
 export type SubmitCheckoutErrorCode =
-  'invalid_step' | 'promotion_invalid' | 'order_failed' | 'payment_failed' | 'cart_stale';
+  | 'invalid_step'
+  | 'promotion_invalid'
+  | 'order_failed'
+  | 'payment_failed'
+  | 'cart_stale'
+  | 'price_changed';
 
 export class SubmitCheckoutError extends Error {
   constructor(
@@ -53,10 +58,13 @@ const CART_LINE_SYNC_ERROR_CODES = new Set<string>([
   ERROR_CODES.CART_ITEMS_MISMATCH,
 ]);
 
-function throwIfCartLineOutOfSync(error: unknown): void {
+function throwIfCheckoutQuoteInvalid(error: unknown): void {
   const code = extractErrorCode(error);
   if (code && CART_LINE_SYNC_ERROR_CODES.has(code)) {
     throw new SubmitCheckoutError(getErrorMessageByCode(code), 'cart_stale');
+  }
+  if (code === ERROR_CODES.PRICE_CHANGED) {
+    throw new SubmitCheckoutError(getErrorMessageByCode(code), 'price_changed');
   }
 }
 
@@ -139,7 +147,7 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
   try {
     order = await params.checkoutHook.createOrder(orderInput);
   } catch (error) {
-    throwIfCartLineOutOfSync(error);
+    throwIfCheckoutQuoteInvalid(error);
 
     const suspendedMessage = mapCheckoutSuspendedStoreError(error);
     if (suspendedMessage) {
@@ -169,7 +177,7 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
         storePromotionCodes: undefined,
       });
     } catch (retryError) {
-      throwIfCartLineOutOfSync(retryError);
+      throwIfCheckoutQuoteInvalid(retryError);
 
       const retrySuspended = mapCheckoutSuspendedStoreError(retryError);
       if (retrySuspended) {

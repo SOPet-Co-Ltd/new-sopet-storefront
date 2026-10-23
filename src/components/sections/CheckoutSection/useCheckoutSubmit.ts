@@ -231,7 +231,10 @@ export function useCheckoutSubmit(
         // Keep UI locked until unmount/reset so a slow navigation cannot double-submit.
         return true;
       } catch (error) {
-        if (error instanceof SubmitCheckoutError && error.code === 'cart_stale') {
+        if (
+          error instanceof SubmitCheckoutError &&
+          (error.code === 'cart_stale' || error.code === 'price_changed')
+        ) {
           await refetch();
         }
 
@@ -240,7 +243,11 @@ export function useCheckoutSubmit(
             ? error.message
             : getErrorMessage(error, 'ไม่สามารถดำเนินการชำระเงินได้');
 
-        toast.error(message);
+        if (error instanceof SubmitCheckoutError && error.code === 'price_changed') {
+          toast.warning(message);
+        } else {
+          toast.error(message);
+        }
         return false;
       }
     },

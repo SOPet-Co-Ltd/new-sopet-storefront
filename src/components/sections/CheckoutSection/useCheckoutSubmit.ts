@@ -303,7 +303,8 @@ export function useCheckoutSubmit(
         if (!ok) {
           endSubmitting();
         }
-      } catch {
+      } catch (error) {
+        toast.error(getErrorMessage(error, 'ไม่สามารถบันทึกที่อยู่ได้'));
         endSubmitting();
       }
       return;

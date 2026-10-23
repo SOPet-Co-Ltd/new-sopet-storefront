@@ -26,7 +26,7 @@ import {
   cleanCardNumber,
   detectCardBrand,
 } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
-import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { clearPendingCheckout, setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { parseCardExpiry } from '@/lib/payment/omise';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
@@ -153,6 +153,9 @@ export function useCheckoutSubmit(
     }
     submittingRef.current = true;
     setIsSubmitting(true);
+    // Drop any prior unpaid pending id so a reload mid-create cannot resume a
+    // previous order's payment QR (SF-CHK-110).
+    clearPendingCheckout();
     return true;
   }, [setIsSubmitting]);
 

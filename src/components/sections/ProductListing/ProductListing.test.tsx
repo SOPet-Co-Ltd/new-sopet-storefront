@@ -36,10 +36,11 @@ const SAMPLE_CATEGORIES = [
 ];
 
 const push = vi.fn();
+const replace = vi.fn();
 let searchParams = new URLSearchParams();
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
   usePathname: () => '/categories/dog-food',
   useSearchParams: () => searchParams,
 }));
@@ -55,6 +56,7 @@ const createWrapper = createApolloTestWrapper;
 beforeEach(() => {
   searchParams = new URLSearchParams();
   push.mockClear();
+  replace.mockClear();
 });
 
 describe('ProductCard', () => {

@@ -16,7 +16,10 @@ import {
   type PlatformPromotionSectionStage,
   type PlatformPromotionSelection,
 } from '@/lib/checkout/platformPromotionUtils';
-import { toPromotionEstimateCartLines, type StorePromotion } from '@/lib/checkout/storePromotionUtils';
+import {
+  toPromotionEstimateCartLines,
+  type StorePromotion,
+} from '@/lib/checkout/storePromotionUtils';
 import { usePromotionListTimeEligibility } from '@/lib/hooks/usePromotionListTimeEligibility';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';

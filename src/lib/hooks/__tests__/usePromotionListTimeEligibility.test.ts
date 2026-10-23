@@ -16,9 +16,9 @@ describe('getListTimeAvailablePromotionCount', () => {
 
   it('returns merged available length after batch success or error', () => {
     expect(getListTimeAvailablePromotionCount(mergedWithOneAvailable, 'success')).toBe(1);
-    expect(getListTimeAvailablePromotionCount({ ...mergedWithOneAvailable, available: [] }, 'success')).toBe(
-      0,
-    );
+    expect(
+      getListTimeAvailablePromotionCount({ ...mergedWithOneAvailable, available: [] }, 'success'),
+    ).toBe(0);
     expect(getListTimeAvailablePromotionCount(mergedWithOneAvailable, 'error')).toBe(1);
   });
 });

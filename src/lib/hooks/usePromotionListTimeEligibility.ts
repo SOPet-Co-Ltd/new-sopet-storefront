@@ -62,12 +62,10 @@ export function usePromotionListTimeEligibility({
   const [batchStatus, setBatchStatus] = useState<ListTimeBatchStatus>('idle');
   const [batchItems, setBatchItems] = useState<PromotionEligibilityBatchItem[] | null>(null);
 
-  const shouldRunBatch =
-    enabled && !catalogLoading && !catalogError && promotions.length > 0;
+  const shouldRunBatch = enabled && !catalogLoading && !catalogError && promotions.length > 0;
 
   const resolvedBatchStatus: ListTimeBatchStatus = shouldRunBatch ? batchStatus : 'idle';
-  const resolvedBatchItems =
-    resolvedBatchStatus === 'success' ? batchItems : null;
+  const resolvedBatchItems = resolvedBatchStatus === 'success' ? batchItems : null;
 
   const merged = useMemo(
     () =>

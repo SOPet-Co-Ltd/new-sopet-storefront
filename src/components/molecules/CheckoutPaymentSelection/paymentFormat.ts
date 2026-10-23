@@ -23,6 +23,62 @@ function getCardNumberLength(value: string): number {
   return getCardBrand(value) === 'amex' ? 15 : 16;
 }
 
+export function getExpectedCardNumberDigitLength(cardNumber: string): number {
+  return getCardNumberLength(cardNumber);
+}
+
+export function isCompleteCardNumber(cardNumber: string): boolean {
+  const digits = cleanCardNumber(cardNumber);
+  return digits.length === getCardNumberLength(cardNumber);
+}
+
+export function passesLuhnCheck(cardNumber: string): boolean {
+  const digits = cleanCardNumber(cardNumber);
+  if (!/^\d+$/.test(digits)) {
+    return false;
+  }
+
+  let sum = 0;
+  let shouldDouble = false;
+  for (let index = digits.length - 1; index >= 0; index -= 1) {
+    let digit = Number.parseInt(digits[index] ?? '', 10);
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) {
+        digit -= 9;
+      }
+    }
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+
+  return sum % 10 === 0;
+}
+
+export function isValidCardNumberLuhn(cardNumber: string): boolean {
+  if (!isCompleteCardNumber(cardNumber)) {
+    return false;
+  }
+  return passesLuhnCheck(cardNumber);
+}
+
+export function isCompleteExpiry(expiry: string): boolean {
+  return /^\d{2}\/\d{2}$/.test(expiry.trim());
+}
+
+export function isExpiryDateValid(expiry: string, referenceDate = new Date()): boolean {
+  const [monthPart, yearPart] = expiry.split('/');
+  const month = Number.parseInt(monthPart?.trim() ?? '', 10);
+  const year = Number.parseInt(`20${yearPart?.trim() ?? ''}`, 10);
+
+  if (!Number.isFinite(month) || !Number.isFinite(year) || month < 1 || month > 12) {
+    return false;
+  }
+
+  const lastMomentOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+  return lastMomentOfMonth >= referenceDate;
+}
+
 export function getCvvLength(cardNumber: string): number {
   return getCardBrand(cardNumber) === 'amex' ? 4 : 3;
 }

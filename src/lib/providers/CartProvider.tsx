@@ -315,8 +315,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     async (variantId: string, quantity = 1) => {
       const activeSessionId = getSessionIdForCart();
       await runCartMutation(
-        () =>
-          addToCartMutation({
+        async () => {
+          const result = await addToCartMutation({
             variables: {
               input: {
                 variantId,
@@ -324,7 +324,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 sessionId: isAuthenticated ? undefined : activeSessionId,
               },
             },
-          }),
+          });
+          toast.success('เพิ่มสินค้าลงตะกร้าแล้ว');
+          return result;
+        },
         'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้',
       );
     },

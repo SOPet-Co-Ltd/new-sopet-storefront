@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Checkbox } from '@/components/atoms/Checkbox';
 import { CaretDownIcon } from '@/components/atoms/icons/inline/CaretDownIcon';
 import { MinusSquareIcon } from '@/components/atoms/icons/inline/MinusSquareIcon';
@@ -49,10 +49,13 @@ export function CartItemRow({
   const variantLabel = parseVariantLabel(item.productVariant?.optionsJson);
   const stockQuantity = item.productVariant?.stockQuantity ?? 0;
   // Optimistic qty so rapid +/- clicks accumulate before server catch-up (SF-CART-020).
+  // Sync from props during render (not in an effect) when the server quantity catches up.
   const [displayQuantity, setDisplayQuantity] = useState(item.quantity);
-  useEffect(() => {
+  const [syncedQuantity, setSyncedQuantity] = useState(item.quantity);
+  if (item.quantity !== syncedQuantity) {
+    setSyncedQuantity(item.quantity);
     setDisplayQuantity(item.quantity);
-  }, [item.quantity]);
+  }
   const canDecrement = !disabled && displayQuantity >= 1;
   const canIncrement = !disabled && displayQuantity < stockQuantity;
   const productName = product?.name ?? 'สินค้า';

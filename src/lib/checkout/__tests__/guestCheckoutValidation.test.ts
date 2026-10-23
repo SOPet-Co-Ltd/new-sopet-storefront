@@ -234,9 +234,7 @@ describe('toCreateOrderInput', () => {
     });
 
     expect(input.savedAddressId).toBeUndefined();
-    expect(input.shippingAddress).toEqual(
-      expect.objectContaining({ recipientName: 'Somchai' }),
-    );
+    expect(input.shippingAddress).toEqual(expect.objectContaining({ recipientName: 'Somchai' }));
     expect(input.guestPhone).toBeUndefined();
   });
 

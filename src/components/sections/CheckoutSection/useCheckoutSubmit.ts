@@ -35,6 +35,11 @@ import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
+import {
+  checkoutLoginRedirectUrl,
+  shouldRedirectCheckoutToLogin,
+} from '@/lib/checkout/checkoutSessionGuard';
+import { hasClientSession } from '@/lib/graphql/authLink';
 import { ensureSessionId } from '@/lib/session';
 
 export type AddressSubmitContext = {
@@ -55,7 +60,7 @@ export function useCheckoutSubmit(
   },
 ) {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, customer } = useAuth();
   const {
     selectedItems: items,
     selectedSubtotal: subtotal,
@@ -185,19 +190,22 @@ export function useCheckoutSubmit(
           }
         }
 
+        const sessionLive = hasClientSession();
+        const submitAsGuest = !isAuthenticated || !sessionLive;
         const resolvedAddressId = overrideAddressId ?? checkoutContext.selectedAddressId;
-        const useInlineShippingForm = !isGuestCheckout && !resolvedAddressId && guestForm != null;
+        const useInlineShippingForm = !submitAsGuest && !resolvedAddressId && guestForm != null;
 
         const result = await submitCheckout(
           {
             step,
             checkoutContext: {
               ...checkoutContext,
+              isAuthenticated: isAuthenticated && sessionLive,
               selectedAddressId: resolvedAddressId,
-              sessionId: isGuestCheckout ? ensureSessionId() : null,
+              sessionId: submitAsGuest ? ensureSessionId() : null,
             },
             cart: { items, includeCartItemIds: !isBuyNow },
-            guestForm: isGuestCheckout || useInlineShippingForm ? guestForm : null,
+            guestForm: submitAsGuest || useInlineShippingForm ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
             omiseToken: finalOmiseToken,
@@ -238,6 +246,7 @@ export function useCheckoutSubmit(
       checkoutMutations,
       clearBuyNow,
       guestForm,
+      isAuthenticated,
       isBuyNow,
       isGuestCheckout,
       items,
@@ -259,6 +268,18 @@ export function useCheckoutSubmit(
       if (isAuthErrorMode) {
         toast.error('ไม่สามารถโหลดที่อยู่ได้ กรุณาลองอีกครั้ง');
       }
+      return;
+    }
+
+    if (
+      shouldRedirectCheckoutToLogin({
+        isAuthenticated,
+        hasCachedCustomer: Boolean(customer),
+        addressCount,
+        selectedAddressId,
+      })
+    ) {
+      router.push(checkoutLoginRedirectUrl());
       return;
     }
 
@@ -353,14 +374,17 @@ export function useCheckoutSubmit(
       endSubmitting();
     }
   }, [
+    addressCount,
     addressSubmitContext,
     beginSubmitting,
     canSubmit,
+    customer,
     endSubmitting,
     executeSubmit,
     guestForm,
     isAuthenticated,
     isAuthErrorMode,
+    router,
     isAuthInlineMode,
     isAuthSummaryMode,
     isGuestCheckout,

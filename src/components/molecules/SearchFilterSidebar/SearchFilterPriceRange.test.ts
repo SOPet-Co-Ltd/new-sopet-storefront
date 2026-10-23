@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parsePriceInput, SEARCH_FILTER_PRICE_MIN } from './SearchFilterPriceRange';
+import {
+  orderPriceRange,
+  parsePriceInput,
+  SEARCH_FILTER_PRICE_MIN,
+} from './SearchFilterPriceRange';
 
 describe('parsePriceInput', () => {
   it('clamps a leading minus to 0 instead of stripping to a positive digit', () => {
@@ -12,5 +16,15 @@ describe('parsePriceInput', () => {
     expect(parsePriceInput('100')).toBe(100);
     expect(parsePriceInput('1,000')).toBe(1000);
     expect(parsePriceInput('')).toBeNull();
+  });
+});
+
+describe('orderPriceRange', () => {
+  it('swaps when min is greater than max', () => {
+    expect(orderPriceRange(500, 100)).toEqual({ minPrice: 100, maxPrice: 500 });
+  });
+
+  it('keeps an already ordered range', () => {
+    expect(orderPriceRange(100, 500)).toEqual({ minPrice: 100, maxPrice: 500 });
   });
 });

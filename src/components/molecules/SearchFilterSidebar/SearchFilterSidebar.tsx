@@ -19,6 +19,7 @@ import {
   SEARCH_FILTER_PRICE_MAX,
   SEARCH_FILTER_PRICE_MIN,
   SearchFilterPriceRange,
+  orderPriceRange,
 } from './SearchFilterPriceRange';
 
 const FILTER_SECTIONS = [
@@ -221,10 +222,13 @@ function SearchFilterPriceSection({
   }, [pushFilters, urlFilters]);
 
   const handleApplyPrice = useCallback(() => {
+    const ordered = orderPriceRange(minPrice, maxPrice);
+    setMinPrice(ordered.minPrice);
+    setMaxPrice(ordered.maxPrice);
     pushFilters({
       ...urlFilters,
-      minPrice,
-      maxPrice,
+      minPrice: ordered.minPrice,
+      maxPrice: ordered.maxPrice,
     });
   }, [maxPrice, minPrice, pushFilters, urlFilters]);
 

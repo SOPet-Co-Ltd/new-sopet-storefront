@@ -39,6 +39,20 @@ export function parsePriceInput(raw: string): number | null {
   return clampPrice(Number(digits));
 }
 
+/** Swap inverted min/max on apply so filters never silently collapse. */
+export function orderPriceRange(
+  minPrice: number,
+  maxPrice: number,
+): {
+  minPrice: number;
+  maxPrice: number;
+} {
+  return {
+    minPrice: Math.min(minPrice, maxPrice),
+    maxPrice: Math.max(minPrice, maxPrice),
+  };
+}
+
 export function SearchFilterPriceRange({
   minValue,
   maxValue,
@@ -62,9 +76,10 @@ export function SearchFilterPriceRange({
         onMinChange(SEARCH_FILTER_PRICE_MIN);
         return;
       }
-      onMinChange(Math.min(parsed, maxValue));
+      // Do not cross-clamp against max while typing; apply step swaps if needed.
+      onMinChange(parsed);
     },
-    [maxValue, onMinChange],
+    [onMinChange],
   );
 
   const handleMaxInputChange = useCallback(
@@ -74,9 +89,10 @@ export function SearchFilterPriceRange({
         onMaxChange(SEARCH_FILTER_PRICE_MAX);
         return;
       }
-      onMaxChange(Math.max(parsed, minValue));
+      // Do not cross-clamp against min while typing; apply step swaps if needed.
+      onMaxChange(parsed);
     },
-    [minValue, onMaxChange],
+    [onMaxChange],
   );
 
   const handleMinSliderChange = useCallback(

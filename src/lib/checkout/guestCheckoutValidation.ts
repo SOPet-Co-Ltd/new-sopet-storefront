@@ -115,6 +115,10 @@ function validateOptionalEmail(value: string | undefined): string | undefined {
     return INVALID_EMAIL_MESSAGE;
   }
 
+  if (/[<>]/.test(trimmed)) {
+    return INVALID_EMAIL_MESSAGE;
+  }
+
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailPattern.test(trimmed) ? undefined : INVALID_EMAIL_MESSAGE;
 }

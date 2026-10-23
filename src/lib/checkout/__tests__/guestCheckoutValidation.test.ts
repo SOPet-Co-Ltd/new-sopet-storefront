@@ -108,6 +108,20 @@ describe('validateGuestCheckoutForm', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
   });
+
+  it('returns a Thai error when optional email exceeds 254 characters', () => {
+    const longEmail = `${'a'.repeat(243)}@example.com`;
+
+    expect(longEmail.length).toBeGreaterThan(254);
+
+    const result = validateGuestCheckoutForm({
+      ...validGuestForm,
+      email: longEmail,
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
 });
 
 describe('validateAuthInlineShippingForm', () => {

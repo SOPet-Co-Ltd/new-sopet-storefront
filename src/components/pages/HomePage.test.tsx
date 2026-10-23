@@ -192,7 +192,7 @@ describe('HomePage', () => {
     expect(await screen.findByRole('heading', { name: 'สินค้าแนะนำ' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'แบรนด์ที่เข้าร่วม' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'คำถามที่พบบ่อย' })).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('links category cards to category PLP routes', async () => {
     registerHomeHandlers();

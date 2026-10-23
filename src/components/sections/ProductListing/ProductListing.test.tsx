@@ -86,6 +86,8 @@ describe('ProductListing', () => {
 
     expect(await screen.findByText('Premium Dog Food 5kg')).toBeInTheDocument();
     expect(screen.getByText('สินค้าทั้งหมด 1')).toBeInTheDocument();
+    expect(screen.getByTestId('search-sort-bar')).toBeInTheDocument();
+    expect(screen.getByText('เรียงตาม')).toBeInTheDocument();
 
     const grid = screen.getByRole('list');
     expect(grid).toHaveClass(...PRODUCT_CARD_GRID_CLASS.split(' '));

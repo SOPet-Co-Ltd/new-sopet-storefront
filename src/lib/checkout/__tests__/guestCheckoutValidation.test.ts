@@ -98,6 +98,16 @@ describe('validateGuestCheckoutForm', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
   });
+
+  it('returns a Thai error when optional email domain has no TLD (a@b)', () => {
+    const result = validateGuestCheckoutForm({
+      ...validGuestForm,
+      email: 'a@b',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
 });
 
 describe('validateAuthInlineShippingForm', () => {

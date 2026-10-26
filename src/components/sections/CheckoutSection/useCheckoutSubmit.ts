@@ -303,10 +303,15 @@ export function useCheckoutSubmit(
         return;
       }
 
+      if (!addressSubmitContext) {
+        toast.error('ไม่สามารถโหลดที่อยู่ได้ กรุณาลองอีกครั้ง');
+        return;
+      }
+
       const validation = validateAuthInlineShippingForm(guestForm);
       if (!validation.valid) {
-        addressSubmitContext?.setShowFieldErrors(true);
-        addressSubmitContext?.setFieldErrors(validation.errors);
+        addressSubmitContext.setShowFieldErrors(true);
+        addressSubmitContext.setFieldErrors(validation.errors);
         toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
         return;
       }

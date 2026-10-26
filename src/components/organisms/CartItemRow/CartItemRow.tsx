@@ -10,7 +10,7 @@ import { PlusSquareIcon } from '@/components/atoms/icons/inline/PlusSquareIcon';
 import { TrashIcon } from '@/components/atoms/icons/filled/TrashIcon';
 import { CartVariantModal } from '@/components/organisms/CartVariantModal/CartVariantModal';
 import type { CartItem } from '@/lib/cart/cartUtils';
-import { getCartItemUnitPrice } from '@/lib/cart/cartUtils';
+import { getCartItemUnitPrice, isCartItemOutOfStock } from '@/lib/cart/cartUtils';
 
 type CartItemRowProps = {
   item: CartItem;
@@ -21,6 +21,13 @@ type CartItemRowProps = {
   onChangeVariant: (itemId: string, variantId: string, quantity: number) => Promise<void>;
   onRemove: (itemId: string) => Promise<void>;
 };
+
+function formatPrice(value: number): string {
+  return value.toLocaleString('th-TH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 function parseVariantLabel(optionsJson: string | null | undefined): string {
   if (!optionsJson) return '';
@@ -48,10 +55,28 @@ export function CartItemRow({
   const unitPrice = getCartItemUnitPrice(item);
   const variantLabel = parseVariantLabel(item.productVariant?.optionsJson);
   const stockQuantity = item.productVariant?.stockQuantity ?? 0;
-  const canDecrement = !disabled && item.quantity > 1;
-  const canIncrement = !disabled && item.quantity < stockQuantity;
+  const outOfStock = isCartItemOutOfStock(item);
+  const rowDisabled = disabled || outOfStock;
+  // Optimistic qty so rapid +/- clicks accumulate before server catch-up (SF-CART-020).
+  // Sync from props during render (not in an effect) when the server quantity catches up.
+  const [displayQuantity, setDisplayQuantity] = useState(item.quantity);
+  const [syncedQuantity, setSyncedQuantity] = useState(item.quantity);
+  if (item.quantity !== syncedQuantity) {
+    setSyncedQuantity(item.quantity);
+    setDisplayQuantity(item.quantity);
+  }
+  const canDecrement = !rowDisabled && displayQuantity >= 1;
+  const canIncrement = !rowDisabled && displayQuantity < stockQuantity;
   const productName = product?.name ?? 'สินค้า';
   const [variantModalOpen, setVariantModalOpen] = useState(false);
+
+  const bumpQuantity = (delta: number) => {
+    setDisplayQuantity((prev) => {
+      const next = Math.min(Math.max(prev + delta, 0), stockQuantity);
+      void onUpdateQuantity(item.id, next);
+      return next;
+    });
+  };
 
   return (
     <div
@@ -59,9 +84,9 @@ export function CartItemRow({
       data-testid={`cart-item-${item.id}`}
     >
       <Checkbox
-        checked={selected}
+        checked={outOfStock ? false : selected}
         onChange={() => onToggleSelect(item.id)}
-        disabled={disabled}
+        disabled={rowDisabled}
         aria-label={`เลือก ${productName}`}
         className="mt-1 lg:mt-0 lg:self-center"
       />
@@ -85,16 +110,26 @@ export function CartItemRow({
       <div className="flex min-w-0 flex-1 flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex items-start justify-between gap-2">
-            {product?.id ? (
-              <Link
-                href={`/product/${product.id}`}
-                className="sop-body-sm-medium text-sop-neutral-gray-300 line-clamp-2"
-              >
-                {productName}
-              </Link>
-            ) : (
-              <p className="sop-body-sm-medium text-sop-neutral-gray-300">{productName}</p>
-            )}
+            <div className="min-w-0 flex-1">
+              {product?.id ? (
+                <Link
+                  href={`/product/${product.id}`}
+                  className="sop-body-sm-medium text-sop-neutral-gray-300 line-clamp-2"
+                >
+                  {productName}
+                </Link>
+              ) : (
+                <p className="sop-body-sm-medium text-sop-neutral-gray-300">{productName}</p>
+              )}
+              {outOfStock ? (
+                <p
+                  className="mt-1 sop-body-xs-medium text-sop-system-error-500"
+                  data-testid={`cart-item-oos-${item.id}`}
+                >
+                  สินค้าหมด
+                </p>
+              ) : null}
+            </div>
 
             <button
               type="button"
@@ -110,7 +145,7 @@ export function CartItemRow({
           {variantLabel ? (
             <button
               type="button"
-              disabled={disabled}
+              disabled={rowDisabled}
               onClick={() => setVariantModalOpen(true)}
               aria-haspopup="dialog"
               aria-label={`เปลี่ยนตัวเลือกสินค้าของ ${productName}`}
@@ -124,7 +159,7 @@ export function CartItemRow({
 
         <div className="flex items-center justify-between gap-3 lg:justify-end lg:gap-6">
           <p className="sop-body-md-medium text-sop-secondary-600 lg:order-1 lg:w-24 lg:text-right">
-            ฿{unitPrice.toLocaleString('th-TH')}
+            ฿{formatPrice(unitPrice)}
           </p>
 
           <div className="flex items-center gap-3 lg:order-2">
@@ -133,7 +168,7 @@ export function CartItemRow({
               disabled={!canDecrement}
               className="cursor-pointer disabled:cursor-not-allowed"
               aria-label="ลดจำนวน"
-              onClick={() => void onUpdateQuantity(item.id, item.quantity - 1)}
+              onClick={() => bumpQuantity(-1)}
             >
               <MinusSquareIcon
                 size={{ mobile: 24 }}
@@ -142,14 +177,14 @@ export function CartItemRow({
               />
             </button>
             <span className="inline-block w-8 shrink-0 text-center sop-body-sm-regular text-sop-neutral-gray-300">
-              {item.quantity}
+              {displayQuantity}
             </span>
             <button
               type="button"
               disabled={!canIncrement}
               className="cursor-pointer disabled:cursor-not-allowed"
               aria-label="เพิ่มจำนวน"
-              onClick={() => void onUpdateQuantity(item.id, item.quantity + 1)}
+              onClick={() => bumpQuantity(1)}
             >
               <PlusSquareIcon
                 size={{ mobile: 24 }}

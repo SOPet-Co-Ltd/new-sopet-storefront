@@ -2780,6 +2780,7 @@ export type ReviewType = {
   comment?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   customerName: Scalars['String']['output'];
+  customerProfilePhotoUrl?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   images: Array<ReviewImageType>;
   productId: Scalars['String']['output'];
@@ -3057,6 +3058,7 @@ export type StoreProductReviewType = {
   comment?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   customerName: Scalars['String']['output'];
+  customerProfilePhotoUrl?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   images: Array<ReviewImageType>;
   productId: Scalars['String']['output'];

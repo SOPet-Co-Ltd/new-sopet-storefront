@@ -57,18 +57,28 @@ export default async function SearchPage({ searchParams }: Props) {
   });
 
   let initialProducts: ProductsQuery['products']['items'] | undefined;
+  let initialTotal: number | undefined;
+  let initialTotalPages: number | undefined;
 
   const preload = await runSsrPreloadQueries('search', async () => {
     const result = await getClient().query({
       query: ProductsDocument,
       variables,
     });
-    return result.data?.products.items;
+    return result.data?.products;
   });
 
-  if (preload.ok) {
-    initialProducts = preload.data;
+  if (preload.ok && preload.data) {
+    initialProducts = preload.data.items;
+    initialTotal = preload.data.pagination.total;
+    initialTotalPages = preload.data.pagination.totalPages;
   }
 
-  return <SearchResultsPage initialProducts={initialProducts} />;
+  return (
+    <SearchResultsPage
+      initialProducts={initialProducts}
+      initialTotal={initialTotal}
+      initialTotalPages={initialTotalPages}
+    />
+  );
 }

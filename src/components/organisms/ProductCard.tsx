@@ -292,8 +292,8 @@ export default function ProductCard({
       onFocus={handlePrefetch}
     >
       <div
-        className={`flex flex-col gap-2 overflow-hidden rounded-sop-16px bg-sop-base-white ${
-          compact ? 'pb-4' : 'pb-4 md:rounded-sop-24px md:pb-5'
+        className={`flex flex-col gap-2 overflow-hidden rounded-sop-8px bg-sop-base-white ${
+          compact ? 'pb-4' : 'pb-4 md:pb-5'
         } ${cardWidthClass}`}
       >
         <ProductCardImage

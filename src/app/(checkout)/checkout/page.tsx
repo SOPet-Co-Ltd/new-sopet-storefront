@@ -24,6 +24,7 @@ import { clearAutoApplyAttempted } from '@/lib/checkout/autoApplyOnceGate';
 import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useCheckoutCardPaymentReady } from '@/lib/hooks/useCheckoutCardPaymentReady';
 import {
   BUY_NOW_CHECKOUT_MODE,
   useCheckoutCartSelection,
@@ -147,6 +148,8 @@ export default function CheckoutPage() {
   const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
     addressSubmitContext,
   });
+  const cardPaymentReady = useCheckoutCardPaymentReady();
+  const canPay = canSubmit && cardPaymentReady;
 
   const handleGuestFormChange = (field: keyof GuestCheckoutFormState, value: string) => {
     setGuestForm((prev) => ({ ...prev, [field]: value }));
@@ -211,7 +214,7 @@ export default function CheckoutPage() {
             <CheckoutSummarySection
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
-              canSubmit={canSubmit}
+              canSubmit={canPay}
             />
           </div>
         </div>
@@ -219,7 +222,7 @@ export default function CheckoutPage() {
       <CheckoutMobileBottomBar
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
-        canSubmit={canSubmit}
+        canSubmit={canPay}
       />
     </div>
   );

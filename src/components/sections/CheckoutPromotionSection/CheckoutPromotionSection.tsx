@@ -17,10 +17,10 @@ import {
   type PlatformPromotionSelection,
 } from '@/lib/checkout/platformPromotionUtils';
 import {
-  categorizeStorePromotions,
   toPromotionEstimateCartLines,
   type StorePromotion,
 } from '@/lib/checkout/storePromotionUtils';
+import { usePromotionListTimeEligibility } from '@/lib/hooks/usePromotionListTimeEligibility';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useActivePlatformPromotions } from '@/lib/hooks/useActivePlatformPromotions';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -152,7 +152,11 @@ export function CheckoutPromotionSection() {
   const { isAuthenticated } = useAuth();
   const isGuest = !isAuthenticated;
   const { selectedSubtotal: subtotal, selectedItems } = useCheckoutCartSelection();
-  const { promotions, loading: loadingPromotions } = useActivePlatformPromotions(true);
+  const {
+    promotions,
+    loading: loadingPromotions,
+    error: promotionsError,
+  } = useActivePlatformPromotions(true);
   const { validatePromotion, validatingPromotion } = useCheckoutMutations();
   const {
     promotionCode,
@@ -205,13 +209,24 @@ export function CheckoutPromotionSection() {
     promotionType,
   ]);
 
-  const availablePromotionCount = useMemo(() => {
-    const { available } = categorizeStorePromotions(promotions as StorePromotion[], subtotal, {
-      isGuest,
-      cartLines,
-    });
-    return available.length;
-  }, [cartLines, isGuest, promotions, subtotal]);
+  const catalogPromotions = promotions as StorePromotion[];
+
+  const {
+    availablePromotionCount,
+    batchStatus: listTimeBatchStatus,
+    batchItems: listTimeBatchItems,
+    merged: listTimeMerged,
+  } = usePromotionListTimeEligibility({
+    promotions,
+    catalogPromotions,
+    subtotal,
+    shippingFee: platformShippingFee,
+    cartLines,
+    context: { isGuest, cartLines },
+    enabled: true,
+    catalogLoading: loadingPromotions,
+    catalogError: Boolean(promotionsError),
+  });
 
   const stage = getPlatformPromotionSectionStage(
     Boolean(appliedPromotion),
@@ -389,6 +404,11 @@ export function CheckoutPromotionSection() {
         appliedPromotion={appliedPromotion}
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleModalConfirm}
+        sharedListTime={{
+          batchStatus: listTimeBatchStatus,
+          batchItems: listTimeBatchItems,
+          merged: listTimeMerged,
+        }}
       />
     </>
   );

@@ -15,11 +15,13 @@ import { useCampaignCompareAtLookup } from '@/lib/hooks/useCampaignCompareAtLook
 import { useProducts } from '@/lib/hooks/useProducts';
 import { useSearchContext } from '@/lib/hooks/useSearchContext';
 import { useSessionId } from '@/lib/hooks/useSessionId';
+import { parseListingPageParam } from '@/lib/search/parseListingPageParam';
 import { parseSearchSort } from '@/lib/search/searchSort';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
 import { cn } from '@/lib/utils';
 import { ProductListingSkeleton } from './ProductListingSkeleton';
 import { PRODUCT_CARD_GRID_CLASS } from './productListingGrid';
+import { resolveListingTotal, resolveListingTotalPages } from './resolveListingPagination';
 
 const DEFAULT_PRODUCT_LIMIT = 24;
 const SEARCH_PRODUCT_LIMIT = 40;
@@ -33,6 +35,8 @@ export type ProductListingProps = {
   variant?: 'default' | 'search';
   limit?: number;
   initialProducts?: ProductsQuery['products']['items'];
+  initialTotal?: number;
+  initialTotalPages?: number;
   initialPage?: number;
   skip?: boolean;
 };
@@ -46,13 +50,15 @@ export function ProductListing({
   variant = 'default',
   limit: limitProp,
   initialProducts,
+  initialTotal,
+  initialTotalPages,
   initialPage = 1,
   skip = false,
 }: ProductListingProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const currentPage = Math.max(1, Number(searchParams.get('page') ?? 1));
+  const requestedPage = parseListingPageParam(searchParams.get('page'));
   const sortParam = searchParams.get('sort') as SearchSortValue | null;
   const searchFilters = parseSearchFilters(searchParams);
   const filterVariables = toProductsFilterVariables(searchFilters);
@@ -65,18 +71,21 @@ export function ProductListing({
         storeId: storeId ?? null,
         tag: effectiveTag ?? null,
         sort: sortParam,
-        page: currentPage,
+        page: requestedPage,
         petTypeIds: filterVariables.petTypeIds ?? null,
         brandIds: filterVariables.brandIds ?? null,
         minPrice: filterVariables.minPrice ?? null,
         maxPrice: filterVariables.maxPrice ?? null,
       }),
-    [category, search, storeId, effectiveTag, sortParam, currentPage, filterVariables],
+    [category, search, storeId, effectiveTag, sortParam, requestedPage, filterVariables],
   );
   const [initialListingParamsKey] = useState(listingParamsKey);
   const listingParamsChanged = listingParamsKey !== initialListingParamsKey;
-  const { sortBy, sortOrder } =
-    variant === 'search' ? parseSearchSort(sortParam) : { sortBy: undefined, sortOrder: undefined };
+  // Category PLP shares search sort controls; seller store listings stay unsorted.
+  const enableSort = variant === 'search' || (Boolean(category) && !storeId);
+  const { sortBy, sortOrder } = enableSort
+    ? parseSearchSort(sortParam)
+    : { sortBy: undefined, sortOrder: undefined };
   const limit = limitProp ?? (variant === 'search' ? SEARCH_PRODUCT_LIMIT : DEFAULT_PRODUCT_LIMIT);
   const searchContext = useSearchContext();
   const sessionId = useSessionId(variant === 'search');
@@ -123,8 +132,9 @@ export function ProductListing({
 
   const {
     products: fetchedProducts,
-    total,
-    totalPages,
+    total: fetchedTotal,
+    totalPages: fetchedTotalPages,
+    hasPagination,
     loading,
     error,
     refetch,
@@ -134,7 +144,7 @@ export function ProductListing({
     storeId,
     ...filterVariables,
     tag: effectiveTag,
-    page: currentPage,
+    page: requestedPage,
     limit,
     sortBy,
     sortOrder,
@@ -144,13 +154,42 @@ export function ProductListing({
   });
 
   const useInitialProducts =
-    currentPage === initialPage && initialProducts !== undefined && !listingParamsChanged;
+    requestedPage === initialPage && initialProducts !== undefined && !listingParamsChanged;
   const products =
     useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;
+  const total = resolveListingTotal({
+    hasPagination,
+    useInitialProducts,
+    fetchedTotal,
+    initialTotal,
+  });
+  const totalPages = resolveListingTotalPages({
+    hasPagination,
+    useInitialProducts,
+    fetchedTotalPages,
+    initialTotalPages,
+  });
+  // Clamp the displayed page once totalPages is known (avoids "หน้า 999/2").
+  const currentPage = totalPages > 0 ? Math.min(requestedPage, totalPages) : requestedPage;
 
   const productIds = useMemo(() => products.map((product) => product.id), [products]);
   const { getCampaignPricing } = useCampaignCompareAtLookup(productIds);
+
+  useEffect(() => {
+    if (totalPages < 1 || requestedPage <= totalPages) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (totalPages <= 1) {
+      params.delete('page');
+    } else {
+      params.set('page', String(totalPages));
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [totalPages, requestedPage, pathname, router, searchParams]);
 
   useEffect(() => {
     if (!listingPrefetch || totalPages <= 1 || currentPage >= totalPages) {
@@ -198,7 +237,7 @@ export function ProductListing({
   }
 
   if (products.length === 0) {
-    if (variant === 'search') {
+    if (enableSort) {
       return (
         <div data-testid="product-listing">
           {heading && (
@@ -220,9 +259,11 @@ export function ProductListing({
     return <EmptySearchResults />;
   }
 
-  if (variant === 'search') {
+  if (enableSort) {
+    const totalLabel = variant === 'search' ? `สินค้าทั้งหมด (${total})` : `สินค้าทั้งหมด ${total}`;
+
     return (
-      <div data-testid="product-listing">
+      <div className={cn(variant !== 'search' && 'py-4')} data-testid="product-listing">
         {heading && <h1 className="sop-headline-md-medium text-sop-neutral-gray-300">{heading}</h1>}
 
         <div className={cn(heading && 'mt-10')}>
@@ -234,8 +275,15 @@ export function ProductListing({
           />
         </div>
 
-        <div className="mt-6 pt-7">
-          <p className="sop-body-lg-medium text-sop-neutral-gray-200">สินค้าทั้งหมด ({total})</p>
+        <div className={cn('mt-6', variant === 'search' && 'pt-7')}>
+          <p
+            className={cn(
+              'sop-body-lg-medium',
+              variant === 'search' ? 'text-sop-neutral-gray-200' : 'text-sop-neutral-gray-300',
+            )}
+          >
+            {totalLabel}
+          </p>
 
           <ul className={cn('mt-6', PRODUCT_CARD_GRID_CLASS)}>
             {products.map((product, index) => {

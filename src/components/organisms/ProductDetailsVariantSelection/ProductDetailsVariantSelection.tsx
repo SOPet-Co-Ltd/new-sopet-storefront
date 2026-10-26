@@ -237,7 +237,7 @@ export default function ProductDetailsVariantSelection({
             loading={isAddingToCart}
             size="xl"
             variant="secondary"
-            className="flex h-11 w-11 flex-shrink-0 !p-0 items-center justify-center rounded-full border border-sop-secondary-500 bg-white text-sop-secondary-500 hover:bg-sop-secondary-50 lg:h-12 lg:w-auto lg:min-w-0 lg:flex-1 lg:border-2 lg:bg-sop-base-white lg:px-4 lg:font-medium lg:text-sm lg:hover:bg-sop-secondary-100"
+            className="flex h-11 w-11 flex-shrink-0 !p-0 items-center justify-center rounded-full border border-sop-secondary-500 text-sop-secondary-500 hover:bg-sop-secondary-50 lg:h-12 lg:w-auto lg:min-w-0 lg:flex-1 lg:border-2 lg:bg-sop-base-white lg:px-4 lg:font-medium lg:text-sm lg:hover:bg-sop-secondary-100"
             aria-busy={isAddingToCart}
             aria-label={
               isAddingToCart

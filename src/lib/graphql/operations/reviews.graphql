@@ -7,6 +7,7 @@ query ProductReviews($productId: String!) {
     status
     createdAt
     customerName
+    customerProfilePhotoUrl
     variantOptions
     images {
       id
@@ -32,6 +33,7 @@ query StoreReviews($storeId: String!) {
     comment
     createdAt
     customerName
+    customerProfilePhotoUrl
     variantOptions
     images {
       id

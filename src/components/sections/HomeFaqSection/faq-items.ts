@@ -42,6 +42,6 @@ export const HOME_FAQ_ITEMS: HomeFaqItem[] = [
     id: 'track-order',
     question: 'ติดตามออเดอร์อย่างไร',
     answer:
-      "สามารถกดที่ปุ่ม 'แชท' ด้านล้างขวา หรือแอดไลน์ @sopet เพื่อให้เจ้าหน้าที่ส่ง Tracking Number ให้ได้เลย",
+      "สามารถกดที่ปุ่ม 'แชท' ด้านล่างขวา หรือแอดไลน์ @sopet เพื่อให้เจ้าหน้าที่ส่ง Tracking Number ให้ได้เลย",
   },
 ];

@@ -133,18 +133,15 @@ function ProductDetailsSellerReviewsContent({
         <div className="flex flex-col items-center justify-center gap-1 rounded-lg bg-sop-primary-100 p-4 md:min-w-[173px] md:shrink-0 md:p-6">
           <div className="flex items-baseline gap-1">
             <p
-              className="sop-headline-md-medium md:sop-display-sm-medium text-sop-system-warning-500"
+              className="sop-headline-md-medium md:sop-display-sm-medium text-sop-neutral-gray-200"
               data-testid="store-review-average"
             >
               {averageRating.toFixed(1)}
             </p>
             <span className="sop-body-sm-regular text-sop-neutral-gray-400">/5</span>
           </div>
-          <div className="hidden items-center gap-2 md:flex">
-            <RenderStars averageRating={averageRating} size={25} />
-          </div>
-          <div className="flex items-center gap-2 md:hidden">
-            <RenderStars averageRating={averageRating} size={19} />
+          <div className="flex items-center gap-2">
+            <RenderStars averageRating={averageRating} size={16} />
           </div>
         </div>
 
@@ -170,7 +167,7 @@ function ProductDetailsSellerReviewsContent({
             <div className="flex justify-center">
               <button
                 type="button"
-                className="inline-flex min-w-[200px] items-center justify-center rounded-full border border-sop-neutral-grayalpha-300 bg-white px-6 py-3 sop-body-md-medium text-sop-neutral-gray-200 transition-colors hover:bg-sop-neutral-grayalpha-100"
+                className="inline-flex min-w-[200px] items-center justify-center rounded-full border border-sop-neutral-grayalpha-300 bg-white px-6 py-3 sop-body-sm-medium text-sop-neutral-gray-200 transition-colors hover:bg-sop-neutral-grayalpha-100"
                 onClick={() => setVisibleCount((prev) => prev + 10)}
               >
                 ดูรีวิวเพิ่มเติม ({remainingCount.toLocaleString()})

@@ -111,6 +111,14 @@ function validateOptionalEmail(value: string | undefined): string | undefined {
     return undefined;
   }
 
+  if (trimmed.length > 254) {
+    return INVALID_EMAIL_MESSAGE;
+  }
+
+  if (/[<>]/.test(trimmed)) {
+    return INVALID_EMAIL_MESSAGE;
+  }
+
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailPattern.test(trimmed) ? undefined : INVALID_EMAIL_MESSAGE;
 }
@@ -171,6 +179,14 @@ export function validateAuthInlineShippingForm(
   formState: GuestCheckoutFormState,
 ): GuestCheckoutValidationResult {
   const errors = validateShippingFields(formState);
+
+  const contactPhoneError = validatePhoneField(
+    formState.contactPhone,
+    GUEST_PHONE_REQUIRED_MESSAGE,
+  );
+  if (contactPhoneError) {
+    errors.guestPhone = contactPhoneError;
+  }
 
   return {
     valid: Object.keys(errors).length === 0,
@@ -292,6 +308,8 @@ export function toCreateOrderInput(
   if (checkoutContext.isAuthenticated) {
     if (checkoutContext.selectedAddressId) {
       input.savedAddressId = checkoutContext.selectedAddressId;
+    } else if (formState) {
+      input.shippingAddress = mapShippingAddress(formState);
     }
 
     return input;

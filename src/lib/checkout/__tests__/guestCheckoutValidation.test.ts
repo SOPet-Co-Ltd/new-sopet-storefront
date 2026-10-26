@@ -5,6 +5,7 @@ import type { CartQuery } from '@/lib/graphql/generated/graphql';
 import {
   getCustomerContactPrefill,
   toCreateOrderInput,
+  validateAuthInlineShippingForm,
   validateGuestCheckoutForm,
   type CreateOrderCheckoutContext,
   type GuestCheckoutFormState,
@@ -87,6 +88,89 @@ describe('validateGuestCheckoutForm', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
   });
+
+  it('returns a Thai error when optional email is incomplete (abc@)', () => {
+    const result = validateGuestCheckoutForm({
+      ...validGuestForm,
+      email: 'abc@',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
+
+  it('returns a Thai error when optional email domain has no TLD (a@b)', () => {
+    const result = validateGuestCheckoutForm({
+      ...validGuestForm,
+      email: 'a@b',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
+
+  it('returns a Thai error when optional email exceeds 254 characters', () => {
+    const longEmail = `${'a'.repeat(243)}@example.com`;
+
+    expect(longEmail.length).toBeGreaterThan(254);
+
+    const result = validateGuestCheckoutForm({
+      ...validGuestForm,
+      email: longEmail,
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
+
+  it('returns a Thai error when optional email contains angle brackets (XSS-like)', () => {
+    const result = validateGuestCheckoutForm({
+      ...validGuestForm,
+      email: '<script>@evil.com',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
+});
+
+describe('validateAuthInlineShippingForm', () => {
+  it('returns a Thai error when contact phone is missing', () => {
+    const result = validateAuthInlineShippingForm({
+      ...validGuestForm,
+      contactPhone: '',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ของคุณ');
+  });
+
+  it('returns a Thai error when contact phone has only 9 digits', () => {
+    const result = validateAuthInlineShippingForm({
+      ...validGuestForm,
+      contactPhone: '081234567',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
+  });
+
+  it('returns a Thai error when contact phone is not a mobile prefix (1912345678)', () => {
+    const result = validateAuthInlineShippingForm({
+      ...validGuestForm,
+      contactPhone: '1912345678',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.guestPhone).toBe('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
+  });
+
+  it('passes when contact phone and shipping fields are valid', () => {
+    const result = validateAuthInlineShippingForm(validGuestForm);
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual({});
+  });
 });
 
 describe('toCreateOrderInput', () => {
@@ -141,6 +225,17 @@ describe('toCreateOrderInput', () => {
         shippingOptionId: SHIPPING_OPTION_ID,
       },
     ]);
+  });
+
+  it('uses one-time shippingAddress for authenticated checkout without saved address (SF-CHK-044)', () => {
+    const input = toCreateOrderInput(validGuestForm, sampleCart, {
+      ...authenticatedCheckoutContext,
+      selectedAddressId: null,
+    });
+
+    expect(input.savedAddressId).toBeUndefined();
+    expect(input.shippingAddress).toEqual(expect.objectContaining({ recipientName: 'Somchai' }));
+    expect(input.guestPhone).toBeUndefined();
   });
 
   it('omits cartItemIds for buy-now checkout so the cart is not mutated', () => {

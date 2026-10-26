@@ -21,6 +21,8 @@ import { CardPaymentForm } from './CardPaymentForm';
 import {
   createCheckoutCardPaymentBridge,
   EMPTY_CHECKOUT_CARD_FORM,
+  getCheckoutCardFieldErrors,
+  notifyCheckoutCardPaymentValidityChange,
   registerCheckoutCardPaymentBridge,
   validateCheckoutCardForm,
   type CheckoutCardFormState,
@@ -189,7 +191,10 @@ export function CheckoutPaymentSelection() {
     cardEntryModeRef.current = cardEntryMode;
     selectedSavedCardIdRef.current = selectedSavedCardId;
     saveCardForNextTimeRef.current = saveCardForNextTime;
+    notifyCheckoutCardPaymentValidityChange();
   }, [cardEntryMode, cardForm, saveCardForNextTime, selectedSavedCardId]);
+
+  const cardFieldErrors = useMemo(() => getCheckoutCardFieldErrors(cardForm), [cardForm]);
 
   useEffect(() => {
     if (paymentMethod === null) {
@@ -428,6 +433,7 @@ export function CheckoutPaymentSelection() {
                       setCardFormError(null);
                     }
                   }}
+                  fieldErrors={cardFieldErrors}
                   error={cardFormError}
                   showSaveCardCheckbox={isAuthenticated}
                   saveCardChecked={saveCardForNextTime}

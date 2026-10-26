@@ -24,6 +24,8 @@ function buildStoreReviews(count: number) {
     comment: `Review comment ${index + 1}`,
     createdAt: '2026-01-01T00:00:00.000Z',
     customerName: `Customer ${index + 1}`,
+    customerProfilePhotoUrl: null,
+    variantOptions: null,
     reply:
       index === 2
         ? {

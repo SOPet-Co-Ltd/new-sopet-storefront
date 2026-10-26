@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { SearchSortValue } from '@/components/molecules/SearchSortBar';
 import { ProductsDocument, type ProductsQuery } from '@/lib/graphql/generated/graphql';
 import { getClient } from '@/lib/graphql/apollo-rsc';
 import { buildProductsListingVariables } from '@/lib/graphql/query-variables';
@@ -8,7 +9,9 @@ import {
   resolveCategoryBySlug,
   resolveCategoryFilterName,
 } from '@/lib/routing/categoryRoutes';
+import { parseListingPageParam } from '@/lib/search/parseListingPageParam';
 import { parseSearchFilters, toProductsFilterVariables } from '@/lib/search/searchFilters';
+import { parseSearchSort } from '@/lib/search/searchSort';
 import { CategoryPLP } from '@/components/sections/ProductListing';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
@@ -23,6 +26,7 @@ type Props = {
   params: Promise<{ category: string }>;
   searchParams: Promise<{
     page?: string;
+    sort?: string;
     petType?: string;
     brand?: string;
     tag?: string;
@@ -60,9 +64,10 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { category: rawCategory } = await params;
   const resolvedSearchParams = await searchParams;
-  const { page: pageParam, petType, brand, tag, minPrice, maxPrice } = resolvedSearchParams;
+  const { page: pageParam, sort, petType, brand, tag, minPrice, maxPrice } = resolvedSearchParams;
   const categorySlug = decodeRouteParam(rawCategory);
-  const currentPage = Math.max(1, Number(pageParam ?? 1));
+  const currentPage = parseListingPageParam(pageParam);
+  const { sortBy, sortOrder } = parseSearchSort(sort as SearchSortValue | null);
   const filters = parseSearchFilters({
     get: (key) => {
       if (key === 'petType') return petType ?? null;
@@ -84,21 +89,27 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const variables = buildProductsListingVariables({
     category: categoryFilter,
     page: currentPage,
+    sortBy,
+    sortOrder,
     ...toProductsFilterVariables(filters),
   });
 
   let initialProducts: ProductsQuery['products']['items'] | undefined;
+  let initialTotal: number | undefined;
+  let initialTotalPages: number | undefined;
 
   const preload = await runSsrPreloadQueries('category', async () => {
     const result = await getClient().query({
       query: ProductsDocument,
       variables,
     });
-    return result.data?.products.items;
+    return result.data?.products;
   });
 
-  if (preload.ok) {
-    initialProducts = preload.data;
+  if (preload.ok && preload.data) {
+    initialProducts = preload.data.items;
+    initialTotal = preload.data.pagination.total;
+    initialTotalPages = preload.data.pagination.totalPages;
   }
 
   const indexation = getCategoryIndexation(categorySlug, resolvedSearchParams);
@@ -128,6 +139,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           categoryFilter={categoryFilter}
           categoryName={categoryName}
           initialProducts={initialProducts}
+          initialTotal={initialTotal}
+          initialTotalPages={initialTotalPages}
           initialPage={currentPage}
         />
       </main>

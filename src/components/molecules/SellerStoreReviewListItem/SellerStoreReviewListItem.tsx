@@ -5,6 +5,7 @@ import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
 import { ReviewImagesGrid } from '@/components/molecules/ReviewImagesGrid/ReviewImagesGrid';
 import { VendorReplyBlock } from '@/components/molecules/VendorReplyBlock';
 import { formatThaiDate } from '@/lib/datetime/formatThaiDatetime';
+import { getReviewerName } from '@/components/organisms/ProductDetailsSellerReviews/ProductReviewItem';
 import type { StoreReview } from '@/lib/hooks/useReviews';
 
 type SellerStoreReviewListItemProps = {
@@ -17,6 +18,7 @@ function getProductHref(review: StoreReview): string {
 
 export function SellerStoreReviewListItem({ review }: SellerStoreReviewListItemProps) {
   const hasComment = Boolean(review.comment?.trim());
+  const reviewerName = getReviewerName(review);
 
   return (
     <li className="py-4" data-testid={`seller-store-review-item-${review.id}`}>
@@ -27,7 +29,7 @@ export function SellerStoreReviewListItem({ review }: SellerStoreReviewListItemP
             {review.productName}
           </Link>
           <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="sop-body-sm-medium text-sop-neutral-gray-300">{review.customerName}</p>
+            <p className="sop-body-sm-medium text-sop-neutral-gray-300">{reviewerName}</p>
             <time
               className="sop-body-xs-regular text-sop-neutral-gray-400"
               dateTime={review.createdAt}

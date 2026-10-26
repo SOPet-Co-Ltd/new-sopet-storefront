@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
 import { ReviewImagesGrid } from '@/components/molecules/ReviewImagesGrid/ReviewImagesGrid';
 import { VendorReplyBlock } from '@/components/molecules/VendorReplyBlock';
@@ -9,6 +12,7 @@ export type ProductReviewItemData = ProductReview & {
   variantOptions?: string | Record<string, string> | null;
   variantName?: string | null;
   productImageUrl?: string | null;
+  customerProfilePhotoUrl?: string | null;
 };
 
 type ProductReviewItemProps = {
@@ -31,23 +35,114 @@ function AvatarPlaceholder({ name }: { name: string }) {
     <div
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sop-neutral-gray-500 text-sop-neutral-gray-300"
       aria-hidden="true"
+      data-testid="reviewer-avatar-placeholder"
     >
       <span className="sop-body-sm-medium">{initials}</span>
     </div>
   );
 }
 
+function ReviewerAvatar({
+  name,
+  profilePhotoUrl,
+}: {
+  name: string;
+  profilePhotoUrl?: string | null;
+}) {
+  const [imageError, setImageError] = useState(false);
+
+  if (profilePhotoUrl && !imageError) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={profilePhotoUrl}
+        alt={name}
+        className="h-9 w-9 shrink-0 rounded-full object-cover"
+        onError={() => setImageError(true)}
+        data-testid="reviewer-avatar-image"
+      />
+    );
+  }
+
+  return <AvatarPlaceholder name={name} />;
+}
+
+export const RANDOM_THAI_NAMES = [
+  'สมชาย ส.',
+  'กมลวรรณ ท.',
+  'ณัฐวุฒิ พ.',
+  'ศิริพร อ.',
+  'ธีรเดช ก.',
+  'พิมลดา ว.',
+  'อรรถพล ม.',
+  'วรรณภา บ.',
+  'ชลธิชา ส.',
+  'ชัยรัตน์ จ.',
+  'ทัศนีย์ ป.',
+  'ปิยะภัทร ช.',
+  'สิริกานต์ ศ.',
+  'อนุรักษ์ น.',
+  'วิภาวี ร.',
+  'พงศกร ล.',
+  'กานดา ด.',
+  'จิราพร อ.',
+  'เกียรติศักดิ์ พ.',
+  'สุจิตรา ธ.',
+  'ธนากร บ.',
+  'วรัญญา ม.',
+  'ปรีชา ว.',
+  'อรทัย ร.',
+  'นพดล ส.',
+  'กุลธิดา ก.',
+  'สุรชัย ช.',
+  'รัตนาภรณ์ พ.',
+  'เอกชัย อ.',
+  'มณีรัตน์ ท.',
+] as const;
+
+export function isGenericOrMissingName(name: string | null | undefined): boolean {
+  if (!name) return true;
+  const trimmed = name.trim();
+  if (!trimmed) return true;
+  return (
+    trimmed === 'ลูกค้า' ||
+    trimmed === 'ลูกค้าไม่ระบุชื่อ' ||
+    trimmed.toLowerCase() === 'unknown' ||
+    trimmed.toLowerCase() === 'customer'
+  );
+}
+
+export function getReviewerName(review: { id?: string; customerName?: string | null }): string {
+  if (!isGenericOrMissingName(review.customerName)) {
+    return review.customerName!.trim();
+  }
+
+  const seed = review.id || '';
+  if (!seed) {
+    return RANDOM_THAI_NAMES[0];
+  }
+
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  const index = Math.abs(hash) % RANDOM_THAI_NAMES.length;
+  return RANDOM_THAI_NAMES[index];
+}
+
 export function ProductReviewItem({ review }: ProductReviewItemProps) {
   const variantText = getVariantText(review);
+  const reviewerName = getReviewerName(review);
 
   return (
     <article className="py-4" data-testid={`product-review-item-${review.id}`}>
       <div className="flex items-start gap-3">
-        <AvatarPlaceholder name={review.customerName} />
+        <ReviewerAvatar name={reviewerName} profilePhotoUrl={review.customerProfilePhotoUrl} />
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="sop-body-sm-medium text-sop-neutral-gray-200 leading-tight">
-            {review.customerName}
+            {reviewerName}
           </p>
           <div className="flex items-center gap-2">
             <RenderStars averageRating={review.rating} size={16} />
@@ -61,7 +156,7 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
         </div>
 
         {variantText ? (
-          <div className="flex shrink-0 items-center gap-2 rounded-full bg-sop-neutral-gray-500 px-sop-16px py-sop-8px">
+          <div className="flex shrink-0 items-center gap-2 rounded-sop-12px bg-sop-neutral-gray-500 px-sop-16px py-sop-8px">
             <span className="sop-body-xs-medium text-sop-neutral-gray-300 whitespace-nowrap">
               ตัวเลือก : {variantText}
             </span>
@@ -70,14 +165,16 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
       </div>
 
       {review.comment ? (
-        <p className="mt-3 sop-body-md-regular text-sop-neutral-gray-300 leading-relaxed">
+        <p className="ml-12 mt-3 sop-body-sm-regular text-sop-neutral-gray-300 leading-relaxed">
           {review.comment}
         </p>
       ) : null}
 
-      <ReviewImagesGrid images={review.images} />
+      <div className="ml-12">
+        <ReviewImagesGrid images={review.images} />
 
-      {review.reply ? <VendorReplyBlock reply={review.reply} /> : null}
+        {review.reply ? <VendorReplyBlock reply={review.reply} /> : null}
+      </div>
 
       <div className="mt-3 flex justify-end">
         <button

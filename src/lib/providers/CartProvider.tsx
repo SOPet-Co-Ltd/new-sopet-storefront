@@ -25,6 +25,7 @@ import {
   computeCartItemCount,
   computeCartSubtotal,
   groupCartItemsByStore,
+  isCartItemOutOfStock,
   type StoreCartGroup,
 } from '@/lib/cart/cartUtils';
 import { SUSPENDED_STORE_ITEM_REMOVED_WARNING_CODE } from '@/lib/constants/storeSuspensionHoldCopy';
@@ -32,6 +33,9 @@ import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { ensureSessionId, hydrateSessionId, rotateSessionId } from '@/lib/session';
 import { mapStoreSuspendedCartError } from '@/lib/store-suspension/mapSuspensionErrors';
+
+const QUANTITY_CAPPED_WARNING_CODE = 'QUANTITY_CAPPED';
+const QUANTITY_CAPPED_TOAST_MESSAGE = 'ปรับจำนวนสินค้าตามสต็อกที่มีแล้ว';
 
 export type CartWarning = NonNullable<CartQuery['cart']['warnings']>[number];
 
@@ -108,6 +112,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Serialize cart mutations against explicit refetches so a slow in-flight Cart
   // response cannot land after a mutation and wipe the items the mutation wrote.
   const cartOpLockRef = useRef(Promise.resolve());
+  /** Latest absolute qty requested per line while update mutations are in flight. */
+  const quantityIntentRef = useRef(new Map<string, number>());
 
   // `sessionId` is null during SSR / before BFF hydrate, which flips the
   // derived `loading` state between the server and the first client render.
@@ -187,6 +193,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [warnings],
   );
 
+  const quantityCapToastKeyRef = useRef('');
+  useEffect(() => {
+    const capped = warnings.filter((warning) => warning.code === QUANTITY_CAPPED_WARNING_CODE);
+    if (capped.length === 0) {
+      return;
+    }
+    const key = capped.map((warning) => `${warning.variantId ?? ''}:${warning.message}`).join('|');
+    if (key === quantityCapToastKeyRef.current) {
+      return;
+    }
+    quantityCapToastKeyRef.current = key;
+    toast.message(QUANTITY_CAPPED_TOAST_MESSAGE);
+  }, [warnings]);
+
   const itemsByStore = useMemo(() => groupCartItemsByStore(items), [items]);
   const itemCount = useMemo(() => computeCartItemCount(items), [items]);
   const subtotal = useMemo(() => computeCartSubtotal(items), [items]);
@@ -209,40 +229,62 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [deselectedIds]);
 
+  const selectableItems = useMemo(
+    () => items.filter((item) => !isCartItemOutOfStock(item)),
+    [items],
+  );
+
+  // Out-of-stock lines cannot be checked out — keep them out of the selection set.
   const selectedItems = useMemo(
-    () => items.filter((item) => !deselectedIds.has(item.id)),
-    [items, deselectedIds],
+    () => selectableItems.filter((item) => !deselectedIds.has(item.id)),
+    [selectableItems, deselectedIds],
   );
   const selectedItemsByStore = useMemo(() => groupCartItemsByStore(selectedItems), [selectedItems]);
   const selectedItemCount = useMemo(() => computeCartItemCount(selectedItems), [selectedItems]);
   const selectedSubtotal = useMemo(() => computeCartSubtotal(selectedItems), [selectedItems]);
-  const allItemsSelected = items.length > 0 && items.every((item) => !deselectedIds.has(item.id));
+  const allItemsSelected =
+    selectableItems.length > 0 && selectableItems.every((item) => !deselectedIds.has(item.id));
 
   const isItemSelected = useCallback(
-    (itemId: string) => !deselectedIds.has(itemId),
-    [deselectedIds],
+    (itemId: string) => {
+      const item = items.find((entry) => entry.id === itemId);
+      if (item && isCartItemOutOfStock(item)) {
+        return false;
+      }
+      return !deselectedIds.has(itemId);
+    },
+    [deselectedIds, items],
   );
 
   const isStoreSelected = useCallback(
     (storeId: string) => {
       const group = itemsByStore.find((entry) => entry.storeId === storeId);
       if (!group || group.items.length === 0) return false;
-      return group.items.every((item) => !deselectedIds.has(item.id));
+      const selectable = group.items.filter((item) => !isCartItemOutOfStock(item));
+      if (selectable.length === 0) return false;
+      return selectable.every((item) => !deselectedIds.has(item.id));
     },
     [itemsByStore, deselectedIds],
   );
 
-  const toggleItemSelected = useCallback((itemId: string) => {
-    setDeselectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(itemId)) {
-        next.delete(itemId);
-      } else {
-        next.add(itemId);
+  const toggleItemSelected = useCallback(
+    (itemId: string) => {
+      const item = items.find((entry) => entry.id === itemId);
+      if (item && isCartItemOutOfStock(item)) {
+        return;
       }
-      return next;
-    });
-  }, []);
+      setDeselectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(itemId)) {
+          next.delete(itemId);
+        } else {
+          next.add(itemId);
+        }
+        return next;
+      });
+    },
+    [items],
+  );
 
   const setStoreSelected = useCallback(
     (storeId: string, selected: boolean) => {
@@ -251,6 +293,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setDeselectedIds((prev) => {
         const next = new Set(prev);
         for (const item of group.items) {
+          if (isCartItemOutOfStock(item)) {
+            next.add(item.id);
+            continue;
+          }
           if (selected) {
             next.delete(item.id);
           } else {
@@ -265,7 +311,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const setAllSelected = useCallback(
     (selected: boolean) => {
-      setDeselectedIds(() => (selected ? new Set() : new Set(items.map((item) => item.id))));
+      setDeselectedIds(() => {
+        if (!selected) {
+          return new Set(items.map((item) => item.id));
+        }
+        // Keep OOS lines deselected when selecting all.
+        return new Set(items.filter((item) => isCartItemOutOfStock(item)).map((item) => item.id));
+      });
     },
     [items],
   );
@@ -285,10 +337,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     async (operation: () => Promise<unknown>, errorMessage: string) => {
       await withCartOpLock(async () => {
         try {
-          const result = (await operation()) as {
-            errors?: Array<{ message: string; extensions?: { code?: unknown } }>;
-          };
-          if (result.errors?.length) {
+          const result = (await operation()) as
+            | {
+                errors?: Array<{ message: string; extensions?: { code?: unknown } }>;
+              }
+            | undefined
+            | null;
+          if (result?.errors?.length) {
             throw Object.assign(new Error(result.errors[0]?.message ?? errorMessage), {
               errors: result.errors,
             });
@@ -309,45 +364,64 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(
     async (variantId: string, quantity = 1) => {
       const activeSessionId = getSessionIdForCart();
-      await runCartMutation(
-        () =>
-          addToCartMutation({
-            variables: {
-              input: {
-                variantId,
-                quantity,
-                sessionId: isAuthenticated ? undefined : activeSessionId,
-              },
+      await runCartMutation(async () => {
+        const result = await addToCartMutation({
+          variables: {
+            input: {
+              variantId,
+              quantity,
+              sessionId: isAuthenticated ? undefined : activeSessionId,
             },
-          }),
-        'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้',
-      );
+          },
+        });
+        toast.success('เพิ่มสินค้าลงตะกร้าแล้ว');
+        return result;
+      }, 'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้');
     },
     [addToCartMutation, isAuthenticated, runCartMutation],
   );
 
   const updateItem = useCallback(
     async (itemId: string, quantity: number) => {
-      if (quantity <= 0) {
-        return;
-      }
+      // Coalesce rapid +/- clicks: always apply the latest absolute intent under the
+      // cart lock so intermediate stale bases (item.quantity + 1) are not lost (SF-CART-020).
+      quantityIntentRef.current.set(itemId, quantity);
 
       const activeSessionId = getSessionIdForCart();
-      await runCartMutation(
-        () =>
-          updateCartItemMutation({
+      const sessionArg = isAuthenticated ? undefined : activeSessionId;
+
+      await runCartMutation(async () => {
+        const target = quantityIntentRef.current.get(itemId);
+        if (target === undefined) {
+          return {};
+        }
+        quantityIntentRef.current.delete(itemId);
+
+        if (target <= 0) {
+          const result = await removeCartItemMutation({
             variables: {
               input: {
                 itemId,
-                quantity,
-                sessionId: isAuthenticated ? undefined : activeSessionId,
+                sessionId: sessionArg,
               },
             },
-          }),
-        'ไม่สามารถอัปเดตจำนวนสินค้าได้',
-      );
+          });
+          toast.success('ลบสินค้าออกจากตะกร้าแล้ว');
+          return result;
+        }
+
+        return updateCartItemMutation({
+          variables: {
+            input: {
+              itemId,
+              quantity: target,
+              sessionId: sessionArg,
+            },
+          },
+        });
+      }, 'ไม่สามารถอัปเดตจำนวนสินค้าได้');
     },
-    [isAuthenticated, runCartMutation, updateCartItemMutation],
+    [isAuthenticated, removeCartItemMutation, runCartMutation, updateCartItemMutation],
   );
 
   // The backend has no dedicated "change variant" mutation. Changing only the

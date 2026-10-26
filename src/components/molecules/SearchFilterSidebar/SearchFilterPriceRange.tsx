@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 export const SEARCH_FILTER_PRICE_MIN = 0;
 export const SEARCH_FILTER_PRICE_MAX = 10_000;
 
+export const PRICE_RANGE_INVALID_MESSAGE = 'ราคาต่ำสุดต้องไม่มากกว่าราคาสูงสุด';
+
 type SearchFilterPriceRangeProps = {
   minValue: number;
   maxValue: number;
@@ -27,8 +29,14 @@ function formatBaht(value: number): string {
   return `฿${formatPriceLabel(value)}`;
 }
 
-function parsePriceInput(raw: string): number | null {
-  const digits = raw.replace(/[^\d]/g, '');
+/** Parse typed price; leading minus clamps to 0 (negative prices are invalid). */
+export function parsePriceInput(raw: string): number | null {
+  const normalized = raw.replace(/,/g, '').trim();
+  if (!normalized) return null;
+  if (normalized.startsWith('-')) {
+    return SEARCH_FILTER_PRICE_MIN;
+  }
+  const digits = normalized.replace(/[^\d]/g, '');
   if (!digits) return null;
   return clampPrice(Number(digits));
 }
@@ -41,6 +49,8 @@ export function SearchFilterPriceRange({
 }: SearchFilterPriceRangeProps) {
   const minInputId = useId();
   const maxInputId = useId();
+  const errorId = useId();
+  const isInvalid = minValue > maxValue;
 
   const minPercent =
     ((minValue - SEARCH_FILTER_PRICE_MIN) / (SEARCH_FILTER_PRICE_MAX - SEARCH_FILTER_PRICE_MIN)) *
@@ -48,6 +58,7 @@ export function SearchFilterPriceRange({
   const maxPercent =
     ((maxValue - SEARCH_FILTER_PRICE_MIN) / (SEARCH_FILTER_PRICE_MAX - SEARCH_FILTER_PRICE_MIN)) *
     100;
+  const fillWidth = isInvalid ? 0 : maxPercent - minPercent;
 
   const handleMinInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,9 +67,10 @@ export function SearchFilterPriceRange({
         onMinChange(SEARCH_FILTER_PRICE_MIN);
         return;
       }
-      onMinChange(Math.min(parsed, maxValue));
+      // Do not cross-clamp against max while typing; show error if inverted.
+      onMinChange(parsed);
     },
-    [maxValue, onMinChange],
+    [onMinChange],
   );
 
   const handleMaxInputChange = useCallback(
@@ -68,9 +80,10 @@ export function SearchFilterPriceRange({
         onMaxChange(SEARCH_FILTER_PRICE_MAX);
         return;
       }
-      onMaxChange(Math.max(parsed, minValue));
+      // Do not cross-clamp against min while typing; show error if inverted.
+      onMaxChange(parsed);
     },
-    [minValue, onMaxChange],
+    [onMaxChange],
   );
 
   const handleMinSliderChange = useCallback(
@@ -99,7 +112,14 @@ export function SearchFilterPriceRange({
           <label htmlFor={minInputId} className="sr-only">
             ราคาต่ำสุด
           </label>
-          <div className="flex h-8 items-center gap-2 rounded-sop-8 border border-sop-neutral-gray-400 px-3 py-2">
+          <div
+            className={cn(
+              'flex h-8 items-center gap-2 rounded-sop-8 border px-3 py-2',
+              isInvalid
+                ? 'border-sop-system-error-400 ring-1 ring-sop-system-error-400'
+                : 'border-sop-neutral-gray-400',
+            )}
+          >
             <TagIcon size={{ mobile: 16, desktop: 16 }} color="#949495" />
             <input
               id={minInputId}
@@ -107,6 +127,8 @@ export function SearchFilterPriceRange({
               inputMode="numeric"
               value={minValue === SEARCH_FILTER_PRICE_MIN ? '' : formatPriceLabel(minValue)}
               placeholder="ราคาต่ำสุด"
+              aria-invalid={isInvalid || undefined}
+              aria-describedby={isInvalid ? errorId : undefined}
               onChange={handleMinInputChange}
               className="min-w-0 flex-1 bg-transparent sop-body-xs-medium text-sop-neutral-gray-200 placeholder:text-sop-neutral-gray-400 focus:outline-none"
             />
@@ -127,7 +149,14 @@ export function SearchFilterPriceRange({
           <label htmlFor={maxInputId} className="sr-only">
             ราคาสูงสุด
           </label>
-          <div className="flex h-8 items-center gap-2 rounded-sop-8 border border-sop-neutral-gray-400 px-3 py-2">
+          <div
+            className={cn(
+              'flex h-8 items-center gap-2 rounded-sop-8 border px-3 py-2',
+              isInvalid
+                ? 'border-sop-system-error-400 ring-1 ring-sop-system-error-400'
+                : 'border-sop-neutral-gray-400',
+            )}
+          >
             <TagIcon size={{ mobile: 16, desktop: 16 }} color="#949495" />
             <input
               id={maxInputId}
@@ -135,12 +164,20 @@ export function SearchFilterPriceRange({
               inputMode="numeric"
               value={maxValue === SEARCH_FILTER_PRICE_MAX ? '' : formatPriceLabel(maxValue)}
               placeholder="ราคาสูงสุด"
+              aria-invalid={isInvalid || undefined}
+              aria-describedby={isInvalid ? errorId : undefined}
               onChange={handleMaxInputChange}
               className="min-w-0 flex-1 bg-transparent sop-body-xs-medium text-sop-neutral-gray-200 placeholder:text-sop-neutral-gray-400 focus:outline-none"
             />
           </div>
         </div>
       </div>
+
+      {isInvalid ? (
+        <p id={errorId} role="alert" className="px-4 sop-body-xs-regular text-sop-system-error-400">
+          {PRICE_RANGE_INVALID_MESSAGE}
+        </p>
+      ) : null}
 
       <div className="flex flex-col gap-3 px-4">
         <div className="flex items-center justify-between sop-body-xs-regular text-[#7e7e7e]">
@@ -152,7 +189,7 @@ export function SearchFilterPriceRange({
           <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-full bg-sop-neutral-grayalpha-200" />
           <div
             className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-sop-secondary-500"
-            style={{ left: `${minPercent}%`, width: `${maxPercent - minPercent}%` }}
+            style={{ left: `${minPercent}%`, width: `${fillWidth}%` }}
           />
           <input
             type="range"

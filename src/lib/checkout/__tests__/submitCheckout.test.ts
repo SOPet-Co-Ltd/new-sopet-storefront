@@ -418,6 +418,46 @@ describe('submitCheckout', () => {
     expect(createOrder).toHaveBeenCalledTimes(1);
   });
 
+  it('maps PRICE_CHANGED to price_changed with Thai message (SF-CHK-114)', async () => {
+    const createOrder = vi.fn().mockRejectedValue({
+      graphQLErrors: [
+        {
+          extensions: { code: 'PRICE_CHANGED' },
+          message: 'Product price changed since checkout started',
+        },
+      ],
+    });
+
+    await expect(
+      submitCheckout(createSubmitParams({ checkoutHook: createCheckoutHook({ createOrder }) })),
+    ).rejects.toMatchObject({
+      code: 'price_changed',
+      message: 'ราคาสินค้ามีการเปลี่ยนแปลง กรุณาตรวจสอบยอดรวมใหม่ก่อนชำระเงิน',
+    });
+
+    expect(createOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps CART_ITEMS_STALE to cart_stale with Thai message (SF-CHK-112)', async () => {
+    const createOrder = vi.fn().mockRejectedValue({
+      graphQLErrors: [
+        {
+          extensions: { code: 'CART_ITEMS_STALE' },
+          message: 'One or more cart items are no longer in the cart',
+        },
+      ],
+    });
+
+    await expect(
+      submitCheckout(createSubmitParams({ checkoutHook: createCheckoutHook({ createOrder }) })),
+    ).rejects.toMatchObject({
+      code: 'cart_stale',
+      message: 'มีรายการถูกลบออกจากตะกร้าแล้ว กรุณาตรวจสอบสรุปคำสั่งซื้ออีกครั้ง',
+    });
+
+    expect(createOrder).toHaveBeenCalledTimes(1);
+  });
+
   it('persists guest checkout form to localStorage after successful createOrder', async () => {
     await submitCheckout(createSubmitParams(), createSubmitCheckoutGuard());
 

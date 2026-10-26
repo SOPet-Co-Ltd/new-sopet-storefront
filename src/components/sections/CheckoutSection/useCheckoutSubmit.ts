@@ -26,7 +26,7 @@ import {
   cleanCardNumber,
   detectCardBrand,
 } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
-import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { clearPendingCheckout, setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { parseCardExpiry } from '@/lib/payment/omise';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
@@ -35,6 +35,11 @@ import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
+import {
+  checkoutLoginRedirectUrl,
+  shouldRedirectCheckoutToLogin,
+} from '@/lib/checkout/checkoutSessionGuard';
+import { hasClientSession } from '@/lib/graphql/authLink';
 import { ensureSessionId } from '@/lib/session';
 
 export type AddressSubmitContext = {
@@ -55,7 +60,7 @@ export function useCheckoutSubmit(
   },
 ) {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, customer } = useAuth();
   const {
     selectedItems: items,
     selectedSubtotal: subtotal,
@@ -148,6 +153,9 @@ export function useCheckoutSubmit(
     }
     submittingRef.current = true;
     setIsSubmitting(true);
+    // Drop any prior unpaid pending id so a reload mid-create cannot resume a
+    // previous order's payment QR (SF-CHK-110).
+    clearPendingCheckout();
     return true;
   }, [setIsSubmitting]);
 
@@ -185,16 +193,22 @@ export function useCheckoutSubmit(
           }
         }
 
+        const sessionLive = hasClientSession();
+        const submitAsGuest = !isAuthenticated || !sessionLive;
+        const resolvedAddressId = overrideAddressId ?? checkoutContext.selectedAddressId;
+        const useInlineShippingForm = !submitAsGuest && !resolvedAddressId && guestForm != null;
+
         const result = await submitCheckout(
           {
             step,
             checkoutContext: {
               ...checkoutContext,
-              selectedAddressId: overrideAddressId ?? checkoutContext.selectedAddressId,
-              sessionId: isGuestCheckout ? ensureSessionId() : null,
+              isAuthenticated: isAuthenticated && sessionLive,
+              selectedAddressId: resolvedAddressId,
+              sessionId: submitAsGuest ? ensureSessionId() : null,
             },
             cart: { items, includeCartItemIds: !isBuyNow },
-            guestForm: isGuestCheckout ? guestForm : null,
+            guestForm: submitAsGuest || useInlineShippingForm ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
             omiseToken: finalOmiseToken,
@@ -220,12 +234,23 @@ export function useCheckoutSubmit(
         // Keep UI locked until unmount/reset so a slow navigation cannot double-submit.
         return true;
       } catch (error) {
+        if (
+          error instanceof SubmitCheckoutError &&
+          (error.code === 'cart_stale' || error.code === 'price_changed')
+        ) {
+          await refetch();
+        }
+
         const message =
           error instanceof SubmitCheckoutError
             ? error.message
             : getErrorMessage(error, 'ไม่สามารถดำเนินการชำระเงินได้');
 
-        toast.error(message);
+        if (error instanceof SubmitCheckoutError && error.code === 'price_changed') {
+          toast.warning(message);
+        } else {
+          toast.error(message);
+        }
         return false;
       }
     },
@@ -235,6 +260,7 @@ export function useCheckoutSubmit(
       checkoutMutations,
       clearBuyNow,
       guestForm,
+      isAuthenticated,
       isBuyNow,
       isGuestCheckout,
       items,
@@ -259,23 +285,34 @@ export function useCheckoutSubmit(
       return;
     }
 
+    if (
+      shouldRedirectCheckoutToLogin({
+        isAuthenticated,
+        hasCachedCustomer: Boolean(customer),
+        addressCount,
+        selectedAddressId,
+      })
+    ) {
+      router.push(checkoutLoginRedirectUrl());
+      return;
+    }
+
     if (isAuthInlineMode) {
       if (!guestForm) {
         toast.error('กรุณากรอกข้อมูลการจัดส่ง');
         return;
       }
 
-      const validation = validateAuthInlineShippingForm(guestForm);
-      if (!validation.valid) {
-        addressSubmitContext?.setShowFieldErrors(true);
-        addressSubmitContext?.setFieldErrors(validation.errors);
-        toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
+      if (!addressSubmitContext) {
+        toast.error('ไม่สามารถโหลดที่อยู่ได้ กรุณาลองอีกครั้ง');
         return;
       }
 
-      const createAddress = addressSubmitContext?.createAddress;
-      if (!createAddress) {
-        toast.error('ไม่สามารถบันทึกที่อยู่ได้');
+      const validation = validateAuthInlineShippingForm(guestForm);
+      if (!validation.valid) {
+        addressSubmitContext.setShowFieldErrors(true);
+        addressSubmitContext.setFieldErrors(validation.errors);
+        toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
         return;
       }
 
@@ -283,6 +320,19 @@ export function useCheckoutSubmit(
         return;
       }
 
+      if (!addressSubmitContext.saveAddressChecked) {
+        try {
+          const ok = await executeSubmit(null);
+          if (!ok) {
+            endSubmitting();
+          }
+        } catch {
+          endSubmitting();
+        }
+        return;
+      }
+
+      const createAddress = addressSubmitContext.createAddress;
       try {
         const created = await createAddress(
           mapGuestFormToCreateAddressInput(guestForm, {
@@ -303,7 +353,8 @@ export function useCheckoutSubmit(
         if (!ok) {
           endSubmitting();
         }
-      } catch {
+      } catch (error) {
+        toast.error(getErrorMessage(error, 'ไม่สามารถบันทึกที่อยู่ได้'));
         endSubmitting();
       }
       return;
@@ -342,14 +393,17 @@ export function useCheckoutSubmit(
       endSubmitting();
     }
   }, [
+    addressCount,
     addressSubmitContext,
     beginSubmitting,
     canSubmit,
+    customer,
     endSubmitting,
     executeSubmit,
     guestForm,
     isAuthenticated,
     isAuthErrorMode,
+    router,
     isAuthInlineMode,
     isAuthSummaryMode,
     isGuestCheckout,

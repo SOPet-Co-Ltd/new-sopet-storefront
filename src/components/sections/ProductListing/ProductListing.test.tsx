@@ -36,10 +36,11 @@ const SAMPLE_CATEGORIES = [
 ];
 
 const push = vi.fn();
+const replace = vi.fn();
 let searchParams = new URLSearchParams();
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
   usePathname: () => '/categories/dog-food',
   useSearchParams: () => searchParams,
 }));
@@ -55,6 +56,7 @@ const createWrapper = createApolloTestWrapper;
 beforeEach(() => {
   searchParams = new URLSearchParams();
   push.mockClear();
+  replace.mockClear();
 });
 
 describe('ProductCard', () => {
@@ -86,6 +88,8 @@ describe('ProductListing', () => {
 
     expect(await screen.findByText('Premium Dog Food 5kg')).toBeInTheDocument();
     expect(screen.getByText('สินค้าทั้งหมด 1')).toBeInTheDocument();
+    expect(screen.getByTestId('search-sort-bar')).toBeInTheDocument();
+    expect(screen.getByText('เรียงตาม')).toBeInTheDocument();
 
     const grid = screen.getByRole('list');
     expect(grid).toHaveClass(...PRODUCT_CARD_GRID_CLASS.split(' '));

@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useId, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useCallback, useId, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/atoms/Button';
 import { SearchSuggestionsDropdown } from '@/components/molecules/SearchSuggestionsDropdown/SearchSuggestionsDropdown';
@@ -36,11 +36,22 @@ function toProductOptions(
   }));
 }
 
-export function NavbarSearch() {
+type NavbarSearchFormProps = {
+  urlQuery?: string;
+};
+
+function NavbarSearchForm({ urlQuery = '' }: NavbarSearchFormProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxId = useId();
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(urlQuery);
+  const [syncedUrlQuery, setSyncedUrlQuery] = useState(urlQuery);
+
+  if (urlQuery !== syncedUrlQuery) {
+    setSyncedUrlQuery(urlQuery);
+    setQuery(urlQuery);
+  }
+
   const [isOpen, setIsOpen] = useState(false);
 
   const graphemeLength = queryGraphemeLength(query);
@@ -179,5 +190,20 @@ export function NavbarSearch() {
         onClearRecent={clearRecentSearches}
       />
     </form>
+  );
+}
+
+function NavbarSearchFromUrl() {
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get(SEARCH_PARAM)?.trim() ?? '';
+
+  return <NavbarSearchForm urlQuery={urlQuery} />;
+}
+
+export function NavbarSearch() {
+  return (
+    <Suspense fallback={<NavbarSearchForm />}>
+      <NavbarSearchFromUrl />
+    </Suspense>
   );
 }

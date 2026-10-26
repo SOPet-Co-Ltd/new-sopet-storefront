@@ -65,7 +65,7 @@ export function ProductShowPrice({ product, selectedOptions }: ProductShowPriceP
                 <span className="text-sm font-normal text-sop-neutral-grayalpha-400 line-through lg:text-lg">
                   ฿{formatPrice(compareAtPrice)}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#FFF0ED] px-2.5 py-0.5 text-xs font-semibold text-sop-secondary-500">
+                <span className="inline-flex items-center rounded-full bg-sop-secondary-100 px-sop-12px py-sop-4px sop-body-sm-regular font-semibold text-sop-secondary-500">
                   ประหยัด ฿{Math.round(savedAmount).toLocaleString('th-TH')}
                 </span>
               </>

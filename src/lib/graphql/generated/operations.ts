@@ -1370,6 +1370,7 @@ export type ProductReviewsQuery = {
     status: string;
     createdAt: string;
     customerName: string;
+    customerProfilePhotoUrl: string | null;
     variantOptions: string | null;
     images: Array<{ id: string; url: string }>;
     reply: { id: string; body: string; createdAt: string; updatedAt: string } | null;
@@ -1391,6 +1392,7 @@ export type StoreReviewsQuery = {
     comment: string | null;
     createdAt: string;
     customerName: string;
+    customerProfilePhotoUrl: string | null;
     variantOptions: string | null;
     images: Array<{ id: string; url: string }>;
     reply: { id: string; body: string; createdAt: string; updatedAt: string } | null;
@@ -5009,6 +5011,7 @@ export const ProductReviewsDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'status' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'customerName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'customerProfilePhotoUrl' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
                 {
                   kind: 'Field',
@@ -5084,6 +5087,7 @@ export const StoreReviewsDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'comment' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'customerName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'customerProfilePhotoUrl' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
                 {
                   kind: 'Field',

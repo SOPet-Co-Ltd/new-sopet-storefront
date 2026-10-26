@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import ProductDetailsSellerReviews from './ProductDetailsSellerReviews';
+import { RANDOM_THAI_NAMES, getReviewerName } from './ProductReviewItem';
 import {
   sampleProductReview,
   sampleProductReviewWithImages,
@@ -143,5 +144,133 @@ describe('ProductDetailsSellerReviews', () => {
     expect(screen.getByText('ตัวเลือก : 20-40 kg')).toBeInTheDocument();
     const noVariantArticle = screen.getByTestId('product-review-item-review-without-variant');
     expect(noVariantArticle).not.toHaveTextContent('ตัวเลือก : 20-40 kg');
+  });
+
+  it('renders reviewer avatar image when customerProfilePhotoUrl is provided', () => {
+    const reviewWithPhoto = {
+      ...sampleProductReview,
+      id: 'review-with-photo',
+      customerName: 'Somchai P.',
+      customerProfilePhotoUrl: 'https://cdn.example.com/profiles/somchai.jpg',
+    };
+
+    render(
+      <ProductDetailsSellerReviews
+        productReviews={[reviewWithPhoto]}
+        averageRating={5}
+        totalReviews={1}
+      />,
+    );
+
+    const avatarImg = screen.getByTestId('reviewer-avatar-image');
+    expect(avatarImg).toBeInTheDocument();
+    expect(avatarImg).toHaveAttribute('src', 'https://cdn.example.com/profiles/somchai.jpg');
+    expect(avatarImg).toHaveAttribute('alt', 'Somchai P.');
+    expect(screen.queryByTestId('reviewer-avatar-placeholder')).not.toBeInTheDocument();
+  });
+
+  it('renders avatar placeholder initials when customerProfilePhotoUrl is null', () => {
+    const reviewWithoutPhoto = {
+      ...sampleProductReview,
+      id: 'review-without-photo',
+      customerName: 'Anan K.',
+      customerProfilePhotoUrl: null,
+    };
+
+    render(
+      <ProductDetailsSellerReviews
+        productReviews={[reviewWithoutPhoto]}
+        averageRating={5}
+        totalReviews={1}
+      />,
+    );
+
+    expect(screen.queryByTestId('reviewer-avatar-image')).not.toBeInTheDocument();
+    const placeholder = screen.getByTestId('reviewer-avatar-placeholder');
+    expect(placeholder).toBeInTheDocument();
+    expect(placeholder).toHaveTextContent('A');
+  });
+
+  it('falls back to avatar placeholder initials when image loading fails', () => {
+    const reviewWithBrokenPhoto = {
+      ...sampleProductReview,
+      id: 'review-with-broken-photo',
+      customerName: 'Karn B.',
+      customerProfilePhotoUrl: 'https://cdn.example.com/broken.jpg',
+    };
+
+    render(
+      <ProductDetailsSellerReviews
+        productReviews={[reviewWithBrokenPhoto]}
+        averageRating={5}
+        totalReviews={1}
+      />,
+    );
+
+    const avatarImg = screen.getByTestId('reviewer-avatar-image');
+    expect(avatarImg).toBeInTheDocument();
+
+    fireEvent.error(avatarImg);
+
+    expect(screen.queryByTestId('reviewer-avatar-image')).not.toBeInTheDocument();
+    const placeholder = screen.getByTestId('reviewer-avatar-placeholder');
+    expect(placeholder).toBeInTheDocument();
+    expect(placeholder).toHaveTextContent('K');
+  });
+
+  it('generates a random Thai name when reviewer has no name or generic name', () => {
+    const reviewWithoutName = {
+      ...sampleProductReview,
+      id: 'review-no-name-1',
+      customerName: '',
+      customerProfilePhotoUrl: null,
+    };
+    const reviewGenericName = {
+      ...sampleProductReview,
+      id: 'review-generic-name-2',
+      customerName: 'ลูกค้า',
+      customerProfilePhotoUrl: null,
+    };
+
+    render(
+      <ProductDetailsSellerReviews
+        productReviews={[reviewWithoutName, reviewGenericName]}
+        averageRating={5}
+        totalReviews={2}
+      />,
+    );
+
+    const expectedName1 = getReviewerName(reviewWithoutName);
+    const expectedName2 = getReviewerName(reviewGenericName);
+
+    expect(RANDOM_THAI_NAMES).toContain(expectedName1);
+    expect(RANDOM_THAI_NAMES).toContain(expectedName2);
+
+    expect(screen.getByText(expectedName1)).toBeInTheDocument();
+    expect(screen.getByText(expectedName2)).toBeInTheDocument();
+
+    // Verify avatar placeholder displays the first character of the generated Thai name
+    const article1 = screen.getByTestId('product-review-item-review-no-name-1');
+    const placeholder1 = article1.querySelector('[data-testid="reviewer-avatar-placeholder"]');
+    expect(placeholder1).toHaveTextContent(expectedName1.charAt(0));
+  });
+
+  it('keeps real reviewer name when customer has a name', () => {
+    const reviewWithRealName = {
+      ...sampleProductReview,
+      id: 'review-real-name',
+      customerName: 'ธนากร ส.',
+      customerProfilePhotoUrl: null,
+    };
+
+    render(
+      <ProductDetailsSellerReviews
+        productReviews={[reviewWithRealName]}
+        averageRating={5}
+        totalReviews={1}
+      />,
+    );
+
+    expect(screen.getByText('ธนากร ส.')).toBeInTheDocument();
   });
 });

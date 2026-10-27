@@ -9,6 +9,14 @@ afterEach(() => {
 });
 
 describe('isAllowed3dsAuthorizeUri', () => {
+  it('allows Beam verify host and rejects other Beam subdomain lookalikes', () => {
+    expect(isAllowed3dsAuthorizeUri('https://verify.beamcheckout.com/3ds/abc')).toBe(true);
+    expect(isAllowed3dsAuthorizeUri('https://verify.beamcheckout.com.evil.example/3ds')).toBe(
+      false,
+    );
+    expect(isAllowed3dsAuthorizeUri('https://notverify.beamcheckout.com/3ds')).toBe(false);
+  });
+
   it('allows https Omise pay host', () => {
     expect(isAllowed3dsAuthorizeUri('https://pay.omise.co/offsites/ofsp_test/pay')).toBe(true);
   });

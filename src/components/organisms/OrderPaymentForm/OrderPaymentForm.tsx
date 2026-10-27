@@ -17,6 +17,7 @@ import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
 import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
 import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
+import { resolvePromptPayQrSrc } from '@/lib/payment/promptPayQr';
 import { PromptPayQrWaitingState } from './PromptPayQrWaitingState';
 import { BankTransferWaitingState } from './BankTransferWaitingState';
 import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
@@ -269,7 +270,8 @@ export function OrderPaymentForm({
   const [panelSubmitting, setPanelSubmitting] = useState(false);
   const isRetryBusy = Boolean(retrySubmitting || panelSubmitting);
 
-  const hasQrCode = Boolean(payment?.qrCodeUrl);
+  const qrCodeSrc = payment ? resolvePromptPayQrSrc(payment) : null;
+  const hasQrCode = Boolean(qrCodeSrc);
   const handleExpire = useCallback(() => {
     onExpired?.();
   }, [onExpired]);
@@ -506,7 +508,7 @@ export function OrderPaymentForm({
         className="max-w-[500px] px-4 py-5 md:max-w-[960px] md:px-6 md:py-6"
       >
         <PromptPayQrWaitingState
-          qrCodeUrl={payment.qrCodeUrl ?? ''}
+          qrCodeSrc={qrCodeSrc ?? ''}
           amountLabel={formatAmount(payment.amount, payment.currency)}
           orderNumber={payment.orderNumber}
           orderCreatedAt={orderCreatedAt}

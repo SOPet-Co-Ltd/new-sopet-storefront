@@ -1,14 +1,16 @@
 /**
  * Allowlist for payment.authorizeUri before window.location / <a href> navigation.
- * Omise returns https://pay.omise.co/...; ACS hosts are included for rare direct ACS URIs.
+ * Beam returns https://verify.beamcheckout.com/... for 3DS / offsite handoff; ACS hosts are included
+ * for rare direct ACS URIs. Legacy Omise hosts stay allowed for historical unpaid payments.
  */
 
 const DEFAULT_HOST_SUFFIXES: readonly string[] = [
+  'verify.beamcheckout.com',
   'omise.co',
   // Documented EMV 3DS ACS / method-URL intermediaries (suffix match)
   'cardinalcommerce.com',
   'arcot.com',
-  // Wallet offsite hosts occasionally returned after Omise authorize handoff
+  // Wallet offsite hosts occasionally returned after authorize handoff
   'truemoney.com',
   'wallet.truemoney.co.th',
   'shopee.co.th',

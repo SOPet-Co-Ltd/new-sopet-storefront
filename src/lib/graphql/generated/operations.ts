@@ -538,6 +538,7 @@ export type CreatePaymentMutation = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
   };
@@ -872,6 +873,7 @@ export type PaymentFieldsFragment = {
   status: string;
   paymentMethod: string;
   authorizeUri: string | null;
+  qrCodeImage: string | null;
   qrCodeUrl: string | null;
   expiresAt: string | null;
 };
@@ -891,6 +893,7 @@ export type PaymentQuery = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
   };
@@ -911,6 +914,7 @@ export type PaymentByOrderIdQuery = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
   };
@@ -938,6 +942,7 @@ export type PaymentStatusUpdatedSubscription = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
   };
@@ -2243,6 +2248,7 @@ export const PaymentFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'status' } },
           { kind: 'Field', name: { kind: 'Name', value: 'paymentMethod' } },
           { kind: 'Field', name: { kind: 'Name', value: 'authorizeUri' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'qrCodeImage' } },
           { kind: 'Field', name: { kind: 'Name', value: 'qrCodeUrl' } },
           { kind: 'Field', name: { kind: 'Name', value: 'expiresAt' } },
         ],

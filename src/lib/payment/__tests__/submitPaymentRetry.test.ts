@@ -27,25 +27,29 @@ describe('submitPaymentRetry', () => {
     expect(
       buildPaymentRetryInput(context, {
         paymentMethod: 'credit_card',
-        omiseToken: 'tokn_test',
+        cardToken: 'tokn_test',
+        cardSecurityCode: '123',
       }),
     ).toEqual({
       orderId: 'order-1',
       currency: 'THB',
       paymentMethod: 'credit_card',
-      omiseToken: 'tokn_test',
+      cardToken: 'tokn_test',
+      cardSecurityCode: '123',
     });
 
     expect(
       buildPaymentRetryInput(context, {
         paymentMethod: 'credit_card',
         savedPaymentMethodId: 'saved-1',
+        cardSecurityCode: '456',
       }),
     ).toEqual({
       orderId: 'order-1',
       currency: 'THB',
       paymentMethod: 'credit_card',
       savedPaymentMethodId: 'saved-1',
+      cardSecurityCode: '456',
     });
 
     expect(buildPaymentRetryInput(context, { paymentMethod: 'promptpay' })).toEqual({

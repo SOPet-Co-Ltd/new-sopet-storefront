@@ -22,7 +22,7 @@ import {
   resetPayment3dsAutoRedirectMemory,
   threeDSAutoRedirectStorageKey,
 } from '@/components/organisms/OrderPaymentForm/Payment3dsAutoRedirect';
-import { tokenizeCard } from '@/lib/payment/omise';
+import { tokenizeCard } from '@/lib/payment/beam';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import {
   CHECKOUT_ORDER_ID,
@@ -93,8 +93,8 @@ vi.mock('@/lib/hooks/usePaymentMethods', () => ({
   })),
 }));
 
-vi.mock('@/lib/payment/omise', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/payment/omise')>('@/lib/payment/omise');
+vi.mock('@/lib/payment/beam', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/payment/beam')>('@/lib/payment/beam');
   return {
     ...actual,
     tokenizeCard: vi.fn(),
@@ -138,7 +138,13 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
     mockPush.mockReset();
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
-    vi.mocked(tokenizeCard).mockResolvedValue('tok_test_mid_qr');
+    vi.mocked(tokenizeCard).mockResolvedValue({
+      cardToken: 'tok_test_mid_qr',
+      lastFour: '4242',
+      brand: 'visa',
+      expiryMonth: 12,
+      expiryYear: 2030,
+    });
   });
 
   afterEach(() => {
@@ -180,7 +186,8 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
           orderId: CHECKOUT_ORDER_ID,
           currency: 'THB',
           paymentMethod: 'credit_card',
-          omiseToken: 'tok_test_mid_qr',
+          cardToken: 'tok_test_mid_qr',
+          cardSecurityCode: '123',
         },
       });
       expect(mockPush).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);

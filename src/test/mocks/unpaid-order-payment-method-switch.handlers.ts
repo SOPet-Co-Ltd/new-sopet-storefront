@@ -11,6 +11,7 @@ export type MidQrPaymentFixture = {
   status: string;
   paymentMethod: string;
   authorizeUri: string | null;
+  qrCodeImage: string | null;
   qrCodeUrl: string | null;
   expiresAt: string | null;
 };
@@ -20,6 +21,7 @@ export const ORDER_NOT_PAYABLE_MESSAGE = 'This order is no longer awaiting payme
 /** Live Mid-QR: pending PromptPay with non-expired QR (CTA eligible). */
 export const midQrLivePayment: MidQrPaymentFixture = {
   ...samplePendingPayment,
+  qrCodeImage: null,
   qrCodeUrl: 'https://example.com/qr.png',
   expiresAt: '2030-01-01T00:00:00.000Z',
   authorizeUri: null,
@@ -38,6 +40,7 @@ export const WAIT_RETURN_AUTHORIZE_URI = 'https://pay.omise.co/offsites/ofsp_tes
 /** WaitReturn: pending card with authorizeUri (after one-shot redirect gate). */
 export const waitReturnPayment: MidQrPaymentFixture = {
   ...samplePendingPayment,
+  qrCodeImage: null,
   qrCodeUrl: null,
   authorizeUri: WAIT_RETURN_AUTHORIZE_URI,
   paymentMethod: 'credit_card',

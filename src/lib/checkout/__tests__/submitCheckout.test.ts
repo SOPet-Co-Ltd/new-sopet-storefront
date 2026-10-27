@@ -282,7 +282,7 @@ describe('submitCheckout', () => {
         ...promptPayParams.checkoutContext,
         paymentMethod: 'card',
       },
-      omiseToken: 'tokn_test_midflight',
+      cardToken: 'tokn_test_midflight',
     });
 
     const [first, second] = await Promise.all([
@@ -294,7 +294,7 @@ describe('submitCheckout', () => {
     expect(first.redirectPath).toBe(second.redirectPath);
   });
 
-  it('passes omiseToken for card payments and skips it for COD', async () => {
+  it('passes cardToken and cardSecurityCode for card payments and skips it for COD', async () => {
     const createPayment = vi.fn().mockResolvedValue(samplePendingPayment);
 
     await submitCheckout(
@@ -309,7 +309,8 @@ describe('submitCheckout', () => {
           storePromotionCodes: [],
           paymentMethod: 'card',
         },
-        omiseToken: 'tokn_test_123',
+        cardToken: 'tokn_test_123',
+        cardSecurityCode: '123',
         checkoutHook: createCheckoutHook({ createPayment }),
       }),
       createSubmitCheckoutGuard(),
@@ -318,7 +319,8 @@ describe('submitCheckout', () => {
     expect(createPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         paymentMethod: 'credit_card',
-        omiseToken: 'tokn_test_123',
+        cardToken: 'tokn_test_123',
+        cardSecurityCode: '123',
       }),
     );
 
@@ -336,7 +338,8 @@ describe('submitCheckout', () => {
           storePromotionCodes: [],
           paymentMethod: 'cod',
         },
-        omiseToken: 'tokn_test_123',
+        cardToken: 'tokn_test_123',
+        cardSecurityCode: '123',
         checkoutHook: createCheckoutHook({ createPayment }),
       }),
       createSubmitCheckoutGuard(),
@@ -344,7 +347,41 @@ describe('submitCheckout', () => {
 
     expect(createPayment).toHaveBeenCalledWith(
       expect.not.objectContaining({
-        omiseToken: expect.anything(),
+        cardToken: expect.anything(),
+      }),
+    );
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        cardSecurityCode: expect.anything(),
+      }),
+    );
+
+    createPayment.mockClear();
+
+    await submitCheckout(
+      createSubmitParams({
+        checkoutContext: {
+          isAuthenticated: false,
+          shippingByStoreId: {
+            [CATALOG_STORE_ID]: { shippingOptionId: SHIPPING_OPTION_ID },
+          },
+          selectedAddressId: null,
+          promotionCode: null,
+          storePromotionCodes: [],
+          paymentMethod: 'card',
+        },
+        savedPaymentMethodId: 'saved-card-1',
+        cardSecurityCode: '456',
+        checkoutHook: createCheckoutHook({ createPayment }),
+      }),
+      createSubmitCheckoutGuard(),
+    );
+
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentMethod: 'credit_card',
+        savedPaymentMethodId: 'saved-card-1',
+        cardSecurityCode: '456',
       }),
     );
   });

@@ -22,13 +22,8 @@ import {
 } from '@/lib/checkout/guestCheckoutValidation';
 import { parseStorePromotionConditions } from '@/lib/checkout/storePromotionUtils';
 import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
-import {
-  cleanCardNumber,
-  detectCardBrand,
-} from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { clearPendingCheckout, setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
-import { parseCardExpiry } from '@/lib/payment/omise';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
@@ -169,27 +164,26 @@ export function useCheckoutSubmit(
       try {
         const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
-        let finalOmiseToken = cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined;
+        let finalCardToken = cardPayment?.type === 'token' ? cardPayment.cardToken : undefined;
+        const finalCardSecurityCode = cardPayment?.cardSecurityCode;
         let finalSavedPaymentMethodId =
           cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined;
 
         if (cardPayment?.type === 'token' && cardPayment.saveCardForNextTime) {
-          const digits = cleanCardNumber(cardPayment.cardForm.cardNumber);
-          const { month, year } = parseCardExpiry(cardPayment.cardForm.expiry);
-          const brand = detectCardBrand(digits);
+          const { tokenizedCard } = cardPayment;
 
           const savedMethod = await addPaymentMethod({
-            omiseCardToken: cardPayment.omiseToken,
-            brand,
-            lastFour: digits.slice(-4),
-            expiryMonth: month,
-            expiryYear: year,
+            cardToken: cardPayment.cardToken,
+            brand: tokenizedCard.brand,
+            lastFour: tokenizedCard.lastFour,
+            expiryMonth: tokenizedCard.expiryMonth,
+            expiryYear: tokenizedCard.expiryYear,
             isDefault: true,
           });
 
           if (savedMethod) {
             finalSavedPaymentMethodId = savedMethod.id;
-            finalOmiseToken = undefined;
+            finalCardToken = undefined;
           }
         }
 
@@ -211,7 +205,8 @@ export function useCheckoutSubmit(
             guestForm: submitAsGuest || useInlineShippingForm ? guestForm : null,
             subtotal,
             checkoutHook: checkoutMutations,
-            omiseToken: finalOmiseToken,
+            cardToken: finalCardToken,
+            cardSecurityCode: finalCardSecurityCode,
             savedPaymentMethodId: finalSavedPaymentMethodId,
           },
           submitGuardRef.current,

@@ -90,6 +90,46 @@ describe('OrderPaymentForm', () => {
     expect(screen.queryByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).not.toBeInTheDocument();
   });
 
+  it('prefers qrCodeImage as a data URL over qrCodeUrl', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeImage: 'iVBORw0KGgoAAAANSUhEUg==',
+          qrCodeUrl: 'https://example.com/legacy-qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toHaveAttribute(
+      'src',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==',
+    );
+  });
+
+  it('renders QR from qrCodeImage alone when qrCodeUrl is absent', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeImage: 'data:image/jpeg;base64,/9j/4AAQ',
+          qrCodeUrl: null,
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toHaveAttribute(
+      'src',
+      'data:image/jpeg;base64,/9j/4AAQ',
+    );
+  });
+
   it('does not show a status check button on the QR wait screen', () => {
     renderForm(
       <OrderPaymentForm

@@ -75,7 +75,9 @@ export type SubmitCheckoutParams = {
   guestForm: GuestCheckoutFormState | null;
   subtotal: number;
   checkoutHook: Pick<UseCheckoutResult, 'validatePromotion' | 'createOrder' | 'createPayment'>;
-  omiseToken?: string | null;
+  cardToken?: string | null;
+  /** CVV for the card token or saved card; sent with createPayment only, never persisted. */
+  cardSecurityCode?: string | null;
   savedPaymentMethodId?: string | null;
 };
 
@@ -220,9 +222,15 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     ...(isNonOmiseApiPaymentMethod(apiPaymentMethod)
       ? {}
       : params.savedPaymentMethodId
-        ? { savedPaymentMethodId: params.savedPaymentMethodId }
-        : params.omiseToken
-          ? { omiseToken: params.omiseToken }
+        ? {
+            savedPaymentMethodId: params.savedPaymentMethodId,
+            ...(params.cardSecurityCode ? { cardSecurityCode: params.cardSecurityCode } : {}),
+          }
+        : params.cardToken
+          ? {
+              cardToken: params.cardToken,
+              ...(params.cardSecurityCode ? { cardSecurityCode: params.cardSecurityCode } : {}),
+            }
           : {}),
   };
 

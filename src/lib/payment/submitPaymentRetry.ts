@@ -47,9 +47,15 @@ export function buildPaymentRetryInput(
     ...(guestPayToken ? { guestPayToken } : {}),
     ...walletFields,
     ...(submit.savedPaymentMethodId
-      ? { savedPaymentMethodId: submit.savedPaymentMethodId }
-      : submit.omiseToken
-        ? { omiseToken: submit.omiseToken }
+      ? {
+          savedPaymentMethodId: submit.savedPaymentMethodId,
+          ...(submit.cardSecurityCode ? { cardSecurityCode: submit.cardSecurityCode } : {}),
+        }
+      : submit.cardToken
+        ? {
+            cardToken: submit.cardToken,
+            ...(submit.cardSecurityCode ? { cardSecurityCode: submit.cardSecurityCode } : {}),
+          }
         : {}),
   };
 }

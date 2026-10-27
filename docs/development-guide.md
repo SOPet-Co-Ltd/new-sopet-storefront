@@ -27,7 +27,7 @@ Follow atomic design import rules.
 | Logic type                     | Location                             |
 | ------------------------------ | ------------------------------------ |
 | Checkout rules                 | `src/lib/checkout/`                  |
-| Payment/Omise                  | `src/lib/payment/`                   |
+| Payment/Beam                   | `src/lib/payment/`                   |
 | Search filters                 | `src/lib/search/`                    |
 | Address formatting             | `src/lib/address/`                   |
 | Order tracking progress/utils  | `src/lib/order-tracking/`            |

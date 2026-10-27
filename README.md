@@ -6,7 +6,7 @@ Customer-facing Next.js web application for the SOPET multi-vendor pet e-commerc
 
 ## Overview
 
-Shoppers browse products, search, manage carts, checkout (including guest checkout), pay via Omise, and manage their account (orders, addresses, favorites, reviews, notifications).
+Shoppers browse products, search, manage carts, checkout (including guest checkout), pay via Beam, and manage their account (orders, addresses, favorites, reviews, notifications).
 
 ## Tech stack
 
@@ -16,7 +16,7 @@ Shoppers browse products, search, manage carts, checkout (including guest checko
 | UI        | React 19, Tailwind CSS 4           |
 | Data      | Apollo Client 4, GraphQL           |
 | Testing   | Vitest, React Testing Library, MSW |
-| Payments  | Omise.js (browser tokenization)    |
+| Payments  | Beam (browser tokenization)        |
 | Codegen   | GraphQL Code Generator             |
 
 ## Architecture
@@ -120,7 +120,7 @@ src/
 │   ├── hooks/              # Apollo data hooks
 │   ├── providers/          # Auth, cart, checkout context
 │   ├── checkout/           # Checkout business logic
-│   ├── payment/            # Omise integration
+│   ├── payment/            # Beam integration
 │   ├── catalog/, search/   # Domain utilities
 │   ├── seo/                # Metadata, sitemap, JSON-LD helpers
 │   ├── session.ts          # Guest session cookie

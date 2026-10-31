@@ -227,6 +227,30 @@ describe('toCreateOrderInput', () => {
     ]);
   });
 
+  it('includes guestEmail for authenticated checkout with a saved address', () => {
+    const input = toCreateOrderInput(
+      { ...validGuestForm, email: '  auth@example.com  ' },
+      sampleCart,
+      authenticatedCheckoutContext,
+    );
+
+    expect(input.savedAddressId).toBe(SAVED_ADDRESS_ID);
+    expect(input.guestEmail).toBe('auth@example.com');
+    expect(input.guestPhone).toBeUndefined();
+    expect(input.shippingAddress).toBeUndefined();
+  });
+
+  it('includes guestEmail for guest checkout', () => {
+    const input = toCreateOrderInput(
+      { ...validGuestForm, email: 'guest@example.com' },
+      sampleCart,
+      guestCheckoutContext,
+    );
+
+    expect(input.guestEmail).toBe('guest@example.com');
+    expect(input.guestPhone).toBe('0812345678');
+  });
+
   it('uses one-time shippingAddress for authenticated checkout without saved address (SF-CHK-044)', () => {
     const input = toCreateOrderInput(validGuestForm, sampleCart, {
       ...authenticatedCheckoutContext,

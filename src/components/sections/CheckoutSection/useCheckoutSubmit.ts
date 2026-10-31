@@ -17,6 +17,7 @@ import {
   mapGuestFormToCreateAddressInput,
   validateAuthInlineShippingForm,
   validateGuestCheckoutForm,
+  validateOptionalCheckoutEmail,
   type GuestCheckoutField,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
@@ -196,7 +197,6 @@ export function useCheckoutSubmit(
         const sessionLive = hasClientSession();
         const submitAsGuest = !isAuthenticated || !sessionLive;
         const resolvedAddressId = overrideAddressId ?? checkoutContext.selectedAddressId;
-        const useInlineShippingForm = !submitAsGuest && !resolvedAddressId && guestForm != null;
 
         const result = await submitCheckout(
           {
@@ -208,7 +208,8 @@ export function useCheckoutSubmit(
               sessionId: submitAsGuest ? ensureSessionId() : null,
             },
             cart: { items, includeCartItemIds: !isBuyNow },
-            guestForm: submitAsGuest || useInlineShippingForm ? guestForm : null,
+            // Keep form so checkout email reaches createOrder for guest and logged-in.
+            guestForm,
             subtotal,
             checkoutHook: checkoutMutations,
             omiseToken: finalOmiseToken,
@@ -363,6 +364,16 @@ export function useCheckoutSubmit(
     if (isAuthSummaryMode && !selectedAddressId) {
       toast.error('กรุณาเลือกที่อยู่จัดส่ง');
       return;
+    }
+
+    if (isAuthSummaryMode && guestForm) {
+      const emailErrors = validateOptionalCheckoutEmail(guestForm.email);
+      if (Object.keys(emailErrors).length > 0) {
+        addressSubmitContext?.setShowFieldErrors(true);
+        addressSubmitContext?.setFieldErrors(emailErrors);
+        toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
+        return;
+      }
     }
 
     if (isGuestCheckout || !isAuthenticated) {

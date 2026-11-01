@@ -267,7 +267,7 @@ export function ProductFloatingBuyCard({
                   </span>
                   <span
                     data-testid="floating-saved-badge"
-                    className="inline-flex items-center rounded-full bg-sop-secondary-200 px-sop-12px py-sop-4px sop-body-sm-regular text-sop-secondary-500"
+                    className="inline-flex items-center rounded-full bg-sop-secondary-100 px-sop-12px py-sop-4px sop-body-sm-regular text-sop-secondary-500"
                   >
                     ประหยัด ฿{Math.round(savedAmount).toLocaleString('th-TH')}
                   </span>

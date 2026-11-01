@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { showSavedProductToast } from '@/components/atoms/SavedProductToast/SavedProductToast';
 import { ProductReviewStars } from '@/components/molecules/ProductReviewStars/ProductReviewStars';
 import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import ProductDetailsVariantSelection from '@/components/organisms/ProductDetailsVariantSelection/ProductDetailsVariantSelection';
@@ -99,10 +100,9 @@ export function ProductDetails({
 
       if (isWishlisted) {
         await removeFavorite(product.id);
-        toast.success('นำออกจากรายการโปรดแล้ว');
       } else {
         await addFavorite(product.id);
-        toast.success('เพิ่มในรายการโปรดแล้ว');
+        showSavedProductToast();
       }
     } catch {
       toast.error('เกิดข้อผิดพลาด', {

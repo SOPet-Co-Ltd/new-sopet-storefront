@@ -3,7 +3,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { prefetchAllAccountPages } from '@/lib/account/prefetchAccountPage';
 
 type AccountAuthGuardProps = {
   children: ReactNode;
@@ -20,22 +19,6 @@ export function AccountAuthGuard({ children }: AccountAuthGuardProps) {
       router.replace(`/login?returnUrl=${returnUrl}`);
     }
   }, [isAuthenticated, isLoading, pathname, router]);
-
-  useEffect(() => {
-    if (isLoading || !isAuthenticated) {
-      return;
-    }
-
-    const warmAccountCache = () => prefetchAllAccountPages();
-
-    if ('requestIdleCallback' in window) {
-      const idleId = window.requestIdleCallback(warmAccountCache);
-      return () => window.cancelIdleCallback(idleId);
-    }
-
-    const timerId = globalThis.setTimeout(warmAccountCache, 200);
-    return () => globalThis.clearTimeout(timerId);
-  }, [isAuthenticated, isLoading]);
 
   if (isLoading || !isAuthenticated) {
     return (

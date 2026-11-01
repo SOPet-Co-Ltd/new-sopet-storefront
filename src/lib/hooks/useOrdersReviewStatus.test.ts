@@ -70,4 +70,28 @@ describe('useOrdersReviewStatus', () => {
 
     expect(result.current.isOrderFullyReviewed('order-1', 'delivered')).toBe(false);
   });
+
+  it('skips customerReviewableItems when no orders are delivered', async () => {
+    let calls = 0;
+    server.use(
+      graphql.query('CustomerReviewableItems', () => {
+        calls += 1;
+        return HttpResponse.json({
+          data: { customerReviewableItems: [] },
+        });
+      }),
+    );
+
+    const orders = [createOrder('order-2', 'shipped')];
+    const { result } = renderHook(() => useOrdersReviewStatus(orders), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(calls).toBe(0);
+    expect(result.current.isOrderFullyReviewed('order-2', 'shipped')).toBe(false);
+  });
 });

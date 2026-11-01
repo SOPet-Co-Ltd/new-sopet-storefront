@@ -100,7 +100,8 @@ describe('CategoryPLP search taxonomy layout', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'dog-food' })).toBeInTheDocument();
     expect(await screen.findByText('Premium Dog Food 5kg')).toBeInTheDocument();
-    expect(productsVariables).toMatchObject({ category: 'Dog Food' });
+    // SSR first page is reused; no duplicate Products refetch while params are unchanged.
+    expect(productsVariables).toBeUndefined();
   });
 
   it('shows empty state for unknown slug without unfiltered products query (AC-026)', async () => {
@@ -172,6 +173,7 @@ describe('CategoryPLP search taxonomy layout', () => {
     expect(await screen.findByTestId('product-listing')).toBeInTheDocument();
     expect(screen.getByText('Premium Dog Food 5kg')).toBeInTheDocument();
     expect(screen.queryByText('ไม่พบสินค้าในหมวดหมู่นี้')).not.toBeInTheDocument();
-    expect(productsVariables).toMatchObject({ category: 'บ้าน กรง และที่นอน' });
+    // SSR first page is reused; no duplicate Products refetch while params are unchanged.
+    expect(productsVariables).toBeUndefined();
   });
 });

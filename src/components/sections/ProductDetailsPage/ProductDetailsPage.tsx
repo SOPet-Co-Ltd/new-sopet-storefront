@@ -20,6 +20,10 @@ import { ProductDetailDescription } from '@/components/sections/ProductDetailDes
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
 import { trackViewItem } from '@/lib/analytics';
+import {
+  PRODUCT_REVIEWS_INITIAL_LIMIT,
+  PRODUCT_REVIEWS_MAX_LIMIT,
+} from '@/lib/constants/listPageSize';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import type { ProductByIdQuery } from '@/lib/graphql/generated/graphql';
 import { useCategories } from '@/lib/hooks/useCategories';
@@ -68,11 +72,33 @@ export default function ProductDetailsPage({
   const product = fetchedProduct ?? initialProduct ?? null;
   const showLoading = !initialProduct && loading;
 
+  const [reviewWindow, setReviewWindow] = useState({
+    productId,
+    limit: PRODUCT_REVIEWS_INITIAL_LIMIT,
+    filterActive: false,
+  });
+
+  if (reviewWindow.productId !== productId) {
+    setReviewWindow({
+      productId,
+      limit: PRODUCT_REVIEWS_INITIAL_LIMIT,
+      filterActive: false,
+    });
+  }
+
+  const productReviewLimit =
+    reviewWindow.productId === productId ? reviewWindow.limit : PRODUCT_REVIEWS_INITIAL_LIMIT;
+  const productReviewFilterActive =
+    reviewWindow.productId === productId ? reviewWindow.filterActive : false;
+
+  // PDP only needs product reviews; store review dumps belong on the seller page.
+  // Page 1 with a growing limit avoids the page/limit offset skipping the first 4.
   const { productReviews, loading: reviewsLoading } = useReviews({
     productId: product?.id,
-    storeId: product?.storeId,
     skip: !product,
     initialProductReviews,
+    productPage: 1,
+    productLimit: productReviewFilterActive ? PRODUCT_REVIEWS_MAX_LIMIT : productReviewLimit,
   });
 
   // Keep the visible summary on product-level aggregates so it matches JSON-LD.
@@ -226,10 +252,19 @@ export default function ProductDetailsPage({
           <ProductDetailWarning warning={product.warning} />
 
           <ProductDetailsSellerReviews
+            key={product.id}
             productReviews={productReviews}
             averageRating={reviewSummary.averageRating}
             totalReviews={reviewSummary.totalReviews}
             loading={reviewsLoading}
+            onLoadMore={(nextLimit) =>
+              setReviewWindow((current) => ({ ...current, limit: nextLimit }))
+            }
+            onFilterActiveChange={(filterActive) =>
+              setReviewWindow((current) =>
+                current.filterActive === filterActive ? current : { ...current, filterActive },
+              )
+            }
           />
         </div>
 

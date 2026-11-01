@@ -190,7 +190,7 @@ function mockProductQueries({
       HttpResponse.json({ data: { approvedCategories: sampleCategories } }),
     ),
     graphql.query('ProductReviews', ({ variables }) => {
-      expect(variables).toEqual({ productId: PRODUCT_ID });
+      expect(variables).toEqual({ productId: PRODUCT_ID, page: 1, limit: 4 });
       return HttpResponse.json({ data: { productReviews: [SAMPLE_PRODUCT_REVIEW] } });
     }),
     graphql.query('StoreReviewSummary', ({ variables }) => {

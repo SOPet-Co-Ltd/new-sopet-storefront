@@ -552,7 +552,10 @@ export type FavoriteProductFieldsFragment = {
   images: Array<{ id: string; imageUrl: string; sortOrder: number }> | null;
 };
 
-export type FavoritesQueryVariables = Exact<{ [key: string]: never }>;
+export type FavoritesQueryVariables = Exact<{
+  page?: number | null | undefined;
+  limit?: number | null | undefined;
+}>;
 
 export type FavoritesQuery = {
   favorites: Array<{
@@ -649,6 +652,8 @@ export type MeQuery = {
 
 export type NotificationsQueryVariables = Exact<{
   unreadOnly?: boolean | null | undefined;
+  page?: number | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 export type NotificationsQuery = {
@@ -1359,6 +1364,8 @@ export type RecommendedProductsQuery = {
 
 export type ProductReviewsQueryVariables = Exact<{
   productId: string;
+  page?: number | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 export type ProductReviewsQuery = {
@@ -1379,6 +1386,8 @@ export type ProductReviewsQuery = {
 
 export type StoreReviewsQueryVariables = Exact<{
   storeId: string;
+  page?: number | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 export type StoreReviewsQuery = {
@@ -1404,16 +1413,7 @@ export type StoreReviewSummaryQueryVariables = Exact<{
 }>;
 
 export type StoreReviewSummaryQuery = {
-  storeReviewSummary: {
-    averageRating: number;
-    totalCount: number;
-    productBreakdown: Array<{
-      productId: string;
-      productName: string;
-      averageRating: number;
-      reviewCount: number;
-    }>;
-  };
+  storeReviewSummary: { averageRating: number; totalCount: number };
 };
 
 export type CreateReviewMutationVariables = Exact<{
@@ -3314,12 +3314,36 @@ export const FavoritesDocument = {
       kind: 'OperationDefinition',
       operation: 'query',
       name: { kind: 'Name', value: 'Favorites' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+      ],
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'favorites' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'page' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+              },
+            ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
@@ -3556,6 +3580,16 @@ export const NotificationsDocument = {
           variable: { kind: 'Variable', name: { kind: 'Name', value: 'unreadOnly' } },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -3568,6 +3602,16 @@ export const NotificationsDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'unreadOnly' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'unreadOnly' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'page' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
               },
             ],
             selectionSet: {
@@ -4987,6 +5031,16 @@ export const ProductReviewsDocument = {
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
           },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -4999,6 +5053,16 @@ export const ProductReviewsDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'productId' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'productId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'page' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
               },
             ],
             selectionSet: {
@@ -5061,6 +5125,16 @@ export const StoreReviewsDocument = {
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
           },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -5073,6 +5147,16 @@ export const StoreReviewsDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'storeId' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'storeId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'page' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
               },
             ],
             selectionSet: {
@@ -5156,19 +5240,6 @@ export const StoreReviewSummaryDocument = {
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'totalCount' } },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'productBreakdown' },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'productId' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'productName' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'reviewCount' } },
-                    ],
-                  },
-                },
               ],
             },
           },

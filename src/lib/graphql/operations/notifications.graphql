@@ -1,5 +1,5 @@
-query Notifications($unreadOnly: Boolean) {
-  notifications(unreadOnly: $unreadOnly) {
+query Notifications($unreadOnly: Boolean, $page: Int, $limit: Int) {
+  notifications(unreadOnly: $unreadOnly, page: $page, limit: $limit) {
     id
     type
     title

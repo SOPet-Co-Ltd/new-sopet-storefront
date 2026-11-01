@@ -349,6 +349,7 @@ describe('ProductDetailsPage', () => {
 
     const breadcrumbNav = screen.getByRole('navigation', { name: 'breadcrumb' });
     expect(breadcrumbNav).toBeInTheDocument();
+    expect(breadcrumbNav.parentElement).toHaveClass('hidden', 'md:block');
     expect(screen.getByRole('link', { name: 'หน้าแรก' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Dog Food' })).toHaveAttribute(
       'href',

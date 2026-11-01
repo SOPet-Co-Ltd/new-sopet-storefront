@@ -216,7 +216,7 @@ export default function ProductDetailsPage({
       data-testid="product-details-page"
       className="mx-auto flex w-full min-w-0 max-w-[1064px] flex-col gap-sop-20px md:gap-5"
     >
-      <div className="py-2">
+      <div className="hidden py-2 md:block">
         <Breadcrumbs items={breadcrumbs} />
       </div>
 

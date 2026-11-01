@@ -33,6 +33,8 @@ vi.mock('@/lib/hooks/useNotifications', () => ({
     notifications: mockNotifications,
     loading: false,
     refetch: vi.fn(),
+    page: 1,
+    hasMore: false,
   })),
   useMarkNotificationRead: vi.fn(() => [mockMarkRead]),
   useMarkAllNotificationsRead: vi.fn(() => [vi.fn()]),
@@ -52,6 +54,8 @@ describe('UserNotificationsPage', () => {
       loading: false,
       error: undefined,
       refetch: vi.fn(),
+      page: 1,
+      hasMore: false,
     } as ReturnType<typeof useNotifications>);
   });
 
@@ -110,6 +114,8 @@ describe('UserNotificationsPage', () => {
       loading: false,
       error: undefined,
       refetch: vi.fn(),
+      page: 1,
+      hasMore: false,
     } as ReturnType<typeof useNotifications>);
 
     render(<UserNotificationsPage />);

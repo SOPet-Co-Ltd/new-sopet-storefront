@@ -11,8 +11,8 @@ fragment FavoriteProductFields on ProductType {
   }
 }
 
-query Favorites {
-  favorites {
+query Favorites($page: Int, $limit: Int) {
+  favorites(page: $page, limit: $limit) {
     id
     productId
     product {

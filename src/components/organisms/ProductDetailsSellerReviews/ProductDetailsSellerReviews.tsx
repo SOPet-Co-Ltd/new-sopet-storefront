@@ -1,16 +1,18 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-// import { ProductReviewPagination } from '@/components/molecules/ProductReviewPagination/ProductReviewPagination';
 import { RenderReviewFilterButtons } from '@/components/molecules/RenderReviewFilterButtons/RenderReviewFilterButtons';
 import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
-import { cn } from '@/lib/utils';
+import {
+  PRODUCT_REVIEWS_INITIAL_LIMIT,
+  PRODUCT_REVIEWS_LOAD_MORE_STEP,
+  PRODUCT_REVIEWS_MAX_LIMIT,
+} from '@/lib/constants/listPageSize';
 import type { ProductReview } from '@/lib/hooks/useReviews';
 import { ProductReviewItem } from './ProductReviewItem';
 import { StarCircleIcon } from '@/components/atoms/icons';
 
-// const REVIEWS_PER_PAGE = 10;
 const RATING_QUERY_KEY = 'prf';
 
 type ProductDetailsSellerReviewsProps = {
@@ -18,6 +20,9 @@ type ProductDetailsSellerReviewsProps = {
   averageRating: number;
   totalReviews: number;
   loading?: boolean;
+  /** Ask the parent to refetch page 1 with this larger limit. */
+  onLoadMore?: (nextLimit: number) => void;
+  onFilterActiveChange?: (active: boolean) => void;
 };
 
 function computeStarCounts(reviews: ProductReview[]) {
@@ -75,12 +80,18 @@ function ProductDetailsSellerReviewsContent({
   averageRating,
   totalReviews,
   loading = false,
+  onLoadMore,
+  onFilterActiveChange,
 }: ProductDetailsSellerReviewsProps) {
   const searchParams = useSearchParams();
   const [ratingFilter, setRatingFilter] = useState<string | null>(() =>
     searchParams.get(RATING_QUERY_KEY),
   );
-  const [visibleCount, setVisibleCount] = useState(4);
+  const [visibleCount, setVisibleCount] = useState(PRODUCT_REVIEWS_INITIAL_LIMIT);
+
+  useEffect(() => {
+    onFilterActiveChange?.(ratingFilter != null);
+  }, [onFilterActiveChange, ratingFilter]);
 
   const starCounts = useMemo(() => computeStarCounts(productReviews), [productReviews]);
   const withImageCount = useMemo(
@@ -100,7 +111,19 @@ function ProductDetailsSellerReviewsContent({
     return filteredReviews.slice(0, visibleCount);
   }, [filteredReviews, visibleCount]);
 
-  const remainingCount = filteredReviews.length - visibleCount;
+  const remainingCount = ratingFilter
+    ? filteredReviews.length - visibleCount
+    : Math.max(filteredReviews.length, totalReviews) - visibleCount;
+  const reachedReviewCap =
+    !ratingFilter &&
+    productReviews.length >= PRODUCT_REVIEWS_MAX_LIMIT &&
+    visibleCount >= productReviews.length;
+  const showLoadMore =
+    remainingCount > 0 &&
+    !reachedReviewCap &&
+    (ratingFilter
+      ? filteredReviews.length > visibleCount
+      : productReviews.length >= visibleCount || filteredReviews.length > visibleCount);
 
   if (loading) {
     return (
@@ -154,7 +177,7 @@ function ProductDetailsSellerReviewsContent({
             selectedRating={ratingFilter}
             onFilterChange={(value) => {
               setRatingFilter(value);
-              setVisibleCount(4);
+              setVisibleCount(PRODUCT_REVIEWS_INITIAL_LIMIT);
             }}
           />
         </div>
@@ -162,13 +185,19 @@ function ProductDetailsSellerReviewsContent({
 
       <div className="mt-7 space-y-4">
         <ReviewComments productReviews={visibleReviews} />
-        {remainingCount > 0 && (
+        {showLoadMore && (
           <div className="border-t border-sop-neutral-grayalpha-200 pt-6">
             <div className="flex justify-center">
               <button
                 type="button"
                 className="inline-flex min-w-[200px] items-center justify-center rounded-full border border-sop-neutral-grayalpha-300 bg-white px-6 py-3 sop-body-sm-medium text-sop-neutral-gray-200 transition-colors hover:bg-sop-neutral-grayalpha-100"
-                onClick={() => setVisibleCount((prev) => prev + 10)}
+                onClick={() => {
+                  const nextVisibleCount = visibleCount + PRODUCT_REVIEWS_LOAD_MORE_STEP;
+                  setVisibleCount(nextVisibleCount);
+                  if (!ratingFilter) {
+                    onLoadMore?.(Math.min(nextVisibleCount, PRODUCT_REVIEWS_MAX_LIMIT));
+                  }
+                }}
               >
                 ดูรีวิวเพิ่มเติม ({remainingCount.toLocaleString()})
               </button>

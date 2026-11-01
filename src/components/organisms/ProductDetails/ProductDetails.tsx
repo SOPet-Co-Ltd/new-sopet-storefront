@@ -8,7 +8,6 @@ import { ProductReviewStars } from '@/components/molecules/ProductReviewStars/Pr
 import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import ProductDetailsVariantSelection from '@/components/organisms/ProductDetailsVariantSelection/ProductDetailsVariantSelection';
 import { ProductShareModal } from '@/components/organisms/ProductShareModal/ProductShareModal';
-import { ProductExpiryDate } from '@/components/sections/ProductExpiryDate/ProductExpiryDate';
 import { ProductShowPrice } from '@/components/sections/ProductShowPrice/ProductShowPrice';
 
 import {
@@ -52,7 +51,16 @@ export function ProductDetails({
 
   const { isAuthenticated } = useAuth();
 
-  const { isFavorite, addFavorite, removeFavorite, loading: favoritesLoading } = useFavorites();
+  // Cap matches backend favorites max so the heart state stays correct beyond page size 24.
+  const {
+    isFavorite,
+    addFavorite,
+    removeFavorite,
+    loading: favoritesLoading,
+  } = useFavorites({
+    page: 1,
+    limit: 100,
+  });
 
   const [internalSelectedOptions, setInternalSelectedOptions] = useState<VariantOptions>(() =>
     resolveSelectedOptionsFromSearchParams(

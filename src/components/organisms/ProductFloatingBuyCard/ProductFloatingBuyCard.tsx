@@ -261,7 +261,7 @@ export function ProductFloatingBuyCard({
                 <div className="mt-0.5 flex flex-wrap items-center gap-2">
                   <span
                     data-testid="floating-compare-price"
-                    className="text-sm font-normal text-sop-neutral-grayalpha-400 line-through lg:text-base"
+                    className="text-sm font-semibold text-sop-neutral-grayalpha-400 line-through lg:text-base"
                   >
                     ฿{formatPrice(compareAtPrice)}
                   </span>

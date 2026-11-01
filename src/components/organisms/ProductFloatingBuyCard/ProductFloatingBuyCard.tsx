@@ -267,7 +267,7 @@ export function ProductFloatingBuyCard({
                   </span>
                   <span
                     data-testid="floating-saved-badge"
-                    className="inline-flex items-center rounded-full bg-[#FFF0ED] px-2.5 py-0.5 text-xs font-semibold text-sop-secondary-500"
+                    className="inline-flex items-center rounded-full bg-sop-secondary-200 px-sop-12px py-sop-4px sop-body-sm-regular text-sop-secondary-500"
                   >
                     ประหยัด ฿{Math.round(savedAmount).toLocaleString('th-TH')}
                   </span>
@@ -289,7 +289,7 @@ export function ProductFloatingBuyCard({
           disabled={isOutOfStock || !hasAnyPrice}
           loading={isAddingToCart}
           variant="secondary"
-          className="h-11 min-w-0 rounded-full border-2 border-sop-secondary-500 bg-sop-base-white !px-2 text-sm font-medium text-sop-secondary-500 hover:bg-sop-secondary-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="h-11 min-w-0 rounded-full border border-sop-secondary-500 px-2! text-sm font-medium text-sop-secondary-500 disabled:opacity-40 disabled:cursor-not-allowed"
           aria-busy={isAddingToCart}
           aria-label={
             isAddingToCart
@@ -300,7 +300,7 @@ export function ProductFloatingBuyCard({
           }
         >
           <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
-            <Bag5Icon size={{ mobile: 20, desktop: 20 }} color="#ff6f61" />
+            <Bag5Icon size={{ mobile: 20, desktop: 20 }} color="#FF6F61" />
             <span className="whitespace-nowrap">
               {isOutOfStock ? 'สินค้าหมด' : 'เพิ่มใส่ตะกร้า'}
             </span>

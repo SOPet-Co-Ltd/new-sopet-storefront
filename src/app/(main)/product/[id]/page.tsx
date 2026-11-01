@@ -15,6 +15,7 @@ import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/category
 import { DEFAULT_SITE_DESCRIPTION } from '@/lib/seo/constants';
 import { fetchApprovedCategories } from '@/lib/seo/fetch';
 import { isProductIndexable } from '@/lib/seo/indexability';
+import { PRODUCT_REVIEWS_INITIAL_LIMIT } from '@/lib/constants/listPageSize';
 import { buildBreadcrumbJsonLd, buildProductJsonLd } from '@/lib/seo/json-ld';
 import { buildAbsoluteUrl, buildPageMetadata, buildProductMetadata } from '@/lib/seo/metadata';
 
@@ -92,23 +93,25 @@ export default async function ProductPage({ params, searchParams }: Props) {
     notFound();
   }
 
-  const reviewsPreload = await runSsrPreloadQueries('product-reviews', async () => {
-    const result = await getClient().query({
-      query: ProductReviewsDocument,
-      variables: { productId: product.id },
-    });
-    return result.data?.productReviews ?? [];
-  });
+  const productPath = `/product/${id}`;
+  const pageUrl = buildAbsoluteUrl(productPath);
+
+  const [reviewsPreload, categories] = await Promise.all([
+    runSsrPreloadQueries('product-reviews', async () => {
+      const result = await getClient().query({
+        query: ProductReviewsDocument,
+        variables: { productId: product.id, page: 1, limit: PRODUCT_REVIEWS_INITIAL_LIMIT },
+      });
+      return result.data?.productReviews ?? [];
+    }),
+    fetchApprovedCategories(),
+  ]);
 
   const initialProductReviews: ProductReviewsQuery['productReviews'] = reviewsPreload.ok
     ? reviewsPreload.data
     : [];
-
-  const productPath = `/product/${id}`;
-  const pageUrl = buildAbsoluteUrl(productPath);
   const productJsonLd = buildProductJsonLd(product, pageUrl, initialProductReviews);
 
-  const categories = await fetchApprovedCategories();
   const resolvedCategory =
     categories && product.category
       ? resolveCategoryBySlug(categories, product.category)

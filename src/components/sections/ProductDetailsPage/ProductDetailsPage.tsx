@@ -308,7 +308,9 @@ export default function ProductDetailsPage({
           viewAllHref={`/recommend?from=${product.id}`}
         />
 
-        <HomeFaqSection items={HOME_FAQ_ITEMS} />
+        <div className="max-md:-mx-4">
+          <HomeFaqSection items={HOME_FAQ_ITEMS} />
+        </div>
       </div>
     </div>
   );

@@ -198,7 +198,7 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
                   type="button"
                   onClick={scrollPrev}
                   disabled={!canScrollPrev}
-                  className="absolute left-6 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-[36px] h-[36px] flex items-center justify-center rounded-full bg-sop-neutral-whitealpha-700 hover:bg-sop-neutral-whitealpha-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  className="absolute left-6 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-[36px] h-[36px] flex items-center justify-center rounded-full bg-sop-neutral-gray-500 hover:bg-sop-neutral-whitealpha-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                   aria-label="Previous image"
                 >
                   <LeftArrowIcon size={{ mobile: 10, desktop: 10 }} color="#211f23" />
@@ -206,7 +206,7 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
               )}
 
               {/* Carousel */}
-              <div className="overflow-hidden rounded-2xl" ref={lightboxEmblaRef}>
+              <div className="overflow-hidden" ref={lightboxEmblaRef}>
                 <div className="flex">
                   {gallerySlides.map((slide) => (
                     <div key={slide.id} className="flex-[0_0_100%] min-w-0">
@@ -235,7 +235,7 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
                   type="button"
                   onClick={scrollNext}
                   disabled={!canScrollNext}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 translate-x-1/2 z-5 w-[36px] h-[36px] flex items-center justify-center rounded-full bg-sop-neutral-whitealpha-700 hover:bg-sop-neutral-whitealpha-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  className="absolute right-6 top-1/2 -translate-y-1/2 translate-x-1/2 z-5 w-[36px] h-[36px] flex items-center justify-center rounded-full bg-sop-neutral-gray-500 hover:bg-sop-neutral-whitealpha-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                   aria-label="Next image"
                 >
                   <RightArrowIcon size={{ mobile: 10, desktop: 10 }} color="#211f23" />
@@ -257,10 +257,10 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
                     aria-label={`เลือกรูปที่ ${index + 1}`}
                     aria-current={lightboxSelectedIndex === index ? 'true' : undefined}
                     className={[
-                      'shrink-0 overflow-hidden rounded-xl transition-all duration-200 w-[64px] md:w-[80px]',
+                      'shrink-0 overflow-hidden rounded-xl transition-all duration-200 w-[64px] md:w-[80px] border-2',
                       lightboxSelectedIndex === index
-                        ? 'ring-2 ring-sop-primary-500 opacity-100'
-                        : 'opacity-60 hover:opacity-90',
+                        ? 'border-sop-primary-500 opacity-100'
+                        : 'border-transparent opacity-60 hover:opacity-90',
                     ].join(' ')}
                   >
                     <div className="relative aspect-square w-full overflow-hidden">

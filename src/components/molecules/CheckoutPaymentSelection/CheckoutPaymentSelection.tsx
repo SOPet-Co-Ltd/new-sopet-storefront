@@ -154,7 +154,7 @@ export function CheckoutPaymentSelection() {
   const paymentOptions = useMemo(
     () =>
       bankTransferAvailable
-        ? [...BASE_PAYMENT_OPTIONS, BANK_TRANSFER_OPTION, ...WALLET_PAYMENT_OPTIONS]
+        ? [BANK_TRANSFER_OPTION, ...BASE_PAYMENT_OPTIONS, ...WALLET_PAYMENT_OPTIONS]
         : [...BASE_PAYMENT_OPTIONS, ...WALLET_PAYMENT_OPTIONS],
     [bankTransferAvailable],
   );
@@ -197,12 +197,15 @@ export function CheckoutPaymentSelection() {
   const cardFieldErrors = useMemo(() => getCheckoutCardFieldErrors(cardForm), [cardForm]);
 
   useEffect(() => {
+    if (bankTransferLoading) return;
+
     if (paymentMethod === null) {
-      setPaymentMethod('promptpay');
+      setPaymentMethod(bankTransferAvailable ? 'bank_transfer' : 'promptpay');
       return;
     }
+
     // Bank transfer is off until admin configures account details.
-    if (paymentMethod === 'bank_transfer' && !bankTransferLoading && !bankTransferAvailable) {
+    if (paymentMethod === 'bank_transfer' && !bankTransferAvailable) {
       setPaymentMethod('promptpay');
     }
   }, [bankTransferAvailable, bankTransferLoading, paymentMethod, setPaymentMethod]);

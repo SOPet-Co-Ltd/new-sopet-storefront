@@ -214,14 +214,14 @@ export default function ProductDetailsPage({
   return (
     <div
       data-testid="product-details-page"
-      className="mx-auto flex w-full min-w-0 max-w-[1064px] flex-col gap-2 md:gap-5"
+      className="mx-auto flex w-full min-w-0 max-w-[1064px] flex-col gap-sop-20px md:gap-5"
     >
       <div className="py-2">
         <Breadcrumbs items={breadcrumbs} />
       </div>
 
       <article aria-labelledby="product-title" ref={mainArticleRef}>
-        <div className="-mx-4 grid min-w-0 grid-cols-1 gap-6 overflow-x-hidden lg:rounded-sop-32px md:rounded-sop-32px rounded-none border border-[#F0EDF5] bg-sop-base-white p-4 shadow-xs md:mx-0 md:p-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-8 lg:p-8">
+        <div className="-mx-4 grid min-w-0 grid-cols-1 gap-6 overflow-x-hidden rounded-none border border-[#F0EDF5] bg-sop-base-white pb-4 shadow-xs md:mx-0 md:rounded-sop-32px md:p-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-8 lg:rounded-sop-32px lg:p-8">
           <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
           <ProductDetails
             product={product}
@@ -243,10 +243,8 @@ export default function ProductDetailsPage({
             : 'lg:grid-cols-[1fr_0px] lg:gap-0',
         )}
       >
-        <div className="flex min-w-0 flex-col gap-2 md:gap-5">
-          <div className="-mx-4 md:mx-0">
-            <ProductDetailsSeller store={product.store} />
-          </div>
+        <div className="flex min-w-0 flex-col gap-sop-20px md:gap-5">
+          <ProductDetailsSeller store={product.store} />
 
           <ProductDetailDescription description={product.description} />
 

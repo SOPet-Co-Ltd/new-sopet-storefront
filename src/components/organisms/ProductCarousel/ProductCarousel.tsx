@@ -138,11 +138,11 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
 
   return (
     <>
-      <div className="relative mx-auto w-full max-w-[500px]" data-testid="product-gallery">
-        <div className="flex flex-col items-center gap-[18px]">
+      <div className="relative w-full md:mx-auto md:max-w-[500px]" data-testid="product-gallery">
+        <div className="flex w-full flex-col items-center gap-[18px]">
           <button
             type="button"
-            className="relative aspect-square w-full max-w-[500px] cursor-pointer overflow-hidden lg:rounded-sop-24px md:rounded-sop-24px rounded-none border-0 bg-transparent p-0"
+            className="relative aspect-square w-full max-w-none cursor-pointer overflow-hidden rounded-none border-0 bg-transparent p-0 md:max-w-[500px] md:rounded-sop-24px lg:rounded-sop-24px"
             onClick={() => handleImageClick(activeIndex)}
             aria-label="ดูรูปภาพขนาดใหญ่"
             data-testid="product-gallery-hero"
@@ -158,13 +158,15 @@ export function ProductCarousel({ slides = [], thumbnailUrl }: ProductCarouselPr
               draggable={false}
             />
           </button>
-          <ProductCarouselIndicator
-            slides={gallerySlides}
-            selectedIndex={activeIndex}
-            onSelectIndex={setSelectedIndex}
-            onPrev={handlePrev}
-            onNext={handleNext}
-          />
+          <div className="w-full max-md:px-sop-16px">
+            <ProductCarouselIndicator
+              slides={gallerySlides}
+              selectedIndex={activeIndex}
+              onSelectIndex={setSelectedIndex}
+              onPrev={handlePrev}
+              onNext={handleNext}
+            />
+          </div>
         </div>
       </div>
 

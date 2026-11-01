@@ -118,7 +118,7 @@ export function ProductDetails({
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
+    <div className="flex min-w-0 flex-col gap-4 max-md:px-sop-16px lg:gap-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-start justify-between gap-4">

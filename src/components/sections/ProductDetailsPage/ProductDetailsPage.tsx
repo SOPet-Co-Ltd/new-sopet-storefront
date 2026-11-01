@@ -31,6 +31,7 @@ import { useProduct } from '@/lib/hooks/useProduct';
 import { useReviews, type ProductReview } from '@/lib/hooks/useReviews';
 import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
 import { cn } from '@/lib/utils';
+import { HomeFaqSection, HOME_FAQ_ITEMS } from '@/components/sections/HomeFaqSection';
 
 type ProductDetailsPageProps = {
   productId: string;
@@ -308,6 +309,8 @@ export default function ProductDetailsPage({
           layout="grid"
           viewAllHref={`/recommend?from=${product.id}`}
         />
+
+        <HomeFaqSection items={HOME_FAQ_ITEMS} />
       </div>
     </div>
   );

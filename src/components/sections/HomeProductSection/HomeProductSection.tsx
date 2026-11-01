@@ -228,7 +228,24 @@ export function HomeProductSection({
 
   return (
     <section className="w-full">
-      <h2 className={`md:px-0 px-4 ${SECTION_HEADING_CLASS}`}>{heading}</h2>
+      <div className="mb-5 flex items-center justify-between px-4 md:px-0">
+        <h2 className={SECTION_HEADING_CLASS.replace('mb-5 ', '')}>{heading}</h2>
+
+        <Link
+          href={viewAllHref}
+          onMouseEnter={handleViewAllPrefetch}
+          onFocus={handleViewAllPrefetch}
+          className="shrink-0"
+        >
+          <Button variant="secondary">
+            <div className="flex items-center gap-2 py-sop-8px">
+              <p className="text-center">ดูทั้งหมด</p>
+              <RightArrowLineIcon size={{ mobile: 11, desktop: 11 }} color="#FF6F61" />
+            </div>
+          </Button>
+        </Link>
+      </div>
+
       {layout === 'grid' ? (
         <div className={PRODUCT_CARD_GRID_CLASS}>
           {displayProducts.map((product, index) => {
@@ -238,6 +255,7 @@ export function HomeProductSection({
               getProductCardCheapestVariantId(product),
               catalogPrice,
             );
+
             return (
               <div key={product.id} className={cn(getGridProductVisibilityClass(index))}>
                 <ProductCard
@@ -258,8 +276,9 @@ export function HomeProductSection({
               getProductCardCheapestVariantId(product),
               catalogPrice,
             );
+
             return (
-              <div key={product.id} className="w-[168px] shrink-0 md:w-full">
+              <div key={product.id} className="w-sop-160px shrink-0 md:w-full">
                 <ProductCard
                   product={product}
                   campaignCompareAt={pricing?.compareAt ?? null}
@@ -270,20 +289,6 @@ export function HomeProductSection({
           })}
         </div>
       )}
-      <div className="mt-6 flex items-center justify-center">
-        <Link
-          href={viewAllHref}
-          onMouseEnter={handleViewAllPrefetch}
-          onFocus={handleViewAllPrefetch}
-        >
-          <Button variant="secondary">
-            <div className="flex items-center gap-2 px-4 py-2 md:py-0">
-              <p className="text-center">ดูทั้งหมด</p>
-              <RightArrowLineIcon size={{ mobile: 11, desktop: 11 }} color="#FF6F61" />
-            </div>
-          </Button>
-        </Link>
-      </div>
     </section>
   );
 }

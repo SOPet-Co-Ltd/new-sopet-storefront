@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { showSavedProductToast } from '@/components/atoms/SavedProductToast/SavedProductToast';
 import { ProductReviewStars } from '@/components/molecules/ProductReviewStars/ProductReviewStars';
 import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import ProductDetailsVariantSelection from '@/components/organisms/ProductDetailsVariantSelection/ProductDetailsVariantSelection';
@@ -99,10 +100,9 @@ export function ProductDetails({
 
       if (isWishlisted) {
         await removeFavorite(product.id);
-        toast.success('นำออกจากรายการโปรดแล้ว');
       } else {
         await addFavorite(product.id);
-        toast.success('เพิ่มในรายการโปรดแล้ว');
+        showSavedProductToast();
       }
     } catch {
       toast.error('เกิดข้อผิดพลาด', {
@@ -118,7 +118,7 @@ export function ProductDetails({
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
+    <div className="flex min-w-0 flex-col gap-4 max-md:px-sop-16px lg:gap-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-start justify-between gap-4">

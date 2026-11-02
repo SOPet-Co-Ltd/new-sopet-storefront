@@ -1,22 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { toast } from 'sonner';
-import { ChainIcon } from '@/components/atoms/icons/filled/ChainIcon';
+import { Modal } from '@/components/atoms/Modal';
 import { InstagramCustomIcon } from '@/components/atoms/icons/filled/InstagramCustomIcon';
-import { MeatballsMenuIcon } from '@/components/atoms/icons/filled/MeatballsMenuIcon';
 import type { VariantOptions } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 import { trackShare } from '@/lib/analytics';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 import { buildAbsoluteUrl } from '@/lib/seo/metadata';
-import { cn } from '@/lib/utils';
 
 type ShareButtonConfig = {
   label: string;
-  method: string;
   icon: () => React.ReactNode;
   handler?: () => void;
-  iconClassName?: string;
 };
 
 function stripHtml(html: string): string {
@@ -70,20 +66,43 @@ export function buildProductShareUrl(
   return query ? `${base}?${query}` : base;
 }
 
-const SHARE_ICON_BUTTON_CLASS =
-  'flex h-sop-40px w-sop-40px cursor-pointer items-center justify-center rounded-full transition-colors';
-
 function ShareBrandIcon({ src, alt }: { src: string; alt: string }) {
   return (
     <img
       src={src}
       alt={alt}
-      width={40}
-      height={40}
-      className="h-sop-40px w-sop-40px shrink-0"
+      width={48}
+      height={48}
+      className="h-12 w-12 shrink-0"
       draggable={false}
     />
   );
+}
+
+function CopyLinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <rect
+        x="8.25"
+        y="8.25"
+        width="11"
+        height="11"
+        rx="2.25"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M15.75 8.25V6.5A2.25 2.25 0 0 0 13.5 4.25h-7A2.25 2.25 0 0 0 4.25 6.5v7A2.25 2.25 0 0 0 6.5 15.75H8.25"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function toShareLinkLabel(url: string): string {
+  return url.replace(/^https?:\/\//, '');
 }
 
 export function ProductShareModal({
@@ -101,34 +120,6 @@ export function ProductShareModal({
     () => buildProductShareUrl(product.id, selectedOptions),
     [product.id, selectedOptions],
   );
-
-  const [canNativeShare, setCanNativeShare] = useState(false);
-
-  useLayoutEffect(() => {
-    // Client-only feature detection: navigator is unavailable during SSR, so this
-    // must stay false on the server render and sync once mounted in the browser.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCanNativeShare(typeof navigator.share === 'function');
-  }, []);
-
-  const handleEscape = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    },
-    [onClose],
-  );
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    document.addEventListener('keydown', handleEscape);
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
-    };
-  }, [handleEscape, isOpen]);
 
   const emitShare = (method: string) => {
     trackShare({ method, item_id: product.id });
@@ -208,27 +199,6 @@ export function ProductShareModal({
     onClose();
   };
 
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.name || '',
-          text: getProductShareText(product),
-          url: productLink,
-        });
-        emitShare('native');
-        onClose();
-      } catch (error) {
-        if (error instanceof Error && error.name !== 'AbortError') {
-          toast.error('เกิดข้อผิดพลาด', { description: 'ไม่สามารถแชร์ได้' });
-        }
-      }
-      return;
-    }
-
-    await handleCopyLink();
-  };
-
   const openShareWindow = (method: string, url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer,width=600,height=600');
     emitShare(method);
@@ -237,114 +207,90 @@ export function ProductShareModal({
 
   const shareButtons: ShareButtonConfig[] = [
     {
-      label: 'คัดลอกลิงก์',
-      method: 'copy_link',
-      icon: () => <ChainIcon size={{ mobile: 16, desktop: 16 }} color="#4C4C4C" />,
-      handler: () => void handleCopyLink(),
-      iconClassName: `${SHARE_ICON_BUTTON_CLASS} bg-[#D6D6D6] hover:bg-[#C0C0C0]`,
-    },
-    {
-      label: 'Line',
-      method: 'line',
-      icon: () => <ShareBrandIcon src="/images/share/lineIcon.svg" alt="Line" />,
+      label: 'LINE',
+      icon: () => <ShareBrandIcon src="/images/share/lineIcon.svg" alt="" />,
       handler: () =>
         openShareWindow(
           'line',
           `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(productLink)}`,
         ),
-      iconClassName: SHARE_ICON_BUTTON_CLASS,
     },
     {
       label: 'Facebook',
-      method: 'facebook',
-      icon: () => <ShareBrandIcon src="/images/share/facebookIcon.svg" alt="Facebook" />,
+      icon: () => <ShareBrandIcon src="/images/share/facebookIcon.svg" alt="" />,
       handler: () =>
         openShareWindow(
           'facebook',
           `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productLink)}`,
         ),
-      iconClassName: SHARE_ICON_BUTTON_CLASS,
     },
     {
       label: 'Messenger',
-      method: 'messenger',
-      icon: () => <ShareBrandIcon src="/images/share/messangerIcon.svg" alt="Messenger" />,
+      icon: () => <ShareBrandIcon src="/images/share/messangerIcon.svg" alt="" />,
       handler: () =>
         openShareWindow(
           'messenger',
           `https://www.facebook.com/dialog/send?link=${encodeURIComponent(productLink)}&app_id=${process.env.NEXT_PUBLIC_FACEBOOK_APP_ID ?? ''}&redirect_uri=${encodeURIComponent(productLink)}`,
         ),
-      iconClassName: SHARE_ICON_BUTTON_CLASS,
     },
     {
       label: 'Instagram',
-      method: 'instagram',
-      icon: () => <InstagramCustomIcon size={{ mobile: 24, desktop: 24 }} color="#FFFFFF" />,
+      icon: () => (
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#FCAF45] via-[#FD1D1D] to-[#833AB4]">
+          <InstagramCustomIcon size={{ mobile: 26, desktop: 26 }} color="#FFFFFF" />
+        </span>
+      ),
       handler: () => void handleInstagramShare(),
-      iconClassName: `${SHARE_ICON_BUTTON_CLASS} bg-gradient-to-br from-[#FCAF45] via-[#FD1D1D] to-[#833AB4] hover:opacity-90`,
-    },
-    {
-      label: 'แอปอื่นๆ',
-      method: 'native',
-      icon: () => <MeatballsMenuIcon size={{ mobile: 20, desktop: 20 }} color="#4C4C4C" />,
-      handler: () => void handleNativeShare(),
-      iconClassName: `${SHARE_ICON_BUTTON_CLASS} border border-[#D6D6D6] bg-transparent hover:bg-[#F5F5F5]`,
     },
   ];
-
-  const visibleShareButtons = canNativeShare
-    ? shareButtons
-    : shareButtons.filter((button) => button.method !== 'native');
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-        aria-label="ปิดหน้าต่างแชร์"
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="product-share-modal-title"
-        className="relative z-10 mx-4 w-full max-w-md rounded-sop-16px bg-sop-base-white px-6 py-4"
-      >
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-center border-b border-[#D6D6D6] py-2">
-            <h2
-              id="product-share-modal-title"
-              className="sop-body-lg-medium text-center text-[#232323]"
+    <Modal
+      onClose={onClose}
+      width={448}
+      aria-labelledby="product-share-modal-title"
+      contentClassName="px-6 py-5"
+    >
+      <div className="flex flex-col gap-5">
+        <h2 id="product-share-modal-title" className="sop-body-sm-medium text-sop-neutral-gray-200">
+          แชร์สินค้าให้เพื่อนของคุณ
+        </h2>
+        <div className="grid grid-cols-4 justify-items-center">
+          {shareButtons.map((button) => (
+            <button
+              key={button.label}
+              type="button"
+              onClick={button.handler}
+              className="flex cursor-pointer flex-col items-center gap-3"
+              aria-label={`แชร์ผ่าน ${button.label}`}
             >
-              แชร์สินค้าให้เพื่อนของคุณ
-            </h2>
-          </div>
-          <div className="grid w-full grid-cols-5 gap-x-3 gap-y-4 justify-items-center">
-            {visibleShareButtons.map((button, index) => (
-              <button
-                key={button.label}
-                type="button"
-                onClick={button.handler}
-                className={cn(
-                  'flex w-full cursor-pointer flex-col items-center gap-0.5',
-                  canNativeShare && index === visibleShareButtons.length - 1 && 'col-start-3',
-                )}
-                aria-label={`แชร์ผ่าน ${button.label}`}
-              >
-                <span className={button.iconClassName} aria-hidden="true">
-                  {button.icon()}
-                </span>
-                <span className="sop-body-sm-light text-center text-sop-base-black">
-                  {button.label}
-                </span>
-              </button>
-            ))}
+              <span aria-hidden="true">{button.icon()}</span>
+              <span className="sop-body-sm-regular text-center text-sop-neutral-gray-200">
+                {button.label}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-2">
+          <p className="sop-body-sm-medium text-sop-neutral-gray-200">คัดลอกลิงก์</p>
+          <div className="flex items-center gap-3 rounded-sop-12px bg-sop-neutral-gray-500 px-4 py-3">
+            <p className="sop-body-sm-regular min-w-0 flex-1 truncate text-sop-neutral-gray-400">
+              {toShareLinkLabel(productLink)}
+            </p>
+            <button
+              type="button"
+              aria-label="คัดลอกลิงก์"
+              onClick={() => void handleCopyLink()}
+              className="shrink-0 cursor-pointer text-sop-neutral-gray-200"
+            >
+              <CopyLinkIcon />
+            </button>
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

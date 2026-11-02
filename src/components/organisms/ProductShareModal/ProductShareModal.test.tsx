@@ -95,19 +95,28 @@ describe('ProductShareModal', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('shows the core share channels', () => {
+  it('shows the share channels and the copy-link field', () => {
     render(<ProductShareModal isOpen onClose={vi.fn()} product={product} />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    for (const label of ['คัดลอกลิงก์', 'Line', 'Facebook', 'Messenger', 'Instagram']) {
+    expect(screen.getByRole('heading', { name: 'แชร์สินค้าให้เพื่อนของคุณ' })).toBeInTheDocument();
+    for (const label of ['LINE', 'Facebook', 'Messenger', 'Instagram']) {
       expect(screen.getByRole('button', { name: `แชร์ผ่าน ${label}` })).toBeInTheDocument();
     }
+    expect(screen.getByRole('button', { name: 'คัดลอกลิงก์' })).toBeInTheDocument();
+    expect(screen.getByText(`www.sopet.org/product/${PRODUCT_ID}`)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'แชร์ผ่าน แอปอื่นๆ' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ปิด' })).toBeInTheDocument();
   });
 
-  it('hides the native "other apps" button when Web Share is unsupported', () => {
-    defineNavigatorProp('share', undefined);
-    render(<ProductShareModal isOpen onClose={vi.fn()} product={product} />);
-    expect(screen.queryByRole('button', { name: 'แชร์ผ่าน แอปอื่นๆ' })).not.toBeInTheDocument();
+  it('closes from the corner button', async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+
+    render(<ProductShareModal isOpen onClose={onClose} product={product} />);
+    await user.click(screen.getByRole('button', { name: 'ปิด' }));
+
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('copies the canonical link, toasts, closes, and tracks the share', async () => {
@@ -118,7 +127,7 @@ describe('ProductShareModal', () => {
     defineNavigatorProp('clipboard', { writeText });
 
     render(<ProductShareModal isOpen onClose={onClose} product={product} />);
-    await user.click(screen.getByRole('button', { name: 'แชร์ผ่าน คัดลอกลิงก์' }));
+    await user.click(screen.getByRole('button', { name: 'คัดลอกลิงก์' }));
 
     expect(writeText).toHaveBeenCalledWith(CANONICAL);
     expect(toastSuccess).toHaveBeenCalled();
@@ -141,7 +150,7 @@ describe('ProductShareModal', () => {
         selectedOptions={{ size: 'L' }}
       />,
     );
-    await user.click(screen.getByRole('button', { name: 'แชร์ผ่าน คัดลอกลิงก์' }));
+    await user.click(screen.getByRole('button', { name: 'คัดลอกลิงก์' }));
 
     expect(writeText).toHaveBeenCalledWith(`${CANONICAL}?size=L`);
   });
@@ -151,7 +160,7 @@ describe('ProductShareModal', () => {
     const user = userEvent.setup();
 
     render(<ProductShareModal isOpen onClose={vi.fn()} product={product} />);
-    await user.click(screen.getByRole('button', { name: 'แชร์ผ่าน Line' }));
+    await user.click(screen.getByRole('button', { name: 'แชร์ผ่าน LINE' }));
 
     expect(openSpy).toHaveBeenCalledWith(
       `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(CANONICAL)}`,
@@ -177,24 +186,24 @@ describe('ProductShareModal', () => {
     );
   });
 
-  it('uses the Web Share API with a separate url (no duplicated link in text)', async () => {
+  it('uses the Web Share API for Instagram with a separate url', async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     defineNavigatorProp('share', share);
     const onClose = vi.fn();
     const user = userEvent.setup();
 
     render(<ProductShareModal isOpen onClose={onClose} product={product} />);
-    await user.click(screen.getByRole('button', { name: 'แชร์ผ่าน แอปอื่นๆ' }));
+    await user.click(screen.getByRole('button', { name: 'แชร์ผ่าน Instagram' }));
 
     expect(share).toHaveBeenCalledTimes(1);
     const payload = share.mock.calls[0][0];
     expect(payload.url).toBe(CANONICAL);
     expect(payload.text).not.toContain(CANONICAL);
     expect(onClose).toHaveBeenCalled();
-    expect(sharedEvents()).toContainEqual(expect.objectContaining({ method: 'native' }));
+    expect(sharedEvents()).toContainEqual(expect.objectContaining({ method: 'instagram' }));
   });
 
-  it('does not toast an error when the user cancels the native share', async () => {
+  it('does not toast an error when the user cancels the Instagram share', async () => {
     const share = vi
       .fn()
       .mockRejectedValue(Object.assign(new Error('cancelled'), { name: 'AbortError' }));
@@ -202,7 +211,7 @@ describe('ProductShareModal', () => {
     const user = userEvent.setup();
 
     render(<ProductShareModal isOpen onClose={vi.fn()} product={product} />);
-    await user.click(screen.getByRole('button', { name: 'แชร์ผ่าน แอปอื่นๆ' }));
+    await user.click(screen.getByRole('button', { name: 'แชร์ผ่าน Instagram' }));
 
     expect(toastError).not.toHaveBeenCalled();
   });

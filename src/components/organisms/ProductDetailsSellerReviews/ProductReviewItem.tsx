@@ -147,7 +147,7 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
           <div className="flex items-center gap-2">
             <RenderStars averageRating={review.rating} size={16} />
             <time
-              className="sop-body-xs-regular text-sop-neutral-gray-400"
+              className="sop-body-sm-regular text-sop-neutral-gray-400"
               dateTime={review.createdAt}
             >
               • {formatThaiDate(review.createdAt)}
@@ -165,7 +165,7 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
       </div>
 
       {review.comment ? (
-        <p className="ml-12 mt-3 sop-body-sm-regular text-sop-neutral-gray-300 leading-relaxed">
+        <p className="ml-12 mt-3 sop-body-sm-regular text-sop-neutral-gray-200 leading-relaxed">
           {review.comment}
         </p>
       ) : null}
@@ -179,7 +179,7 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
       <div className="mt-3 flex justify-end">
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-full border border-sop-neutral-grayalpha-200 px-3 py-1 sop-body-xs-regular text-sop-neutral-gray-300 transition-colors hover:border-sop-neutral-grayalpha-300 hover:text-sop-neutral-gray-300"
+          className="flex items-center gap-1.5 rounded-full border border-sop-neutral-grayalpha-200 px-3 py-1 sop-body-sm-regular text-sop-neutral-gray-300 transition-colors hover:border-sop-neutral-grayalpha-300 hover:text-sop-neutral-gray-300"
           aria-label="มีประโยชน์"
         >
           <svg

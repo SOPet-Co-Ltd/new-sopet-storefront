@@ -9,7 +9,7 @@ export function ProductDetailDescription({ description }: ProductDetailDescripti
   if (!description) return null;
 
   return (
-    <div className="-mx-4 bg-sop-base-white p-4 rounded-none md:mx-0 md:rounded-sop-16px">
+    <div className="rounded-sop-16px bg-sop-base-white px-sop-16px py-4">
       <div className="flex items-center gap-sop-8px pb-sop-20px">
         <ClipboardListIcon
           size={{ mobile: 32, desktop: 32 }}

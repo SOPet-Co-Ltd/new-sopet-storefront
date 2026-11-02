@@ -37,6 +37,9 @@ describe('ProductCarousel', () => {
     expect(screen.getByTestId('product-gallery')).toBeInTheDocument();
     expect(screen.getByTestId('product-gallery-hero')).toBeInTheDocument();
     expect(screen.getByTestId('product-gallery-thumbnails')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Previous image' })).toHaveClass('hidden', 'md:flex');
+    expect(screen.getByRole('button', { name: 'Next image' })).toHaveClass('hidden', 'md:flex');
+    expect(screen.getByAltText('Product thumbnail 1')).toHaveClass('size-[98px]');
 
     const heroImage = screen.getByAltText('Product image');
     expect(heroImage).toHaveAttribute('src', 'https://example.com/image-1.jpg');

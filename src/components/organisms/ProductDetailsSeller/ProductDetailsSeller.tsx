@@ -19,7 +19,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
 
   return (
     <div
-      className="w-full lg:rounded-2xl md:rounded-2xl rounded-none border border-[#F0EDF5] bg-sop-base-white p-4 shadow-xs md:p-6"
+      className="w-full rounded-sop-16px border border-[#F0EDF5] bg-sop-base-white px-sop-16px py-4 shadow-xs md:rounded-2xl md:p-6"
       data-testid="product-seller"
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

@@ -55,14 +55,14 @@ export function ProductShowPrice({ product, selectedOptions }: ProductShowPriceP
         {hasPrice ? (
           <>
             <span
-              className="text-2xl font-bold text-sop-secondary-500 lg:text-3xl"
+              className="text-2xl font-bold text-sop-secondary-600 lg:text-3xl"
               data-testid="variant-price"
             >
               ฿{formatPrice(displayPrice)}
             </span>
             {hasDiscount && (
               <>
-                <span className="text-sm font-normal text-sop-neutral-grayalpha-400 line-through lg:text-lg">
+                <span className="text-sm font-semibold text-sop-neutral-grayalpha-400 line-through lg:text-lg">
                   ฿{formatPrice(compareAtPrice)}
                 </span>
                 <span className="inline-flex items-center rounded-full bg-sop-secondary-100 px-sop-12px py-sop-4px sop-body-sm-regular font-semibold text-sop-secondary-500">

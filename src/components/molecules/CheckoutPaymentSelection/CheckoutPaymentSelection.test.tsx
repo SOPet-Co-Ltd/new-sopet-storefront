@@ -33,6 +33,7 @@ vi.mock('@/lib/hooks/usePaymentMethods', () => ({
         expiryMonth: 12,
         expiryYear: 2030,
         isDefault: true,
+        psp: 'beam',
       },
     ],
     loading: false,

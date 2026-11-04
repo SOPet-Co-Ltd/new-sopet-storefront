@@ -19,6 +19,7 @@ export const samplePaymentMethod = {
   expiryMonth: 12,
   expiryYear: 2028,
   isDefault: true,
+  psp: 'beam',
 };
 
 export const sampleReviewableItem = {

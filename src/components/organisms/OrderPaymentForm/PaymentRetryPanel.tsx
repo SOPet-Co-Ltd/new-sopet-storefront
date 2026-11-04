@@ -22,6 +22,8 @@ import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { BeamConfigurationError, parseCardExpiry, tokenizeCard } from '@/lib/payment/beam';
+import { buildSaveCardPayload, type SaveCardOnPaymentInput } from '@/lib/payment/saveCard';
+import { isBeamSavedPaymentMethod } from '@/lib/payment/savedPaymentMethod';
 import { PaymentRetryError } from '@/lib/payment/submitPaymentRetry';
 import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
@@ -33,6 +35,8 @@ export type PaymentRetrySubmitInput = {
   /** CVV for the new card token or the selected saved card (required for card payments). */
   cardSecurityCode?: string;
   savedPaymentMethodId?: string;
+  /** Save after paid — never call addPaymentMethod before createPayment. */
+  saveCard?: SaveCardOnPaymentInput;
 };
 
 export type PaymentRetryPanelProps = {
@@ -117,11 +121,12 @@ const WALLET_PAYMENT_OPTIONS: PaymentOption[] = [
 function resolveDefaultSavedCardId(
   paymentMethods: ReturnType<typeof usePaymentMethods>['paymentMethods'],
 ): string | null {
-  if (paymentMethods.length === 0) {
+  const usable = paymentMethods.filter(isBeamSavedPaymentMethod);
+  if (usable.length === 0) {
     return null;
   }
 
-  return paymentMethods.find((method) => method.isDefault)?.id ?? paymentMethods[0]?.id ?? null;
+  return usable.find((method) => method.isDefault)?.id ?? usable[0]?.id ?? null;
 }
 
 export function PaymentRetryPanel({
@@ -284,6 +289,16 @@ export function PaymentRetryPanel({
           });
           payload.cardToken = tokenized.cardToken;
           payload.cardSecurityCode = cardForm.cvv.replace(/\D/g, '');
+          if (saveCardForNextTime) {
+            payload.saveCard = buildSaveCardPayload({
+              cardToken: tokenized.cardToken,
+              lastFour: tokenized.lastFour,
+              brand: tokenized.brand,
+              expiryMonth: tokenized.expiryMonth,
+              expiryYear: tokenized.expiryYear,
+              isDefault: true,
+            });
+          }
         } catch (error) {
           const message =
             error instanceof BeamConfigurationError
@@ -293,6 +308,16 @@ export function PaymentRetryPanel({
           setLocalSubmitting(false);
           return;
         }
+      }
+
+      if (
+        payload.savedPaymentMethodId &&
+        selectedSavedCard &&
+        !isBeamSavedPaymentMethod(selectedSavedCard)
+      ) {
+        setCardFormError('บัตรนี้ไม่สามารถใช้ได้');
+        setLocalSubmitting(false);
+        return;
       }
 
       await onSubmit?.(payload);

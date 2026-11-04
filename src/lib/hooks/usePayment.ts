@@ -11,7 +11,10 @@ import {
 import { setWsGuestPayToken } from '@/lib/graphql/wsConnectionParams';
 import { persistGuestPayToken, resolveGuestPayToken } from '@/lib/payment/guestPayToken';
 
-export type PaymentRecord = PaymentQuery['payment'];
+/** Widened until codegen includes PaymentType.failureCode. */
+export type PaymentRecord = PaymentQuery['payment'] & {
+  failureCode?: string | null;
+};
 export type PaymentStatus = PaymentRecord['status'];
 
 export type PollPaymentParams = {

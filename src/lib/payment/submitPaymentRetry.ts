@@ -1,6 +1,6 @@
 import type { PaymentRetrySubmitInput } from '@/components/organisms/OrderPaymentForm/PaymentRetryPanel';
 import { threeDSAutoRedirectStorageKey } from '@/components/organisms/OrderPaymentForm/Payment3dsAutoRedirect';
-import type { CreatePaymentInput } from '@/lib/graphql/generated/graphql';
+import type { CreatePaymentSubmitInput } from '@/lib/checkout/submitCheckout';
 import { persistGuestPayToken, resolveGuestPayToken } from '@/lib/payment/guestPayToken';
 import {
   isOmiseWalletApiPaymentMethod,
@@ -29,7 +29,7 @@ export type PaymentRetryContext = {
 export function buildPaymentRetryInput(
   context: PaymentRetryContext,
   submit: PaymentRetrySubmitInput,
-): CreatePaymentInput {
+): CreatePaymentSubmitInput {
   const guestPayToken = resolveGuestPayToken({
     guestPayToken: context.guestPayToken,
     orderId: context.orderId,
@@ -55,6 +55,7 @@ export function buildPaymentRetryInput(
         ? {
             cardToken: submit.cardToken,
             ...(submit.cardSecurityCode ? { cardSecurityCode: submit.cardSecurityCode } : {}),
+            ...(submit.saveCard ? { saveCard: submit.saveCard } : {}),
           }
         : {}),
   };

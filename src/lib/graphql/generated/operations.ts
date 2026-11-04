@@ -541,6 +541,7 @@ export type CreatePaymentMutation = {
     qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -881,6 +882,7 @@ export type PaymentFieldsFragment = {
   qrCodeImage: string | null;
   qrCodeUrl: string | null;
   expiresAt: string | null;
+  failureCode: string | null;
 };
 
 export type PaymentQueryVariables = Exact<{
@@ -901,6 +903,7 @@ export type PaymentQuery = {
     qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -922,6 +925,7 @@ export type PaymentByOrderIdQuery = {
     qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -950,6 +954,7 @@ export type PaymentStatusUpdatedSubscription = {
     qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -961,6 +966,7 @@ export type SavedPaymentMethodFieldsFragment = {
   expiryMonth: number;
   expiryYear: number;
   isDefault: boolean;
+  psp: string | null;
 };
 
 export type PaymentMethodsQueryVariables = Exact<{ [key: string]: never }>;
@@ -974,6 +980,7 @@ export type PaymentMethodsQuery = {
     expiryMonth: number;
     expiryYear: number;
     isDefault: boolean;
+    psp: string | null;
   }>;
 };
 
@@ -990,6 +997,7 @@ export type AddPaymentMethodMutation = {
     expiryMonth: number;
     expiryYear: number;
     isDefault: boolean;
+    psp: string | null;
   };
 };
 
@@ -1012,6 +1020,7 @@ export type SetDefaultPaymentMethodMutation = {
     expiryMonth: number;
     expiryYear: number;
     isDefault: boolean;
+    psp: string | null;
   };
 };
 
@@ -2251,6 +2260,7 @@ export const PaymentFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'qrCodeImage' } },
           { kind: 'Field', name: { kind: 'Name', value: 'qrCodeUrl' } },
           { kind: 'Field', name: { kind: 'Name', value: 'expiresAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failureCode' } },
         ],
       },
     },
@@ -2273,6 +2283,7 @@ export const SavedPaymentMethodFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'expiryMonth' } },
           { kind: 'Field', name: { kind: 'Name', value: 'expiryYear' } },
           { kind: 'Field', name: { kind: 'Name', value: 'isDefault' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'psp' } },
         ],
       },
     },

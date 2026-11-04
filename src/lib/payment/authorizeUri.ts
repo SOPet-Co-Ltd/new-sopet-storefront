@@ -5,7 +5,9 @@
  */
 
 const DEFAULT_HOST_SUFFIXES: readonly string[] = [
+  // Explicit Beam 3DS verify hosts (avoid broad *.beamcheckout.com)
   'verify.beamcheckout.com',
+  'playground-verify.beamcheckout.com',
   'omise.co',
   // Documented EMV 3DS ACS / method-URL intermediaries (suffix match)
   'cardinalcommerce.com',

@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   BeamConfigurationError,
   detectBeamCardBrand,
+  getBeamApiBaseUrl,
   getBeamCredentials,
   parseCardExpiry,
+  toBeamExpiryYearYy,
   tokenizeCard,
 } from '@/lib/payment/beam';
 import {
@@ -39,10 +41,12 @@ function jsonResponse(body: unknown, init: { status?: number } = {}) {
 describe('beam payment utilities', () => {
   const originalMerchantId = process.env.NEXT_PUBLIC_BEAM_MERCHANT_ID;
   const originalPublishableKey = process.env.NEXT_PUBLIC_BEAM_PUBLISHABLE_KEY;
+  const originalApiBaseUrl = process.env.NEXT_PUBLIC_BEAM_API_BASE_URL;
 
   beforeEach(() => {
     process.env.NEXT_PUBLIC_BEAM_MERCHANT_ID = 'merchant_test';
     process.env.NEXT_PUBLIC_BEAM_PUBLISHABLE_KEY = 'pk_test_123';
+    delete process.env.NEXT_PUBLIC_BEAM_API_BASE_URL;
   });
 
   afterEach(() => {
@@ -55,6 +59,11 @@ describe('beam payment utilities', () => {
       delete process.env.NEXT_PUBLIC_BEAM_PUBLISHABLE_KEY;
     } else {
       process.env.NEXT_PUBLIC_BEAM_PUBLISHABLE_KEY = originalPublishableKey;
+    }
+    if (originalApiBaseUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_BEAM_API_BASE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_BEAM_API_BASE_URL = originalApiBaseUrl;
     }
     registerCheckoutCardPaymentBridge(null);
     vi.unstubAllGlobals();
@@ -80,7 +89,7 @@ describe('beam payment utilities', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('tokenizes via Beam card-tokens with Basic auth and derives display fields locally', async () => {
+  it('tokenizes via Beam card-tokens with Basic auth, YY expiry, and full YYYY locally', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: 'beam_tok_123' }));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -93,6 +102,7 @@ describe('beam payment utilities', () => {
       expiryMonth: 12,
       expiryYear: 2030,
     });
+    expect(toBeamExpiryYearYy(2030)).toBe(30);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -104,9 +114,22 @@ describe('beam payment utilities', () => {
     expect(JSON.parse(init.body as string)).toEqual({
       pan: '4242424242424242',
       expiryMonth: 12,
-      expiryYear: 2030,
+      expiryYear: 30,
       cardHolderName: 'Test User',
     });
+  });
+
+  it('uses NEXT_PUBLIC_BEAM_API_BASE_URL when set', async () => {
+    process.env.NEXT_PUBLIC_BEAM_API_BASE_URL = 'https://playground.api.beamcheckout.com';
+    expect(getBeamApiBaseUrl()).toBe('https://playground.api.beamcheckout.com');
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: 'beam_tok_pg' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await tokenizeCard(TOKEN_INPUT);
+
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://playground.api.beamcheckout.com/client/v1/card-tokens');
   });
 
   it('rejects when Beam returns a non-OK response', async () => {

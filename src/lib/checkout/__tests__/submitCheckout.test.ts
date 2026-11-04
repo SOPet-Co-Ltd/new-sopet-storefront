@@ -323,6 +323,61 @@ describe('submitCheckout', () => {
         cardSecurityCode: '123',
       }),
     );
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        saveCard: expect.anything(),
+      }),
+    );
+
+    createPayment.mockClear();
+
+    await submitCheckout(
+      createSubmitParams({
+        checkoutContext: {
+          isAuthenticated: true,
+          shippingByStoreId: {
+            [CATALOG_STORE_ID]: { shippingOptionId: SHIPPING_OPTION_ID },
+          },
+          selectedAddressId: 'addr-1',
+          promotionCode: null,
+          storePromotionCodes: [],
+          paymentMethod: 'card',
+        },
+        cardToken: 'tokn_save_me',
+        cardSecurityCode: '123',
+        saveCard: {
+          cardToken: 'tokn_save_me',
+          lastFour: '4242',
+          brand: 'visa',
+          expiryMonth: 12,
+          expiryYear: 2030,
+          isDefault: true,
+        },
+        checkoutHook: createCheckoutHook({ createPayment }),
+      }),
+      createSubmitCheckoutGuard(),
+    );
+
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentMethod: 'credit_card',
+        cardToken: 'tokn_save_me',
+        cardSecurityCode: '123',
+        saveCard: {
+          cardToken: 'tokn_save_me',
+          lastFour: '4242',
+          brand: 'visa',
+          expiryMonth: 12,
+          expiryYear: 2030,
+          isDefault: true,
+        },
+      }),
+    );
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        savedPaymentMethodId: expect.anything(),
+      }),
+    );
 
     createPayment.mockClear();
 

@@ -16,6 +16,7 @@ import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
 import { parseCardExpiry } from '@/lib/payment/beam';
+import { isBeamSavedPaymentMethod } from '@/lib/payment/savedPaymentMethod';
 import { cn } from '@/lib/utils';
 import { CardPaymentForm } from './CardPaymentForm';
 import {
@@ -136,11 +137,12 @@ function PaymentMethodOption({
 function resolveDefaultSavedCardId(
   paymentMethods: ReturnType<typeof usePaymentMethods>['paymentMethods'],
 ): string | null {
-  if (paymentMethods.length === 0) {
+  const usable = paymentMethods.filter(isBeamSavedPaymentMethod);
+  if (usable.length === 0) {
     return null;
   }
 
-  return paymentMethods.find((method) => method.isDefault)?.id ?? paymentMethods[0]?.id ?? null;
+  return usable.find((method) => method.isDefault)?.id ?? usable[0]?.id ?? null;
 }
 
 export function CheckoutPaymentSelection() {

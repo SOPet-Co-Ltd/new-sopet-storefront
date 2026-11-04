@@ -336,6 +336,63 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
   });
 
+  it('maps Beam failureCode to Thai shopper copy on failed payments', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          status: 'failed',
+          expiresAt: null,
+          failureCode: 'CH_CARD_DECLINED',
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByText(/บัตรถูกปฏิเสธ/)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveAttribute('data-failure-code', 'CH_CARD_DECLINED');
+  });
+
+  it('does not treat BEAM_ERROR as a card decline message', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          status: 'failed',
+          expiresAt: null,
+          failureCode: 'BEAM_ERROR',
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.queryByText(/บัตรถูกปฏิเสธ/)).not.toBeInTheDocument();
+    expect(screen.getByText(/ไม่สามารถดำเนินการชำระเงินได้/)).toBeInTheDocument();
+  });
+
+  it('logs only the hostname when authorizeUri host is disallowed', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const evilUri = 'https://evil.example/phish?token=secret';
+
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...cardPendingPayment,
+          authorizeUri: evilUri,
+        }}
+        loading={false}
+        error={undefined}
+        navigateToAuthorizeUri={navigate}
+      />,
+    );
+
+    expect(warn).toHaveBeenCalledWith('Disallowed 3DS authorize host:', 'evil.example');
+    expect(warn.mock.calls.flat().join(' ')).not.toContain('token=secret');
+    warn.mockRestore();
+  });
+
   it('retrySubmitting swaps failed chrome for processing stage (no unsuccessful banner)', () => {
     renderForm(
       <OrderPaymentForm

@@ -547,6 +547,7 @@ export type CreatePaymentInput = {
   orderId: Scalars['String']['input'];
   paymentMethod: Scalars['String']['input'];
   platformType?: InputMaybe<Scalars['String']['input']>;
+  saveCard?: InputMaybe<SaveCardOnPaymentInput>;
   savedPaymentMethodId?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2014,6 +2015,7 @@ export type PaymentType = {
   authorizeUri?: Maybe<Scalars['String']['output']>;
   currency: Scalars['String']['output'];
   expiresAt?: Maybe<Scalars['DateTime']['output']>;
+  failureCode?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   orderId: Scalars['String']['output'];
   orderNumber?: Maybe<Scalars['String']['output']>;
@@ -3052,6 +3054,15 @@ export type SalesTimePointType = {
   revenue: Scalars['Float']['output'];
 };
 
+export type SaveCardOnPaymentInput = {
+  brand: Scalars['String']['input'];
+  cardToken: Scalars['String']['input'];
+  expiryMonth: Scalars['Int']['input'];
+  expiryYear: Scalars['Int']['input'];
+  isDefault?: InputMaybe<Scalars['Boolean']['input']>;
+  lastFour: Scalars['String']['input'];
+};
+
 export type SavedAddressType = {
   __typename?: 'SavedAddressType';
   addressLine1: Scalars['String']['output'];
@@ -3075,6 +3086,7 @@ export type SavedPaymentMethodType = {
   id: Scalars['String']['output'];
   isDefault: Scalars['Boolean']['output'];
   lastFour: Scalars['String']['output'];
+  psp?: Maybe<Scalars['String']['output']>;
   type: Scalars['String']['output'];
 };
 

@@ -383,6 +383,7 @@ export function OrderPaymentForm({
       <PaymentBusyShell titleId="payment-failed-title" title="ชำระเงิน" busy={isRetryBusy}>
         <PaymentFailedState
           isQrExpired={isQrExpired}
+          failureCode={payment.failureCode}
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
           isSubmitting={retrySubmitting}
@@ -414,6 +415,11 @@ export function OrderPaymentForm({
     const amountLabel = formatAmount(payment.amount, payment.currency);
 
     if (!isAllowed3dsAuthorizeUri(authorizeUri)) {
+      try {
+        console.warn('Disallowed 3DS authorize host:', new URL(authorizeUri).hostname);
+      } catch {
+        console.warn('Disallowed 3DS authorize host: <unparseable>');
+      }
       return (
         <PaymentBusyShell titleId="payment-waiting-title" title="ชำระเงิน" busy={isRetryBusy}>
           <div className="mt-4 flex items-center justify-between py-3">

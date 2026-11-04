@@ -1,8 +1,12 @@
-export const BEAM_API_BASE_URL = 'https://api.beamcheckout.com';
+export const BEAM_API_BASE_URL_DEFAULT = 'https://api.beamcheckout.com';
 export const BEAM_CARD_TOKENS_PATH = '/client/v1/card-tokens';
+
+/** @deprecated Prefer getBeamApiBaseUrl() — kept for callers that need the production default. */
+export const BEAM_API_BASE_URL = BEAM_API_BASE_URL_DEFAULT;
 
 export const BEAM_MERCHANT_ID_ENV = 'NEXT_PUBLIC_BEAM_MERCHANT_ID';
 export const BEAM_PUBLISHABLE_KEY_ENV = 'NEXT_PUBLIC_BEAM_PUBLISHABLE_KEY';
+export const BEAM_API_BASE_URL_ENV = 'NEXT_PUBLIC_BEAM_API_BASE_URL';
 
 export type TokenizeCardInput = {
   number: string;
@@ -30,6 +34,17 @@ export class BeamConfigurationError extends Error {
     super(message);
     this.name = 'BeamConfigurationError';
   }
+}
+
+/** Beam browser API origin; override with NEXT_PUBLIC_BEAM_API_BASE_URL (e.g. playground). */
+export function getBeamApiBaseUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_BEAM_API_BASE_URL?.trim();
+  return configured || BEAM_API_BASE_URL_DEFAULT;
+}
+
+/** Beam card-tokens expect a 2-digit YY expiry year (e.g. 2030 → 30). */
+export function toBeamExpiryYearYy(fullYear: number): number {
+  return fullYear % 100;
 }
 
 export function getBeamCredentials(): { merchantId: string; publishableKey: string } {
@@ -81,7 +96,7 @@ export async function tokenizeCard(input: TokenizeCardInput): Promise<TokenizedC
   const { merchantId, publishableKey } = getBeamCredentials();
   const pan = input.number.replace(/\D/g, '');
 
-  const response = await fetch(`${BEAM_API_BASE_URL}${BEAM_CARD_TOKENS_PATH}`, {
+  const response = await fetch(`${getBeamApiBaseUrl()}${BEAM_CARD_TOKENS_PATH}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -90,7 +105,7 @@ export async function tokenizeCard(input: TokenizeCardInput): Promise<TokenizedC
     body: JSON.stringify({
       pan,
       expiryMonth: input.expirationMonth,
-      expiryYear: input.expirationYear,
+      expiryYear: toBeamExpiryYearYy(input.expirationYear),
       cardHolderName: input.name.trim(),
     }),
   });
@@ -106,6 +121,7 @@ export async function tokenizeCard(input: TokenizeCardInput): Promise<TokenizedC
     lastFour: pan.slice(-4),
     brand: detectBeamCardBrand(pan),
     expiryMonth: input.expirationMonth,
+    // Keep full YYYY for display / saveCard metadata; Beam request used YY above.
     expiryYear: input.expirationYear,
   };
 }

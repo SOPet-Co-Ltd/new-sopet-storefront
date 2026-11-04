@@ -6,6 +6,7 @@ fragment SavedPaymentMethodFields on SavedPaymentMethodType {
   expiryMonth
   expiryYear
   isDefault
+  psp
 }
 
 query PaymentMethods {

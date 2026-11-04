@@ -25,7 +25,6 @@ import { parseStorePromotionConditions } from '@/lib/checkout/storePromotionUtil
 import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import { clearPendingCheckout, setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
-import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
@@ -36,6 +35,7 @@ import {
   shouldRedirectCheckoutToLogin,
 } from '@/lib/checkout/checkoutSessionGuard';
 import { hasClientSession } from '@/lib/graphql/authLink';
+import { buildSaveCardPayload } from '@/lib/payment/saveCard';
 import { ensureSessionId } from '@/lib/session';
 
 export type AddressSubmitContext = {
@@ -66,7 +66,6 @@ export function useCheckoutSubmit(
     clearBuyNow,
   } = useCheckoutCartSelection();
   const checkoutMutations = useCheckoutMutations();
-  const { addPaymentMethod } = usePaymentMethods();
   const {
     step,
     shippingByStoreId,
@@ -165,28 +164,22 @@ export function useCheckoutSubmit(
       try {
         const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
-        let finalCardToken = cardPayment?.type === 'token' ? cardPayment.cardToken : undefined;
+        const finalCardToken = cardPayment?.type === 'token' ? cardPayment.cardToken : undefined;
         const finalCardSecurityCode = cardPayment?.cardSecurityCode;
-        let finalSavedPaymentMethodId =
+        const finalSavedPaymentMethodId =
           cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined;
-
-        if (cardPayment?.type === 'token' && cardPayment.saveCardForNextTime) {
-          const { tokenizedCard } = cardPayment;
-
-          const savedMethod = await addPaymentMethod({
-            cardToken: cardPayment.cardToken,
-            brand: tokenizedCard.brand,
-            lastFour: tokenizedCard.lastFour,
-            expiryMonth: tokenizedCard.expiryMonth,
-            expiryYear: tokenizedCard.expiryYear,
-            isDefault: true,
-          });
-
-          if (savedMethod) {
-            finalSavedPaymentMethodId = savedMethod.id;
-            finalCardToken = undefined;
-          }
-        }
+        // Defer vaulting to backend after paid — do not call addPaymentMethod before charge.
+        const saveCard =
+          cardPayment?.type === 'token' && cardPayment.saveCardForNextTime
+            ? buildSaveCardPayload({
+                cardToken: cardPayment.cardToken,
+                brand: cardPayment.tokenizedCard.brand,
+                lastFour: cardPayment.tokenizedCard.lastFour,
+                expiryMonth: cardPayment.tokenizedCard.expiryMonth,
+                expiryYear: cardPayment.tokenizedCard.expiryYear,
+                isDefault: true,
+              })
+            : undefined;
 
         const sessionLive = hasClientSession();
         const submitAsGuest = !isAuthenticated || !sessionLive;
@@ -209,6 +202,7 @@ export function useCheckoutSubmit(
             cardToken: finalCardToken,
             cardSecurityCode: finalCardSecurityCode,
             savedPaymentMethodId: finalSavedPaymentMethodId,
+            saveCard,
           },
           submitGuardRef.current,
         );
@@ -251,14 +245,12 @@ export function useCheckoutSubmit(
       }
     },
     [
-      addPaymentMethod,
       checkoutContext,
       checkoutMutations,
       clearBuyNow,
       guestForm,
       isAuthenticated,
       isBuyNow,
-      isGuestCheckout,
       items,
       paymentMethod,
       pruneDeselectedIds,

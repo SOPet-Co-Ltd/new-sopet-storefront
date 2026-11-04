@@ -17,7 +17,7 @@ import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
 import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
 import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
-import { resolvePromptPayQrSrc } from '@/lib/payment/promptPayQr';
+import { resolvePromptPayQrSrc, resolvePromptPayReferenceId } from '@/lib/payment/promptPayQr';
 import { PromptPayQrWaitingState } from './PromptPayQrWaitingState';
 import { BankTransferWaitingState } from './BankTransferWaitingState';
 import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
@@ -518,7 +518,7 @@ export function OrderPaymentForm({
           amountLabel={formatAmount(payment.amount, payment.currency)}
           orderNumber={payment.orderNumber}
           orderCreatedAt={orderCreatedAt}
-          referenceId={payment.id}
+          referenceId={resolvePromptPayReferenceId(payment.qrCodeUrl, payment.id)}
           remainingMs={remainingMs}
           actions={
             <MidQrChangeMethodChrome

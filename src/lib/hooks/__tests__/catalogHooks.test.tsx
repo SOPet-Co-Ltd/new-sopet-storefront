@@ -7,6 +7,10 @@ import { useReviews } from '@/lib/hooks/useReviews';
 import { useStore } from '@/lib/hooks/useStore';
 import { server } from '@/test/mocks/server';
 import {
+  PRODUCT_REVIEWS_INITIAL_LIMIT,
+  STORE_REVIEWS_PAGE_SIZE,
+} from '@/lib/constants/listPageSize';
+import {
   CATALOG_PRODUCT_ID,
   CATALOG_STORE_ID,
   sampleCategories,
@@ -60,7 +64,11 @@ describe('useReviews', () => {
   it('fetches productReviews and storeReviewSummary', async () => {
     server.use(
       graphql.query('ProductReviews', ({ variables }) => {
-        expect(variables).toEqual({ productId: CATALOG_PRODUCT_ID });
+        expect(variables).toEqual({
+          productId: CATALOG_PRODUCT_ID,
+          page: 1,
+          limit: PRODUCT_REVIEWS_INITIAL_LIMIT,
+        });
         return HttpResponse.json({ data: { productReviews: [sampleProductReview] } });
       }),
       graphql.query('StoreReviewSummary', ({ variables }) => {
@@ -68,7 +76,11 @@ describe('useReviews', () => {
         return HttpResponse.json({ data: { storeReviewSummary: sampleStoreReviewSummary } });
       }),
       graphql.query('StoreReviews', ({ variables }) => {
-        expect(variables).toEqual({ storeId: CATALOG_STORE_ID });
+        expect(variables).toEqual({
+          storeId: CATALOG_STORE_ID,
+          page: 1,
+          limit: STORE_REVIEWS_PAGE_SIZE,
+        });
         return HttpResponse.json({ data: { storeReviews: [] } });
       }),
     );

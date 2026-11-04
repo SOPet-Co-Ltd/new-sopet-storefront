@@ -175,10 +175,20 @@ function validateShippingFields(
   return errors;
 }
 
+export function validateOptionalCheckoutEmail(
+  email: string | undefined,
+): Partial<Record<GuestCheckoutField, string>> {
+  const emailError = validateOptionalEmail(email);
+  return emailError ? { email: emailError } : {};
+}
+
 export function validateAuthInlineShippingForm(
   formState: GuestCheckoutFormState,
 ): GuestCheckoutValidationResult {
-  const errors = validateShippingFields(formState);
+  const errors = {
+    ...validateShippingFields(formState),
+    ...validateOptionalCheckoutEmail(formState.email),
+  };
 
   const contactPhoneError = validatePhoneField(
     formState.contactPhone,
@@ -305,6 +315,11 @@ export function toCreateOrderInput(
     input.storePromotionCodes = checkoutContext.storePromotionCodes;
   }
 
+  const trimmedEmail = formState?.email?.trim();
+  if (trimmedEmail) {
+    input.guestEmail = trimmedEmail;
+  }
+
   if (checkoutContext.isAuthenticated) {
     if (checkoutContext.selectedAddressId) {
       input.savedAddressId = checkoutContext.selectedAddressId;
@@ -319,13 +334,10 @@ export function toCreateOrderInput(
     throw new Error('Guest checkout requires form state');
   }
 
-  const trimmedEmail = formState.email?.trim();
-
   return {
     ...input,
     guestPhone: normalizeThaiPhoneNumber(formState.contactPhone),
     guestName: formState.recipientFullName.trim(),
-    guestEmail: trimmedEmail || undefined,
     notes: formState.notes?.trim() || undefined,
     shippingAddress: mapShippingAddress(formState),
   };

@@ -13,10 +13,6 @@ vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-vi.mock('@/lib/account/prefetchAccountPage', () => ({
-  prefetchAllAccountPages: vi.fn(),
-}));
-
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mockReplace }),
   usePathname: () => '/user/orders',

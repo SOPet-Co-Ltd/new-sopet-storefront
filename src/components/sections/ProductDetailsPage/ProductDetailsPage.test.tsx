@@ -190,7 +190,7 @@ function mockProductQueries({
       HttpResponse.json({ data: { approvedCategories: sampleCategories } }),
     ),
     graphql.query('ProductReviews', ({ variables }) => {
-      expect(variables).toEqual({ productId: PRODUCT_ID });
+      expect(variables).toEqual({ productId: PRODUCT_ID, page: 1, limit: 4 });
       return HttpResponse.json({ data: { productReviews: [SAMPLE_PRODUCT_REVIEW] } });
     }),
     graphql.query('StoreReviewSummary', ({ variables }) => {
@@ -349,6 +349,7 @@ describe('ProductDetailsPage', () => {
 
     const breadcrumbNav = screen.getByRole('navigation', { name: 'breadcrumb' });
     expect(breadcrumbNav).toBeInTheDocument();
+    expect(breadcrumbNav.parentElement).toHaveClass('hidden', 'md:block');
     expect(screen.getByRole('link', { name: 'หน้าแรก' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Dog Food' })).toHaveAttribute(
       'href',

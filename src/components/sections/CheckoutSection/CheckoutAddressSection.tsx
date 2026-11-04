@@ -193,7 +193,10 @@ export function CheckoutAddressSection({
         ) : null}
 
         {displayMode === 'auth-summary' && selectedAddress ? (
-          <>
+          <fieldset
+            disabled={isSubmitting}
+            className="m-0 flex min-w-0 flex-col gap-sop-20px border-0 p-0 disabled:opacity-60"
+          >
             <SavedAddressSummaryCard
               address={selectedAddress}
               onChangeClick={() => setIsModalOpen(true)}
@@ -209,7 +212,16 @@ export function CheckoutAddressSection({
               onConfirmSelection={setAddress}
               addressesApi={addressesApi}
             />
-          </>
+            <CheckoutContactSection
+              contactPhone={guestForm.contactPhone}
+              email={guestForm.email ?? ''}
+              onContactPhoneChange={handleContactPhoneChange}
+              onEmailChange={(value) => onGuestFormChange('email', value)}
+              errors={fieldErrors}
+              showErrors={showFieldErrors}
+              showPhone={false}
+            />
+          </fieldset>
         ) : null}
 
         {displayMode !== 'auth-loading' && displayMode !== 'auth-error' ? (

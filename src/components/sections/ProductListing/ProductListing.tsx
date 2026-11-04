@@ -130,6 +130,14 @@ export function ProductListing({
     ],
   );
 
+  // Search always hydrates once with sessionId/searchContext for personalization.
+  // Category/store listings can reuse SSR first page when params are unchanged.
+  const useInitialProducts =
+    variant !== 'search' &&
+    requestedPage === initialPage &&
+    initialProducts !== undefined &&
+    !listingParamsChanged;
+
   const {
     products: fetchedProducts,
     total: fetchedTotal,
@@ -150,13 +158,10 @@ export function ProductListing({
     sortOrder,
     sessionId,
     searchContext,
-    skip,
+    skip: skip || useInitialProducts,
   });
 
-  const useInitialProducts =
-    requestedPage === initialPage && initialProducts !== undefined && !listingParamsChanged;
-  const products =
-    useInitialProducts && loading ? (initialProducts ?? fetchedProducts) : fetchedProducts;
+  const products = useInitialProducts ? (initialProducts ?? fetchedProducts) : fetchedProducts;
   const showLoading = useInitialProducts ? !initialProducts && loading : loading;
   const total = resolveListingTotal({
     hasPagination,

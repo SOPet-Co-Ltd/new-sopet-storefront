@@ -436,7 +436,11 @@ describe('CheckoutPaymentSelection', () => {
       </ApolloTestWrapper>,
     );
 
-    expect(await screen.findByTestId('payment-method-bank_transfer')).toBeInTheDocument();
+    const bankTransfer = await screen.findByTestId('payment-method-bank_transfer');
+    const methods = screen.getAllByRole('radio');
+
+    expect(methods[0]).toBe(bankTransfer);
+    expect(bankTransfer).toHaveAttribute('aria-checked', 'true');
   });
 
   it('accepts card number input', async () => {

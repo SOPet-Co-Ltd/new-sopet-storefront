@@ -57,7 +57,14 @@ describe('Seller reviews vendor reply fixture-e2e', () => {
           },
         }),
       ),
-      graphql.query('StoreReviews', () => HttpResponse.json({ data: { storeReviews: reviews } })),
+      graphql.query('StoreReviews', ({ variables }) => {
+        const page = Number(variables.page ?? 1);
+        const limit = Number(variables.limit ?? 10);
+        const start = (page - 1) * limit;
+        return HttpResponse.json({
+          data: { storeReviews: reviews.slice(start, start + limit) },
+        });
+      }),
     );
 
     const user = userEvent.setup();

@@ -139,7 +139,7 @@ describe('CheckoutAddressSection integration', () => {
 
     it('renders auth-summary mode with summary card', async () => {
       mockedUseAuth.mockReturnValue({
-        customer: { id: 'cust-1' } as never,
+        customer: { id: 'cust-1', email: 'user@example.com' } as never,
         isAuthenticated: true,
         isLoading: false,
         pendingDeletion: false,
@@ -156,7 +156,8 @@ describe('CheckoutAddressSection integration', () => {
         ),
       );
 
-      renderCheckoutAddressSection();
+      const onGuestFormChange = vi.fn();
+      renderCheckoutAddressSection({ onGuestFormChange });
 
       await waitFor(() => {
         expect(screen.getByTestId('checkout-address-mode-auth-summary')).toBeInTheDocument();
@@ -164,8 +165,15 @@ describe('CheckoutAddressSection integration', () => {
 
       expect(screen.getByTestId('address-summary')).toBeInTheDocument();
       expect(screen.getByTestId('address-change-button')).toBeInTheDocument();
+      expect(screen.getByTestId('checkout-contact-section')).toBeInTheDocument();
+      expect(screen.getByTestId('guest-email-field')).toBeInTheDocument();
+      expect(screen.queryByTestId('contact-phone-field')).not.toBeInTheDocument();
       expect(screen.queryByTestId('address-list')).not.toBeInTheDocument();
       expect(screen.queryByTestId('shipping-address-line1')).not.toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(onGuestFormChange).toHaveBeenCalledWith('email', 'user@example.com');
+      });
     });
 
     it('renders auth-loading skeleton while addresses query is in flight', async () => {

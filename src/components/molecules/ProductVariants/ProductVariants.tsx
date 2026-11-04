@@ -51,7 +51,7 @@ export function ProductVariants({
                     className={cn(
                       'inline-flex min-h-[40px] cursor-pointer items-center justify-center rounded-sop-12px px-5 py-2 text-sm transition-all',
                       isSelected
-                        ? 'border-2 border-sop-primary-500 bg-sop-base-white font-medium text-sop-primary-500 shadow-xs'
+                        ? 'border-2 border-sop-primary-500 bg-sop-primary-100 font-medium text-sop-primary-500 shadow-xs'
                         : 'border border-transparent bg-sop-neutral-gray-500 text-sop-neutral-gray-200 hover:bg-sop-neutral-grayalpha-100',
                       isDisabled && 'cursor-not-allowed opacity-40',
                     )}

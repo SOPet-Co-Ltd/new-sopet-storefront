@@ -46,7 +46,7 @@ export function ProductCarouselIndicator({
         onClick={onPrev}
         aria-label="Previous image"
         className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 bg-white transition-colors hover:bg-sop-neutral-gray-500',
+          'hidden size-9 shrink-0 items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 bg-white transition-colors hover:bg-sop-neutral-gray-500 md:flex',
           selectedIndex === 0 ? 'cursor-not-allowed opacity-40' : 'cursor-pointer',
         )}
         disabled={selectedIndex === 0}
@@ -69,10 +69,10 @@ export function ProductCarouselIndicator({
                 <Image
                   src={slide.imageUrl}
                   alt={`Product thumbnail ${index + 1}`}
-                  width={80}
-                  height={80}
+                  width={98}
+                  height={98}
                   className={cn(
-                    'size-[72px] rounded-sop-16px object-cover transition-all duration-200 lg:size-20',
+                    'size-[98px] rounded-sop-16px object-cover transition-all duration-200',
                     selectedIndex === index
                       ? 'border-2 border-sop-primary-500 shadow-xs'
                       : 'border-2 border-transparent opacity-80 hover:opacity-100',
@@ -90,7 +90,7 @@ export function ProductCarouselIndicator({
         onClick={onNext}
         aria-label="Next image"
         className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 bg-white transition-colors hover:bg-sop-neutral-gray-500',
+          'hidden size-9 shrink-0 items-center justify-center rounded-full border border-sop-neutral-grayalpha-200 bg-white transition-colors hover:bg-sop-neutral-gray-500 md:flex',
           selectedIndex === slides.length - 1 ? 'cursor-not-allowed opacity-40' : 'cursor-pointer',
         )}
         disabled={selectedIndex === slides.length - 1}

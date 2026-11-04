@@ -20,6 +20,10 @@ import { ProductDetailDescription } from '@/components/sections/ProductDetailDes
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
 import { trackViewItem } from '@/lib/analytics';
+import {
+  PRODUCT_REVIEWS_INITIAL_LIMIT,
+  PRODUCT_REVIEWS_MAX_LIMIT,
+} from '@/lib/constants/listPageSize';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import type { ProductByIdQuery } from '@/lib/graphql/generated/graphql';
 import { useCategories } from '@/lib/hooks/useCategories';
@@ -27,6 +31,7 @@ import { useProduct } from '@/lib/hooks/useProduct';
 import { useReviews, type ProductReview } from '@/lib/hooks/useReviews';
 import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
 import { cn } from '@/lib/utils';
+import { HomeFaqSection, HOME_FAQ_ITEMS } from '@/components/sections/HomeFaqSection';
 
 type ProductDetailsPageProps = {
   productId: string;
@@ -68,11 +73,33 @@ export default function ProductDetailsPage({
   const product = fetchedProduct ?? initialProduct ?? null;
   const showLoading = !initialProduct && loading;
 
+  const [reviewWindow, setReviewWindow] = useState({
+    productId,
+    limit: PRODUCT_REVIEWS_INITIAL_LIMIT,
+    filterActive: false,
+  });
+
+  if (reviewWindow.productId !== productId) {
+    setReviewWindow({
+      productId,
+      limit: PRODUCT_REVIEWS_INITIAL_LIMIT,
+      filterActive: false,
+    });
+  }
+
+  const productReviewLimit =
+    reviewWindow.productId === productId ? reviewWindow.limit : PRODUCT_REVIEWS_INITIAL_LIMIT;
+  const productReviewFilterActive =
+    reviewWindow.productId === productId ? reviewWindow.filterActive : false;
+
+  // PDP only needs product reviews; store review dumps belong on the seller page.
+  // Page 1 with a growing limit avoids the page/limit offset skipping the first 4.
   const { productReviews, loading: reviewsLoading } = useReviews({
     productId: product?.id,
-    storeId: product?.storeId,
     skip: !product,
     initialProductReviews,
+    productPage: 1,
+    productLimit: productReviewFilterActive ? PRODUCT_REVIEWS_MAX_LIMIT : productReviewLimit,
   });
 
   // Keep the visible summary on product-level aggregates so it matches JSON-LD.
@@ -187,14 +214,14 @@ export default function ProductDetailsPage({
   return (
     <div
       data-testid="product-details-page"
-      className="mx-auto flex w-full min-w-0 max-w-[1064px] flex-col gap-2 md:gap-5"
+      className="mx-auto flex w-full min-w-0 max-w-[1064px] flex-col gap-sop-20px md:gap-5"
     >
-      <div className="py-2">
+      <div className="hidden py-2 md:block">
         <Breadcrumbs items={breadcrumbs} />
       </div>
 
       <article aria-labelledby="product-title" ref={mainArticleRef}>
-        <div className="-mx-4 grid min-w-0 grid-cols-1 gap-6 overflow-x-hidden lg:rounded-sop-32px md:rounded-sop-32px rounded-none border border-[#F0EDF5] bg-sop-base-white p-4 shadow-xs md:mx-0 md:p-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-8 lg:p-8">
+        <div className="-mx-4 grid min-w-0 grid-cols-1 gap-6 overflow-x-hidden rounded-none border border-[#F0EDF5] bg-sop-base-white pb-4 shadow-xs md:mx-0 md:rounded-sop-32px md:p-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-8 lg:rounded-sop-32px lg:p-8">
           <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
           <ProductDetails
             product={product}
@@ -216,20 +243,27 @@ export default function ProductDetailsPage({
             : 'lg:grid-cols-[1fr_0px] lg:gap-0',
         )}
       >
-        <div className="flex min-w-0 flex-col gap-2 md:gap-5">
-          <div className="-mx-4 md:mx-0">
-            <ProductDetailsSeller store={product.store} />
-          </div>
+        <div className="flex min-w-0 flex-col gap-sop-20px md:gap-5">
+          <ProductDetailsSeller store={product.store} />
 
           <ProductDetailDescription description={product.description} />
 
           <ProductDetailWarning warning={product.warning} />
 
           <ProductDetailsSellerReviews
+            key={product.id}
             productReviews={productReviews}
             averageRating={reviewSummary.averageRating}
             totalReviews={reviewSummary.totalReviews}
             loading={reviewsLoading}
+            onLoadMore={(nextLimit) =>
+              setReviewWindow((current) => ({ ...current, limit: nextLimit }))
+            }
+            onFilterActiveChange={(filterActive) =>
+              setReviewWindow((current) =>
+                current.filterActive === filterActive ? current : { ...current, filterActive },
+              )
+            }
           />
         </div>
 
@@ -273,6 +307,10 @@ export default function ProductDetailsPage({
           layout="grid"
           viewAllHref={`/recommend?from=${product.id}`}
         />
+
+        <div className="max-md:-mx-4">
+          <HomeFaqSection items={HOME_FAQ_ITEMS} />
+        </div>
       </div>
     </div>
   );

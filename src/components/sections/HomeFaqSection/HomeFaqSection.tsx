@@ -12,10 +12,13 @@ export { HOME_FAQ_ITEMS };
 
 type HomeFaqSectionProps = {
   heading?: string;
-  items: HomeFaqItem[];
+  items?: HomeFaqItem[];
 };
 
-export function HomeFaqSection({ heading = 'คำถามที่พบบ่อย', items }: HomeFaqSectionProps) {
+export function HomeFaqSection({
+  heading = 'คำถามที่พบบ่อย',
+  items = HOME_FAQ_ITEMS,
+}: HomeFaqSectionProps) {
   const [openItemId, setOpenItemId] = useState<string | null>(items[0]?.id ?? null);
 
   const toggleItem = (itemId: string) => {

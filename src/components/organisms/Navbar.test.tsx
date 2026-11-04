@@ -97,14 +97,14 @@ describe('Navbar', () => {
     expect(document.body.innerHTML).not.toContain('/coupons');
   });
 
-  it('shows membership promo copy and opens login modal from CTA', async () => {
+  it('shows CSII promo copy and opens login modal from CTA', async () => {
     const user = userEvent.setup();
     render(<Navbar />);
 
-    expect(screen.getByText(/สมัครสมาชิก/)).toBeInTheDocument();
     expect(
       screen.getByText(/Sopet สนับสนุนโดยสถาบันนวัตกรรมบูรณาการแห่งจุฬาฯ \(CSII\)/),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/สมัครสมาชิก/)).not.toBeInTheDocument();
 
     const trackStatus = screen.getByRole('link', { name: 'ติดตามสถานะผ่าน LINE' });
     expect(trackStatus).toHaveAttribute('href', 'https://line.me/R/ti/p/@sopet');

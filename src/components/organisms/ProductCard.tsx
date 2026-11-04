@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
 import { StarIcon } from '@/components/atoms/icons/filled/StarIcon';
 import { prefetchProductById } from '@/lib/catalog/prefetchProduct';
 import type { ProductListItem } from '@/lib/hooks/useProducts';
@@ -252,25 +251,6 @@ export default function ProductCard({
     campaignSalePrice != null && campaignSalePrice > 0 ? campaignSalePrice : catalogPrice;
   const compareAtPrice = getProductCardCompareAtPrice(product, campaignCompareAt);
   const discountPercent = getDiscountPercent(displayPrice, compareAtPrice);
-  const cardRef = useRef<HTMLAnchorElement>(null);
-
-  useEffect(() => {
-    const element = cardRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          prefetchProductById(product.id);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [product.id]);
 
   const handlePrefetch = () => {
     prefetchProductById(product.id);
@@ -280,7 +260,6 @@ export default function ProductCard({
 
   return (
     <Link
-      ref={cardRef}
       href={href}
       prefetch
       aria-label={`ดู ${product.name}`}

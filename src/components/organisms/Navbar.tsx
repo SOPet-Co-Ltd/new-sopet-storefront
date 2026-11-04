@@ -42,9 +42,8 @@ function PromoBar() {
   return (
     <div className="sop-gradient-01 flex h-12 min-w-0 items-center justify-center overflow-hidden px-2 md:justify-between md:gap-3 md:px-sop-48px">
       <p className="sop-body-sm-regular min-w-0 truncate text-center text-sop-base-white md:text-left">
-        <span className="sop-body-sm-medium">สมัครสมาชิก</span>
         <span className="sop-body-sm-regular">
-          &nbsp; Sopet สนับสนุนโดยสถาบันนวัตกรรมบูรณาการแห่งจุฬาฯ (CSII)
+          Sopet สนับสนุนโดยสถาบันนวัตกรรมบูรณาการแห่งจุฬาฯ (CSII)
         </span>
       </p>
       {isLoading ? (

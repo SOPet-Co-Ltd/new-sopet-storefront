@@ -16,6 +16,44 @@ import {
   useMarkAllNotificationsRead,
 } from '@/lib/hooks/useNotifications';
 
+function OffsetPageControls({
+  page,
+  hasMore,
+  loading,
+  onPageChange,
+}: {
+  page: number;
+  hasMore: boolean;
+  loading: boolean;
+  onPageChange: (page: number) => void;
+}) {
+  if (page <= 1 && !hasMore) {
+    return null;
+  }
+
+  return (
+    <div className="mt-6 flex items-center justify-center gap-4" data-testid="notifications-pager">
+      <button
+        type="button"
+        className="sop-body-sm-medium text-sop-secondary-500 underline disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={loading || page <= 1}
+        onClick={() => onPageChange(page - 1)}
+      >
+        ก่อนหน้า
+      </button>
+      <span className="sop-body-sm-regular text-sop-neutral-gray-300">หน้า {page}</span>
+      <button
+        type="button"
+        className="sop-body-sm-medium text-sop-secondary-500 underline disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={loading || !hasMore}
+        onClick={() => onPageChange(page + 1)}
+      >
+        ถัดไป
+      </button>
+    </div>
+  );
+}
+
 type NotificationTypeConfig = {
   label: string;
   badgeClasses: string;
@@ -67,7 +105,8 @@ const DEFAULT_NOTIFICATION_TYPE_CONFIG: NotificationTypeConfig = {
 
 export default function UserNotificationsPage() {
   const [tab, setTab] = useState<'all' | 'unread'>('all');
-  const { notifications, loading, refetch } = useNotifications(tab === 'unread');
+  const [page, setPage] = useState(1);
+  const { notifications, loading, refetch, hasMore } = useNotifications(tab === 'unread', page);
   const [markRead] = useMarkNotificationRead();
   const [markAll] = useMarkAllNotificationsRead();
 
@@ -88,7 +127,10 @@ export default function UserNotificationsPage() {
         <div className="flex items-center gap-2">
           <AccountTabBar
             ariaLabel="แท็บการแจ้งเตือน"
-            onValueChange={(value) => setTab(value as 'all' | 'unread')}
+            onValueChange={(value) => {
+              setTab(value as 'all' | 'unread');
+              setPage(1);
+            }}
             tabs={[
               { id: 'all', label: 'ทั้งหมด' },
               { id: 'unread', label: 'ยังไม่อ่าน' },
@@ -131,6 +173,12 @@ export default function UserNotificationsPage() {
           ))
         )}
       </div>
+      <OffsetPageControls
+        page={page}
+        hasMore={Boolean(hasMore)}
+        loading={loading}
+        onPageChange={setPage}
+      />
     </AccountLayout>
   );
 }

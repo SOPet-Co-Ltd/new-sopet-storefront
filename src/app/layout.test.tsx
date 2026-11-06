@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_TITLE } from '@/lib/seo/constants';
+import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_NAME } from '@/lib/seo/constants';
 import RootLayout, { metadata } from './layout';
 import AuthLayout from './(auth)/layout';
 import CheckoutLayout from './(checkout)/layout';
@@ -65,7 +65,7 @@ describe('RootLayout', () => {
 
   it('exports Thai metadata defaults', () => {
     expect(metadata.title).toMatchObject({
-      default: DEFAULT_SITE_TITLE,
+      default: DEFAULT_SITE_NAME,
       template: 'Sopet | %s',
     });
     expect(metadata.description).toBe(DEFAULT_SITE_DESCRIPTION);

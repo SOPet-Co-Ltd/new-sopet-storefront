@@ -6,10 +6,16 @@ import {
   buildProductMetadata,
   getDefaultOgImageUrl,
   getSiteConfig,
+  sanitizeMetaDescription,
+  stripHtmlForMeta,
   stripMarkdownForMeta,
   truncateDescription,
 } from './metadata';
-import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_TITLE } from '@/lib/seo/constants';
+import {
+  DEFAULT_SITE_DESCRIPTION,
+  DEFAULT_SITE_TITLE,
+  META_DESCRIPTION_MAX_LENGTH,
+} from '@/lib/seo/constants';
 import { CATALOG_PRODUCT_ID, sampleProductDetail } from '@/test/mocks/fixtures/catalog';
 
 const ORIGINAL_ENV = { ...process.env };
@@ -71,6 +77,19 @@ describe('buildPageMetadata', () => {
       card: 'summary_large_image',
       images: ['https://www.sopet.org/og/default-og.jpg'],
     });
+  });
+
+  it('strips HTML tags from description before emitting meta tags', () => {
+    const metadata = buildPageMetadata({
+      title: 'Product',
+      description: '<p><span>อาหารสุนัขคุณภาพสูง สำหรับทุกสายพันธุ์</span></p>',
+      path: '/product/abc',
+    });
+
+    expect(metadata.description).toBe('อาหารสุนัขคุณภาพสูง สำหรับทุกสายพันธุ์');
+    expect(metadata.description).not.toMatch(/[<>]/);
+    expect(metadata.openGraph?.description).toBe(metadata.description);
+    expect(metadata.twitter?.description).toBe(metadata.description);
   });
 
   it('does not throw on minimal input', () => {
@@ -143,5 +162,28 @@ describe('truncateDescription', () => {
 describe('stripMarkdownForMeta', () => {
   it('removes markdown syntax for meta descriptions', () => {
     expect(stripMarkdownForMeta('**Bold** and [link](https://example.com)')).toBe('Bold and link');
+  });
+});
+
+describe('stripHtmlForMeta', () => {
+  it('removes HTML tags and collapses whitespace', () => {
+    expect(stripHtmlForMeta('<p><span>ข้อความ</span></p>')).toBe('ข้อความ');
+    expect(stripHtmlForMeta('<p>Hello&nbsp;&amp; welcome</p>')).toBe('Hello & welcome');
+  });
+});
+
+describe('sanitizeMetaDescription', () => {
+  it('strips HTML and markdown then truncates to meta max length', () => {
+    const html = `<p>${'a'.repeat(200)}</p>`;
+    const result = sanitizeMetaDescription(html);
+
+    expect(result).not.toMatch(/[<>]/);
+    expect(result.length).toBeLessThanOrEqual(META_DESCRIPTION_MAX_LENGTH);
+    expect(result.endsWith('…')).toBe(true);
+  });
+
+  it('returns empty string for nullish input', () => {
+    expect(sanitizeMetaDescription(null)).toBe('');
+    expect(sanitizeMetaDescription(undefined)).toBe('');
   });
 });

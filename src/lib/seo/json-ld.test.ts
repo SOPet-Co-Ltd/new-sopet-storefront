@@ -132,6 +132,19 @@ describe('buildProductJsonLd', () => {
     });
   });
 
+  it('strips HTML tags from product description in JSON-LD', () => {
+    vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
+
+    const productWithHtml = {
+      ...sampleProductDetail,
+      description: '<p><span>High quality dog food</span></p>',
+    };
+    const jsonLd = buildProductJsonLd(productWithHtml, 'https://www.sopet.org/product/prod-001');
+
+    expect(jsonLd.description).toBe('High quality dog food');
+    expect(String(jsonLd.description)).not.toMatch(/[<>]/);
+  });
+
   it('includes up to four Review entries from the server review list', () => {
     vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
 

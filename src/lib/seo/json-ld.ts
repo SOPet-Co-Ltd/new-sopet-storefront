@@ -2,12 +2,7 @@ import { getDefaultVariant } from '@/components/organisms/ProductDetailsVariantS
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 import type { ProductReview } from '@/lib/hooks/useReviews';
 
-import {
-  buildAbsoluteUrl,
-  resolveAbsoluteImageUrl,
-  stripMarkdownForMeta,
-  truncateDescription,
-} from './metadata';
+import { buildAbsoluteUrl, resolveAbsoluteImageUrl, sanitizeMetaDescription } from './metadata';
 
 export type SiteConfig = {
   baseUrl: string;
@@ -99,9 +94,7 @@ export function buildProductJsonLd(
 ): Record<string, unknown> {
   const price = getDefaultOfferPrice(product);
   const defaultVariant = getDefaultVariant(product.variants);
-  const description = truncateDescription(
-    stripMarkdownForMeta(product.description ?? product.name),
-  );
+  const description = sanitizeMetaDescription(product.description ?? product.name);
   const images = collectProductImages(product);
 
   const jsonLd: Record<string, unknown> = {
@@ -231,7 +224,7 @@ export function buildWebPageJsonLd(options: {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     name: options.name,
-    description: truncateDescription(stripMarkdownForMeta(options.description)),
+    description: sanitizeMetaDescription(options.description),
     url: options.url,
   };
 }
@@ -245,7 +238,7 @@ export function buildCollectionPageJsonLd(options: {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: options.name,
-    description: truncateDescription(stripMarkdownForMeta(options.description)),
+    description: sanitizeMetaDescription(options.description),
     url: options.url,
   };
 }

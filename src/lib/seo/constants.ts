@@ -4,6 +4,8 @@ export const PRODUCT_STATUS_PUBLISHED = 'published';
 export const DEFAULT_BASE_URL = 'http://localhost:3000';
 export const DEFAULT_SITE_NAME = 'Sopet';
 export const DEFAULT_DESCRIPTION_MAX_LENGTH = 160;
+/** SERP-friendly meta description length (Google typically shows ~155 chars). */
+export const META_DESCRIPTION_MAX_LENGTH = 155;
 
 export const DEFAULT_SITE_TITLE_SEGMENT =
   'ยาสัตว์ออนไลน์ ของแท้ Nexgard, Apoquel, Cardisure และอีก 100 แบรนด์';

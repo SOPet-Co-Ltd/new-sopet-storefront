@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import nextConfig from './next.config';
+import nextConfig, { buildProductionCsp } from './next.config';
 
 describe('next.config redirects', () => {
   it('redirects /products to /search and /categories to home', async () => {
@@ -39,6 +39,23 @@ describe('next.config security headers', () => {
     expect(byKey['X-Frame-Options']).toBe('DENY');
     expect(byKey['X-Content-Type-Options']).toBe('nosniff');
     expect(byKey['Referrer-Policy']).toBe('strict-origin-when-cross-origin');
+  });
+
+  it('allows GraphQL API WebSocket origin in connect-src when backend origin is set', () => {
+    const csp = buildProductionCsp({
+      NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN: 'https://api.example.com',
+    } as NodeJS.ProcessEnv);
+
+    expect(csp).toContain('wss://api.example.com');
+    expect(csp).toContain('https://api.beamcheckout.com');
+  });
+
+  it('allows explicit NEXT_PUBLIC_GRAPHQL_WS_URL origin in connect-src', () => {
+    const csp = buildProductionCsp({
+      NEXT_PUBLIC_GRAPHQL_WS_URL: 'wss://payments-api.sopet.org/graphql',
+    } as NodeJS.ProcessEnv);
+
+    expect(csp).toContain('wss://payments-api.sopet.org');
   });
 });
 

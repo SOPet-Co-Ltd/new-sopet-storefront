@@ -14,7 +14,17 @@ export const GRAPHQL_URL =
 Browser → `/graphql` (rewritten by `next.config.ts`).
 SSR → direct backend URL.
 
-WebSocket subscriptions use `getGraphqlWsUrl()` (defaults to `ws://localhost:3002/graphql`). Optional overrides: `NEXT_PUBLIC_GRAPHQL_WS_URL`, `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN`, `GRAPHQL_WS_SSR_URL`.
+### WebSocket subscriptions (live payment)
+
+Browser GraphQL **subscriptions** connect **directly** to the API WebSocket (`getGraphqlWsUrl()`), not through the Next.js `/graphql` HTTP rewrite. Used for `paymentStatusUpdated` so the payment page can redirect when a Beam webhook marks the charge paid.
+
+| Env                                  | Role                                                                                                                                               |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN` | Preferred on UAT/prod — e.g. `https://api.example.com`. Builds `wss://api.example.com/graphql` and adds that host to production CSP `connect-src`. |
+| `NEXT_PUBLIC_GRAPHQL_WS_URL`         | Full WS URL override (takes precedence), e.g. `wss://api.example.com/graphql`.                                                                     |
+| `GRAPHQL_WS_SSR_URL`                 | Server-only default when resolving WS URL outside the browser.                                                                                     |
+
+Local default when unset: `ws://localhost:3002/graphql`. Development skips CSP; UAT/prod **must** set one of the public WS vars or the browser will block `wss:` and fall back to HTTP polling while pending.
 
 ### Cloudflare SSR bypass (UAT/prod)
 
@@ -45,7 +55,7 @@ Shared fragment example: `operations/fragments/ProductCardFields.graphql`.
 2. Else the first existing candidate: `../sopet-backend/src/schema.gql` or `sopet-backend/src/schema.gql`
 3. Else defaults to `../sopet-backend/src/schema.gql`
 
-Documents: `src/lib/graphql/operations/**/*.graphql`  
+Documents: `src/lib/graphql/operations/**/*.graphql`
 Output: `src/lib/graphql/generated/graphql.ts` (plugins: `typescript`, `typescript-operations`, `typed-document-node`)
 
 ```bash

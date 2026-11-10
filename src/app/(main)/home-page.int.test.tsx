@@ -37,6 +37,12 @@ const SAMPLE_PRODUCT = {
   reviewCount: 12,
   soldCount: 40,
   variants: null,
+  store: {
+    __typename: 'StoreType' as const,
+    id: 'store-1',
+    name: 'Happy Pets',
+    slug: 'happy-pets',
+  },
 };
 
 describe('Home SSR reconciliation', () => {

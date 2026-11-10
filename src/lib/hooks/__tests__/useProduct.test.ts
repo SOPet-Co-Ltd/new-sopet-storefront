@@ -6,6 +6,7 @@ import { useProduct } from '@/lib/hooks/useProduct';
 import { server } from '@/test/mocks/server';
 import {
   CATALOG_PRODUCT_ID,
+  CATALOG_PRODUCT_PATH,
   CATALOG_STORE_ID,
   sampleProductDetail,
 } from '@/test/mocks/fixtures/catalog';
@@ -40,6 +41,24 @@ describe('useProduct', () => {
 
     await waitFor(() => {
       expect(result.current.product?.name).toBe('Premium Dog Food 5kg');
+    });
+    expect(result.current.missingStoreId).toBe(false);
+  });
+
+  it('resolves product by SEO path', async () => {
+    server.use(
+      graphql.query('ProductByPath', ({ variables }) => {
+        expect(variables).toEqual({ path: CATALOG_PRODUCT_PATH });
+        return HttpResponse.json({ data: { productByPath: sampleProductDetail } });
+      }),
+    );
+
+    const { result } = renderHook(() => useProduct({ mode: 'path', path: CATALOG_PRODUCT_PATH }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.product?.id).toBe(CATALOG_PRODUCT_ID);
     });
     expect(result.current.missingStoreId).toBe(false);
   });

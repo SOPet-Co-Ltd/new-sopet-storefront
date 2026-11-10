@@ -12,6 +12,7 @@ import { server } from '@/test/mocks/server';
 const STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
 const PRODUCT_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
 const SLUG = 'premium-dog-food-5kg';
+const PRODUCT_PATH = `${SLUG}-sopet-pet-shop`;
 
 const SAMPLE_PRODUCT_DETAIL = {
   __typename: 'ProductType' as const,
@@ -275,7 +276,7 @@ describe('ProductDetailsPage', () => {
   it('renders gallery, variants, seller, and reviews by product id', async () => {
     mockProductQueries();
 
-    render(<ProductDetailsPage productId={PRODUCT_ID} />, {
+    render(<ProductDetailsPage productPath={PRODUCT_PATH} productId={PRODUCT_ID} />, {
       wrapper: createWrapper(),
     });
 
@@ -300,7 +301,7 @@ describe('ProductDetailsPage', () => {
     mockProductQueries();
     const user = userEvent.setup();
 
-    render(<ProductDetailsPage productId={PRODUCT_ID} />, {
+    render(<ProductDetailsPage productPath={PRODUCT_PATH} productId={PRODUCT_ID} />, {
       wrapper: createWrapper(),
     });
 
@@ -321,7 +322,7 @@ describe('ProductDetailsPage', () => {
       productError: { code: 'PRODUCT_NOT_FOUND', message: 'Product not found' },
     });
 
-    render(<ProductDetailsPage productId={PRODUCT_ID} />, {
+    render(<ProductDetailsPage productPath={PRODUCT_PATH} productId={PRODUCT_ID} />, {
       wrapper: createWrapper(),
     });
 
@@ -333,9 +334,12 @@ describe('ProductDetailsPage', () => {
   it('renders a single visible h1, article landmark, and breadcrumb trail with category crumb', async () => {
     mockProductQueries();
 
-    const { container } = render(<ProductDetailsPage productId={PRODUCT_ID} />, {
-      wrapper: createWrapper(),
-    });
+    const { container } = render(
+      <ProductDetailsPage productPath={PRODUCT_PATH} productId={PRODUCT_ID} />,
+      {
+        wrapper: createWrapper(),
+      },
+    );
 
     expect(await screen.findByTestId('product-details-page')).toBeInTheDocument();
 

@@ -8,6 +8,7 @@ import { SearchSuggestionsDropdown } from '@/components/molecules/SearchSuggesti
 import { useNavbarSearchCombobox, type ComboboxOption } from '@/lib/hooks/useNavbarSearchCombobox';
 import { useRecentSearches } from '@/lib/hooks/useRecentSearches';
 import { useSearchSuggestions } from '@/lib/hooks/useSearchSuggestions';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 import { MIN_SEARCH_QUERY_LENGTH } from '@/lib/search/constants';
 import { queryGraphemeLength } from '@/lib/search/queryLength';
 import { cn } from '@/lib/utils';
@@ -31,7 +32,14 @@ function toProductOptions(
     type: 'product',
     id: product.id,
     label: product.name,
-    href: `/product/${product.id}`,
+    href: buildProductHref(
+      {
+        slug: product.slug,
+        store: { slug: product.storeSlug },
+        id: product.id,
+      },
+      { encode: true },
+    ),
     thumbnailUrl: product.thumbnailUrl,
   }));
 }

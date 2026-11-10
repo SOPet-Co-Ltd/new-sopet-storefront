@@ -114,9 +114,16 @@ describe('PDP SSR reconciliation', () => {
       ),
     );
 
-    render(<ProductDetailsPage productId="prod-1" initialProduct={SAMPLE_PRODUCT_DETAIL} />, {
-      wrapper: createPdpWrapper(),
-    });
+    render(
+      <ProductDetailsPage
+        productPath="premium-dog-food-happy-pets"
+        productId="prod-1"
+        initialProduct={SAMPLE_PRODUCT_DETAIL}
+      />,
+      {
+        wrapper: createPdpWrapper(),
+      },
+    );
 
     expect(screen.getByTestId('product-details-page')).toBeInTheDocument();
     expect(screen.getAllByText('Premium Dog Food 5kg').length).toBeGreaterThan(0);

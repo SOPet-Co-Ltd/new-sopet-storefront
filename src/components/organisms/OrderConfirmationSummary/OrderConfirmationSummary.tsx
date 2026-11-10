@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ProductThumbnail } from '@/components/molecules/ProductThumbnail/ProductThumbnail';
-import { buildProductHref } from '@/components/organisms/ProductCard';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { labelFulfillmentStatus } from '@/lib/constants/fulfillmentStatus';
 import {
@@ -53,7 +53,7 @@ type OrderConfirmationSummaryProps = {
 };
 
 function OrderConfirmationItemRow({ item }: { item: OrderSummaryDisplayItem }) {
-  const productHref = item.productId ? buildProductHref(item.productId) : null;
+  const productHref = item.productId ? buildProductHref({ id: item.productId }) : null;
   const variantOptionsLabel = formatOrderVariantOptions(item.variantOptions);
   const isHeld = item.fulfillmentStatus === HOLD_FULFILLMENT_STATUS;
   const rowClassName =

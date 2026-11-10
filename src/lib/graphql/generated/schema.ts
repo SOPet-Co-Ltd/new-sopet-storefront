@@ -2385,6 +2385,7 @@ export type Query = {
   platformTopProducts: Array<TopProductType>;
   platformTopStores: Array<TopStoreType>;
   product: ProductType;
+  productByPath: ProductType;
   productBySlug: ProductType;
   productPublishChecklist: ProductPublishChecklistType;
   productReviews: Array<ReviewType>;
@@ -2684,6 +2685,10 @@ export type QueryPlatformTopStoresArgs = {
 
 export type QueryProductArgs = {
   id: Scalars['String']['input'];
+};
+
+export type QueryProductByPathArgs = {
+  path: Scalars['String']['input'];
 };
 
 export type QueryProductBySlugArgs = {
@@ -3116,6 +3121,7 @@ export type SearchProductSuggestionType = {
   id: Scalars['String']['output'];
   name: Scalars['String']['output'];
   slug: Scalars['String']['output'];
+  storeSlug: Scalars['String']['output'];
   thumbnailUrl?: Maybe<Scalars['String']['output']>;
 };
 

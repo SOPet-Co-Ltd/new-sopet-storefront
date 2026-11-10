@@ -9,6 +9,11 @@ fragment ProductCardFields on ProductType {
   averageRating
   reviewCount
   soldCount
+  store {
+    id
+    name
+    slug
+  }
   variants {
     id
     price

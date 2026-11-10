@@ -64,7 +64,7 @@ describe('ProductCard', () => {
     render(<ProductCard product={SAMPLE_PRODUCT} />);
 
     const link = screen.getByRole('link', { name: 'ดู Premium Dog Food 5kg' });
-    expect(link).toHaveAttribute('href', buildProductHref(SAMPLE_PRODUCT.id));
+    expect(link).toHaveAttribute('href', buildProductHref(SAMPLE_PRODUCT));
   });
 });
 

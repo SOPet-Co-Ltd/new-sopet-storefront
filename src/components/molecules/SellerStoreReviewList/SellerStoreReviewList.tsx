@@ -5,6 +5,7 @@ import type { StoreReview } from '@/lib/hooks/useReviews';
 
 type SellerStoreReviewListProps = {
   reviews: StoreReview[];
+  storeSlug: string;
   currentPage: number;
   totalCount: number;
   onPageChange: (page: number) => void;
@@ -12,6 +13,7 @@ type SellerStoreReviewListProps = {
 
 export function SellerStoreReviewList({
   reviews,
+  storeSlug,
   currentPage,
   totalCount,
   onPageChange,
@@ -23,7 +25,7 @@ export function SellerStoreReviewList({
     <div data-testid="seller-store-review-list">
       <ul className="divide-y">
         {reviews.map((review) => (
-          <SellerStoreReviewListItem key={review.id} review={review} />
+          <SellerStoreReviewListItem key={review.id} review={review} storeSlug={storeSlug} />
         ))}
       </ul>
       <SellerStoreReviewPagination

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/atoms/Button';
-import { buildProductHref } from '@/components/organisms/ProductCard';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 import type { FavoriteItem } from '@/lib/hooks/useFavorites';
 
 function formatPrice(amount: number): string {
@@ -54,7 +54,7 @@ export function FavoritesGrid({
             key={item.id}
             className="overflow-hidden rounded-sop-12px border border-sop-neutral-grayalpha-200 bg-sop-base-white"
           >
-            <Link href={buildProductHref(product.id)} className="block">
+            <Link href={buildProductHref(product, { encode: true })} className="block">
               <div className="relative aspect-square bg-sop-neutral-gray-500">
                 {imageUrl ? (
                   <Image

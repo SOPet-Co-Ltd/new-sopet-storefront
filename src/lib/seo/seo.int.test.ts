@@ -51,7 +51,11 @@ import { resolve } from 'node:path';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildRootMetadata } from '@/app/layout';
-import { CATALOG_PRODUCT_ID, sampleProductDetail } from '@/test/mocks/fixtures/catalog';
+import {
+  CATALOG_PRODUCT_ID,
+  CATALOG_PRODUCT_PATH,
+  sampleProductDetail,
+} from '@/test/mocks/fixtures/catalog';
 import { buildProductJsonLd, getDefaultOfferPrice } from './json-ld';
 import {
   getCategoryIndexation,
@@ -90,8 +94,8 @@ describe('integration test 1 of 3 — product metadata and JSON-LD parity', () =
   it('emits canonical, title, OG, robots, and JSON-LD offers matching fixture', () => {
     vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
 
-    const productPath = `/product/${CATALOG_PRODUCT_ID}`;
-    const expectedCanonical = `https://www.sopet.org/product/${CATALOG_PRODUCT_ID}`;
+    const productPath = `/product/${CATALOG_PRODUCT_PATH}`;
+    const expectedCanonical = `https://www.sopet.org/product/${CATALOG_PRODUCT_PATH}`;
     const expectedPrice = getDefaultOfferPrice(sampleProductDetail);
 
     const metadata = buildProductMetadata(sampleProductDetail, productPath);

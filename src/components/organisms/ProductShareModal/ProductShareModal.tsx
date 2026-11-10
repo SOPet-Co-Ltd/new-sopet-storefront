@@ -7,6 +7,7 @@ import { InstagramCustomIcon } from '@/components/atoms/icons/filled/InstagramCu
 import type { VariantOptions } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 import { trackShare } from '@/lib/analytics';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 import { buildAbsoluteUrl } from '@/lib/seo/metadata';
 
 type ShareButtonConfig = {
@@ -46,16 +47,16 @@ export function getProductShareText(product: ProductDetail): string {
 }
 
 /**
- * Canonical, always-public share URL: `{NEXT_PUBLIC_BASE_URL}/product/{id}`
+ * Canonical, always-public share URL: `{NEXT_PUBLIC_BASE_URL}/product/{slug}-{storeSlug}`
  * plus the currently selected variant options as query params (decision 2B).
  * Independent of `window.location`, so shared links never leak localhost, the
  * current host, or tracking params, and always resolve OG previews.
  */
 export function buildProductShareUrl(
-  productId: string,
+  product: Pick<ProductDetail, 'id' | 'slug' | 'store'>,
   selectedOptions: VariantOptions = {},
 ): string {
-  const base = buildAbsoluteUrl(`/product/${productId}`);
+  const base = buildAbsoluteUrl(buildProductHref(product, { encode: true }));
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(selectedOptions)) {
@@ -117,8 +118,8 @@ export function ProductShareModal({
   selectedOptions?: VariantOptions;
 }) {
   const productLink = useMemo(
-    () => buildProductShareUrl(product.id, selectedOptions),
-    [product.id, selectedOptions],
+    () => buildProductShareUrl(product, selectedOptions),
+    [product, selectedOptions],
   );
 
   const emitShare = (method: string) => {

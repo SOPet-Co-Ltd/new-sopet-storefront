@@ -67,38 +67,85 @@ function ReviewerAvatar({
   return <AvatarPlaceholder name={name} />;
 }
 
-export const RANDOM_THAI_NAMES = [
-  'สมชาย ส.',
-  'กมลวรรณ ท.',
-  'ณัฐวุฒิ พ.',
-  'ศิริพร อ.',
-  'ธีรเดช ก.',
-  'พิมลดา ว.',
-  'อรรถพล ม.',
-  'วรรณภา บ.',
-  'ชลธิชา ส.',
-  'ชัยรัตน์ จ.',
-  'ทัศนีย์ ป.',
-  'ปิยะภัทร ช.',
-  'สิริกานต์ ศ.',
-  'อนุรักษ์ น.',
-  'วิภาวี ร.',
-  'พงศกร ล.',
-  'กานดา ด.',
-  'จิราพร อ.',
-  'เกียรติศักดิ์ พ.',
-  'สุจิตรา ธ.',
-  'ธนากร บ.',
-  'วรัญญา ม.',
-  'ปรีชา ว.',
-  'อรทัย ร.',
-  'นพดล ส.',
-  'กุลธิดา ก.',
-  'สุรชัย ช.',
-  'รัตนาภรณ์ พ.',
-  'เอกชัย อ.',
-  'มณีรัตน์ ท.',
+const REVIEWER_GIVEN_NAMES = [
+  'สมชาย',
+  'กมลวรรณ',
+  'ณัฐวุฒิ',
+  'ศิริพร',
+  'ธีรเดช',
+  'พิมลดา',
+  'อรรถพล',
+  'วรรณภา',
+  'ชลธิชา',
+  'ชัยรัตน์',
+  'ทัศนีย์',
+  'ปิยะภัทร',
+  'สิริกานต์',
+  'อนุรักษ์',
+  'วิภาวี',
+  'พงศกร',
+  'กานดา',
+  'จิราพร',
+  'เกียรติศักดิ์',
+  'สุจิตรา',
+  'ธนากร',
+  'วรัญญา',
+  'ปรีชา',
+  'อรทัย',
+  'นพดล',
+  'กุลธิดา',
+  'สุรชัย',
+  'รัตนาภรณ์',
+  'เอกชัย',
+  'มณีรัตน์',
+  'อภิชาติ',
+  'ศุภชัย',
+  'ชนิดา',
+  'ภาวิณี',
+  'ธนพล',
+  'ปวีณา',
+  'อดิศร',
+  'ณัฐธิดา',
+  'วสันต์',
+  'สุภาพร',
 ] as const;
+
+const REVIEWER_SURNAME_INITIALS = [
+  'ก',
+  'ข',
+  'ค',
+  'จ',
+  'ช',
+  'ณ',
+  'ด',
+  'ต',
+  'ท',
+  'น',
+  'บ',
+  'ป',
+  'พ',
+  'ภ',
+  'ม',
+  'ย',
+  'ร',
+  'ล',
+  'ว',
+  'ส',
+] as const;
+
+const REVIEWER_ALIAS_PATTERN = /^[\u0E00-\u0E7F]+ [\u0E00-\u0E7F]\.$/;
+
+export function isReviewerAlias(name: string): boolean {
+  return REVIEWER_ALIAS_PATTERN.test(name);
+}
+
+function composeReviewerAlias(hash: number): string {
+  const unsigned = hash >>> 0;
+  const givenName = REVIEWER_GIVEN_NAMES[unsigned % REVIEWER_GIVEN_NAMES.length];
+  const surnameInitial =
+    REVIEWER_SURNAME_INITIALS[(unsigned >>> 8) % REVIEWER_SURNAME_INITIALS.length];
+  return `${givenName} ${surnameInitial}.`;
+}
 
 export function isGenericOrMissingName(name: string | null | undefined): boolean {
   if (!name) return true;
@@ -119,7 +166,7 @@ export function getReviewerName(review: { id?: string; customerName?: string | n
 
   const seed = review.id || '';
   if (!seed) {
-    return RANDOM_THAI_NAMES[0];
+    return composeReviewerAlias(0);
   }
 
   let hash = 0;
@@ -127,8 +174,7 @@ export function getReviewerName(review: { id?: string; customerName?: string | n
     hash = (hash << 5) - hash + seed.charCodeAt(i);
     hash |= 0;
   }
-  const index = Math.abs(hash) % RANDOM_THAI_NAMES.length;
-  return RANDOM_THAI_NAMES[index];
+  return composeReviewerAlias(hash);
 }
 
 export function ProductReviewItem({ review }: ProductReviewItemProps) {

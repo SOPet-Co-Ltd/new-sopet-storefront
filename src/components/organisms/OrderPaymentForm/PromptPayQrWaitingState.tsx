@@ -6,7 +6,7 @@ import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 import { formatCountdown } from '@/lib/hooks/usePaymentCountdown';
 
 type PromptPayQrWaitingStateProps = {
-  qrCodeUrl: string;
+  qrCodeSrc: string;
   amountLabel: string;
   orderNumber?: string | null;
   orderCreatedAt?: string | null;
@@ -15,7 +15,7 @@ type PromptPayQrWaitingStateProps = {
   actions?: ReactNode;
 };
 
-/** Omise PromptPay document: 740×1050, navy header band is the top 176px. */
+/** Legacy Omise PromptPay document: 740×1050, navy header band is the top 176px. */
 const OMISE_QR_WIDTH = 740;
 const OMISE_QR_HEADER = 176;
 const OMISE_QR_BODY = 1050 - OMISE_QR_HEADER;
@@ -35,18 +35,18 @@ function DownloadIcon() {
   );
 }
 
-async function saveQrCode(qrCodeUrl: string) {
+async function saveQrCode(qrCodeSrc: string) {
   const filename = 'promptpay-qr.png';
 
-  if (qrCodeUrl.startsWith('data:')) {
+  if (qrCodeSrc.startsWith('data:')) {
     const anchor = document.createElement('a');
-    anchor.href = qrCodeUrl;
+    anchor.href = qrCodeSrc;
     anchor.download = filename;
     anchor.click();
     return;
   }
 
-  const response = await fetch(qrCodeUrl);
+  const response = await fetch(qrCodeSrc);
   if (!response.ok) {
     throw new Error('QR download failed');
   }
@@ -62,19 +62,19 @@ async function saveQrCode(qrCodeUrl: string) {
   URL.revokeObjectURL(objectUrl);
 }
 
-function DownloadQrButton({ qrCodeUrl }: { qrCodeUrl: string }) {
+function DownloadQrButton({ qrCodeSrc }: { qrCodeSrc: string }) {
   const [saving, setSaving] = useState(false);
 
   const onSave = useCallback(async () => {
     setSaving(true);
     try {
-      await saveQrCode(qrCodeUrl);
+      await saveQrCode(qrCodeSrc);
     } catch {
-      window.open(qrCodeUrl, '_blank', 'noopener,noreferrer');
+      window.open(qrCodeSrc, '_blank', 'noopener,noreferrer');
     } finally {
       setSaving(false);
     }
-  }, [qrCodeUrl]);
+  }, [qrCodeSrc]);
 
   return (
     <Button
@@ -112,37 +112,52 @@ function PaymentCountdown({
   );
 }
 
-function QrSlipCard({ qrCodeUrl, countdown }: { qrCodeUrl: string; countdown?: ReactNode }) {
+function QrSlipCard({ qrCodeSrc, countdown }: { qrCodeSrc: string; countdown?: ReactNode }) {
+  // Beam returns a bare QR as base64 (data URL); legacy Omise rows are a full remote slip document.
+  const isBareQrImage = qrCodeSrc.startsWith('data:');
+
   return (
     <div className="overflow-hidden rounded-[20px] border border-sop-neutral-grayalpha-200 bg-white">
-      {/* Official Thai QR header is the top band of the Omise document. */}
-      <div
-        className="relative w-full overflow-hidden"
-        style={{ aspectRatio: `${OMISE_QR_WIDTH} / ${OMISE_QR_HEADER}` }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element -- remote Omise QR document */}
-        <img
-          src={qrCodeUrl}
-          alt=""
-          aria-hidden
-          className="absolute inset-x-0 top-0 w-full max-w-none"
-        />
-      </div>
-      {countdown}
-      <div
-        className="relative w-full overflow-hidden"
-        style={{ aspectRatio: `${OMISE_QR_WIDTH} / ${OMISE_QR_BODY}` }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element -- remote Omise QR document */}
-        <img
-          src={qrCodeUrl}
-          alt="PromptPay QR Code"
-          className="absolute inset-x-0 w-full max-w-none"
-          style={{ top: `calc(${OMISE_QR_HEADER} / ${OMISE_QR_BODY} * -100%)` }}
-        />
-      </div>
+      {isBareQrImage ? (
+        <>
+          {countdown}
+          <div className="flex w-full justify-center p-4">
+            {/* eslint-disable-next-line @next/next/no-img-element -- inline base64 QR image */}
+            <img src={qrCodeSrc} alt="PromptPay QR Code" className="h-auto w-full max-w-[320px]" />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Official Thai QR header is the top band of the legacy Omise document. */}
+          <div
+            className="relative w-full overflow-hidden"
+            style={{ aspectRatio: `${OMISE_QR_WIDTH} / ${OMISE_QR_HEADER}` }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- remote legacy QR document */}
+            <img
+              src={qrCodeSrc}
+              alt=""
+              aria-hidden
+              className="absolute inset-x-0 top-0 w-full max-w-none"
+            />
+          </div>
+          {countdown}
+          <div
+            className="relative w-full overflow-hidden"
+            style={{ aspectRatio: `${OMISE_QR_WIDTH} / ${OMISE_QR_BODY}` }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- remote legacy QR document */}
+            <img
+              src={qrCodeSrc}
+              alt="PromptPay QR Code"
+              className="absolute inset-x-0 w-full max-w-none"
+              style={{ top: `calc(${OMISE_QR_HEADER} / ${OMISE_QR_BODY} * -100%)` }}
+            />
+          </div>
+        </>
+      )}
       <div className="flex justify-center px-4 pb-5 pt-1">
-        <DownloadQrButton qrCodeUrl={qrCodeUrl} />
+        <DownloadQrButton qrCodeSrc={qrCodeSrc} />
       </div>
     </div>
   );
@@ -202,7 +217,7 @@ function ReferenceIdCard({ referenceId }: { referenceId: string }) {
 }
 
 export function PromptPayQrWaitingState({
-  qrCodeUrl,
+  qrCodeSrc,
   amountLabel,
   orderNumber,
   orderCreatedAt,
@@ -237,7 +252,7 @@ export function PromptPayQrWaitingState({
 
       <div className="md:order-1 md:col-start-1 md:row-span-2 md:row-start-1">
         <QrSlipCard
-          qrCodeUrl={qrCodeUrl}
+          qrCodeSrc={qrCodeSrc}
           countdown={
             remainingMs !== null ? (
               <div className="hidden px-3 pt-3 md:block">

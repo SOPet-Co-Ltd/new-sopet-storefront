@@ -3,12 +3,14 @@ export const sampleSearchProductSuggestions = [
     id: 'prod-royal-canin',
     name: 'Royal Canin Cat Food',
     slug: 'royal-canin-cat-food',
+    storeSlug: 'sopet-pet-shop',
     thumbnailUrl: 'https://example.com/royal-canin.jpg',
   },
   {
     id: 'prod-dog-treats',
     name: 'Premium Dog Treats',
     slug: 'premium-dog-treats',
+    storeSlug: 'sopet-pet-shop',
     thumbnailUrl: null,
   },
 ];

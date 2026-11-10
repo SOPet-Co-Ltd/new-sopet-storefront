@@ -68,7 +68,9 @@ describe('Seller reviews vendor reply fixture-e2e', () => {
     );
 
     const user = userEvent.setup();
-    render(<SellerReviewTab storeId={STORE_ID} />, { wrapper: createWrapper() });
+    render(<SellerReviewTab storeId={STORE_ID} storeSlug="sopet-pet-shop" />, {
+      wrapper: createWrapper(),
+    });
 
     expect(await screen.findByText('รีวิวจากลูกค้า')).toBeInTheDocument();
     expect(screen.getByText('4.8')).toBeInTheDocument();
@@ -104,7 +106,9 @@ describe('Seller reviews vendor reply fixture-e2e', () => {
       graphql.query('StoreReviews', () => HttpResponse.json({ data: { storeReviews: [] } })),
     );
 
-    render(<SellerReviewTab storeId={STORE_ID} />, { wrapper: createWrapper() });
+    render(<SellerReviewTab storeId={STORE_ID} storeSlug="sopet-pet-shop" />, {
+      wrapper: createWrapper(),
+    });
 
     expect(await screen.findByText('ยังไม่มีรีวิว')).toBeInTheDocument();
     expect(screen.getByText('คะแนนร้านค้า')).toBeInTheDocument();

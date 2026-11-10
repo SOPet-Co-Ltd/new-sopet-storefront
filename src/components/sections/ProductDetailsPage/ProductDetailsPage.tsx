@@ -30,11 +30,15 @@ import { useCategories } from '@/lib/hooks/useCategories';
 import { useProduct } from '@/lib/hooks/useProduct';
 import { useReviews, type ProductReview } from '@/lib/hooks/useReviews';
 import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 import { cn } from '@/lib/utils';
 import { HomeFaqSection, HOME_FAQ_ITEMS } from '@/components/sections/HomeFaqSection';
 
 type ProductDetailsPageProps = {
-  productId: string;
+  /** SEO path segment `{productSlug}-{storeSlug}`, or legacy UUID before redirect. */
+  productPath: string;
+  /** When SSR already resolved the product, client refetches by id. */
+  productId?: string;
   initialProduct?: ProductByIdQuery['product'];
   /** Server-fetched reviews so review text is present in the first HTML. */
   initialProductReviews?: ProductReview[];
@@ -57,21 +61,23 @@ function ProductDetailsSkeleton() {
 }
 
 export default function ProductDetailsPage({
-  productId,
+  productPath,
+  productId: productIdProp,
   initialProduct,
   initialProductReviews,
   variantSearchParams,
 }: ProductDetailsPageProps) {
+  const resolvedProductId = productIdProp ?? initialProduct?.id;
   const {
     product: fetchedProduct,
     loading,
     error,
-  } = useProduct({
-    mode: 'id',
-    id: productId,
-  });
+  } = useProduct(
+    resolvedProductId ? { mode: 'id', id: resolvedProductId } : { mode: 'path', path: productPath },
+  );
   const product = fetchedProduct ?? initialProduct ?? null;
   const showLoading = !initialProduct && loading;
+  const productId = product?.id ?? resolvedProductId ?? productPath;
 
   const [reviewWindow, setReviewWindow] = useState({
     productId,
@@ -179,7 +185,7 @@ export default function ProductDetailsPage({
       });
     }
 
-    items.push({ label: product.name, path: `/product/${product.id}` });
+    items.push({ label: product.name, path: buildProductHref(product) });
     return items;
   }, [categories, product]);
 

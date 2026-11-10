@@ -1,9 +1,10 @@
 import {
-  OmiseConfigurationError,
+  BeamConfigurationError,
   parseCardExpiry,
   tokenizeCard,
   type TokenizeCardInput,
-} from '@/lib/payment/omise';
+  type TokenizedCard,
+} from '@/lib/payment/beam';
 import {
   cleanCardNumber,
   getCvvLength,
@@ -31,18 +32,21 @@ export const EMPTY_CHECKOUT_CARD_FORM: CheckoutCardFormState = {
 export type CardPaymentPayload =
   | {
       type: 'token';
-      omiseToken: string;
+      cardToken: string;
+      cardSecurityCode: string;
+      tokenizedCard: TokenizedCard;
       saveCardForNextTime: boolean;
       cardForm: CheckoutCardFormState;
     }
-  | { type: 'saved'; savedPaymentMethodId: string };
+  | { type: 'saved'; savedPaymentMethodId: string; cardSecurityCode: string };
 
 type CheckoutCardPaymentBridge = {
   getCardForm: () => CheckoutCardFormState;
   validateCardForm: () => boolean;
-  tokenizeCardForCheckout: () => Promise<string>;
+  tokenizeCardForCheckout: () => Promise<TokenizedCard>;
   clearCardForm: () => void;
   getSavedPaymentMethodId: () => string | null;
+  getSavedCardCvv: () => string;
   shouldUseSavedCard: () => boolean;
   getSaveCardForNextTime: () => boolean;
 };
@@ -78,10 +82,17 @@ export function isCheckoutCardPaymentReady(): boolean {
   }
 
   if (bridge.shouldUseSavedCard()) {
-    return Boolean(bridge.getSavedPaymentMethodId());
+    return (
+      Boolean(bridge.getSavedPaymentMethodId()) && isValidSavedCardCvv(bridge.getSavedCardCvv())
+    );
   }
 
   return bridge.validateCardForm();
+}
+
+/** Saved cards keep no CVV; Beam requires one on every charge (3 digits, or 4 for Amex). */
+export function isValidSavedCardCvv(cvv: string): boolean {
+  return /^\d{3,4}$/.test(cvv.trim());
 }
 
 export type CheckoutCardFieldErrors = Partial<
@@ -142,7 +153,6 @@ function buildTokenizeInput(form: CheckoutCardFormState): TokenizeCardInput {
     number: cleanCardNumber(form.cardNumber),
     expirationMonth: month,
     expirationYear: year,
-    securityCode: form.cvv,
     name: form.cardName.trim(),
   };
 }
@@ -184,7 +194,12 @@ export async function prepareCardPayment(): Promise<CardPaymentPayload> {
       throw new Error('กรุณาเลือกบัตรที่บันทึกไว้');
     }
 
-    return { type: 'saved', savedPaymentMethodId };
+    const cardSecurityCode = bridge.getSavedCardCvv().trim();
+    if (!isValidSavedCardCvv(cardSecurityCode)) {
+      throw new Error('กรุณากรอกรหัส CVV ของบัตรที่บันทึกไว้');
+    }
+
+    return { type: 'saved', savedPaymentMethodId, cardSecurityCode };
   }
 
   const form = bridge.getCardForm();
@@ -194,12 +209,19 @@ export async function prepareCardPayment(): Promise<CardPaymentPayload> {
   }
 
   try {
-    const omiseToken = await bridge.tokenizeCardForCheckout();
+    const tokenizedCard = await bridge.tokenizeCardForCheckout();
     const saveCardForNextTime = bridge.getSaveCardForNextTime();
     const cardForm = bridge.getCardForm();
-    return { type: 'token', omiseToken, saveCardForNextTime, cardForm };
+    return {
+      type: 'token',
+      cardToken: tokenizedCard.cardToken,
+      cardSecurityCode: form.cvv.replace(/\D/g, ''),
+      tokenizedCard,
+      saveCardForNextTime,
+      cardForm,
+    };
   } catch (error) {
-    if (error instanceof OmiseConfigurationError) {
+    if (error instanceof BeamConfigurationError) {
       throw error;
     }
 
@@ -215,13 +237,14 @@ export async function prepareCardPaymentToken(): Promise<string> {
     throw new Error('กรุณากรอกข้อมูลบัตรเครดิตให้ครบ');
   }
 
-  return payload.omiseToken;
+  return payload.cardToken;
 }
 
 export function createCheckoutCardPaymentBridge(handlers: {
   getCardForm: () => CheckoutCardFormState;
   clearCardForm: () => void;
   getSavedPaymentMethodId: () => string | null;
+  getSavedCardCvv: () => string;
   shouldUseSavedCard: () => boolean;
   getSaveCardForNextTime: () => boolean;
 }): CheckoutCardPaymentBridge {
@@ -229,6 +252,7 @@ export function createCheckoutCardPaymentBridge(handlers: {
     getCardForm: handlers.getCardForm,
     clearCardForm: handlers.clearCardForm,
     getSavedPaymentMethodId: handlers.getSavedPaymentMethodId,
+    getSavedCardCvv: handlers.getSavedCardCvv,
     shouldUseSavedCard: handlers.shouldUseSavedCard,
     getSaveCardForNextTime: handlers.getSaveCardForNextTime,
     validateCardForm: () => validateCheckoutCardForm(handlers.getCardForm()) === null,

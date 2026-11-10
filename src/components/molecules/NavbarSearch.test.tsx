@@ -150,7 +150,7 @@ describe('NavbarSearch', () => {
     await user.keyboard('{ArrowDown}{Enter}');
 
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/product/prod-royal-canin');
+      expect(push).toHaveBeenCalledWith('/product/royal-canin-cat-food-sopet-pet-shop');
     });
   });
 });

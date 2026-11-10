@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { StarIcon } from '@/components/atoms/icons/filled/StarIcon';
 import { prefetchProductById } from '@/lib/catalog/prefetchProduct';
 import type { ProductListItem } from '@/lib/hooks/useProducts';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 
 export type ProductCardProduct = Pick<
   ProductListItem,
@@ -17,6 +18,7 @@ export type ProductCardProduct = Pick<
   | 'averageRating'
   | 'reviewCount'
   | 'soldCount'
+  | 'store'
 > & {
   storeId?: string;
   /** Present on list/card queries; used to show min variant price when basePrice is 0. */
@@ -101,10 +103,6 @@ type ProductCardProps = {
   /** Pre-resolved campaign sale unit; when set, used as the highlighted payable price. */
   campaignSalePrice?: number | null;
 };
-
-function buildProductHref(productId: string): string {
-  return `/product/${productId}`;
-}
 
 function formatPrice(amount: number): string {
   return `฿${amount.toLocaleString('th-TH', {
@@ -245,7 +243,7 @@ export default function ProductCard({
   campaignCompareAt = null,
   campaignSalePrice = null,
 }: ProductCardProps) {
-  const href = buildProductHref(product.id);
+  const href = buildProductHref(product, { encode: true });
   const catalogPrice = getProductCardDisplayPrice(product);
   const displayPrice =
     campaignSalePrice != null && campaignSalePrice > 0 ? campaignSalePrice : catalogPrice;
@@ -303,4 +301,4 @@ export default function ProductCard({
   );
 }
 
-export { buildProductHref };
+export { buildProductHref } from '@/lib/routing/productRoutes';

@@ -4,6 +4,7 @@ query SearchSuggestions($query: String!, $limit: Int, $sessionId: String) {
       id
       name
       slug
+      storeSlug
       thumbnailUrl
     }
     queries {

@@ -11,6 +11,7 @@ import { TrashIcon } from '@/components/atoms/icons/filled/TrashIcon';
 import { CartVariantModal } from '@/components/organisms/CartVariantModal/CartVariantModal';
 import type { CartItem } from '@/lib/cart/cartUtils';
 import { getCartItemUnitPrice, isCartItemOutOfStock } from '@/lib/cart/cartUtils';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 
 type CartItemRowProps = {
   item: CartItem;
@@ -113,7 +114,7 @@ export function CartItemRow({
             <div className="min-w-0 flex-1">
               {product?.id ? (
                 <Link
-                  href={`/product/${product.id}`}
+                  href={buildProductHref(product, { encode: true })}
                   className="sop-body-sm-medium text-sop-neutral-gray-300 line-clamp-2"
                 >
                   {productName}

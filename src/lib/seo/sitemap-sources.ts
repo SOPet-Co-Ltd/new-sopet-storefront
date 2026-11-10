@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 
+import { buildProductHref } from '@/lib/routing/productRoutes';
 import { POLICY_PATHS, REGULATORY_PATHS } from './constants';
 import { fetchAllSitemapProducts, fetchApprovedCategories, fetchApprovedStores } from './fetch';
 import { buildAbsoluteUrl } from './metadata';
@@ -35,7 +36,7 @@ export async function collectSitemapUrls(): Promise<MetadataRoute.Sitemap> {
 
   if (products) {
     for (const product of products) {
-      entries.push({ url: buildAbsoluteUrl(`/product/${product.id}`) });
+      entries.push({ url: buildAbsoluteUrl(buildProductHref(product, { encode: true })) });
     }
   }
 

@@ -78,7 +78,9 @@ describe('collectSitemapUrls', () => {
     const urls = entries.map((entry) => entry.url);
 
     expect(urls).toContain('https://www.sopet.org/');
-    expect(urls).toContain(`https://www.sopet.org/product/${CATALOG_PRODUCT_ID}`);
+    expect(urls).toContain(
+      `https://www.sopet.org/product/${sampleProductCard.slug}-${sampleProductCard.store.slug}`,
+    );
     expect(urls).toContain('https://www.sopet.org/categories/dog-food');
     expect(urls).toContain(`https://www.sopet.org/sellers/${sampleStore.slug}`);
 
@@ -91,14 +93,16 @@ describe('collectSitemapUrls', () => {
     }
   });
 
-  it('uses absolute UUID product URLs', async () => {
+  it('uses absolute SEO product URLs', async () => {
     vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://www.sopet.org');
 
     const { collectSitemapUrls: collectUrls } = await import('./sitemap-sources');
     const entries = await collectUrls();
     const productUrl = entries.find((entry) => entry.url.includes('/product/'))?.url;
 
-    expect(productUrl).toBe(`https://www.sopet.org/product/${sampleProductCard.id}`);
-    expect(productUrl).not.toContain(sampleProductCard.slug);
+    expect(productUrl).toBe(
+      `https://www.sopet.org/product/${sampleProductCard.slug}-${sampleProductCard.store.slug}`,
+    );
+    expect(productUrl).not.toContain(sampleProductCard.id);
   });
 });

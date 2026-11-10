@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { buildProductHref } from '@/components/organisms/ProductCard';
 import { ProductThumbnail } from '@/components/molecules/ProductThumbnail/ProductThumbnail';
 import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
 import { ReviewImagesGrid } from '@/components/molecules/ReviewImagesGrid/ReviewImagesGrid';
@@ -7,16 +6,24 @@ import { VendorReplyBlock } from '@/components/molecules/VendorReplyBlock';
 import { formatThaiDate } from '@/lib/datetime/formatThaiDatetime';
 import { getReviewerName } from '@/components/organisms/ProductDetailsSellerReviews/ProductReviewItem';
 import type { StoreReview } from '@/lib/hooks/useReviews';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 
 type SellerStoreReviewListItemProps = {
   review: StoreReview;
+  storeSlug: string;
 };
 
-function getProductHref(review: StoreReview): string {
-  return review.productSlug ? `/product/${review.productSlug}` : buildProductHref(review.productId);
+function getProductHref(review: StoreReview, storeSlug: string): string {
+  if (review.productSlug) {
+    return buildProductHref(
+      { slug: review.productSlug, store: { slug: storeSlug } },
+      { encode: true },
+    );
+  }
+  return buildProductHref({ id: review.productId });
 }
 
-export function SellerStoreReviewListItem({ review }: SellerStoreReviewListItemProps) {
+export function SellerStoreReviewListItem({ review, storeSlug }: SellerStoreReviewListItemProps) {
   const hasComment = Boolean(review.comment?.trim());
   const reviewerName = getReviewerName(review);
 
@@ -25,7 +32,10 @@ export function SellerStoreReviewListItem({ review }: SellerStoreReviewListItemP
       <div className="flex flex-col gap-4 sm:flex-row">
         <ProductThumbnail imageUrl={review.productImageUrl} alt={review.productName} />
         <div className="min-w-0 flex-1">
-          <Link href={getProductHref(review)} className="sop-body-md-medium text-sop-primary-700">
+          <Link
+            href={getProductHref(review, storeSlug)}
+            className="sop-body-md-medium text-sop-primary-700"
+          >
             {review.productName}
           </Link>
           <div className="mt-2 flex items-center justify-between gap-2">

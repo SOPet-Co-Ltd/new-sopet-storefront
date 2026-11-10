@@ -12,10 +12,13 @@ import {
 } from '@/test/mocks/fixtures/catalog';
 
 const STORE_ID = 'store-1';
+const STORE_SLUG = 'sopet-pet-shop';
 const createWrapper = createApolloTestWrapper;
 
 function renderSellerReviewTab() {
-  return render(<SellerReviewTab storeId={STORE_ID} />, { wrapper: createWrapper() });
+  return render(<SellerReviewTab storeId={STORE_ID} storeSlug={STORE_SLUG} />, {
+    wrapper: createWrapper(),
+  });
 }
 
 describe('SellerReviewTab', () => {
@@ -40,7 +43,7 @@ describe('SellerReviewTab', () => {
     expect(screen.getByText(sampleStoreReview.productName)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: sampleStoreReview.productName })).toHaveAttribute(
       'href',
-      `/product/${sampleStoreReview.productSlug}`,
+      `/product/${sampleStoreReview.productSlug}-${STORE_SLUG}`,
     );
   });
 

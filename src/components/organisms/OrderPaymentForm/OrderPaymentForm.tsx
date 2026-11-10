@@ -17,6 +17,7 @@ import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
 import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
 import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
+import { resolvePromptPayQrSrc, resolvePromptPayReferenceId } from '@/lib/payment/promptPayQr';
 import { PromptPayQrWaitingState } from './PromptPayQrWaitingState';
 import { BankTransferWaitingState } from './BankTransferWaitingState';
 import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
@@ -269,7 +270,8 @@ export function OrderPaymentForm({
   const [panelSubmitting, setPanelSubmitting] = useState(false);
   const isRetryBusy = Boolean(retrySubmitting || panelSubmitting);
 
-  const hasQrCode = Boolean(payment?.qrCodeUrl);
+  const qrCodeSrc = payment ? resolvePromptPayQrSrc(payment) : null;
+  const hasQrCode = Boolean(qrCodeSrc);
   const handleExpire = useCallback(() => {
     onExpired?.();
   }, [onExpired]);
@@ -381,6 +383,7 @@ export function OrderPaymentForm({
       <PaymentBusyShell titleId="payment-failed-title" title="ชำระเงิน" busy={isRetryBusy}>
         <PaymentFailedState
           isQrExpired={isQrExpired}
+          failureCode={payment.failureCode}
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
           isSubmitting={retrySubmitting}
@@ -412,6 +415,11 @@ export function OrderPaymentForm({
     const amountLabel = formatAmount(payment.amount, payment.currency);
 
     if (!isAllowed3dsAuthorizeUri(authorizeUri)) {
+      try {
+        console.warn('Disallowed 3DS authorize host:', new URL(authorizeUri).hostname);
+      } catch {
+        console.warn('Disallowed 3DS authorize host: <unparseable>');
+      }
       return (
         <PaymentBusyShell titleId="payment-waiting-title" title="ชำระเงิน" busy={isRetryBusy}>
           <div className="mt-4 flex items-center justify-between py-3">
@@ -506,11 +514,11 @@ export function OrderPaymentForm({
         className="max-w-[500px] px-4 py-5 md:max-w-[960px] md:px-6 md:py-6"
       >
         <PromptPayQrWaitingState
-          qrCodeUrl={payment.qrCodeUrl ?? ''}
+          qrCodeSrc={qrCodeSrc ?? ''}
           amountLabel={formatAmount(payment.amount, payment.currency)}
           orderNumber={payment.orderNumber}
           orderCreatedAt={orderCreatedAt}
-          referenceId={payment.id}
+          referenceId={resolvePromptPayReferenceId(payment.qrCodeUrl, payment.id)}
           remainingMs={remainingMs}
           actions={
             <MidQrChangeMethodChrome

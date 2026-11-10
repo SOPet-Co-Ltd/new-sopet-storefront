@@ -5,7 +5,7 @@ import { sampleCart } from '@/test/mocks/fixtures/cart';
 import { sampleOrder, samplePendingPayment } from '@/test/mocks/fixtures/checkout';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 
-vi.mock('@/lib/payment/omise', () => ({
+vi.mock('@/lib/payment/beam', () => ({
   tokenizeCard: vi.fn(),
 }));
 
@@ -14,7 +14,7 @@ vi.mock('@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBrid
   prepareCardPaymentToken: vi.fn(),
 }));
 
-import { tokenizeCard } from '@/lib/payment/omise';
+import { tokenizeCard } from '@/lib/payment/beam';
 import { prepareCardPaymentToken } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 
 const SHIPPING_OPTION_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
@@ -54,16 +54,18 @@ function createSubmitParams(paymentMethod: 'promptpay' | 'card' | 'cod'): Submit
 }
 
 describe('submitCheckout payment method boundaries', () => {
-  it('includes omiseToken for card payments when provided', async () => {
+  it('includes cardToken and cardSecurityCode for card payments when provided', async () => {
     const params = createSubmitParams('card');
-    params.omiseToken = 'tokn_test_123';
+    params.cardToken = 'tokn_test_123';
+    params.cardSecurityCode = '123';
 
     await submitCheckout(params);
 
     expect(params.checkoutHook.createPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         paymentMethod: 'credit_card',
-        omiseToken: 'tokn_test_123',
+        cardToken: 'tokn_test_123',
+        cardSecurityCode: '123',
       }),
     );
     expect(tokenizeCard).not.toHaveBeenCalled();
@@ -72,6 +74,7 @@ describe('submitCheckout payment method boundaries', () => {
   it('includes savedPaymentMethodId for saved card payments when provided', async () => {
     const params = createSubmitParams('card');
     params.savedPaymentMethodId = 'saved-card-1';
+    params.cardSecurityCode = '456';
 
     await submitCheckout(params);
 
@@ -79,6 +82,7 @@ describe('submitCheckout payment method boundaries', () => {
       expect.objectContaining({
         paymentMethod: 'credit_card',
         savedPaymentMethodId: 'saved-card-1',
+        cardSecurityCode: '456',
       }),
     );
     expect(tokenizeCard).not.toHaveBeenCalled();

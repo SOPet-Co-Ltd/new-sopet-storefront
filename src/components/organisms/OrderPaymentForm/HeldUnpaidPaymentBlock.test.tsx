@@ -13,6 +13,7 @@ const pendingPayment = {
   status: 'pending' as const,
   paymentMethod: 'promptpay',
   authorizeUri: null,
+  qrCodeImage: null,
   qrCodeUrl: 'https://example.com/qr.png',
   expiresAt: new Date(Date.now() + 60_000).toISOString(),
 };

@@ -34,6 +34,8 @@ import {
   getErrorMessageByCode,
 } from '@/lib/errors/getErrorMessage';
 import { mapCheckoutSuspendedStoreError } from '@/lib/store-suspension/mapSuspensionErrors';
+import type { SaveCardOnPaymentInput } from '@/lib/payment/saveCard';
+import type { CreatePaymentInput } from '@/lib/graphql/generated/graphql';
 
 export type SubmitCheckoutErrorCode =
   | 'invalid_step'
@@ -75,9 +77,19 @@ export type SubmitCheckoutParams = {
   guestForm: GuestCheckoutFormState | null;
   subtotal: number;
   checkoutHook: Pick<UseCheckoutResult, 'validatePromotion' | 'createOrder' | 'createPayment'>;
-  omiseToken?: string | null;
+  cardToken?: string | null;
+  /** CVV for the card token or saved card; sent with createPayment only, never persisted. */
+  cardSecurityCode?: string | null;
   savedPaymentMethodId?: string | null;
+  /**
+   * Save-card metadata for Beam CIT: server saves only after the charge is paid.
+   * Do not call addPaymentMethod before createPayment when this is set.
+   */
+  saveCard?: SaveCardOnPaymentInput | null;
 };
+
+/** Alias for createPayment variables (includes optional saveCard from schema). */
+export type CreatePaymentSubmitInput = CreatePaymentInput;
 
 export type SubmitCheckoutResult = {
   redirectPath: string;
@@ -211,7 +223,7 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     ? { platformType: resolveOmiseWalletPlatformType() }
     : {};
 
-  const paymentInput = {
+  const paymentInput: CreatePaymentSubmitInput = {
     orderId: order.id,
     paymentMethod: apiPaymentMethod,
     currency: 'THB' as const,
@@ -220,9 +232,16 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     ...(isNonOmiseApiPaymentMethod(apiPaymentMethod)
       ? {}
       : params.savedPaymentMethodId
-        ? { savedPaymentMethodId: params.savedPaymentMethodId }
-        : params.omiseToken
-          ? { omiseToken: params.omiseToken }
+        ? {
+            savedPaymentMethodId: params.savedPaymentMethodId,
+            ...(params.cardSecurityCode ? { cardSecurityCode: params.cardSecurityCode } : {}),
+          }
+        : params.cardToken
+          ? {
+              cardToken: params.cardToken,
+              ...(params.cardSecurityCode ? { cardSecurityCode: params.cardSecurityCode } : {}),
+              ...(params.saveCard ? { saveCard: params.saveCard } : {}),
+            }
           : {}),
   };
 

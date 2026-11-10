@@ -46,7 +46,7 @@ ${regulatoryLines}
 
 ## URL patterns
 
-- Product detail: ${baseUrl}/product/{uuid}
+- Product detail: ${baseUrl}/product/{productSlug}-{storeSlug}
 - Category listing: ${baseUrl}/categories/{slug}
 - Seller storefront: ${baseUrl}/sellers/{slug}
 - Policy pages: ${baseUrl}/policy/{slug}
@@ -54,7 +54,7 @@ ${regulatoryLines}
 ## Notes
 
 - Search, checkout, account, and order-tracking pages are not intended for indexing.
-- Product URLs use stable UUID identifiers.
+- Product URLs use SEO slugs (\`{productSlug}-{storeSlug}\`); legacy UUID paths redirect permanently.
 - Each product page includes that product's customer rating and reviews in structured data.
 `;
 }

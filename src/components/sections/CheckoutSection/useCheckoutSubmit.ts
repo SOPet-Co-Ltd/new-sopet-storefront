@@ -23,14 +23,8 @@ import {
 } from '@/lib/checkout/guestCheckoutValidation';
 import { parseStorePromotionConditions } from '@/lib/checkout/storePromotionUtils';
 import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
-import {
-  cleanCardNumber,
-  detectCardBrand,
-} from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { clearPendingCheckout, setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
-import { parseCardExpiry } from '@/lib/payment/omise';
-import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
@@ -41,6 +35,7 @@ import {
   shouldRedirectCheckoutToLogin,
 } from '@/lib/checkout/checkoutSessionGuard';
 import { hasClientSession } from '@/lib/graphql/authLink';
+import { buildSaveCardPayload } from '@/lib/payment/saveCard';
 import { ensureSessionId } from '@/lib/session';
 
 export type AddressSubmitContext = {
@@ -71,7 +66,6 @@ export function useCheckoutSubmit(
     clearBuyNow,
   } = useCheckoutCartSelection();
   const checkoutMutations = useCheckoutMutations();
-  const { addPaymentMethod } = usePaymentMethods();
   const {
     step,
     shippingByStoreId,
@@ -170,29 +164,22 @@ export function useCheckoutSubmit(
       try {
         const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
-        let finalOmiseToken = cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined;
-        let finalSavedPaymentMethodId =
+        const finalCardToken = cardPayment?.type === 'token' ? cardPayment.cardToken : undefined;
+        const finalCardSecurityCode = cardPayment?.cardSecurityCode;
+        const finalSavedPaymentMethodId =
           cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined;
-
-        if (cardPayment?.type === 'token' && cardPayment.saveCardForNextTime) {
-          const digits = cleanCardNumber(cardPayment.cardForm.cardNumber);
-          const { month, year } = parseCardExpiry(cardPayment.cardForm.expiry);
-          const brand = detectCardBrand(digits);
-
-          const savedMethod = await addPaymentMethod({
-            omiseCardToken: cardPayment.omiseToken,
-            brand,
-            lastFour: digits.slice(-4),
-            expiryMonth: month,
-            expiryYear: year,
-            isDefault: true,
-          });
-
-          if (savedMethod) {
-            finalSavedPaymentMethodId = savedMethod.id;
-            finalOmiseToken = undefined;
-          }
-        }
+        // Defer vaulting to backend after paid — do not call addPaymentMethod before charge.
+        const saveCard =
+          cardPayment?.type === 'token' && cardPayment.saveCardForNextTime
+            ? buildSaveCardPayload({
+                cardToken: cardPayment.cardToken,
+                brand: cardPayment.tokenizedCard.brand,
+                lastFour: cardPayment.tokenizedCard.lastFour,
+                expiryMonth: cardPayment.tokenizedCard.expiryMonth,
+                expiryYear: cardPayment.tokenizedCard.expiryYear,
+                isDefault: true,
+              })
+            : undefined;
 
         const sessionLive = hasClientSession();
         const submitAsGuest = !isAuthenticated || !sessionLive;
@@ -212,8 +199,10 @@ export function useCheckoutSubmit(
             guestForm,
             subtotal,
             checkoutHook: checkoutMutations,
-            omiseToken: finalOmiseToken,
+            cardToken: finalCardToken,
+            cardSecurityCode: finalCardSecurityCode,
             savedPaymentMethodId: finalSavedPaymentMethodId,
+            saveCard,
           },
           submitGuardRef.current,
         );
@@ -256,14 +245,12 @@ export function useCheckoutSubmit(
       }
     },
     [
-      addPaymentMethod,
       checkoutContext,
       checkoutMutations,
       clearBuyNow,
       guestForm,
       isAuthenticated,
       isBuyNow,
-      isGuestCheckout,
       items,
       paymentMethod,
       pruneDeselectedIds,

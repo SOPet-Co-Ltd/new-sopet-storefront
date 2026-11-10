@@ -1,5 +1,6 @@
 import type {
   ProductByIdQueryVariables,
+  ProductByPathQueryVariables,
   ProductsQueryVariables,
   RecommendedProductsQueryVariables,
   SearchContextInput,
@@ -98,6 +99,14 @@ export function buildRecommendedProductsVariables({
 
 export function buildProductByIdVariables({ id }: { id: string }): ProductByIdQueryVariables {
   return { id };
+}
+
+export function buildProductByPathVariables({
+  path,
+}: {
+  path: string;
+}): ProductByPathQueryVariables {
+  return { path };
 }
 
 export function buildSellerStorefrontVariables({

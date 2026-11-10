@@ -30,7 +30,8 @@ describe('next.config security headers', () => {
 
     // Vitest runs with NODE_ENV=test, so production CSP is applied.
     expect(byKey['Content-Security-Policy']).toContain("frame-ancestors 'none'");
-    expect(byKey['Content-Security-Policy']).toContain('https://cdn.omise.co');
+    expect(byKey['Content-Security-Policy']).toContain('https://api.beamcheckout.com');
+    expect(byKey['Content-Security-Policy']).not.toContain('omise');
     expect(byKey['Content-Security-Policy']).toContain("img-src 'self' data: blob: https:");
     expect(byKey['Content-Security-Policy']).not.toContain("'wasm-unsafe-eval'");
     expect(byKey['Content-Security-Policy']).not.toContain("'unsafe-eval'");

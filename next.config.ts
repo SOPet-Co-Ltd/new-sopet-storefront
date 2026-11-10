@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 import type { RemotePattern } from 'next/dist/shared/lib/image-config';
-import { getGraphqlWsConnectSrcOrigins } from './src/lib/config';
+import { getBeamConnectSrcOrigins, getGraphqlWsConnectSrcOrigins } from './src/lib/config';
 
 function cdnRemotePattern(cdnUrl: string): RemotePattern | null {
   try {
@@ -70,9 +70,10 @@ function imageRemotePatterns(): RemotePattern[] {
 /** Exported for unit tests — reads WS env at call time. */
 export function buildProductionCsp(env: NodeJS.ProcessEnv = process.env): string {
   const wsOrigins = getGraphqlWsConnectSrcOrigins(env);
+  const beamOrigins = getBeamConnectSrcOrigins(env);
   const connectSrc = [
     "'self'",
-    'https://api.beamcheckout.com',
+    ...beamOrigins,
     'https://www.google-analytics.com',
     'https://www.googletagmanager.com',
     'https://*.google-analytics.com',

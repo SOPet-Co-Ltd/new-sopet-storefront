@@ -183,7 +183,7 @@ describe('usePayment', () => {
     });
   });
 
-  it('does not poll while subscription is healthy (subscription-first)', async () => {
+  it('starts HTTP polling for pending payments even when subscription has no error', async () => {
     server.use(
       graphql.query('Payment', () => {
         return HttpResponse.json({
@@ -198,9 +198,8 @@ describe('usePayment', () => {
 
     await waitFor(() => {
       expect(result.current.payment?.status).toBe('pending');
+      expect(pollingSpies.startPolling).toHaveBeenCalledWith(2_000);
     });
-
-    expect(pollingSpies.startPolling).not.toHaveBeenCalled();
   });
 
   it('starts HTTP polling for pending PromptPay when subscription is unusable', async () => {
@@ -223,8 +222,7 @@ describe('usePayment', () => {
     });
   });
 
-  it('stops HTTP polling when payment becomes paid after subscription failure', async () => {
-    subscriptionState.error = new Error('WebSocket connection failed');
+  it('stops HTTP polling when payment becomes paid', async () => {
     let releasePaid = false;
 
     server.use(

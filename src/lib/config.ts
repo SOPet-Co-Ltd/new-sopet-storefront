@@ -1,3 +1,5 @@
+import { BEAM_API_BASE_URL_DEFAULT } from './payment/beam';
+
 const DEFAULT_SERVER_GRAPHQL_URL = 'http://localhost:3002/graphql';
 const DEFAULT_SERVER_GRAPHQL_WS_URL = 'ws://localhost:3002/graphql';
 
@@ -70,6 +72,24 @@ export function getGraphqlWsConnectSrcOrigins(env: NodeJS.ProcessEnv = process.e
   }
 
   return [];
+}
+
+/**
+ * CSP `connect-src` origin for Beam browser card tokenization.
+ * Uses the same `NEXT_PUBLIC_BEAM_API_BASE_URL` as `getBeamApiBaseUrl()` (build-time on Vercel).
+ */
+export function getBeamConnectSrcOrigins(env: NodeJS.ProcessEnv = process.env): string[] {
+  const configured = env.NEXT_PUBLIC_BEAM_API_BASE_URL?.trim();
+  if (configured) {
+    try {
+      const url = new URL(configured);
+      return [`${url.protocol}//${url.host}`];
+    } catch {
+      // fall through to production default
+    }
+  }
+
+  return [BEAM_API_BASE_URL_DEFAULT];
 }
 
 /** WebSocket endpoint for GraphQL subscriptions (browser connects directly to API). */

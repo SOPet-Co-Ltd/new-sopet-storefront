@@ -64,7 +64,9 @@ jobs:
 
     env:
       NEXT_PUBLIC_GRAPHQL_URL: http://localhost:3002/graphql
-      NEXT_PUBLIC_OMISE_PUBLIC_KEY: pkey_test_ci_dummy
+      NEXT_PUBLIC_BEAM_MERCHANT_ID: ci_dummy_merchant
+      NEXT_PUBLIC_BEAM_PUBLISHABLE_KEY: ci_dummy_publishable_key
+      NEXT_PUBLIC_BEAM_API_BASE_URL: https://playground.api.beamcheckout.com
 
     steps:
       - name: Checkout storefront

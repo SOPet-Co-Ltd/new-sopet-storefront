@@ -46,6 +46,12 @@ query ProductBySlug($slug: String!, $storeId: String!) {
   }
 }
 
+query ProductByPath($path: String!) {
+  productByPath(path: $path) {
+    ...ProductDetailFields
+  }
+}
+
 query ProductById($id: String!) {
   product(id: $id) {
     ...ProductDetailFields

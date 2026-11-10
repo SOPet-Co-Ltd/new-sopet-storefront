@@ -4,12 +4,12 @@
 
 **Purpose:** Next.js App Router entry points. Keep files thin.
 
-| Route group   | URL examples                             | Layout                    |
-| ------------- | ---------------------------------------- | ------------------------- |
-| `(main)/`     | `/`, `/cart`, `/product/[id]`, `/user/*` | Header + footer           |
-| `(auth)/`     | `/login`, `/login/otp`, `/signout`       | Centered auth shell       |
-| `(checkout)/` | `/checkout`                              | Header + full-height main |
-| `(payment)/`  | `/payment/[id]`                          | No chrome                 |
+| Route group   | URL examples                               | Layout                    |
+| ------------- | ------------------------------------------ | ------------------------- |
+| `(main)/`     | `/`, `/cart`, `/product/[slug]`, `/user/*` | Header + footer           |
+| `(auth)/`     | `/login`, `/login/otp`, `/signout`         | Centered auth shell       |
+| `(checkout)/` | `/checkout`                                | Header + full-height main |
+| `(payment)/`  | `/payment/[id]`                            | No chrome                 |
 
 Root-level (outside route groups): `layout.tsx`, `loading.tsx`, `robots.ts`, `sitemap.ts`, `llms.txt/route.ts`.
 

@@ -135,7 +135,11 @@ describe('Smart search products integration', () => {
     });
 
     const initialOrder = getRenderedProductOrder();
-    expect(initialOrder).toEqual(['id-3', 'id-1', 'id-2']);
+    expect(initialOrder).toEqual([
+      'search-product-three-sopet-pet-shop',
+      'search-product-one-sopet-pet-shop',
+      'search-product-two-sopet-pet-shop',
+    ]);
 
     rerender(<SearchResultsPage initialProducts={ORDERED_PRODUCTS} />);
     expect(getRenderedProductOrder()).toEqual(initialOrder);

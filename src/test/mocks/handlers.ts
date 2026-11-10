@@ -120,6 +120,12 @@ export const handlers = [
     });
   }),
 
+  graphql.query('ProductByPath', () => {
+    return HttpResponse.json({
+      data: { productByPath: sampleProductDetail },
+    });
+  }),
+
   graphql.query('ProductById', () => {
     return HttpResponse.json({
       data: { product: sampleProductDetail },

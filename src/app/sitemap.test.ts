@@ -66,7 +66,7 @@ describe('sitemap route', () => {
     const urls = entries.map((entry) => entry.url);
 
     expect(urls).toContain('https://www.sopet.org/');
-    expect(urls).toContain(`https://www.sopet.org/product/${CATALOG_PRODUCT_ID}`);
+    expect(urls).toContain('https://www.sopet.org/product/premium-dog-food-5kg-sopet-pet-shop');
     expect(urls.some((url) => url.includes('/categories/'))).toBe(false);
   });
 
@@ -78,7 +78,7 @@ describe('sitemap route', () => {
     const urls = entries.map((entry) => entry.url);
 
     expect(urls).toContain('https://www.sopet.org/');
-    expect(urls).toContain(`https://www.sopet.org/product/${CATALOG_PRODUCT_ID}`);
+    expect(urls).toContain('https://www.sopet.org/product/premium-dog-food-5kg-sopet-pet-shop');
     expect(urls).toContain('https://www.sopet.org/categories/dog-food');
     expect(urls).toContain(`https://www.sopet.org/sellers/${sampleStore.slug}`);
 

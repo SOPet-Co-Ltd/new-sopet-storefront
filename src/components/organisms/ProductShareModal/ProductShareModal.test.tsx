@@ -16,13 +16,18 @@ vi.mock('sonner', () => ({
 }));
 
 const PRODUCT_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
+const PRODUCT_SLUG = 'premium-cat-food';
+const STORE_SLUG = 'sopet-pet-shop';
+const PRODUCT_PATH = `${PRODUCT_SLUG}-${STORE_SLUG}`;
 const BASE_URL = 'https://www.sopet.org';
-const CANONICAL = `${BASE_URL}/product/${PRODUCT_ID}`;
+const CANONICAL = `${BASE_URL}/product/${PRODUCT_PATH}`;
 
 const product = {
   id: PRODUCT_ID,
+  slug: PRODUCT_SLUG,
   name: 'อาหารแมว Premium',
   description: '<p>อร่อยและมีประโยชน์</p>',
+  store: { slug: STORE_SLUG },
 } as unknown as ProductDetail;
 
 function defineNavigatorProp(prop: 'share' | 'clipboard', value: unknown) {
@@ -57,23 +62,21 @@ function sharedEvents() {
 
 describe('buildProductShareUrl', () => {
   it('returns the canonical product URL when no options are selected', () => {
-    expect(buildProductShareUrl(PRODUCT_ID)).toBe(CANONICAL);
+    expect(buildProductShareUrl(product)).toBe(CANONICAL);
   });
 
   it('appends selected variant options as query params', () => {
-    const url = buildProductShareUrl(PRODUCT_ID, { size: 'L', flavor: 'tuna' });
+    const url = buildProductShareUrl(product, { size: 'L', flavor: 'tuna' });
     expect(url).toBe(`${CANONICAL}?size=L&flavor=tuna`);
   });
 
   it('ignores empty option values', () => {
-    expect(buildProductShareUrl(PRODUCT_ID, { size: '' })).toBe(CANONICAL);
+    expect(buildProductShareUrl(product, { size: '' })).toBe(CANONICAL);
   });
 
   it('uses the configured base URL, not window.location', () => {
     vi.stubEnv('NEXT_PUBLIC_BASE_URL', 'https://staging.sopet.org');
-    expect(buildProductShareUrl(PRODUCT_ID)).toBe(
-      `https://staging.sopet.org/product/${PRODUCT_ID}`,
-    );
+    expect(buildProductShareUrl(product)).toBe(`https://staging.sopet.org/product/${PRODUCT_PATH}`);
   });
 });
 
@@ -104,7 +107,7 @@ describe('ProductShareModal', () => {
       expect(screen.getByRole('button', { name: `แชร์ผ่าน ${label}` })).toBeInTheDocument();
     }
     expect(screen.getByRole('button', { name: 'คัดลอกลิงก์' })).toBeInTheDocument();
-    expect(screen.getByText(`www.sopet.org/product/${PRODUCT_ID}`)).toBeInTheDocument();
+    expect(screen.getByText(`www.sopet.org/product/${PRODUCT_PATH}`)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'แชร์ผ่าน แอปอื่นๆ' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ปิด' })).toBeInTheDocument();
   });

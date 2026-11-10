@@ -8,6 +8,7 @@ import { useReviews } from '@/lib/hooks/useReviews';
 
 type SellerReviewTabProps = {
   storeId: string;
+  storeSlug: string;
 };
 
 function SellerReviewTabSkeleton() {
@@ -47,7 +48,7 @@ function SellerScorePanel({
   );
 }
 
-export function SellerReviewTab({ storeId }: SellerReviewTabProps) {
+export function SellerReviewTab({ storeId, storeSlug }: SellerReviewTabProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const {
     storeReviewSummary,
@@ -101,6 +102,7 @@ export function SellerReviewTab({ storeId }: SellerReviewTabProps) {
         ) : (
           <SellerStoreReviewList
             reviews={storeReviews}
+            storeSlug={storeSlug}
             currentPage={currentPage}
             totalCount={summary?.totalCount ?? 0}
             onPageChange={setCurrentPage}

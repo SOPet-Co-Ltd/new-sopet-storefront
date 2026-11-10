@@ -549,6 +549,7 @@ export type FavoriteProductFieldsFragment = {
   slug: string;
   basePrice: number;
   thumbnailUrl: string | null;
+  store: { id: string; name: string; slug: string } | null;
   images: Array<{ id: string; imageUrl: string; sortOrder: number }> | null;
 };
 
@@ -567,6 +568,7 @@ export type FavoritesQuery = {
       slug: string;
       basePrice: number;
       thumbnailUrl: string | null;
+      store: { id: string; name: string; slug: string } | null;
       images: Array<{ id: string; imageUrl: string; sortOrder: number }> | null;
     } | null;
   }>;
@@ -586,6 +588,7 @@ export type AddFavoriteMutation = {
       slug: string;
       basePrice: number;
       thumbnailUrl: string | null;
+      store: { id: string; name: string; slug: string } | null;
       images: Array<{ id: string; imageUrl: string; sortOrder: number }> | null;
     } | null;
   };
@@ -608,6 +611,7 @@ export type ProductCardFieldsFragment = {
   averageRating: number;
   reviewCount: number;
   soldCount: number;
+  store: { id: string; name: string; slug: string } | null;
   variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
 };
 
@@ -631,6 +635,7 @@ export type LatestPurchaseProductsQuery = {
     averageRating: number;
     reviewCount: number;
     soldCount: number;
+    store: { id: string; name: string; slug: string } | null;
     variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
   }>;
 };
@@ -1164,6 +1169,49 @@ export type ProductBySlugQuery = {
   };
 };
 
+export type ProductByPathQueryVariables = Exact<{
+  path: string;
+}>;
+
+export type ProductByPathQuery = {
+  productByPath: {
+    id: string;
+    slug: string;
+    storeId: string;
+    name: string;
+    description: string | null;
+    basePrice: number;
+    compareAtPrice: number | null;
+    thumbnailUrl: string | null;
+    averageRating: number;
+    reviewCount: number;
+    soldCount: number;
+    status: string;
+    category: string | null;
+    brandName: string | null;
+    tags: Array<string>;
+    warning: string | null;
+    expiryDate: string | null;
+    store: {
+      id: string;
+      name: string;
+      slug: string;
+      logoUrl: string | null;
+      bannerUrl: string | null;
+      description: string | null;
+    } | null;
+    images: Array<{ id: string; imageUrl: string; isThumbnail: boolean; sortOrder: number }> | null;
+    variants: Array<{
+      id: string;
+      sku: string;
+      price: number;
+      compareAtPrice: number | null;
+      stockQuantity: number;
+      optionsJson: string | null;
+    }> | null;
+  };
+};
+
 export type ProductByIdQueryVariables = Exact<{
   id: string;
 }>;
@@ -1358,6 +1406,7 @@ export type RecommendedProductsQuery = {
     averageRating: number;
     reviewCount: number;
     soldCount: number;
+    store: { id: string; name: string; slug: string } | null;
     variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
   }>;
 };
@@ -1525,7 +1574,13 @@ export type SearchSuggestionsQueryVariables = Exact<{
 
 export type SearchSuggestionsQuery = {
   searchSuggestions: {
-    products: Array<{ id: string; name: string; slug: string; thumbnailUrl: string | null }>;
+    products: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      storeSlug: string;
+      thumbnailUrl: string | null;
+    }>;
     queries: Array<{ query: string }>;
   };
 };
@@ -2026,6 +2081,18 @@ export const FavoriteProductFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'thumbnailUrl' } },
           {
             kind: 'Field',
+            name: { kind: 'Name', value: 'store' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
             name: { kind: 'Name', value: 'images' },
             selectionSet: {
               kind: 'SelectionSet',
@@ -2061,6 +2128,18 @@ export const ProductCardFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
           { kind: 'Field', name: { kind: 'Name', value: 'reviewCount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'soldCount' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'store' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
+              ],
+            },
+          },
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'variants' },
@@ -4499,6 +4578,48 @@ export const ProductBySlugDocument = {
     },
   ],
 } as unknown as DocumentNode<ProductBySlugQuery, ProductBySlugQueryVariables>;
+export const ProductByPathDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ProductByPath' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'path' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'productByPath' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'path' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'path' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'ProductDetailFields' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ProductByPathQuery, ProductByPathQueryVariables>;
 export const ProductByIdDocument = {
   kind: 'Document',
   definitions: [
@@ -4722,18 +4843,6 @@ export const ProductsDocument = {
                       {
                         kind: 'FragmentSpread',
                         name: { kind: 'Name', value: 'ProductCardFields' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'store' },
-                        selectionSet: {
-                          kind: 'SelectionSet',
-                          selections: [
-                            { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
-                          ],
-                        },
                       },
                     ],
                   },
@@ -5572,6 +5681,7 @@ export const SearchSuggestionsDocument = {
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'storeSlug' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'thumbnailUrl' } },
                     ],
                   },

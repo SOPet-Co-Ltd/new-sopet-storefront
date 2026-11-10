@@ -4,6 +4,11 @@ fragment FavoriteProductFields on ProductType {
   slug
   basePrice
   thumbnailUrl
+  store {
+    id
+    name
+    slug
+  }
   images {
     id
     imageUrl

@@ -111,7 +111,7 @@ export function SellerTabs({ activeTab, storeHandle, storeId, initialProducts }:
       </TabContent>
 
       <TabContent activeTab={activeTab} value="reviews">
-        <SellerReviewTab storeId={storeId} />
+        <SellerReviewTab storeId={storeId} storeSlug={storeHandle} />
       </TabContent>
     </div>
   );

@@ -213,7 +213,10 @@ describe('HomePage', () => {
     });
 
     expect(productLinks.length).toBeGreaterThan(0);
-    expect(productLinks[0]).toHaveAttribute('href', `/product/${SAMPLE_PRODUCT.id}`);
+    expect(productLinks[0]).toHaveAttribute(
+      'href',
+      `/product/${SAMPLE_PRODUCT.slug}-${SAMPLE_PRODUCT.store.slug}`,
+    );
   });
 
   it('hides recent orders section for guest users', async () => {
@@ -261,7 +264,7 @@ describe('HomePage', () => {
     expect(within(recentOrdersSection).queryByText('ขายแล้ว')).not.toBeInTheDocument();
     expect(
       within(recentOrdersSection).getByRole('link', { name: 'ดู Pet Shampoo 500ml' }),
-    ).toHaveAttribute('href', '/product/prod-recent-1');
+    ).toHaveAttribute('href', '/product/pet-shampoo-500ml-sopet-pet-shop');
     expect(
       within(recentOrdersSection).getByRole('img', { name: 'Pet Shampoo 500ml' }),
     ).toHaveAttribute('src', 'https://example.com/shampoo.jpg');

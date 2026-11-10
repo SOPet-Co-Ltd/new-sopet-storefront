@@ -15,7 +15,8 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
-import { parseCardExpiry } from '@/lib/payment/omise';
+import { parseCardExpiry } from '@/lib/payment/beam';
+import { isBeamSavedPaymentMethod } from '@/lib/payment/savedPaymentMethod';
 import { cn } from '@/lib/utils';
 import { CardPaymentForm } from './CardPaymentForm';
 import {
@@ -27,8 +28,9 @@ import {
   validateCheckoutCardForm,
   type CheckoutCardFormState,
 } from './checkoutCardPaymentBridge';
-import { cleanCardNumber, detectCardBrand } from './paymentFormat';
+import { cleanCardNumber } from './paymentFormat';
 import { PaymentMethodRadio } from './PaymentMethodRadio';
+import { SavedCardCvvField } from './SavedCardCvvField';
 import { SavedPaymentMethodOption } from './SavedPaymentMethodOption';
 
 type PaymentOption = {
@@ -135,11 +137,12 @@ function PaymentMethodOption({
 function resolveDefaultSavedCardId(
   paymentMethods: ReturnType<typeof usePaymentMethods>['paymentMethods'],
 ): string | null {
-  if (paymentMethods.length === 0) {
+  const usable = paymentMethods.filter(isBeamSavedPaymentMethod);
+  if (usable.length === 0) {
     return null;
   }
 
-  return paymentMethods.find((method) => method.isDefault)?.id ?? paymentMethods[0]?.id ?? null;
+  return usable.find((method) => method.isDefault)?.id ?? usable[0]?.id ?? null;
 }
 
 export function CheckoutPaymentSelection() {
@@ -163,16 +166,19 @@ export function CheckoutPaymentSelection() {
   const [cardEntryMode, setCardEntryMode] = useState<CardEntryMode>('new');
   const [selectedSavedCardId, setSelectedSavedCardId] = useState<string | null>(null);
   const [saveCardForNextTime, setSaveCardForNextTime] = useState(false);
+  const [savedCardCvv, setSavedCardCvv] = useState('');
   const [isSavingCard, setIsSavingCard] = useState(false);
   const cardFormRef = useRef(cardForm);
   const cardEntryModeRef = useRef(cardEntryMode);
   const selectedSavedCardIdRef = useRef(selectedSavedCardId);
   const saveCardForNextTimeRef = useRef(saveCardForNextTime);
+  const savedCardCvvRef = useRef(savedCardCvv);
   const [prevHasSavedCards, setPrevHasSavedCards] = useState<boolean | null>(null);
 
   const hasSavedCards = isAuthenticated && paymentMethods.length > 0;
   const showSavedCards = paymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
   const showNewCardForm = paymentMethod === 'card' && !showSavedCards;
+  const selectedSavedCard = paymentMethods.find((method) => method.id === selectedSavedCardId);
 
   // Adjust saved-card selection state when availability changes, following the
   // "adjusting state when a prop changes" pattern (no effect needed for this).
@@ -191,8 +197,9 @@ export function CheckoutPaymentSelection() {
     cardEntryModeRef.current = cardEntryMode;
     selectedSavedCardIdRef.current = selectedSavedCardId;
     saveCardForNextTimeRef.current = saveCardForNextTime;
+    savedCardCvvRef.current = savedCardCvv;
     notifyCheckoutCardPaymentValidityChange();
-  }, [cardEntryMode, cardForm, saveCardForNextTime, selectedSavedCardId]);
+  }, [cardEntryMode, cardForm, saveCardForNextTime, savedCardCvv, selectedSavedCardId]);
 
   const cardFieldErrors = useMemo(() => getCheckoutCardFieldErrors(cardForm), [cardForm]);
 
@@ -213,6 +220,7 @@ export function CheckoutPaymentSelection() {
     setCardForm(EMPTY_CHECKOUT_CARD_FORM);
     setCardFormError(null);
     setSaveCardForNextTime(false);
+    setSavedCardCvv('');
   }, []);
 
   useEffect(() => {
@@ -221,6 +229,7 @@ export function CheckoutPaymentSelection() {
         getCardForm: () => cardFormRef.current,
         clearCardForm,
         getSavedPaymentMethodId: () => selectedSavedCardIdRef.current,
+        getSavedCardCvv: () => savedCardCvvRef.current,
         shouldUseSavedCard: () =>
           cardEntryModeRef.current === 'saved' && Boolean(selectedSavedCardIdRef.current),
         getSaveCardForNextTime: () => saveCardForNextTimeRef.current,
@@ -289,26 +298,21 @@ export function CheckoutPaymentSelection() {
     setCardFormError(null);
 
     try {
-      const { tokenizeCard } = await import('@/lib/payment/omise');
+      const { tokenizeCard } = await import('@/lib/payment/beam');
       const { month, year } = parseCardExpiry(cardForm.expiry);
-      const digits = cleanCardNumber(cardForm.cardNumber);
-      const omiseToken = await tokenizeCard({
-        number: digits,
+      const tokenized = await tokenizeCard({
+        number: cleanCardNumber(cardForm.cardNumber),
         expirationMonth: month,
         expirationYear: year,
-        securityCode: cardForm.cvv,
         name: cardForm.cardName.trim(),
       });
 
-      const brand = detectCardBrand(cardForm.cardNumber);
-      const lastFour = digits.slice(-4);
-
       const saved = await addPaymentMethod({
-        omiseCardToken: omiseToken,
-        brand,
-        lastFour,
-        expiryMonth: month,
-        expiryYear: year,
+        cardToken: tokenized.cardToken,
+        brand: tokenized.brand,
+        lastFour: tokenized.lastFour,
+        expiryMonth: tokenized.expiryMonth,
+        expiryYear: tokenized.expiryYear,
       });
 
       clearCardForm();
@@ -386,12 +390,25 @@ export function CheckoutPaymentSelection() {
                       disabled={isSubmitting}
                       onSelect={() => {
                         if (!isSubmitting) {
+                          if (selectedSavedCardId !== method.id) {
+                            setSavedCardCvv('');
+                          }
                           setSelectedSavedCardId(method.id);
                         }
                       }}
                     />
                   ))}
                 </div>
+
+                {selectedSavedCard ? (
+                  <SavedCardCvvField
+                    key={selectedSavedCard.id}
+                    value={savedCardCvv}
+                    brand={selectedSavedCard.brand}
+                    disabled={isSubmitting}
+                    onChange={setSavedCardCvv}
+                  />
+                ) : null}
               </div>
             ) : null}
 

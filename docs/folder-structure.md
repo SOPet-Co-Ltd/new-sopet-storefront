@@ -142,9 +142,10 @@ Pure functions and validation (no React UI):
 
 ---
 
-## `src/lib/payment/` — Omise integration
+## `src/lib/payment/` — Beam integration
 
-- `omise.ts` — Omise.js tokenization wrapper
+- `beam.ts` — Beam card tokenization (`POST /client/v1/card-tokens`)
+- `promptPayQr.ts` — PromptPay QR image / URL resolution
 
 ---
 

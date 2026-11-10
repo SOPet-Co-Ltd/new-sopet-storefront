@@ -41,11 +41,9 @@ vi.mock('@/lib/graphql/authLink', () => ({
   hasClientSession: vi.fn(() => true),
 }));
 
-vi.mock('@/lib/hooks/usePaymentMethods', () => ({
-  usePaymentMethods: () => ({
-    paymentMethods: [],
-    addPaymentMethod: vi.fn(),
-  }),
+const mockPrepareCardPayment = vi.fn();
+vi.mock('@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge', () => ({
+  prepareCardPayment: () => mockPrepareCardPayment(),
 }));
 
 vi.mock('@/lib/hooks/useCheckoutCartSelection', () => ({
@@ -116,7 +114,9 @@ describe('useCheckoutSubmit', () => {
     vi.mocked(hasClientSession).mockReturnValue(true);
     checkoutState.step = 'review';
     checkoutState.selectedAddressId = null;
+    checkoutState.paymentMethod = 'promptpay';
     checkoutState.isSubmitting = false;
+    mockPrepareCardPayment.mockReset();
     mockCreateAddress.mockReset();
     mockCreateOrder.mockReset();
     mockCreatePayment.mockReset();
@@ -246,5 +246,74 @@ describe('useCheckoutSubmit', () => {
     });
 
     expect(mockClearPendingCheckout).toHaveBeenCalled();
+  });
+
+  it('passes saveCard on createPayment instead of addPaymentMethod before charge', async () => {
+    checkoutState.selectedAddressId = 'addr-1';
+    checkoutState.paymentMethod = 'card';
+    mockPrepareCardPayment.mockResolvedValue({
+      type: 'token',
+      cardToken: 'beam_tok_new',
+      cardSecurityCode: '123',
+      saveCardForNextTime: true,
+      tokenizedCard: {
+        cardToken: 'beam_tok_new',
+        lastFour: '4242',
+        brand: 'visa',
+        expiryMonth: 12,
+        expiryYear: 2030,
+      },
+      cardForm: {
+        cardNumber: '4242424242424242',
+        cardName: 'Test',
+        expiry: '12/30',
+        cvv: '123',
+      },
+    });
+    mockCreateOrder.mockResolvedValue({
+      id: 'ord-1',
+      orderNumber: 'ORD-TEST',
+      paymentMethod: 'credit_card',
+    });
+    mockCreatePayment.mockResolvedValue({ id: 'pay-1' });
+
+    const { result } = renderHook(() =>
+      useCheckoutSubmit(null, {
+        addressSubmitContext: {
+          createAddress: mockCreateAddress,
+          setAddress: vi.fn(),
+          saveAddressChecked: false,
+          setFieldErrors: vi.fn(),
+          setShowFieldErrors: vi.fn(),
+          addressQueryError: undefined,
+          addressQueryLoading: false,
+          addressCount: 1,
+        },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(mockCreatePayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cardToken: 'beam_tok_new',
+        cardSecurityCode: '123',
+        saveCard: {
+          cardToken: 'beam_tok_new',
+          lastFour: '4242',
+          brand: 'visa',
+          expiryMonth: 12,
+          expiryYear: 2030,
+          isDefault: true,
+        },
+      }),
+    );
+    expect(mockCreatePayment).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        savedPaymentMethodId: expect.anything(),
+      }),
+    );
   });
 });

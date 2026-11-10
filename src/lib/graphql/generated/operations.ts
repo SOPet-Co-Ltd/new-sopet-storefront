@@ -538,8 +538,10 @@ export type CreatePaymentMutation = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -882,8 +884,10 @@ export type PaymentFieldsFragment = {
   status: string;
   paymentMethod: string;
   authorizeUri: string | null;
+  qrCodeImage: string | null;
   qrCodeUrl: string | null;
   expiresAt: string | null;
+  failureCode: string | null;
 };
 
 export type PaymentQueryVariables = Exact<{
@@ -901,8 +905,10 @@ export type PaymentQuery = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -921,8 +927,10 @@ export type PaymentByOrderIdQuery = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -948,8 +956,10 @@ export type PaymentStatusUpdatedSubscription = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -961,6 +971,7 @@ export type SavedPaymentMethodFieldsFragment = {
   expiryMonth: number;
   expiryYear: number;
   isDefault: boolean;
+  psp: string | null;
 };
 
 export type PaymentMethodsQueryVariables = Exact<{ [key: string]: never }>;
@@ -974,6 +985,7 @@ export type PaymentMethodsQuery = {
     expiryMonth: number;
     expiryYear: number;
     isDefault: boolean;
+    psp: string | null;
   }>;
 };
 
@@ -990,6 +1002,7 @@ export type AddPaymentMethodMutation = {
     expiryMonth: number;
     expiryYear: number;
     isDefault: boolean;
+    psp: string | null;
   };
 };
 
@@ -1012,6 +1025,7 @@ export type SetDefaultPaymentMethodMutation = {
     expiryMonth: number;
     expiryYear: number;
     isDefault: boolean;
+    psp: string | null;
   };
 };
 
@@ -2322,8 +2336,10 @@ export const PaymentFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'status' } },
           { kind: 'Field', name: { kind: 'Name', value: 'paymentMethod' } },
           { kind: 'Field', name: { kind: 'Name', value: 'authorizeUri' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'qrCodeImage' } },
           { kind: 'Field', name: { kind: 'Name', value: 'qrCodeUrl' } },
           { kind: 'Field', name: { kind: 'Name', value: 'expiresAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failureCode' } },
         ],
       },
     },
@@ -2346,6 +2362,7 @@ export const SavedPaymentMethodFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'expiryMonth' } },
           { kind: 'Field', name: { kind: 'Name', value: 'expiryYear' } },
           { kind: 'Field', name: { kind: 'Name', value: 'isDefault' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'psp' } },
         ],
       },
     },

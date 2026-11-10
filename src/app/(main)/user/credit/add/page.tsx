@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountLayout } from '@/components/templates/AccountLayout/AccountLayout';
 import { Button } from '@/components/atoms/Button';
@@ -13,28 +13,29 @@ import {
 import { cleanCardNumber } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import {
-  loadOmise,
-  OmiseConfigurationError,
+  BeamConfigurationError,
+  detectBeamCardBrand,
+  getBeamCredentials,
   parseCardExpiry,
   tokenizeCard,
-} from '@/lib/payment/omise';
+} from '@/lib/payment/beam';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 
+function getBeamConfigurationErrorMessage(): string | null {
+  try {
+    getBeamCredentials();
+    return null;
+  } catch (err) {
+    return err instanceof BeamConfigurationError ? err.message : null;
+  }
+}
+
 function getAddCardErrorMessage(error: unknown): string {
-  if (error instanceof OmiseConfigurationError) {
+  if (error instanceof BeamConfigurationError) {
     return error.message;
   }
 
   return getErrorMessage(error, 'ไม่สามารถเพิ่มบัตรได้');
-}
-
-function detectCardBrand(cardNumber: string): string {
-  const digits = cleanCardNumber(cardNumber);
-  if (/^4/.test(digits)) return 'visa';
-  if (/^5[1-5]/.test(digits) || /^2[2-7]/.test(digits)) return 'mastercard';
-  if (/^3[47]/.test(digits)) return 'amex';
-  if (/^6/.test(digits)) return 'discover';
-  return 'unknown';
 }
 
 export default function AddCreditCardPage() {
@@ -44,15 +45,7 @@ export default function AddCreditCardPage() {
   const [cardForm, setCardForm] = useState<CheckoutCardFormState>(EMPTY_CHECKOUT_CARD_FORM);
   const [isDefault, setIsDefault] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    void loadOmise().catch((err) => {
-      if (err instanceof OmiseConfigurationError) {
-        setError(err.message);
-      }
-    });
-  }, []);
+  const [error, setError] = useState<string | null>(getBeamConfigurationErrorMessage);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -70,7 +63,7 @@ export default function AddCreditCardPage() {
 
       const digits = cleanCardNumber(form.cardNumber);
       const { month, year } = parseCardExpiry(form.expiry);
-      const brand = detectCardBrand(digits);
+      const brand = detectBeamCardBrand(digits);
 
       const alreadySaved = paymentMethods.find(
         (method) =>
@@ -84,20 +77,19 @@ export default function AddCreditCardPage() {
         return;
       }
 
-      const token = await tokenizeCard({
+      const tokenized = await tokenizeCard({
         number: digits,
         expirationMonth: month,
         expirationYear: year,
-        securityCode: form.cvv,
         name: form.cardName.trim(),
       });
 
       const method = await addPaymentMethod({
-        omiseCardToken: token,
-        brand,
-        lastFour: digits.slice(-4),
-        expiryMonth: month,
-        expiryYear: year,
+        cardToken: tokenized.cardToken,
+        brand: tokenized.brand,
+        lastFour: tokenized.lastFour,
+        expiryMonth: tokenized.expiryMonth,
+        expiryYear: tokenized.expiryYear,
         isDefault: hasExistingCards ? isDefault : true,
       });
 

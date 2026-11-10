@@ -13,6 +13,7 @@ import {
   type ValidatePromotionInput,
   type ValidatePromotionQuery,
 } from '@/lib/graphql/generated/graphql';
+import type { CreatePaymentSubmitInput } from '@/lib/checkout/submitCheckout';
 
 export type PromotionValidation = ValidatePromotionQuery['validatePromotion'];
 export type CreatedOrder = CreateOrderMutation['createOrder'];
@@ -21,7 +22,7 @@ export type CreatedPayment = CreatePaymentMutation['createPayment'];
 export type UseCheckoutResult = {
   validatePromotion: (input: ValidatePromotionInput) => Promise<PromotionValidation | undefined>;
   createOrder: (input: CreateOrderInput) => Promise<CreatedOrder | undefined>;
-  createPayment: (input: CreatePaymentInput) => Promise<CreatedPayment | undefined>;
+  createPayment: (input: CreatePaymentSubmitInput) => Promise<CreatedPayment | undefined>;
   validatingPromotion: boolean;
   creatingOrder: boolean;
   creatingPayment: boolean;
@@ -63,8 +64,11 @@ export function useCheckout(): UseCheckoutResult {
   );
 
   const createPayment = useCallback(
-    async (input: CreatePaymentInput) => {
-      const result = await createPaymentMutation({ variables: { input } });
+    async (input: CreatePaymentSubmitInput) => {
+      // Cast until codegen regenerates CreatePaymentInput with saveCard.
+      const result = await createPaymentMutation({
+        variables: { input: input as CreatePaymentInput },
+      });
       return result.data?.createPayment;
     },
     [createPaymentMutation],

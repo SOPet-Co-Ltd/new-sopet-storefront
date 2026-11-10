@@ -8,18 +8,22 @@ import { PlusIcon, QrCodeIcon, SubtractIcon, WalletIcon } from '@/components/ato
 import { CardPaymentForm } from '@/components/molecules/CheckoutPaymentSelection/CardPaymentForm';
 import {
   EMPTY_CHECKOUT_CARD_FORM,
+  isValidSavedCardCvv,
   validateCheckoutCardForm,
   type CheckoutCardFormState,
 } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import { PaymentMethodRadio } from '@/components/molecules/CheckoutPaymentSelection/PaymentMethodRadio';
 import { cleanCardNumber } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
+import { SavedCardCvvField } from '@/components/molecules/CheckoutPaymentSelection/SavedCardCvvField';
 import { SavedPaymentMethodOption } from '@/components/molecules/CheckoutPaymentSelection/SavedPaymentMethodOption';
 import { mapCheckoutPaymentMethodForApi } from '@/lib/checkout/checkoutPaymentMethod';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
-import { OmiseConfigurationError, parseCardExpiry, tokenizeCard } from '@/lib/payment/omise';
+import { BeamConfigurationError, parseCardExpiry, tokenizeCard } from '@/lib/payment/beam';
+import { buildSaveCardPayload, type SaveCardOnPaymentInput } from '@/lib/payment/saveCard';
+import { isBeamSavedPaymentMethod } from '@/lib/payment/savedPaymentMethod';
 import { PaymentRetryError } from '@/lib/payment/submitPaymentRetry';
 import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { cn } from '@/lib/utils';
@@ -27,8 +31,12 @@ import { cn } from '@/lib/utils';
 export type PaymentRetrySubmitInput = {
   /** Mid-QR / recovery: PromptPay, card, wallets, or bank transfer when platform-enabled. */
   paymentMethod: 'promptpay' | 'credit_card' | 'bank_transfer' | 'truemoney' | 'shopeepay';
-  omiseToken?: string;
+  cardToken?: string;
+  /** CVV for the new card token or the selected saved card (required for card payments). */
+  cardSecurityCode?: string;
   savedPaymentMethodId?: string;
+  /** Save after paid — never call addPaymentMethod before createPayment. */
+  saveCard?: SaveCardOnPaymentInput;
 };
 
 export type PaymentRetryPanelProps = {
@@ -113,11 +121,12 @@ const WALLET_PAYMENT_OPTIONS: PaymentOption[] = [
 function resolveDefaultSavedCardId(
   paymentMethods: ReturnType<typeof usePaymentMethods>['paymentMethods'],
 ): string | null {
-  if (paymentMethods.length === 0) {
+  const usable = paymentMethods.filter(isBeamSavedPaymentMethod);
+  if (usable.length === 0) {
     return null;
   }
 
-  return paymentMethods.find((method) => method.isDefault)?.id ?? paymentMethods[0]?.id ?? null;
+  return usable.find((method) => method.isDefault)?.id ?? usable[0]?.id ?? null;
 }
 
 export function PaymentRetryPanel({
@@ -162,6 +171,7 @@ export function PaymentRetryPanel({
   const [cardEntryMode, setCardEntryMode] = useState<CardEntryMode>('new');
   const [selectedSavedCardId, setSelectedSavedCardId] = useState<string | null>(null);
   const [saveCardForNextTime, setSaveCardForNextTime] = useState(false);
+  const [savedCardCvv, setSavedCardCvv] = useState('');
   const [localSubmitting, setLocalSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -173,6 +183,7 @@ export function PaymentRetryPanel({
   const showSavedCards =
     selectedPaymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
   const showNewCardForm = selectedPaymentMethod === 'card' && !showSavedCards;
+  const selectedSavedCard = paymentMethods.find((method) => method.id === selectedSavedCardId);
   const displayError = submitError ?? localError;
 
   useEffect(() => {
@@ -184,6 +195,7 @@ export function PaymentRetryPanel({
     setCardForm(EMPTY_CHECKOUT_CARD_FORM);
     setCardFormError(null);
     setSaveCardForNextTime(false);
+    setSavedCardCvv('');
   };
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
@@ -246,7 +258,13 @@ export function PaymentRetryPanel({
 
     if (selectedPaymentMethod === 'card') {
       if (cardEntryMode === 'saved' && selectedSavedCardId) {
+        const cvv = savedCardCvv.trim();
+        if (!isValidSavedCardCvv(cvv)) {
+          setCardFormError('กรุณากรอกรหัส CVV ของบัตรที่บันทึกไว้');
+          return;
+        }
         payload.savedPaymentMethodId = selectedSavedCardId;
+        payload.cardSecurityCode = cvv;
       } else {
         const validationError = validateCheckoutCardForm(cardForm);
         if (validationError) {
@@ -263,16 +281,27 @@ export function PaymentRetryPanel({
       if (usesNewCardForm) {
         try {
           const { month, year } = parseCardExpiry(cardForm.expiry);
-          payload.omiseToken = await tokenizeCard({
+          const tokenized = await tokenizeCard({
             number: cleanCardNumber(cardForm.cardNumber),
             expirationMonth: month,
             expirationYear: year,
-            securityCode: cardForm.cvv,
             name: cardForm.cardName.trim(),
           });
+          payload.cardToken = tokenized.cardToken;
+          payload.cardSecurityCode = cardForm.cvv.replace(/\D/g, '');
+          if (saveCardForNextTime) {
+            payload.saveCard = buildSaveCardPayload({
+              cardToken: tokenized.cardToken,
+              lastFour: tokenized.lastFour,
+              brand: tokenized.brand,
+              expiryMonth: tokenized.expiryMonth,
+              expiryYear: tokenized.expiryYear,
+              isDefault: true,
+            });
+          }
         } catch (error) {
           const message =
-            error instanceof OmiseConfigurationError
+            error instanceof BeamConfigurationError
               ? error.message
               : getErrorMessage(error, 'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร');
           setCardFormError(message);
@@ -281,14 +310,24 @@ export function PaymentRetryPanel({
         }
       }
 
+      if (
+        payload.savedPaymentMethodId &&
+        selectedSavedCard &&
+        !isBeamSavedPaymentMethod(selectedSavedCard)
+      ) {
+        setCardFormError('บัตรนี้ไม่สามารถใช้ได้');
+        setLocalSubmitting(false);
+        return;
+      }
+
       await onSubmit?.(payload);
       // Clear sensitive card fields only after a successful submit.
-      if (usesNewCardForm) {
+      if (selectedPaymentMethod === 'card') {
         clearCardForm();
       }
     } catch (error) {
       const message =
-        error instanceof OmiseConfigurationError || error instanceof PaymentRetryError
+        error instanceof BeamConfigurationError || error instanceof PaymentRetryError
           ? error.message
           : getErrorMessage(error, 'ไม่สามารถสร้างการชำระเงินได้');
       setLocalError(message);
@@ -382,12 +421,31 @@ export function PaymentRetryPanel({
                       disabled={isSubmitting}
                       onSelect={() => {
                         if (!isSubmitting) {
+                          if (selectedSavedCardId !== method.id) {
+                            setSavedCardCvv('');
+                          }
                           setSelectedSavedCardId(method.id);
                         }
                       }}
                     />
                   ))}
                 </div>
+
+                {selectedSavedCard ? (
+                  <SavedCardCvvField
+                    key={selectedSavedCard.id}
+                    value={savedCardCvv}
+                    brand={selectedSavedCard.brand}
+                    disabled={isSubmitting}
+                    error={cardFormError}
+                    onChange={(next) => {
+                      setSavedCardCvv(next);
+                      if (cardFormError) {
+                        setCardFormError(null);
+                      }
+                    }}
+                  />
+                ) : null}
               </div>
             ) : null}
 

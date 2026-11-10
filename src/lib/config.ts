@@ -42,6 +42,36 @@ export function buildGraphqlSsrBypassHeaders(
   return { [GRAPHQL_SSR_BYPASS_HEADER]: secret };
 }
 
+/**
+ * CSP `connect-src` origins for GraphQL subscriptions.
+ * Browser opens WS directly to the API (not the Next.js `/graphql` HTTP rewrite).
+ * Set `NEXT_PUBLIC_GRAPHQL_WS_URL` or `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN` in UAT/prod.
+ */
+export function getGraphqlWsConnectSrcOrigins(env: NodeJS.ProcessEnv = process.env): string[] {
+  const explicit = env.NEXT_PUBLIC_GRAPHQL_WS_URL?.trim();
+  if (explicit) {
+    try {
+      const url = new URL(explicit);
+      return [`${url.protocol}//${url.host}`];
+    } catch {
+      return [];
+    }
+  }
+
+  const backendOrigin = env.NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN?.trim();
+  if (backendOrigin) {
+    try {
+      const url = new URL(backendOrigin);
+      const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      return [`${protocol}//${url.host}`];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
 /** WebSocket endpoint for GraphQL subscriptions (browser connects directly to API). */
 export function getGraphqlWsUrl(): string {
   if (typeof window === 'undefined') {

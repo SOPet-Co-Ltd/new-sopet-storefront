@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import type { RemotePattern } from 'next/dist/shared/lib/image-config';
+import { getGraphqlWsConnectSrcOrigins } from './src/lib/config';
 
 function cdnRemotePattern(cdnUrl: string): RemotePattern | null {
   try {
@@ -66,20 +67,36 @@ function imageRemotePatterns(): RemotePattern[] {
   return patterns;
 }
 
-const productionCsp = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  // Next.js + GTM/GA + Vercel Preview require script hosts; tighten further when CMP lands.
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live",
-  "connect-src 'self' https://api.beamcheckout.com https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://vercel.live https://*.vercel.live",
-  "frame-src 'self' https://www.googletagmanager.com https://vercel.live",
-  "form-action 'self'",
-].join('; ');
+/** Exported for unit tests — reads WS env at call time. */
+export function buildProductionCsp(env: NodeJS.ProcessEnv = process.env): string {
+  const wsOrigins = getGraphqlWsConnectSrcOrigins(env);
+  const connectSrc = [
+    "'self'",
+    'https://api.beamcheckout.com',
+    'https://www.google-analytics.com',
+    'https://www.googletagmanager.com',
+    'https://*.google-analytics.com',
+    'https://*.analytics.google.com',
+    'https://vercel.live',
+    'https://*.vercel.live',
+    ...wsOrigins,
+  ].join(' ');
+
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    // Next.js + GTM/GA + Vercel Preview require script hosts; tighten further when CMP lands.
+    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live",
+    `connect-src ${connectSrc}`,
+    "frame-src 'self' https://www.googletagmanager.com https://vercel.live",
+    "form-action 'self'",
+  ].join('; ');
+}
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -90,7 +107,7 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: [
           // Skip CSP locally so MinIO/http assets and HMR are unrestricted.
-          ...(skipCsp ? [] : [{ key: 'Content-Security-Policy', value: productionCsp }]),
+          ...(skipCsp ? [] : [{ key: 'Content-Security-Policy', value: buildProductionCsp() }]),
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',

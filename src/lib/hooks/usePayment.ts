@@ -150,6 +150,36 @@ export function usePayment({
     });
   }, [payment?.id, payment?.orderId, resolvedGuestPayToken]);
 
+  const { startPolling, stopPolling } = activeQuery;
+  const subscriptionUnusable = Boolean(paymentStatusUpdatedSubscription.error);
+
+  // Subscription-first live updates. HTTP poll only when the WebSocket subscription
+  // is unusable (CSP/proxy/env). Bank transfer stays manual acknowledgment.
+  useEffect(() => {
+    const shouldPoll =
+      shouldQuery &&
+      subscriptionUnusable &&
+      payment?.status === 'pending' &&
+      payment.paymentMethod !== 'bank_transfer';
+
+    if (!shouldPoll) {
+      stopPolling();
+      return;
+    }
+
+    startPolling(DEFAULT_POLL_INTERVAL_MS);
+    return () => {
+      stopPolling();
+    };
+  }, [
+    payment?.paymentMethod,
+    payment?.status,
+    shouldQuery,
+    startPolling,
+    stopPolling,
+    subscriptionUnusable,
+  ]);
+
   const poll = useCallback(
     async (params: PollPaymentParams = {}): Promise<PollPaymentResult> => {
       const paymentId = params.id ?? id ?? undefined;

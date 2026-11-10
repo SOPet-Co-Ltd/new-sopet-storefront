@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildGraphqlSsrBypassHeaders,
   getGraphqlSsrBypassSecret,
+  getGraphqlWsConnectSrcOrigins,
   GRAPHQL_SSR_BYPASS_HEADER,
 } from './config';
 
@@ -48,5 +49,28 @@ describe('buildGraphqlSsrBypassHeaders', () => {
     expect(buildGraphqlSsrBypassHeaders()).toEqual({
       [GRAPHQL_SSR_BYPASS_HEADER]: 'from-env',
     });
+  });
+});
+
+describe('getGraphqlWsConnectSrcOrigins', () => {
+  it('returns empty when no WS env is set', () => {
+    expect(getGraphqlWsConnectSrcOrigins({})).toEqual([]);
+  });
+
+  it('maps https backend origin to wss host for CSP', () => {
+    expect(
+      getGraphqlWsConnectSrcOrigins({
+        NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN: 'https://api.example.com',
+      }),
+    ).toEqual(['wss://api.example.com']);
+  });
+
+  it('prefers explicit NEXT_PUBLIC_GRAPHQL_WS_URL origin', () => {
+    expect(
+      getGraphqlWsConnectSrcOrigins({
+        NEXT_PUBLIC_GRAPHQL_WS_URL: 'wss://api.example.com/graphql',
+        NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN: 'https://ignored.example.com',
+      }),
+    ).toEqual(['wss://api.example.com']);
   });
 });

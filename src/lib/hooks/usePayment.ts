@@ -151,16 +151,15 @@ export function usePayment({
   }, [payment?.id, payment?.orderId, resolvedGuestPayToken]);
 
   const { startPolling, stopPolling } = activeQuery;
-  const subscriptionUnusable = Boolean(paymentStatusUpdatedSubscription.error);
 
-  // Subscription-first live updates. HTTP poll only when the WebSocket subscription
-  // is unusable (CSP/proxy/env). Bank transfer stays manual acknowledgment.
+  // Hybrid live updates: keep the subscription for fast push when it works, but
+  // always HTTP-poll while pending. On UAT/prod the WebSocket often connects
+  // without error yet never delivers paymentStatusUpdated — without polling the
+  // page stays stuck until a manual check or full refresh. Bank transfer stays
+  // manual acknowledgment (admin confirms; no Beam charge to poll).
   useEffect(() => {
     const shouldPoll =
-      shouldQuery &&
-      subscriptionUnusable &&
-      payment?.status === 'pending' &&
-      payment.paymentMethod !== 'bank_transfer';
+      shouldQuery && payment?.status === 'pending' && payment.paymentMethod !== 'bank_transfer';
 
     if (!shouldPoll) {
       stopPolling();
@@ -171,14 +170,7 @@ export function usePayment({
     return () => {
       stopPolling();
     };
-  }, [
-    payment?.paymentMethod,
-    payment?.status,
-    shouldQuery,
-    startPolling,
-    stopPolling,
-    subscriptionUnusable,
-  ]);
+  }, [payment?.paymentMethod, payment?.status, shouldQuery, startPolling, stopPolling]);
 
   const poll = useCallback(
     async (params: PollPaymentParams = {}): Promise<PollPaymentResult> => {

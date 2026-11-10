@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildGraphqlSsrBypassHeaders,
+  getBeamConnectSrcOrigins,
   getGraphqlSsrBypassSecret,
   getGraphqlWsConnectSrcOrigins,
   GRAPHQL_SSR_BYPASS_HEADER,
@@ -72,5 +73,27 @@ describe('getGraphqlWsConnectSrcOrigins', () => {
         NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN: 'https://ignored.example.com',
       }),
     ).toEqual(['wss://api.example.com']);
+  });
+});
+
+describe('getBeamConnectSrcOrigins', () => {
+  it('defaults to production Beam API origin when unset', () => {
+    expect(getBeamConnectSrcOrigins({})).toEqual(['https://api.beamcheckout.com']);
+  });
+
+  it('uses NEXT_PUBLIC_BEAM_API_BASE_URL origin for CSP', () => {
+    expect(
+      getBeamConnectSrcOrigins({
+        NEXT_PUBLIC_BEAM_API_BASE_URL: 'https://playground.api.beamcheckout.com',
+      }),
+    ).toEqual(['https://playground.api.beamcheckout.com']);
+  });
+
+  it('falls back to production when Beam API base URL is invalid', () => {
+    expect(
+      getBeamConnectSrcOrigins({
+        NEXT_PUBLIC_BEAM_API_BASE_URL: 'not-a-url',
+      }),
+    ).toEqual(['https://api.beamcheckout.com']);
   });
 });

@@ -24,7 +24,7 @@ Browser GraphQL **subscriptions** connect **directly** to the API WebSocket (`ge
 | `NEXT_PUBLIC_GRAPHQL_WS_URL`         | Full WS URL override (takes precedence), e.g. `wss://api.example.com/graphql`.                                                                     |
 | `GRAPHQL_WS_SSR_URL`                 | Server-only default when resolving WS URL outside the browser.                                                                                     |
 
-Local default when unset: `ws://localhost:3002/graphql`. Development skips CSP; UAT/prod **must** set one of the public WS vars or the browser will block `wss:` and fall back to HTTP polling while pending.
+Local default when unset: `ws://localhost:3002/graphql`. Development skips CSP; UAT/prod **must** set one of the public WS vars or the browser will block `wss:`. The payment page always HTTP-polls while status is pending (except bank transfer); the subscription is best-effort for faster updates when WSS works.
 
 ### Cloudflare SSR bypass (UAT/prod)
 

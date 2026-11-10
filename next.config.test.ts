@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getBeamConnectSrcOrigins } from './src/lib/config';
 import nextConfig, { buildProductionCsp } from './next.config';
 
 describe('next.config redirects', () => {
@@ -29,8 +30,10 @@ describe('next.config security headers', () => {
     const byKey = Object.fromEntries(globalHeaders.map((h) => [h.key, h.value]));
 
     // Vitest runs with NODE_ENV=test, so production CSP is applied.
+    // Beam origin follows process.env (CI may set playground NEXT_PUBLIC_BEAM_API_BASE_URL).
+    const [beamOrigin] = getBeamConnectSrcOrigins();
     expect(byKey['Content-Security-Policy']).toContain("frame-ancestors 'none'");
-    expect(byKey['Content-Security-Policy']).toContain('https://api.beamcheckout.com');
+    expect(byKey['Content-Security-Policy']).toContain(beamOrigin);
     expect(byKey['Content-Security-Policy']).not.toContain('omise');
     expect(byKey['Content-Security-Policy']).toContain("img-src 'self' data: blob: https:");
     expect(byKey['Content-Security-Policy']).not.toContain("'wasm-unsafe-eval'");
@@ -56,6 +59,21 @@ describe('next.config security headers', () => {
     } as NodeJS.ProcessEnv);
 
     expect(csp).toContain('wss://payments-api.sopet.org');
+  });
+
+  it('allows Beam playground API origin in connect-src when NEXT_PUBLIC_BEAM_API_BASE_URL is set', () => {
+    const csp = buildProductionCsp({
+      NEXT_PUBLIC_BEAM_API_BASE_URL: 'https://playground.api.beamcheckout.com',
+    } as NodeJS.ProcessEnv);
+
+    expect(csp).toContain('https://playground.api.beamcheckout.com');
+  });
+
+  it('defaults Beam connect-src to production API when NEXT_PUBLIC_BEAM_API_BASE_URL is unset', () => {
+    const csp = buildProductionCsp({} as NodeJS.ProcessEnv);
+
+    expect(csp).toContain('https://api.beamcheckout.com');
+    expect(csp).not.toContain('https://playground.api.beamcheckout.com');
   });
 });
 

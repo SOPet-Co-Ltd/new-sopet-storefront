@@ -2,7 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
-import { usePayment } from '@/lib/hooks/usePayment';
+import { pickFreshestPayment, usePayment, type PaymentRecord } from '@/lib/hooks/usePayment';
 import { server } from '@/test/mocks/server';
 import {
   CHECKOUT_ORDER_ID,
@@ -13,6 +13,7 @@ import {
 
 const subscriptionState = vi.hoisted(() => ({
   error: undefined as Error | undefined,
+  data: undefined as { paymentStatusUpdated: PaymentRecord } | undefined,
 }));
 
 const pollingSpies = vi.hoisted(() => ({
@@ -25,7 +26,7 @@ vi.mock('@apollo/client/react', async (importOriginal) => {
   return {
     ...actual,
     useSubscription: () => ({
-      data: undefined,
+      data: subscriptionState.data,
       error: subscriptionState.error,
       loading: false,
     }),
@@ -45,11 +46,34 @@ vi.mock('@apollo/client/react', async (importOriginal) => {
 
 const createWrapper = createApolloTestWrapper;
 
+describe('pickFreshestPayment', () => {
+  it('prefers paid query over failed subscription', () => {
+    const failedSubscription = {
+      ...samplePendingPayment,
+      status: 'failed' as const,
+    };
+    const paidQuery = samplePaidPayment;
+
+    expect(pickFreshestPayment(failedSubscription, paidQuery)?.status).toBe('paid');
+  });
+
+  it('prefers paid subscription over failed query', () => {
+    const paidSubscription = samplePaidPayment;
+    const failedQuery = {
+      ...samplePendingPayment,
+      status: 'failed' as const,
+    };
+
+    expect(pickFreshestPayment(paidSubscription, failedQuery)?.status).toBe('paid');
+  });
+});
+
 describe('usePayment', () => {
   afterEach(() => {
     pollingSpies.startPolling.mockReset();
     pollingSpies.stopPolling.mockReset();
     subscriptionState.error = undefined;
+    subscriptionState.data = undefined;
   });
 
   it('loads payment by id', async () => {
@@ -285,5 +309,116 @@ describe('usePayment', () => {
     });
 
     expect(pollingSpies.startPolling).not.toHaveBeenCalled();
+  });
+
+  it('runs one late-success refetch when PromptPay flips to failed while order is pending_payment', async () => {
+    const failedPromptPay = {
+      ...samplePendingPayment,
+      status: 'failed' as const,
+    };
+    let paymentQueryCount = 0;
+
+    server.use(
+      graphql.query('Payment', () => {
+        paymentQueryCount += 1;
+        return HttpResponse.json({
+          data: { payment: failedPromptPay },
+        });
+      }),
+    );
+
+    const { result } = renderHook(
+      () =>
+        usePayment({
+          id: CHECKOUT_PAYMENT_ID,
+          orderStatus: 'pending_payment',
+        }),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(result.current.payment?.status).toBe('failed');
+    });
+
+    // Initial useQuery + one late-success network GET.
+    await waitFor(() => {
+      expect(paymentQueryCount).toBeGreaterThanOrEqual(2);
+    });
+
+    await waitFor(() => {
+      expect(result.current.confirmingLateSuccess).toBe(false);
+    });
+
+    const countAfterSettle = paymentQueryCount;
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(paymentQueryCount).toBe(countAfterSettle);
+  });
+
+  it('does not late-success refetch for failed card payments', async () => {
+    const failedCard = {
+      ...samplePendingPayment,
+      status: 'failed' as const,
+      paymentMethod: 'credit_card',
+      qrCodeUrl: null,
+      expiresAt: null,
+    };
+    let paymentQueryCount = 0;
+
+    server.use(
+      graphql.query('Payment', () => {
+        paymentQueryCount += 1;
+        return HttpResponse.json({
+          data: { payment: failedCard },
+        });
+      }),
+    );
+
+    const { result } = renderHook(
+      () =>
+        usePayment({
+          id: CHECKOUT_PAYMENT_ID,
+          orderStatus: 'pending_payment',
+        }),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(result.current.payment?.status).toBe('failed');
+      expect(result.current.payment?.paymentMethod).toBe('credit_card');
+    });
+
+    const countAfterLoad = paymentQueryCount;
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(paymentQueryCount).toBe(countAfterLoad);
+    expect(result.current.confirmingLateSuccess).toBe(false);
+  });
+
+  it('paid query wins over failed subscription event', async () => {
+    subscriptionState.data = {
+      paymentStatusUpdated: {
+        ...samplePendingPayment,
+        status: 'failed',
+      },
+    };
+
+    server.use(
+      graphql.query('Payment', () => {
+        return HttpResponse.json({
+          data: { payment: samplePaidPayment },
+        });
+      }),
+    );
+
+    const { result } = renderHook(() => usePayment({ id: CHECKOUT_PAYMENT_ID }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.payment?.status).toBe('paid');
+    });
   });
 });

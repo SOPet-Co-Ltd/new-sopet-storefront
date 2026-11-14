@@ -359,19 +359,23 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
     });
 
-    it('QR-expired interim shows retry panel and does not mount Mid-QR CTA', async () => {
+    it('QR-expired interim keeps QR, shows late-success check, and does not mount Mid-QR or retry CTA', async () => {
       server.use(paymentQueryHandler(midQrExpiredInterimPayment));
 
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(
-          screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'),
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('payment-late-success-check')).toBeInTheDocument();
       });
-      expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+      expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'),
+      ).not.toBeInTheDocument();
       expect(screen.queryByTestId('payment-order-not-payable')).not.toBeInTheDocument();
     });
   });

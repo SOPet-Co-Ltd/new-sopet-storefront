@@ -184,7 +184,7 @@ describe('OrderPaymentForm', () => {
     expect(onPromptPayComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('shows retry panel when pending PromptPay QR countdown has expired', () => {
+  it('keeps QR and hides retry panel while pending PromptPay countdown has expired', () => {
     renderForm(
       <OrderPaymentForm
         payment={{
@@ -197,10 +197,33 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    expect(screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่')).toBeInTheDocument();
-    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
-    expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+    expect(screen.getByTestId('payment-late-success-check')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'),
+    ).not.toBeInTheDocument();
     expect(screen.queryByTestId('payment-order-not-payable')).not.toBeInTheDocument();
+  });
+
+  it('does not render retry panel while confirmingLateSuccess on failed PromptPay', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          status: 'failed',
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: pastExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+        confirmingLateSuccess
+      />,
+    );
+
+    expect(screen.getByTestId('payment-late-success-check')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('payment-failed-state')).not.toBeInTheDocument();
   });
 
   it('authorizeUri present → redirecting state and auto-navigates once (AC-003/004)', () => {
@@ -611,7 +634,7 @@ describe('OrderPaymentForm', () => {
     expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
   });
 
-  it('QR-expired interim shows retry panel and does not mount Mid-QR change-method CTA', () => {
+  it('QR-expired interim keeps QR, shows late-success check, and does not mount Mid-QR or retry CTA', () => {
     renderForm(
       <OrderPaymentForm
         payment={{
@@ -624,9 +647,16 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+    expect(screen.getByTestId('payment-late-success-check')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
-    expect(screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่')).toBeInTheDocument();
+    expect(
+      screen.queryByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'),
+    ).not.toBeInTheDocument();
   });
 
   it('frictionless pending (no qrCodeUrl) does not mount Mid-QR CTA', () => {

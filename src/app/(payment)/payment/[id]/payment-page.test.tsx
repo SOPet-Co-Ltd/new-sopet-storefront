@@ -134,6 +134,7 @@ vi.mock('@/lib/hooks/usePayment', () => ({
     error: undefined,
     refetch: vi.fn(),
     poll: vi.fn(),
+    confirmingLateSuccess: false,
   }),
 }));
 

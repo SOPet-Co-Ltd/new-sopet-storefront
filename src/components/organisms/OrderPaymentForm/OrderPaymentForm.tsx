@@ -41,6 +41,11 @@ export type OrderPaymentFormProps = {
   onRetryPayment?: PaymentRetryPanelProps['onSubmit'];
   retrySubmitError?: PaymentRetryPanelProps['submitError'];
   retrySubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  /**
+   * PromptPay late-success check in flight after a failed (or locally expired) QR.
+   * Hide the retry panel until this settles so a second charge is not started early.
+   */
+  confirmingLateSuccess?: boolean;
   /** Order cancelled / unpaid window closed — hide change-method UI */
   paymentRecoveryUnavailable?: boolean;
   /** Decision #15: any item on_hold while pending payment — block pay / Mid-QR / retry */
@@ -263,6 +268,7 @@ export function OrderPaymentForm({
   onRetryPayment,
   retrySubmitError,
   retrySubmitting,
+  confirmingLateSuccess = false,
   paymentRecoveryUnavailable = false,
   heldUnpaidBlocked = false,
   orderCreatedAt = null,
@@ -377,6 +383,21 @@ export function OrderPaymentForm({
   }
 
   if (payment.status === 'failed') {
+    const isPromptPay = payment.paymentMethod === 'promptpay';
+    if (isPromptPay && confirmingLateSuccess) {
+      return (
+        <section
+          className="flex w-full max-w-[500px] flex-col items-center gap-4 rounded-3xl bg-white p-8 shadow-xl"
+          aria-busy="true"
+          aria-label="กำลังตรวจสอบการชำระเงิน"
+          data-testid="payment-late-success-check"
+        >
+          <SpinnerIcon size={{ mobile: 32, desktop: 32 }} />
+          <p className="text-sm text-gray-500">กำลังตรวจสอบการชำระเงิน...</p>
+        </section>
+      );
+    }
+
     const isQrExpired = hasQrExpiredAt(payment.expiresAt);
 
     return (
@@ -396,15 +417,35 @@ export function OrderPaymentForm({
   const authorizeUri = payment.authorizeUri?.trim() ? payment.authorizeUri : null;
   const hasRedirectUri = Boolean(authorizeUri);
 
+  // Local countdown expired while payment is still pending: keep QR visible and hide
+  // retry / Mid-QR change-method until the late-success refetch settles on failed.
   if (hasQrCode && isExpired && payment.status === 'pending') {
     return (
-      <PaymentBusyShell titleId="payment-expired-title" title="ชำระเงิน" busy={isRetryBusy}>
-        <PaymentFailedState
-          isQrExpired
-          onRetrySubmit={onRetryPayment}
-          submitError={retrySubmitError}
-          isSubmitting={retrySubmitting}
-          onSubmittingChange={setPanelSubmitting}
+      <PaymentBusyShell
+        titleId="payment-waiting-title"
+        title="สแกน QR เพื่อชำระเงิน"
+        busy={false}
+        hideTitle
+        className="max-w-[500px] px-4 py-5 md:max-w-[960px] md:px-6 md:py-6"
+      >
+        <PromptPayQrWaitingState
+          qrCodeSrc={qrCodeSrc ?? ''}
+          amountLabel={formatAmount(payment.amount, payment.currency)}
+          orderNumber={payment.orderNumber}
+          orderCreatedAt={orderCreatedAt}
+          referenceId={resolvePromptPayReferenceId(payment.qrCodeUrl, payment.id)}
+          remainingMs={0}
+          actions={
+            <div
+              className="mt-4 flex flex-col items-center gap-2"
+              data-testid="payment-late-success-check"
+              aria-busy="true"
+              aria-label="กำลังตรวจสอบการชำระเงิน"
+            >
+              <SpinnerIcon size={{ mobile: 24, desktop: 24 }} />
+              <p className="text-sm text-gray-500">กำลังตรวจสอบการชำระเงิน...</p>
+            </div>
+          }
         />
       </PaymentBusyShell>
     );

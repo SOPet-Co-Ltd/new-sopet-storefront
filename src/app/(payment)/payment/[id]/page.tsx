@@ -66,9 +66,12 @@ export default function PaymentPage() {
   const hasTriedFallback = useRef(false);
   const hasRedirected = useRef(false);
 
-  const { payment, loading, error, refetch } = usePayment({
+  const [orderStatusForPayment, setOrderStatusForPayment] = useState<string | undefined>(undefined);
+
+  const { payment, loading, error, refetch, confirmingLateSuccess } = usePayment({
     id: lookupMode === 'paymentId' ? routeId : null,
     orderId: lookupMode === 'orderId' ? routeId : null,
+    orderStatus: orderStatusForPayment,
   });
 
   const orderIdForHold = payment?.orderId ?? (lookupMode === 'orderId' ? routeId : undefined);
@@ -78,6 +81,11 @@ export default function PaymentPage() {
     [order],
   );
   const heldUnpaidBlocked = heldUnpaidFromOrder || heldUnpaidFromError;
+
+  // Adjust state during render when the order detail status becomes available.
+  if (order?.status && order.status !== orderStatusForPayment) {
+    setOrderStatusForPayment(order.status);
+  }
 
   const handlePromptPayComplete = useCallback(() => {
     if (!payment?.orderId || hasRedirected.current) {
@@ -134,7 +142,7 @@ export default function PaymentPage() {
 
   const handleRetryPayment = useCallback(
     async (input: PaymentRetrySubmitInput) => {
-      if (!payment?.orderId || !payment.id) {
+      if (!payment?.orderId || !payment.id || confirmingLateSuccess) {
         return;
       }
 
@@ -180,7 +188,7 @@ export default function PaymentPage() {
         throw retryError instanceof Error ? retryError : new Error(message);
       }
     },
-    [createPayment, payment, router],
+    [confirmingLateSuccess, createPayment, payment, router],
   );
 
   return (
@@ -200,6 +208,7 @@ export default function PaymentPage() {
         onRetryPayment={handleRetryPayment}
         retrySubmitError={retrySubmitError}
         retrySubmitting={creatingPayment || retryNavigating}
+        confirmingLateSuccess={confirmingLateSuccess}
         paymentRecoveryUnavailable={paymentRecoveryUnavailable}
         heldUnpaidBlocked={heldUnpaidBlocked}
         orderCreatedAt={order?.createdAt ?? null}

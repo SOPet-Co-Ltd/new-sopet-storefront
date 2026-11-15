@@ -156,6 +156,8 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.ORDER_NOT_PAYABLE]:
     'คำสั่งซื้อนี้หมดเวลาชำระเงินแล้ว หรือถูกยกเลิกแล้ว กรุณาทำรายการสั่งซื้อใหม่',
   [ERROR_CODES.ORDER_NOT_REVIEWABLE]: 'ยังไม่สามารถรีวิวคำสั่งซื้อนี้ได้',
+  [ERROR_CODES.ORDER_REVIEWED_CANNOT_CANCEL]:
+    'ไม่สามารถยกเลิกหรือคืนเงินได้ เนื่องจากคำสั่งซื้อนี้มีการรีวิวแล้ว',
   [ERROR_CODES.OWNER_REQUIRED]: 'ต้องมีเจ้าของร้าน',
   [ERROR_CODES.PAYLOAD_TOO_LARGE]: 'ไฟล์หรือข้อมูลมีขนาดใหญ่เกินไป',
   [ERROR_CODES.PAYMENT_HELD_PORTION_BLOCKED]:
@@ -362,6 +364,7 @@ const CODE_GROUPS: Record<string, ErrorCode[]> = {
     ERROR_CODES.ORDER_NOT_FULLY_SHIPPED,
     ERROR_CODES.ORDER_NOT_PAYABLE,
     ERROR_CODES.ORDER_NOT_REVIEWABLE,
+    ERROR_CODES.ORDER_REVIEWED_CANNOT_CANCEL,
     ERROR_CODES.PAYMENT_HELD_PORTION_BLOCKED,
     ERROR_CODES.PAYMENT_METHOD_ALREADY_EXISTS,
     ERROR_CODES.PAYMENT_METHOD_NOT_FOUND,

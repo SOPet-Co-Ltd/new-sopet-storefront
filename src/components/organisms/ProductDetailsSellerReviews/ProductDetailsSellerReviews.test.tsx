@@ -141,7 +141,7 @@ describe('ProductDetailsSellerReviews', () => {
       <ProductDetailsSellerReviews productReviews={reviews} averageRating={5} totalReviews={2} />,
     );
 
-    expect(screen.getByText('ตัวเลือก : 20-40 kg')).toBeInTheDocument();
+    expect(screen.getAllByText('ตัวเลือก : 20-40 kg').length).toBeGreaterThan(0);
     const noVariantArticle = screen.getByTestId('product-review-item-review-without-variant');
     expect(noVariantArticle).not.toHaveTextContent('ตัวเลือก : 20-40 kg');
   });

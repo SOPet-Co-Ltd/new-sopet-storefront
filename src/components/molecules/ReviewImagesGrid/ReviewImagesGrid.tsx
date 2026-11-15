@@ -14,9 +14,11 @@ export type ReviewImage = {
 type ReviewImagesGridProps = {
   images: ReviewImage[];
   size?: number;
+  /** Mobile product reviews fill the row; desktop stays on the fixed thumbnail size. */
+  layout?: 'fixed' | 'responsive';
 };
 
-export function ReviewImagesGrid({ images, size = 88 }: ReviewImagesGridProps) {
+export function ReviewImagesGrid({ images, size = 88, layout = 'fixed' }: ReviewImagesGridProps) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -63,22 +65,37 @@ export function ReviewImagesGrid({ images, size = 88 }: ReviewImagesGridProps) {
 
   return (
     <>
-      <div className="mt-2 flex flex-wrap gap-2" data-testid="review-images-grid">
+      <div
+        className={
+          layout === 'responsive'
+            ? 'mt-4 grid grid-cols-3 gap-2 md:mt-2 md:flex md:flex-wrap'
+            : 'mt-2 flex flex-wrap gap-2'
+        }
+        data-testid="review-images-grid"
+      >
         {images.map((image, index) => (
           <button
             key={image.id}
             type="button"
             aria-label={`ดูรูปรีวิวที่ ${index + 1}`}
             onClick={() => openLightbox(index)}
-            className="overflow-hidden rounded-sop-8px"
+            className={
+              layout === 'responsive'
+                ? 'overflow-hidden rounded-sop-12px md:rounded-sop-8px'
+                : 'overflow-hidden rounded-sop-8px'
+            }
           >
             <Image
               src={image.url}
               alt=""
               width={size}
               height={size}
-              className="rounded-sop-8px object-cover"
-              style={{ width: size, height: size }}
+              className={
+                layout === 'responsive'
+                  ? 'aspect-square h-auto w-full rounded-sop-12px object-cover md:h-[88px] md:w-[88px] md:rounded-sop-8px'
+                  : 'rounded-sop-8px object-cover'
+              }
+              style={layout === 'responsive' ? undefined : { width: size, height: size }}
             />
           </button>
         ))}

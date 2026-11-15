@@ -40,3 +40,22 @@ export function formatThaiDate(value: string | Date): string {
     timeZone: THAILAND_TIME_ZONE,
   }).format(date);
 }
+
+/** Recent reviews read as "2 วันที่แล้ว"; older ones keep the calendar date. */
+export function formatRelativeThaiDate(value: string | Date, now: Date = new Date()): string {
+  const date = parseApiDate(value);
+  const elapsedMs = now.getTime() - date.getTime();
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+    return formatThaiDate(value);
+  }
+
+  const minuteMs = 60 * 1000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+
+  if (elapsedMs < minuteMs) return 'เมื่อสักครู่';
+  if (elapsedMs < hourMs) return `${Math.floor(elapsedMs / minuteMs)} นาทีที่แล้ว`;
+  if (elapsedMs < dayMs) return `${Math.floor(elapsedMs / hourMs)} ชั่วโมงที่แล้ว`;
+  if (elapsedMs < 30 * dayMs) return `${Math.floor(elapsedMs / dayMs)} วันที่แล้ว`;
+  return formatThaiDate(value);
+}

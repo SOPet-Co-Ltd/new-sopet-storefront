@@ -16,7 +16,7 @@ type ReviewImagesGridProps = {
   size?: number;
 };
 
-export function ReviewImagesGrid({ images, size = 64 }: ReviewImagesGridProps) {
+export function ReviewImagesGrid({ images, size = 88 }: ReviewImagesGridProps) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
 

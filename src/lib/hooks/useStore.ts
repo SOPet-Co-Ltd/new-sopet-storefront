@@ -2,6 +2,7 @@
 
 import { useQuery } from '@apollo/client/react';
 import { StoreBySlugDocument, type StoreBySlugQuery } from '@/lib/graphql/generated/graphql';
+import { decodeRouteParam } from '@/lib/routing/categoryRoutes';
 
 export type StoreDetail = NonNullable<StoreBySlugQuery['storeBySlug']>;
 
@@ -22,9 +23,10 @@ function toHookError(error: unknown): Error | undefined {
 }
 
 export function useStore({ slug, skip = false }: UseStoreParams): UseStoreResult {
+  const decodedSlug = decodeRouteParam(slug);
   const { data, loading, error } = useQuery(StoreBySlugDocument, {
-    variables: { slug },
-    skip: skip || !slug,
+    variables: { slug: decodedSlug },
+    skip: skip || !decodedSlug,
   });
 
   return {

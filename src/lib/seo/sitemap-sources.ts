@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 import { buildProductHref } from '@/lib/routing/productRoutes';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
 import { POLICY_PATHS, REGULATORY_PATHS } from './constants';
 import { fetchAllSitemapProducts, fetchApprovedCategories, fetchApprovedStores } from './fetch';
 import { buildAbsoluteUrl } from './metadata';
@@ -42,7 +43,7 @@ export async function collectSitemapUrls(): Promise<MetadataRoute.Sitemap> {
 
   if (stores) {
     for (const store of stores) {
-      entries.push({ url: buildAbsoluteUrl(`/sellers/${store.slug}`) });
+      entries.push({ url: buildAbsoluteUrl(buildSellerHref(store.slug)) });
     }
   }
 

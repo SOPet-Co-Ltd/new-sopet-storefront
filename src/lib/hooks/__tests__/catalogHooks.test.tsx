@@ -58,6 +58,24 @@ describe('useStore', () => {
     });
     expect(result.current.store?.slug).toBe('sopet-pet-shop');
   });
+
+  it('queries a Thai store slug after the URL segment is decoded', async () => {
+    const slug = 'ร้านไทย';
+    server.use(
+      graphql.query('StoreBySlug', ({ variables }) => {
+        expect(variables).toEqual({ slug });
+        return HttpResponse.json({ data: { storeBySlug: { ...sampleStore, slug } } });
+      }),
+    );
+
+    const { result } = renderHook(() => useStore({ slug: encodeURIComponent(slug) }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.store?.slug).toBe(slug);
+    });
+  });
 });
 
 describe('useReviews', () => {

@@ -40,7 +40,7 @@ vi.mock('@/lib/session', async (importOriginal) => {
 });
 
 vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), custom: vi.fn(), dismiss: vi.fn() },
 }));
 
 type CartPayload = {

@@ -13,6 +13,7 @@ import {
 import type { ApolloCache } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { toast } from 'sonner';
+import { showAddedToCartToast } from '@/components/atoms/SavedProductToast/SavedProductToast';
 import {
   AddToCartDocument,
   CartDocument,
@@ -374,7 +375,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             },
           },
         });
-        toast.success('เพิ่มสินค้าลงตะกร้าแล้ว');
+        showAddedToCartToast();
         return result;
       }, 'ไม่สามารถเพิ่มสินค้าลงตะกร้าได้');
     },

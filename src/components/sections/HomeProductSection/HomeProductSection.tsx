@@ -35,7 +35,7 @@ function getGridProductVisibilityClass(index: number): string | undefined {
 
 function ProductSkeletonRow() {
   return (
-    <div className="flex gap-4 overflow-x-auto px-4 md:px-0" aria-hidden="true">
+    <div className="flex gap-4 overflow-x-auto" aria-hidden="true">
       {Array.from({ length: 5 }).map((_, index) => (
         <div
           key={index}
@@ -198,7 +198,7 @@ export function HomeProductSection({
   if (isLoading) {
     return (
       <section className="w-full" aria-busy="true">
-        <h2 className={`md:px-0 px-4 ${SECTION_HEADING_CLASS}`}>{heading}</h2>
+        <h2 className={SECTION_HEADING_CLASS}>{heading}</h2>
         <ProductSkeletonRow />
       </section>
     );
@@ -228,8 +228,8 @@ export function HomeProductSection({
 
   return (
     <section className="w-full">
-      <div className="mb-5 flex items-center justify-between px-4 md:px-0">
-        <h2 className={SECTION_HEADING_CLASS.replace('mb-5 ', '')}>{heading}</h2>
+      <div className="mb-5 flex w-full items-center justify-between gap-4">
+        <h2 className="min-w-0 sop-body-lg-medium text-sop-neutral-gray-200">{heading}</h2>
 
         <Link
           href={viewAllHref}

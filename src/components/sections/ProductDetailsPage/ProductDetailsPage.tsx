@@ -31,6 +31,7 @@ import { useProduct } from '@/lib/hooks/useProduct';
 import { useReviews, type ProductReview } from '@/lib/hooks/useReviews';
 import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
 import { buildProductHref } from '@/lib/routing/productRoutes';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
 import { cn } from '@/lib/utils';
 import { HomeFaqSection, HOME_FAQ_ITEMS } from '@/components/sections/HomeFaqSection';
 
@@ -299,7 +300,7 @@ export default function ProductDetailsPage({
           excludeProductId={product.id}
           sameStoreOnly
           layout="grid"
-          viewAllHref={product.store ? `/sellers/${product.store.slug}` : '/products'}
+          viewAllHref={product.store ? buildSellerHref(product.store.slug) : '/products'}
         />
 
         <HomeProductSection

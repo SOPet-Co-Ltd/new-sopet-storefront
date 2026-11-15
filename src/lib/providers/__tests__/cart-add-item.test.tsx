@@ -31,7 +31,7 @@ vi.mock('@/lib/session', async (importOriginal) => {
 });
 
 vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), custom: vi.fn(), dismiss: vi.fn() },
 }));
 
 const variantId = 'variant-001';
@@ -79,7 +79,7 @@ function CartAddItemProbe() {
 describe('CartProvider addItem', () => {
   it('shows a success toast when add to cart succeeds (SF-CART-029)', async () => {
     addToCartMutation.mockClear();
-    vi.mocked(toast.success).mockClear();
+    vi.mocked(toast.custom).mockClear();
 
     const user = userEvent.setup();
     render(
@@ -102,6 +102,13 @@ describe('CartProvider addItem', () => {
       });
     });
 
-    expect(toast.success).toHaveBeenCalledWith('เพิ่มสินค้าลงตะกร้าแล้ว');
+    expect(toast.custom).toHaveBeenCalledOnce();
+    const [renderToast, options] = vi.mocked(toast.custom).mock.calls[0];
+    expect(options).toMatchObject({
+      id: 'added-to-cart',
+      position: 'top-right',
+    });
+    render(<>{renderToast('added-to-cart')}</>);
+    expect(screen.getByText('เพิ่มสินค้าลงตะกร้าแล้ว')).toBeInTheDocument();
   });
 });

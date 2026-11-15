@@ -10,6 +10,7 @@ import {
   DEFAULT_SITE_TITLE_SEGMENT,
   META_DESCRIPTION_MAX_LENGTH,
 } from './constants';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
 import { getSearchIndexation, isProductIndexable } from './indexability';
 
 export type PageMetadataInput = {
@@ -230,7 +231,7 @@ export function buildSellerMetadata(
   return buildPageMetadata({
     title: store.name,
     description: store.description ?? `ร้านค้า ${store.name} บน Sopet`,
-    path: `/sellers/${store.slug}`,
+    path: buildSellerHref(store.slug),
     robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     ogImage,
   });

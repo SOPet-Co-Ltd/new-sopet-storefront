@@ -1,3 +1,4 @@
+import { decodeRouteParam } from '@/lib/routing/categoryRoutes';
 import type {
   ProductByIdQueryVariables,
   ProductByPathQueryVariables,
@@ -114,5 +115,5 @@ export function buildSellerStorefrontVariables({
 }: {
   handle: string;
 }): StoreBySlugQueryVariables {
-  return { slug: handle };
+  return { slug: decodeRouteParam(handle) };
 }

@@ -21,6 +21,14 @@ describe('ReviewImagesGrid', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('renders review thumbnails at 88px', () => {
+    render(<ReviewImagesGrid images={images} />);
+
+    const thumbnail = screen.getByRole('button', { name: 'ดูรูปรีวิวที่ 1' }).querySelector('img');
+    expect(thumbnail).toHaveAttribute('width', '88');
+    expect(thumbnail).toHaveAttribute('height', '88');
+  });
+
   it('opens the lightbox when a thumbnail is clicked', async () => {
     const user = userEvent.setup();
     render(<ReviewImagesGrid images={images} />);

@@ -9,6 +9,7 @@ import type { ProductsQuery } from '@/lib/graphql/generated/graphql';
 import type { StoreDetail } from '@/lib/hooks/useStore';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/lib/hooks/useStore';
+import { buildSellerHref, buildSellerReviewsHref } from '@/lib/routing/sellerRoutes';
 import { SellerHeading } from '@/components/organisms/SellerHeading';
 import { SellerReviewTab } from '@/components/organisms/SellerReviewTab';
 
@@ -77,8 +78,8 @@ function TabContent({
 
 export function SellerTabs({ activeTab, storeHandle, storeId, initialProducts }: SellerTabsProps) {
   const tabs: TabItem[] = [
-    { label: 'products', href: `/sellers/${storeHandle}` },
-    { label: 'reviews', href: `/sellers/${storeHandle}/reviews` },
+    { label: 'products', href: buildSellerHref(storeHandle) },
+    { label: 'reviews', href: buildSellerReviewsHref(storeHandle) },
   ];
 
   const handleTabPrefetch = (tab: SellerTab) => {

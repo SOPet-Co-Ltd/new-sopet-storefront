@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { ChatDotsIcon, ShopVendorIcon } from '@/components/atoms/icons';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
 
 type ProductDetailsSellerProps = {
   store: ProductDetail['store'];
@@ -16,6 +17,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
   const handleChat = () => {
     toast.message('ฟีเจอร์แชทพูดคุยจะเปิดใช้งานเร็วๆ นี้');
   };
+  const sellerHref = buildSellerHref(store.slug);
 
   return (
     <div
@@ -25,7 +27,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         {/* Left / Top: Store Info */}
         <div className="flex items-center gap-3.5 min-w-0">
-          <Link href={`/sellers/${store.slug}`} className="shrink-0" aria-label={store.name}>
+          <Link href={sellerHref} className="shrink-0" aria-label={store.name}>
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-sop-neutral-gray-500">
               {store.logoUrl ? (
                 <Image
@@ -44,7 +46,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
           </Link>
 
           <div className="flex flex-col gap-1 min-w-0">
-            <Link href={`/sellers/${store.slug}`} className="min-w-0">
+            <Link href={sellerHref} className="min-w-0">
               <p className="sop-body-md-medium text-sop-neutral-gray-100 truncate hover:underline">
                 {store.name}
               </p>
@@ -80,7 +82,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
           </button>
 
           <Link
-            href={`/sellers/${store.slug}`}
+            href={sellerHref}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-sop-neutral-grayalpha-200 bg-sop-base-white px-4 py-2.5 text-sm font-medium text-sop-neutral-gray-200 shadow-2xs transition-colors hover:bg-sop-neutral-gray-500"
             data-testid="seller-store-link"
           >

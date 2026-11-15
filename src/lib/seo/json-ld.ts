@@ -2,6 +2,7 @@ import { getDefaultVariant } from '@/components/organisms/ProductDetailsVariantS
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 import type { ProductReview } from '@/lib/hooks/useReviews';
 
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
 import { buildAbsoluteUrl, resolveAbsoluteImageUrl, sanitizeMetaDescription } from './metadata';
 
 export type SiteConfig = {
@@ -120,7 +121,7 @@ export function buildProductJsonLd(
         name: product.store.name,
       };
       if (product.store.slug) {
-        seller.url = buildAbsoluteUrl(`/sellers/${product.store.slug}`);
+        seller.url = buildAbsoluteUrl(buildSellerHref(product.store.slug));
       }
       offer.seller = seller;
     }

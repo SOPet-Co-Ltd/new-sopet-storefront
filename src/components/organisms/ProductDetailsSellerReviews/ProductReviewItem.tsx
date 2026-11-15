@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
 import { ReviewImagesGrid } from '@/components/molecules/ReviewImagesGrid/ReviewImagesGrid';
 import { VendorReplyBlock } from '@/components/molecules/VendorReplyBlock';
-import { formatThaiDate } from '@/lib/datetime/formatThaiDatetime';
+import { formatRelativeThaiDate, formatThaiDate } from '@/lib/datetime/formatThaiDatetime';
+import { cn } from '@/lib/utils';
 
 import type { ProductReview } from '@/lib/hooks/useReviews';
 
@@ -29,11 +30,16 @@ function getVariantText(review: ProductReviewItemData): string | null {
   return null;
 }
 
+const AVATAR_CLASS = 'h-12 w-12 md:h-9 md:w-9';
+
 function AvatarPlaceholder({ name }: { name: string }) {
   const initials = name.charAt(0).toUpperCase();
   return (
     <div
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sop-neutral-gray-500 text-sop-neutral-gray-300"
+      className={cn(
+        'flex shrink-0 items-center justify-center rounded-full bg-sop-neutral-gray-500 text-sop-neutral-gray-300',
+        AVATAR_CLASS,
+      )}
       aria-hidden="true"
       data-testid="reviewer-avatar-placeholder"
     >
@@ -57,7 +63,7 @@ function ReviewerAvatar({
       <img
         src={profilePhotoUrl}
         alt={name}
-        className="h-9 w-9 shrink-0 rounded-full object-cover"
+        className={cn('shrink-0 rounded-full object-cover', AVATAR_CLASS)}
         onError={() => setImageError(true)}
         data-testid="reviewer-avatar-image"
       />
@@ -131,6 +137,10 @@ export function getReviewerName(review: { id?: string; customerName?: string | n
   return RANDOM_THAI_NAMES[index];
 }
 
+function VariantLabel({ variantText }: { variantText: string }) {
+  return <span>ตัวเลือก : {variantText}</span>;
+}
+
 export function ProductReviewItem({ review }: ProductReviewItemProps) {
   const variantText = getVariantText(review);
   const reviewerName = getReviewerName(review);
@@ -141,50 +151,67 @@ export function ProductReviewItem({ review }: ProductReviewItemProps) {
         <ReviewerAvatar name={reviewerName} profilePhotoUrl={review.customerProfilePhotoUrl} />
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p className="sop-body-sm-medium text-sop-neutral-gray-200 leading-tight">
+          <p className="sop-body-md-medium leading-tight text-sop-neutral-gray-200 md:sop-body-sm-medium">
             {reviewerName}
           </p>
           <div className="flex items-center gap-2">
-            <RenderStars averageRating={review.rating} size={16} />
+            <span className="md:hidden">
+              <RenderStars averageRating={review.rating} size={18} />
+            </span>
+            <span className="hidden md:block">
+              <RenderStars averageRating={review.rating} size={16} />
+            </span>
             <time
               className="sop-body-sm-regular text-sop-neutral-gray-400"
               dateTime={review.createdAt}
             >
-              • {formatThaiDate(review.createdAt)}
+              <span className="md:hidden">• {formatRelativeThaiDate(review.createdAt)}</span>
+              <span className="hidden md:inline">• {formatThaiDate(review.createdAt)}</span>
             </time>
           </div>
         </div>
 
         {variantText ? (
-          <div className="flex shrink-0 items-center gap-2 rounded-sop-12px bg-sop-neutral-gray-500 px-sop-16px py-sop-8px">
-            <span className="sop-body-xs-medium text-sop-neutral-gray-300 whitespace-nowrap">
-              ตัวเลือก : {variantText}
+          <div className="hidden shrink-0 items-center gap-2 rounded-sop-12px bg-sop-neutral-gray-500 px-sop-16px py-sop-8px md:flex">
+            <span className="sop-body-xs-medium whitespace-nowrap text-sop-neutral-gray-300">
+              <VariantLabel variantText={variantText} />
             </span>
           </div>
         ) : null}
       </div>
 
       {review.comment ? (
-        <p className="ml-12 mt-3 sop-body-sm-regular text-sop-neutral-gray-200 leading-relaxed">
+        <p className="mt-4 whitespace-pre-line sop-body-md-regular leading-relaxed text-sop-neutral-gray-200 md:ml-12 md:mt-3 md:sop-body-sm-regular">
           {review.comment}
         </p>
       ) : null}
 
-      <div className="ml-12">
-        <ReviewImagesGrid images={review.images} />
+      <div className="md:ml-12">
+        <ReviewImagesGrid images={review.images} layout="responsive" />
+
+        {variantText ? (
+          <div
+            className="mt-sop-20px flex items-center rounded-sop-12px bg-sop-neutral-gray-500 px-sop-8px py-sop-12px md:hidden"
+            data-testid="review-variant-bar"
+          >
+            <span className="sop-body-sm-medium text-sop-neutral-gray-200">
+              <VariantLabel variantText={variantText} />
+            </span>
+          </div>
+        ) : null}
 
         {review.reply ? <VendorReplyBlock reply={review.reply} /> : null}
       </div>
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-4 flex justify-end md:mt-3">
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-full border border-sop-neutral-grayalpha-200 px-3 py-1 sop-body-sm-regular text-sop-neutral-gray-300 transition-colors hover:border-sop-neutral-grayalpha-300 hover:text-sop-neutral-gray-300"
+          className="flex items-center gap-2 rounded-full border border-sop-neutral-grayalpha-200 bg-white px-4 py-2 sop-body-sm-regular text-sop-neutral-gray-300 transition-colors hover:border-sop-neutral-grayalpha-300"
           aria-label="มีประโยชน์"
         >
           <svg
-            width="14"
-            height="14"
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

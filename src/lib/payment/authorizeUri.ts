@@ -1,13 +1,17 @@
 /**
  * Allowlist for payment.authorizeUri before window.location / <a href> navigation.
- * Beam returns https://verify.beamcheckout.com/... for 3DS / offsite handoff; ACS hosts are included
- * for rare direct ACS URIs. Legacy Omise hosts stay allowed for historical unpaid payments.
+ * Beam returns https://verify.beamcheckout.com/... for 3DS / offsite handoff. Playground
+ * charges redirect via the sandbox Cloud Run gateway. ACS hosts are included for rare direct
+ * ACS URIs. Legacy Omise hosts stay allowed for historical unpaid payments.
  */
 
 const DEFAULT_HOST_SUFFIXES: readonly string[] = [
   // Explicit Beam 3DS verify hosts (avoid broad *.beamcheckout.com)
   'verify.beamcheckout.com',
   'playground-verify.beamcheckout.com',
+  // Beam playground returns the card/wallet handoff on this Cloud Run host.
+  // Keep the full hostname — do not allow every *.run.app app.
+  'sandbox-gateway-357427797651.asia-southeast1.run.app',
   'omise.co',
   // Documented EMV 3DS ACS / method-URL intermediaries (suffix match)
   'cardinalcommerce.com',

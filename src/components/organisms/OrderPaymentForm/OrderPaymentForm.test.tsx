@@ -700,4 +700,41 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByRole('button', { name: 'ยืนยันชำระเงินแล้ว' })).toBeInTheDocument();
     expect(screen.getByTestId('payment-busy-back')).toBeInTheDocument();
   });
+
+  it('hides bank-transfer instructions while choosing a new payment method', async () => {
+    const user = userEvent.setup();
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          paymentMethod: 'bank_transfer',
+          qrCodeUrl: null,
+          authorizeUri: null,
+          expiresAt: null,
+        }}
+        loading={false}
+        error={undefined}
+        onCheckStatus={vi.fn()}
+        onRetryPayment={vi.fn()}
+        orderCreatedAt="2024-05-12T07:30:00.000Z"
+      />,
+    );
+
+    expect(screen.getByTestId('bank-transfer-waiting')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+
+    expect(screen.queryByTestId('bank-transfer-waiting')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ยืนยันชำระเงินแล้ว' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'ปิดวิธีชำระเงินอื่น' }));
+
+    expect(screen.getByTestId('bank-transfer-waiting')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ยืนยันชำระเงินแล้ว' })).toBeInTheDocument();
+  });
 });

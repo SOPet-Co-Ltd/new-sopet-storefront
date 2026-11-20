@@ -80,6 +80,7 @@ function PaymentBusyShell({
   backHref,
   backLabel,
   hideTitle,
+  ariaLabel,
   className,
   children,
 }: {
@@ -90,6 +91,8 @@ function PaymentBusyShell({
   backLabel?: string;
   /** When title is rendered by children (e.g. Figma bank-transfer layout). */
   hideTitle?: boolean;
+  /** Replaces aria-labelledby when the title element is not in the document. */
+  ariaLabel?: string;
   className?: string;
   children: ReactNode;
 }) {
@@ -99,7 +102,8 @@ function PaymentBusyShell({
         'w-full max-w-[500px] rounded-[20px] bg-white px-6 py-6 shadow-xl md:px-10 md:py-6',
         className,
       )}
-      aria-labelledby={titleId}
+      aria-labelledby={ariaLabel ? undefined : titleId}
+      aria-label={ariaLabel}
       aria-busy={busy || undefined}
     >
       {backHref && backLabel ? (
@@ -134,19 +138,22 @@ function BankTransferActionsChrome({
   isSubmitting,
   onSubmittingChange,
   onCheckStatus,
+  recoveryExpanded,
+  onRecoveryExpandedChange,
 }: {
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
   onSubmittingChange?: PaymentRetryPanelProps['onSubmittingChange'];
   onCheckStatus?: () => void | Promise<unknown>;
+  recoveryExpanded: boolean;
+  onRecoveryExpandedChange: (open: boolean) => void;
 }) {
-  const [recoveryExpanded, setRecoveryExpanded] = useState(false);
   const [checking, setChecking] = useState(false);
 
   return (
-    <div className="mt-5 flex flex-col items-center gap-2">
-      {onCheckStatus ? (
+    <div className={cn('flex flex-col items-center gap-2', recoveryExpanded ? 'mt-0' : 'mt-5')}>
+      {onCheckStatus && !recoveryExpanded ? (
         <Button
           type="button"
           variant="primary"
@@ -168,15 +175,6 @@ function BankTransferActionsChrome({
       ) : null}
       {onRetrySubmit ? (
         <>
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full text-sop-neutral-gray-300"
-            onClick={() => setRecoveryExpanded((open) => !open)}
-            aria-expanded={recoveryExpanded}
-          >
-            {recoveryExpanded ? 'ปิดวิธีชำระเงินอื่น' : 'เปลี่ยนวิธีชำระเงิน'}
-          </Button>
           {recoveryExpanded ? (
             <PaymentRetryPanel
               initialPaymentMethod={null}
@@ -187,6 +185,15 @@ function BankTransferActionsChrome({
               onSubmittingChange={onSubmittingChange}
             />
           ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full text-sop-neutral-gray-300"
+            onClick={() => onRecoveryExpandedChange(!recoveryExpanded)}
+            aria-expanded={recoveryExpanded}
+          >
+            {recoveryExpanded ? 'ปิดวิธีชำระเงินอื่น' : 'เปลี่ยนวิธีชำระเงิน'}
+          </Button>
         </>
       ) : null}
     </div>
@@ -274,6 +281,7 @@ export function OrderPaymentForm({
   orderCreatedAt = null,
 }: OrderPaymentFormProps) {
   const [panelSubmitting, setPanelSubmitting] = useState(false);
+  const [bankTransferMethodChangeOpen, setBankTransferMethodChangeOpen] = useState(false);
   const isRetryBusy = Boolean(retrySubmitting || panelSubmitting);
 
   const qrCodeSrc = payment ? resolvePromptPayQrSrc(payment) : null;
@@ -525,18 +533,23 @@ export function OrderPaymentForm({
         backHref={leaveHref}
         backLabel={leaveLabel}
         hideTitle
+        ariaLabel={bankTransferMethodChangeOpen ? 'เลือกวิธีชำระเงินใหม่' : undefined}
       >
-        <BankTransferWaitingState
-          amountLabel={amountLabel}
-          orderNumber={payment.orderNumber}
-          orderCreatedAt={orderCreatedAt}
-        />
+        {bankTransferMethodChangeOpen ? null : (
+          <BankTransferWaitingState
+            amountLabel={amountLabel}
+            orderNumber={payment.orderNumber}
+            orderCreatedAt={orderCreatedAt}
+          />
+        )}
         <BankTransferActionsChrome
           onCheckStatus={onCheckStatus}
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
           isSubmitting={retrySubmitting}
           onSubmittingChange={setPanelSubmitting}
+          recoveryExpanded={bankTransferMethodChangeOpen}
+          onRecoveryExpandedChange={setBankTransferMethodChangeOpen}
         />
         <div aria-live="polite" aria-atomic="true" className="sr-only">
           รอการยืนยันการโอนเงินจากเจ้าหน้าที่

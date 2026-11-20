@@ -223,7 +223,7 @@ export function CheckoutPromotionSection() {
     shippingFee: platformShippingFee,
     cartLines,
     context: { isGuest, cartLines },
-    enabled: true,
+    enabled: !isSubmitting,
     catalogLoading: loadingPromotions,
     catalogError: Boolean(promotionsError),
   });

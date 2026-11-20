@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback } from 'react';
-import { useLazyQuery } from '@apollo/client/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useApolloClient } from '@apollo/client/react';
 import {
   ValidatePromotionsDocument,
   type ValidatePromotionLineInput,
@@ -81,38 +81,66 @@ export type UseValidatePromotionsResult = {
   error: Error | undefined;
 };
 
-function toHookError(error: unknown): Error | undefined {
-  if (!error) return undefined;
-  return error as Error;
+function toHookError(error: unknown): Error {
+  if (error instanceof Error) return error;
+  return new Error('ValidatePromotions failed');
 }
 
 /**
- * Lazy network-only wrapper for Decision 6 list-time batch eligibility.
+ * One-shot network-only wrapper for Decision 6 list-time batch eligibility.
+ * Uses client.query so leaving checkout does not abort the request — an aborted
+ * call shows up as a failed ValidatePromotions row in devtools.
  * API surface is batch-only (AC-046); single-code apply stays on useCheckout.validatePromotion.
  */
 export function useValidatePromotions(): UseValidatePromotionsResult {
-  const [runValidatePromotions, { loading, error, data }] = useLazyQuery(
-    ValidatePromotionsDocument,
-    { fetchPolicy: 'network-only' },
-  );
+  const client = useApolloClient();
+  const mountedRef = useRef(true);
+  const [items, setItems] = useState<PromotionEligibilityItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | undefined>();
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const validatePromotions = useCallback(
     async (input: ValidatePromotionsInput) => {
+      if (mountedRef.current) {
+        setLoading(true);
+        setError(undefined);
+      }
+
       try {
-        const result = await runValidatePromotions({ variables: { input } });
-        return result.data?.validatePromotions;
-      } catch {
+        const result = await client.query({
+          query: ValidatePromotionsDocument,
+          variables: { input },
+          fetchPolicy: 'network-only',
+        });
+        const payload = result.data?.validatePromotions;
+        if (mountedRef.current) {
+          setItems(payload?.items ?? []);
+          setLoading(false);
+        }
+        return payload;
+      } catch (caught) {
         // Transport / GraphQL whole-query failure → AC-051 via hook error; no invented items.
+        if (mountedRef.current) {
+          setItems([]);
+          setError(toHookError(caught));
+          setLoading(false);
+        }
         return undefined;
       }
     },
-    [runValidatePromotions],
+    [client],
   );
 
   return {
     validatePromotions,
-    items: data?.validatePromotions?.items ?? [],
+    items,
     loading,
-    error: toHookError(error),
+    error,
   };
 }

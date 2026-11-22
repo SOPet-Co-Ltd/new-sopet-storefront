@@ -12,10 +12,15 @@ import {
   getCvvPlaceholder,
 } from './paymentFormat';
 
+export type CheckoutCardFieldErrors = Partial<
+  Record<keyof CheckoutCardFormState, string | null | undefined>
+>;
+
 type CardPaymentFormProps = {
   value: CheckoutCardFormState;
   onChange: (next: CheckoutCardFormState) => void;
   error?: string | null;
+  fieldErrors?: CheckoutCardFieldErrors;
   saveCardChecked?: boolean;
   onSaveCardChange?: (checked: boolean) => void;
   showSaveCardCheckbox?: boolean;
@@ -26,6 +31,7 @@ export function CardPaymentForm({
   value,
   onChange,
   error,
+  fieldErrors,
   saveCardChecked = false,
   onSaveCardChange,
   showSaveCardCheckbox = false,
@@ -51,6 +57,8 @@ export function CardPaymentForm({
           autoComplete="cc-number"
           data-testid="card-number-input"
           disabled={disabled}
+          state={fieldErrors?.cardNumber ? 'error' : 'default'}
+          description={fieldErrors?.cardNumber ?? undefined}
           value={value.cardNumber}
           onChange={(event) => {
             const cardNumber = formatCardNumber(event.target.value);
@@ -71,6 +79,8 @@ export function CardPaymentForm({
           autoComplete="cc-name"
           data-testid="card-name-input"
           disabled={disabled}
+          state={fieldErrors?.cardName ? 'error' : 'default'}
+          description={fieldErrors?.cardName ?? undefined}
           value={value.cardName}
           onChange={(event) => updateField('cardName', formatCardName(event.target.value))}
         />
@@ -87,6 +97,8 @@ export function CardPaymentForm({
           autoComplete="cc-exp"
           data-testid="card-expiry-input"
           disabled={disabled}
+          state={fieldErrors?.expiry ? 'error' : 'default'}
+          description={fieldErrors?.expiry ?? undefined}
           value={value.expiry}
           onChange={(event) => updateField('expiry', formatExpiry(event.target.value))}
         />
@@ -101,6 +113,8 @@ export function CardPaymentForm({
           autoComplete="cc-csc"
           data-testid="card-cvv-input"
           disabled={disabled}
+          state={fieldErrors?.cvv ? 'error' : 'default'}
+          description={fieldErrors?.cvv ?? undefined}
           value={value.cvv}
           maxLength={getCvvLength(value.cardNumber)}
           onChange={(event) => updateField('cvv', formatCvv(event.target.value, value.cardNumber))}

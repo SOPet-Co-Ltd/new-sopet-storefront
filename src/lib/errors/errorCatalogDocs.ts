@@ -282,6 +282,11 @@ export const ERROR_CATALOG_DOCS: Partial<Record<ErrorCode, ErrorCatalogDocs>> = 
     possibleIssue: 'ออเดอร์ยังไม่จัดส่งครบ หรืออยู่นอกช่วงรีวิว',
     howToFix: 'รอจนกว่าสินค้าจะจัดส่งสำเร็จภายในช่วงเวลาที่กำหนด',
   },
+  [ERROR_CODES.ORDER_REVIEWED_CANNOT_CANCEL]: {
+    why: 'คำสั่งซื้อที่มีรีวิวแล้วถือว่าส่งสำเร็จและรับสินค้าแล้ว จึงยกเลิกหรือคืนเงินไม่ได้',
+    possibleIssue: 'พยายามยกเลิกหรือคืนเงินหลังจากลูกค้าเขียนรีวิวแล้ว',
+    howToFix: 'คงสถานะคำสั่งซื้อไว้ รีวิวจะยังแสดงตามปกติ',
+  },
   [ERROR_CODES.PAYMENT_HELD_PORTION_BLOCKED]: {
     why: 'ส่วนที่ถูกพักจากการระงับร้านยังชำระไม่ได้',
     possibleIssue: 'ร้านของรายการนั้นถูกระงับชั่วคราว',

@@ -12,7 +12,10 @@ import { CartItemRow } from '@/components/organisms/CartItemRow/CartItemRow';
 import { useCart } from '@/lib/providers/CartProvider';
 
 function formatPrice(amount: number): string {
-  return `฿${amount.toLocaleString('th-TH')}`;
+  return `฿${amount.toLocaleString('th-TH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function CartSkeleton() {

@@ -151,8 +151,10 @@ export const samplePendingPayment = {
   status: 'pending',
   paymentMethod: 'promptpay',
   authorizeUri: null,
+  qrCodeImage: null,
   qrCodeUrl: 'https://example.com/qr.png',
   expiresAt: '2030-01-01T00:00:00.000Z',
+  failureCode: null as string | null,
 };
 
 export const samplePaidPayment = {
@@ -164,6 +166,7 @@ export const samplePaidPayment = {
 export const sampleRetryPendingPayment = {
   ...samplePendingPayment,
   id: CHECKOUT_RETRY_PAYMENT_ID,
+  qrCodeImage: null,
   qrCodeUrl: null,
   authorizeUri: 'https://pay.omise.co/offsites/ofsp_retry/pay',
   paymentMethod: 'credit_card',

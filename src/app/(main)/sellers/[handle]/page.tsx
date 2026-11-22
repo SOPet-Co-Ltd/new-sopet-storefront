@@ -19,6 +19,8 @@ import { fetchStoreBySlug } from '@/lib/seo/fetch';
 import { isSellerIndexable } from '@/lib/seo/indexability';
 import { buildBreadcrumbJsonLd } from '@/lib/seo/json-ld';
 import { buildAbsoluteUrl, buildPageMetadata, buildSellerMetadata } from '@/lib/seo/metadata';
+import { decodeRouteParam } from '@/lib/routing/categoryRoutes';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
 
 export const revalidate = 60;
 
@@ -27,14 +29,15 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { handle } = await params;
+  const { handle: rawHandle } = await params;
+  const handle = decodeRouteParam(rawHandle);
   const store = await fetchStoreBySlug(handle);
 
   if (!store) {
     return buildPageMetadata({
       title: 'ร้านค้าไม่พบ',
       description: DEFAULT_SITE_DESCRIPTION,
-      path: `/sellers/${handle}`,
+      path: buildSellerHref(handle),
       robots: { index: false, follow: true },
     });
   }
@@ -43,7 +46,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SellerPage({ params }: Props) {
-  const { handle } = await params;
+  const { handle: rawHandle } = await params;
+  const handle = decodeRouteParam(rawHandle);
   const storeVariables = buildSellerStorefrontVariables({ handle });
 
   let initialStore: StoreBySlugQuery['storeBySlug'] | undefined;
@@ -83,7 +87,7 @@ export default async function SellerPage({ params }: Props) {
 
   const store = initialStore;
 
-  const sellerPath = `/sellers/${handle}`;
+  const sellerPath = buildSellerHref(handle);
   const breadcrumbJsonLd =
     store && isSellerIndexable(store)
       ? buildBreadcrumbJsonLd([
@@ -101,7 +105,7 @@ export default async function SellerPage({ params }: Props) {
             <Breadcrumbs
               items={[
                 { label: 'หน้าแรก', path: '/' },
-                { label: store.name, path: `/sellers/${handle}` },
+                { label: store.name, path: sellerPath },
               ]}
             />
           </div>

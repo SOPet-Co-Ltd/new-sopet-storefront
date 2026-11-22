@@ -24,6 +24,14 @@ function createWsLink(): GraphQLWsLink | null {
       url: getGraphqlWsUrl(),
       // SOPET-M-05: JWT and/or guestPayToken for backend onConnect.
       connectionParams: () => buildWsConnectionParams(),
+      // Survive brief proxy blips so paymentStatusUpdated recovers without polling.
+      retryAttempts: 20,
+      shouldRetry: () => true,
+      retryWait: async (retries) => {
+        await new Promise((resolve) => {
+          setTimeout(resolve, Math.min(1_000 * 2 ** retries, 10_000));
+        });
+      },
     }),
   );
 }

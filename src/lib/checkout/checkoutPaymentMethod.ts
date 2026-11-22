@@ -1,6 +1,7 @@
 import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
 
-export type ApiPaymentMethod = 'promptpay' | 'credit_card' | 'cod' | 'bank_transfer';
+export type ApiPaymentMethod =
+  'promptpay' | 'credit_card' | 'cod' | 'bank_transfer' | 'truemoney' | 'shopeepay';
 
 export function mapCheckoutPaymentMethodForApi(
   paymentMethod: PaymentMethod | string | null | undefined,
@@ -13,7 +14,9 @@ export function mapCheckoutPaymentMethodForApi(
     paymentMethod === 'promptpay' ||
     paymentMethod === 'credit_card' ||
     paymentMethod === 'cod' ||
-    paymentMethod === 'bank_transfer'
+    paymentMethod === 'bank_transfer' ||
+    paymentMethod === 'truemoney' ||
+    paymentMethod === 'shopeepay'
   ) {
     return paymentMethod;
   }

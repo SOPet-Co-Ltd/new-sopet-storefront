@@ -3,6 +3,7 @@
 import { useQuery } from '@apollo/client/react';
 import {
   ProductBySlugDocument,
+  ProductByPathDocument,
   ProductByIdDocument,
   type ProductBySlugQuery,
 } from '@/lib/graphql/generated/graphql';
@@ -16,13 +17,20 @@ export type UseProductBySlugParams = {
   skip?: boolean;
 };
 
+export type UseProductByPathParams = {
+  path: string;
+  skip?: boolean;
+};
+
 export type UseProductByIdParams = {
   id: string;
   skip?: boolean;
 };
 
 export type UseProductParams =
-  ({ mode: 'slug' } & UseProductBySlugParams) | ({ mode: 'id' } & UseProductByIdParams);
+  | ({ mode: 'slug' } & UseProductBySlugParams)
+  | ({ mode: 'path' } & UseProductByPathParams)
+  | ({ mode: 'id' } & UseProductByIdParams);
 
 export type UseProductResult = {
   product: ProductDetail | null;
@@ -38,19 +46,27 @@ function toHookError(error: unknown): Error | undefined {
 }
 
 /**
- * Resolves a product by UUID or by slug + storeId (P0-T9 spike strategy).
- * Slug-only lookup is skipped and surfaces `missingStoreId` until backend supports it.
+ * Resolves a product by UUID, by SEO path (`{productSlug}-{storeSlug}`),
+ * or by slug + storeId.
  */
 export function useProduct(params: UseProductParams): UseProductResult {
   const slugParams = params.mode === 'slug' ? params : null;
+  const pathParams = params.mode === 'path' ? params : null;
   const idParams = params.mode === 'id' ? params : null;
 
   const slugCanQuery = Boolean(slugParams?.slug && slugParams?.storeId && !slugParams?.skip);
+  const pathCanQuery = Boolean(pathParams?.path && !pathParams?.skip);
   const idCanQuery = Boolean(idParams?.id && !idParams?.skip);
 
   const slugQuery = useQuery(ProductBySlugDocument, {
     variables: { slug: slugParams?.slug ?? '', storeId: slugParams?.storeId ?? '' },
     skip: !slugCanQuery,
+  });
+
+  const pathQuery = useQuery(ProductByPathDocument, {
+    variables: { path: pathParams?.path ?? '' },
+    skip: !pathCanQuery,
+    fetchPolicy: 'cache-first',
   });
 
   const idQuery = useQuery(ProductByIdDocument, {
@@ -65,6 +81,15 @@ export function useProduct(params: UseProductParams): UseProductResult {
       loading: slugCanQuery && slugQuery.loading,
       error: toHookError(slugQuery.error),
       missingStoreId: Boolean(slugParams?.slug && !slugParams?.storeId && !slugParams?.skip),
+    };
+  }
+
+  if (params.mode === 'path') {
+    return {
+      product: pathQuery.data?.productByPath ?? null,
+      loading: pathCanQuery && pathQuery.loading,
+      error: toHookError(pathQuery.error),
+      missingStoreId: false,
     };
   }
 

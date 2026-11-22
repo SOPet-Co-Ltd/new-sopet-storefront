@@ -5,8 +5,8 @@ import { Button } from '@/components/atoms/Button';
 import { ArrowLeftIcon } from '@/components/atoms/icons';
 import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
-import { formatCountdown, usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
-import { useCallback, useState, type ReactNode } from 'react';
+import { usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { isAllowed3dsAuthorizeUri } from '@/lib/payment/authorizeUri';
 import { hasQrExpiredAt } from '@/lib/payment/orderNotPayable';
 import { Payment3dsAutoRedirect, threeDSAutoRedirectStorageKey } from './Payment3dsAutoRedirect';
@@ -17,6 +17,8 @@ import { PaymentOrderNotPayableState } from './PaymentOrderNotPayableState';
 import { PaymentStatusCheckButton } from './PaymentStatusCheckButton';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
 import { PaymentWaitingFrictionlessState } from './PaymentWaitingFrictionlessState';
+import { resolvePromptPayQrSrc, resolvePromptPayReferenceId } from '@/lib/payment/promptPayQr';
+import { PromptPayQrWaitingState } from './PromptPayQrWaitingState';
 import { BankTransferWaitingState } from './BankTransferWaitingState';
 import { PaymentRetryPanel, type PaymentRetryPanelProps } from './PaymentRetryPanel';
 import { PaymentRetryProcessingState } from './PaymentRetryProcessingState';
@@ -30,6 +32,8 @@ export type OrderPaymentFormProps = {
   onRetry?: () => void;
   /** One-shot refetch of payment status from the backend (no continuous polling). */
   onCheckStatus?: () => void | Promise<unknown>;
+  /** PromptPay QR: customer confirms they finished paying and goes to the success page. */
+  onPromptPayComplete?: () => void;
   onExpired?: () => void;
   /** Test seam / optional override for 3DS auto-redirect navigation */
   navigateToAuthorizeUri?: (uri: string) => void;
@@ -37,6 +41,11 @@ export type OrderPaymentFormProps = {
   onRetryPayment?: PaymentRetryPanelProps['onSubmit'];
   retrySubmitError?: PaymentRetryPanelProps['submitError'];
   retrySubmitting?: PaymentRetryPanelProps['isSubmitting'];
+  /**
+   * PromptPay late-success check in flight after a failed (or locally expired) QR.
+   * Hide the retry panel until this settles so a second charge is not started early.
+   */
+  confirmingLateSuccess?: boolean;
   /** Order cancelled / unpaid window closed — hide change-method UI */
   paymentRecoveryUnavailable?: boolean;
   /** Decision #15: any item on_hold while pending payment — block pay / Mid-QR / retry */
@@ -71,6 +80,8 @@ function PaymentBusyShell({
   backHref,
   backLabel,
   hideTitle,
+  ariaLabel,
+  className,
   children,
 }: {
   titleId: string;
@@ -80,12 +91,19 @@ function PaymentBusyShell({
   backLabel?: string;
   /** When title is rendered by children (e.g. Figma bank-transfer layout). */
   hideTitle?: boolean;
+  /** Replaces aria-labelledby when the title element is not in the document. */
+  ariaLabel?: string;
+  className?: string;
   children: ReactNode;
 }) {
   return (
     <section
-      className="w-full max-w-[500px] rounded-[20px] bg-white px-6 py-6 shadow-xl md:px-10 md:py-6"
-      aria-labelledby={titleId}
+      className={cn(
+        'w-full max-w-[500px] rounded-[20px] bg-white px-6 py-6 shadow-xl md:px-10 md:py-6',
+        className,
+      )}
+      aria-labelledby={ariaLabel ? undefined : titleId}
+      aria-label={ariaLabel}
       aria-busy={busy || undefined}
     >
       {backHref && backLabel ? (
@@ -120,19 +138,24 @@ function BankTransferActionsChrome({
   isSubmitting,
   onSubmittingChange,
   onCheckStatus,
+  recoveryExpanded,
+  onRecoveryExpandedChange,
+  amountLabel,
 }: {
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
   onSubmittingChange?: PaymentRetryPanelProps['onSubmittingChange'];
   onCheckStatus?: () => void | Promise<unknown>;
+  recoveryExpanded: boolean;
+  onRecoveryExpandedChange: (open: boolean) => void;
+  amountLabel?: string;
 }) {
-  const [recoveryExpanded, setRecoveryExpanded] = useState(false);
   const [checking, setChecking] = useState(false);
 
   return (
-    <div className="mt-5 flex flex-col items-center gap-2">
-      {onCheckStatus ? (
+    <div className={cn('flex flex-col items-center gap-2', recoveryExpanded ? 'mt-0' : 'mt-5')}>
+      {onCheckStatus && !recoveryExpanded ? (
         <Button
           type="button"
           variant="primary"
@@ -154,62 +177,88 @@ function BankTransferActionsChrome({
       ) : null}
       {onRetrySubmit ? (
         <>
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full text-sop-neutral-gray-300"
-            onClick={() => setRecoveryExpanded((open) => !open)}
-            aria-expanded={recoveryExpanded}
-          >
-            {recoveryExpanded ? 'ปิดวิธีชำระเงินอื่น' : 'เปลี่ยนวิธีชำระเงิน'}
-          </Button>
           {recoveryExpanded ? (
             <PaymentRetryPanel
               initialPaymentMethod={null}
               hideBankTransfer
+              amountLabel={amountLabel}
               onSubmit={onRetrySubmit}
               submitError={submitError}
               isSubmitting={isSubmitting}
               onSubmittingChange={onSubmittingChange}
             />
           ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full text-sop-neutral-gray-300"
+            onClick={() => onRecoveryExpandedChange(!recoveryExpanded)}
+            aria-expanded={recoveryExpanded}
+          >
+            {recoveryExpanded ? 'ปิดวิธีชำระเงินอื่น' : 'เปลี่ยนวิธีชำระเงิน'}
+          </Button>
         </>
       ) : null}
     </div>
   );
 }
 
+const PROMPT_PAY_COMPLETE_DELAY_MS = 5_000;
+
 /** Inline Mid-QR chrome (UI-LOCK-01 B) — local state resets when branch unmounts. */
 function MidQrChangeMethodChrome({
+  onComplete,
   onRetrySubmit,
   submitError,
   isSubmitting,
   onSubmittingChange,
-  onCheckStatus,
+  amountLabel,
 }: {
+  onComplete?: () => void;
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
   onSubmittingChange?: PaymentRetryPanelProps['onSubmittingChange'];
-  onCheckStatus?: () => void | Promise<unknown>;
+  amountLabel?: string;
 }) {
   const [recoveryExpanded, setRecoveryExpanded] = useState(false);
+  const [completeEnabled, setCompleteEnabled] = useState(false);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setCompleteEnabled(true);
+    }, PROMPT_PAY_COMPLETE_DELAY_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   return (
-    <div className="mt-4 flex flex-col items-center gap-2">
-      <PaymentStatusCheckButton onCheckStatus={onCheckStatus} />
+    <div className="flex flex-col items-stretch gap-3">
       <Button
         type="button"
-        variant="outline"
-        className="w-full max-w-xs"
+        variant="primary"
+        size="xl"
+        fill
+        className="w-full"
+        disabled={!completeEnabled}
+        onClick={onComplete}
+      >
+        ชำระเงินเสร็จสิ้น
+      </Button>
+      <Button
+        type="button"
+        variant="neutral"
+        size="xl"
+        fill
+        className="w-full border-sop-neutral-grayalpha-200 font-medium text-sop-neutral-gray-200"
         onClick={() => setRecoveryExpanded((open) => !open)}
         aria-expanded={recoveryExpanded}
       >
-        เปลี่ยนวิธีชำระเงิน
+        เปลี่ยนช่องทางการชำระเงิน
       </Button>
       {recoveryExpanded ? (
         <PaymentRetryPanel
           hidePromptPay
+          amountLabel={amountLabel}
           onSubmit={onRetrySubmit}
           submitError={submitError}
           isSubmitting={isSubmitting}
@@ -226,19 +275,23 @@ export function OrderPaymentForm({
   error,
   onRetry,
   onCheckStatus,
+  onPromptPayComplete,
   onExpired,
   navigateToAuthorizeUri,
   onRetryPayment,
   retrySubmitError,
   retrySubmitting,
+  confirmingLateSuccess = false,
   paymentRecoveryUnavailable = false,
   heldUnpaidBlocked = false,
   orderCreatedAt = null,
 }: OrderPaymentFormProps) {
   const [panelSubmitting, setPanelSubmitting] = useState(false);
+  const [bankTransferMethodChangeOpen, setBankTransferMethodChangeOpen] = useState(false);
   const isRetryBusy = Boolean(retrySubmitting || panelSubmitting);
 
-  const hasQrCode = Boolean(payment?.qrCodeUrl);
+  const qrCodeSrc = payment ? resolvePromptPayQrSrc(payment) : null;
+  const hasQrCode = Boolean(qrCodeSrc);
   const handleExpire = useCallback(() => {
     onExpired?.();
   }, [onExpired]);
@@ -344,12 +397,29 @@ export function OrderPaymentForm({
   }
 
   if (payment.status === 'failed') {
+    const isPromptPay = payment.paymentMethod === 'promptpay';
+    if (isPromptPay && confirmingLateSuccess) {
+      return (
+        <section
+          className="flex w-full max-w-[500px] flex-col items-center gap-4 rounded-3xl bg-white p-8 shadow-xl"
+          aria-busy="true"
+          aria-label="กำลังตรวจสอบการชำระเงิน"
+          data-testid="payment-late-success-check"
+        >
+          <SpinnerIcon size={{ mobile: 32, desktop: 32 }} />
+          <p className="text-sm text-gray-500">กำลังตรวจสอบการชำระเงิน...</p>
+        </section>
+      );
+    }
+
     const isQrExpired = hasQrExpiredAt(payment.expiresAt);
 
     return (
       <PaymentBusyShell titleId="payment-failed-title" title="ชำระเงิน" busy={isRetryBusy}>
         <PaymentFailedState
           isQrExpired={isQrExpired}
+          failureCode={payment.failureCode}
+          amountLabel={formatAmount(payment.amount, payment.currency)}
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
           isSubmitting={retrySubmitting}
@@ -362,15 +432,35 @@ export function OrderPaymentForm({
   const authorizeUri = payment.authorizeUri?.trim() ? payment.authorizeUri : null;
   const hasRedirectUri = Boolean(authorizeUri);
 
+  // Local countdown expired while payment is still pending: keep QR visible and hide
+  // retry / Mid-QR change-method until the late-success refetch settles on failed.
   if (hasQrCode && isExpired && payment.status === 'pending') {
     return (
-      <PaymentBusyShell titleId="payment-expired-title" title="ชำระเงิน" busy={isRetryBusy}>
-        <PaymentFailedState
-          isQrExpired
-          onRetrySubmit={onRetryPayment}
-          submitError={retrySubmitError}
-          isSubmitting={retrySubmitting}
-          onSubmittingChange={setPanelSubmitting}
+      <PaymentBusyShell
+        titleId="payment-waiting-title"
+        title="สแกน QR เพื่อชำระเงิน"
+        busy={false}
+        hideTitle
+        className="max-w-[500px] px-4 py-5 md:max-w-[960px] md:px-6 md:py-6"
+      >
+        <PromptPayQrWaitingState
+          qrCodeSrc={qrCodeSrc ?? ''}
+          amountLabel={formatAmount(payment.amount, payment.currency)}
+          orderNumber={payment.orderNumber}
+          orderCreatedAt={orderCreatedAt}
+          referenceId={resolvePromptPayReferenceId(payment.qrCodeUrl, payment.id)}
+          remainingMs={0}
+          actions={
+            <div
+              className="mt-4 flex flex-col items-center gap-2"
+              data-testid="payment-late-success-check"
+              aria-busy="true"
+              aria-label="กำลังตรวจสอบการชำระเงิน"
+            >
+              <SpinnerIcon size={{ mobile: 24, desktop: 24 }} />
+              <p className="text-sm text-gray-500">กำลังตรวจสอบการชำระเงิน...</p>
+            </div>
+          }
         />
       </PaymentBusyShell>
     );
@@ -381,6 +471,11 @@ export function OrderPaymentForm({
     const amountLabel = formatAmount(payment.amount, payment.currency);
 
     if (!isAllowed3dsAuthorizeUri(authorizeUri)) {
+      try {
+        console.warn('Disallowed 3DS authorize host:', new URL(authorizeUri).hostname);
+      } catch {
+        console.warn('Disallowed 3DS authorize host: <unparseable>');
+      }
       return (
         <PaymentBusyShell titleId="payment-waiting-title" title="ชำระเงิน" busy={isRetryBusy}>
           <div className="mt-4 flex items-center justify-between py-3">
@@ -445,18 +540,24 @@ export function OrderPaymentForm({
         backHref={leaveHref}
         backLabel={leaveLabel}
         hideTitle
+        ariaLabel={bankTransferMethodChangeOpen ? 'เลือกวิธีชำระเงินใหม่' : undefined}
       >
-        <BankTransferWaitingState
-          amountLabel={amountLabel}
-          orderNumber={payment.orderNumber}
-          orderCreatedAt={orderCreatedAt}
-        />
+        {bankTransferMethodChangeOpen ? null : (
+          <BankTransferWaitingState
+            amountLabel={amountLabel}
+            orderNumber={payment.orderNumber}
+            orderCreatedAt={orderCreatedAt}
+          />
+        )}
         <BankTransferActionsChrome
+          amountLabel={amountLabel}
           onCheckStatus={onCheckStatus}
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
           isSubmitting={retrySubmitting}
           onSubmittingChange={setPanelSubmitting}
+          recoveryExpanded={bankTransferMethodChangeOpen}
+          onRecoveryExpandedChange={setBankTransferMethodChangeOpen}
         />
         <div aria-live="polite" aria-atomic="true" className="sr-only">
           รอการยืนยันการโอนเงินจากเจ้าหน้าที่
@@ -465,19 +566,44 @@ export function OrderPaymentForm({
     );
   }
 
+  if (hasQrCode) {
+    return (
+      <PaymentBusyShell
+        titleId="payment-waiting-title"
+        title="สแกน QR เพื่อชำระเงิน"
+        busy={isRetryBusy}
+        hideTitle
+        className="max-w-[500px] px-4 py-5 md:max-w-[960px] md:px-6 md:py-6"
+      >
+        <PromptPayQrWaitingState
+          qrCodeSrc={qrCodeSrc ?? ''}
+          amountLabel={formatAmount(payment.amount, payment.currency)}
+          orderNumber={payment.orderNumber}
+          orderCreatedAt={orderCreatedAt}
+          referenceId={resolvePromptPayReferenceId(payment.qrCodeUrl, payment.id)}
+          remainingMs={remainingMs}
+          actions={
+            <MidQrChangeMethodChrome
+              amountLabel={formatAmount(payment.amount, payment.currency)}
+              onComplete={onPromptPayComplete}
+              onRetrySubmit={onRetryPayment}
+              submitError={retrySubmitError}
+              isSubmitting={retrySubmitting}
+              onSubmittingChange={setPanelSubmitting}
+            />
+          }
+        />
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          กำลังรอการชำระเงิน
+        </div>
+      </PaymentBusyShell>
+    );
+  }
+
   return (
     <PaymentBusyShell titleId="payment-waiting-title" title="ชำระเงิน" busy={isRetryBusy}>
       <div className="mt-4 rounded-lg bg-sop-primary-200 px-4 py-2">
-        <p className="text-sm text-gray-800">
-          {hasQrCode
-            ? 'ชำระเงินผ่าน QR code ภายในแอปธนาคารของคุณ'
-            : 'กรุณาดำเนินการชำระเงินให้เสร็จสิ้น'}
-        </p>
-        {hasQrCode && remainingMs !== null ? (
-          <p className="mt-2 text-sm font-medium text-gray-900" aria-live="polite">
-            เวลาที่เหลือ: {formatCountdown(remainingMs)}
-          </p>
-        ) : null}
+        <p className="text-sm text-gray-800">กรุณาดำเนินการชำระเงินให้เสร็จสิ้น</p>
       </div>
 
       <div className="mt-4 flex items-center justify-between py-3">
@@ -488,35 +614,12 @@ export function OrderPaymentForm({
       </div>
 
       <div className="relative flex min-h-[250px] flex-col items-center justify-center overflow-hidden rounded-lg border border-gray-300">
-        {hasQrCode ? (
-          <div className="flex w-full flex-col items-center bg-white p-4">
-            <img
-              src={payment.qrCodeUrl ?? ''}
-              alt="PromptPay QR Code"
-              className="w-full max-w-[200px] md:max-w-[250px]"
-            />
-            <p className="mt-4 text-center text-xs text-gray-400">
-              แสกนเพื่อชำระเงินผ่านแอปธนาคารใดก็ได้
-            </p>
-          </div>
-        ) : (
-          <PaymentWaitingFrictionlessState />
-        )}
+        <PaymentWaitingFrictionlessState />
       </div>
 
-      {hasQrCode ? (
-        <MidQrChangeMethodChrome
-          onCheckStatus={onCheckStatus}
-          onRetrySubmit={onRetryPayment}
-          submitError={retrySubmitError}
-          isSubmitting={retrySubmitting}
-          onSubmittingChange={setPanelSubmitting}
-        />
-      ) : (
-        <div className="mt-4 flex flex-col items-center gap-2">
-          <PaymentStatusCheckButton onCheckStatus={onCheckStatus} />
-        </div>
-      )}
+      <div className="mt-4 flex flex-col items-center gap-2">
+        <PaymentStatusCheckButton onCheckStatus={onCheckStatus} />
+      </div>
 
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         กำลังรอการชำระเงิน

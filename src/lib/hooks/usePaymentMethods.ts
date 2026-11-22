@@ -13,7 +13,12 @@ import {
 } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 
-export type SavedPaymentMethod = PaymentMethodsQuery['paymentMethods'][number];
+/** Widened until codegen includes SavedPaymentMethodType.psp. */
+export type SavedPaymentMethod = PaymentMethodsQuery['paymentMethods'][number] & {
+  psp?: string | null;
+};
+
+export { isBeamSavedPaymentMethod } from '@/lib/payment/savedPaymentMethod';
 
 export type UsePaymentMethodsResult = {
   paymentMethods: SavedPaymentMethod[];

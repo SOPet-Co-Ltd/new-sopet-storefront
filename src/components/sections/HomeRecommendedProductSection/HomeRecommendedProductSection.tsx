@@ -41,6 +41,7 @@ export function HomeRecommendedProductSection({
 }: HomeRecommendedProductSectionProps) {
   const { data, loading, error } = useQuery(RecommendedProductsDocument, {
     variables: { limit },
+    skip: Boolean(initialRecommendedProducts),
   });
 
   const products = initialRecommendedProducts ?? data?.recommendedProducts ?? [];

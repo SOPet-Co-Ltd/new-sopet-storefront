@@ -6,7 +6,7 @@ Customer-facing Next.js web application for the SOPET multi-vendor pet e-commerc
 
 ## Overview
 
-Shoppers browse products, search, manage carts, checkout (including guest checkout), pay via Omise, and manage their account (orders, addresses, favorites, reviews, notifications).
+Shoppers browse products, search, manage carts, checkout (including guest checkout), pay via Beam, and manage their account (orders, addresses, favorites, reviews, notifications).
 
 ## Tech stack
 
@@ -16,7 +16,7 @@ Shoppers browse products, search, manage carts, checkout (including guest checko
 | UI        | React 19, Tailwind CSS 4           |
 | Data      | Apollo Client 4, GraphQL           |
 | Testing   | Vitest, React Testing Library, MSW |
-| Payments  | Omise.js (browser tokenization)    |
+| Payments  | Beam (browser tokenization)        |
 | Codegen   | GraphQL Code Generator             |
 
 ## Architecture
@@ -48,6 +48,8 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_GRAPHQL_URL`              | `/graphql`                        | Browser GraphQL (proxied)                                           |
 | `GRAPHQL_SSR_URL`                      | `http://localhost:3002/graphql`   | Server-side GraphQL                                                 |
 | `GRAPHQL_SSR_BYPASS_SECRET`            | —                                 | Server-only; Cloudflare SSR bypass (see docs/cloudflare-ssr-bypass) |
+| `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN`   | `http://localhost:3002`           | API origin for live payment WS + CSP `wss:` allowlist (UAT/prod)    |
+| `NEXT_PUBLIC_GRAPHQL_WS_URL`           | —                                 | Optional full `wss://…/graphql` override (takes precedence)         |
 | `NEXT_PUBLIC_OMISE_PUBLIC_KEY`         | —                                 | Must match backend `OMISE_PUBLIC_KEY`                               |
 | `NEXT_PUBLIC_FACEBOOK_APP_ID`          | —                                 | Required for the Messenger share button on products                 |
 | `NEXT_PUBLIC_BASE_URL`                 | `http://localhost:3000`           | Canonical URLs, Open Graph, sitemap, robots, product share links    |
@@ -59,7 +61,7 @@ cp .env.example .env.local
 | `GRAPHQL_SCHEMA_PATH`                  | `../sopet-backend/src/schema.gql` | Codegen schema source (also accepts `sopet-backend/src/schema.gql`) |
 | `GRAPHQL_SCHEMA_GITHUB_OWNER/REPO/REF` | —                                 | Optional; fetch schema from GitHub when no local schema (CI/Vercel) |
 
-Optional WebSocket overrides (see `src/lib/config.ts`): `NEXT_PUBLIC_GRAPHQL_WS_URL`, `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN`, `GRAPHQL_WS_SSR_URL`.
+Live payment subscriptions: browser opens WS to the API directly — set `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN` (or `NEXT_PUBLIC_GRAPHQL_WS_URL`) on UAT/prod. Details: [docs/graphql.md](docs/graphql.md).
 
 Analytics (GTM + GA4) setup: [docs/analytics.md](docs/analytics.md).
 
@@ -120,7 +122,7 @@ src/
 │   ├── hooks/              # Apollo data hooks
 │   ├── providers/          # Auth, cart, checkout context
 │   ├── checkout/           # Checkout business logic
-│   ├── payment/            # Omise integration
+│   ├── payment/            # Beam integration
 │   ├── catalog/, search/   # Domain utilities
 │   ├── seo/                # Metadata, sitemap, JSON-LD helpers
 │   ├── session.ts          # Guest session cookie

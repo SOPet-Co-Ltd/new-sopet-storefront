@@ -8,11 +8,12 @@ import { sampleApprovedTags } from '@/test/mocks/handlers';
 import { server } from '@/test/mocks/server';
 
 const push = vi.fn();
+const replace = vi.fn();
 let pathname = '/categories/dog-food';
 let searchParams = new URLSearchParams();
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
   usePathname: () => pathname,
   useSearchParams: () => searchParams,
 }));
@@ -33,6 +34,7 @@ beforeEach(() => {
   pathname = '/categories/dog-food';
   searchParams = new URLSearchParams();
   push.mockClear();
+  replace.mockClear();
 });
 
 describe('SearchFilterSidebar taxonomy filters', () => {
@@ -206,5 +208,44 @@ describe('SearchFilterSidebar taxonomy filters', () => {
     expect(params.has('minPrice')).toBe(false);
     expect(params.has('maxPrice')).toBe(false);
     expect(params.has('page')).toBe(false);
+  });
+
+  it('disables ตกลง and shows an alert when draft min is greater than max', async () => {
+    const user = userEvent.setup();
+
+    render(<SearchFilterSidebar />, { wrapper: createWrapper() });
+    await expandSection(user, /ราคา/);
+
+    const minInput = screen.getByPlaceholderText('ราคาต่ำสุด');
+    const maxInput = screen.getByPlaceholderText('ราคาสูงสุด');
+    await user.clear(minInput);
+    await user.type(minInput, '2000');
+    await user.clear(maxInput);
+    await user.type(maxInput, '1000');
+
+    expect(screen.getByRole('alert')).toHaveTextContent('ราคาต่ำสุดต้องไม่มากกว่าราคาสูงสุด');
+    expect(screen.getByRole('button', { name: 'ตกลง' })).toBeDisabled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('strips inverted minPrice/maxPrice from the URL while preserving other params', async () => {
+    searchParams = new URLSearchParams({
+      petType: 'pet-dog',
+      minPrice: '2000',
+      maxPrice: '1000',
+    });
+
+    render(<SearchFilterSidebar />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalled();
+    });
+
+    const replacedUrl = replace.mock.calls.at(-1)?.[0] as string;
+    const queryIndex = replacedUrl.indexOf('?');
+    const params = new URLSearchParams(queryIndex >= 0 ? replacedUrl.slice(queryIndex + 1) : '');
+    expect(params.get('petType')).toBe('pet-dog');
+    expect(params.has('minPrice')).toBe(false);
+    expect(params.has('maxPrice')).toBe(false);
   });
 });

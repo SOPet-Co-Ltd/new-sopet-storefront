@@ -7,6 +7,7 @@ import ProductDetailsPage from '@/components/sections/ProductDetailsPage/Product
 import { CartProvider } from '@/lib/providers/CartProvider';
 import {
   CATALOG_PRODUCT_ID,
+  CATALOG_PRODUCT_PATH,
   sampleProductCard,
   sampleProductDetail,
 } from '@/test/mocks/fixtures/catalog';
@@ -90,7 +91,11 @@ describe('Product page warm-cache fixture-e2e', () => {
     );
 
     render(
-      <ProductDetailsPage productId={CATALOG_PRODUCT_ID} initialProduct={sampleProductDetail} />,
+      <ProductDetailsPage
+        productPath={CATALOG_PRODUCT_PATH}
+        productId={CATALOG_PRODUCT_ID}
+        initialProduct={sampleProductDetail}
+      />,
       { wrapper: createPdpWrapper() },
     );
 

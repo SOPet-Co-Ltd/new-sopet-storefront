@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm/OrderPaymentForm';
@@ -65,6 +65,7 @@ describe('OrderPaymentForm', () => {
   afterEach(() => {
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
+    vi.useRealTimers();
   });
 
   it('renders QR image when qrCodeUrl is present and payment has not expired', () => {
@@ -84,32 +85,52 @@ describe('OrderPaymentForm', () => {
       'src',
       'https://example.com/qr.png',
     );
-    expect(screen.getByText('แสกนเพื่อชำระเงินผ่านแอปธนาคารใดก็ได้')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'สแกน QR เพื่อชำระเงิน' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'บันทึก QR Code' })).toBeInTheDocument();
     expect(screen.queryByText('QR Code หมดอายุแล้ว กำลังอัปเดตสถานะ...')).not.toBeInTheDocument();
   });
 
-  it('checks payment status from backend when status button is clicked on QR wait', async () => {
-    const user = userEvent.setup();
-    const onCheckStatus = vi.fn().mockResolvedValue(undefined);
-
+  it('prefers qrCodeImage as a data URL over qrCodeUrl', () => {
     renderForm(
       <OrderPaymentForm
         payment={{
           ...basePayment,
-          qrCodeUrl: 'https://example.com/qr.png',
+          qrCodeImage: 'iVBORw0KGgoAAAANSUhEUg==',
+          qrCodeUrl: 'https://example.com/legacy-qr.png',
           expiresAt: futureExpiresAt,
         }}
         loading={false}
         error={undefined}
-        onCheckStatus={onCheckStatus}
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }));
-    expect(onCheckStatus).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toHaveAttribute(
+      'src',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==',
+    );
   });
 
-  it('does not show status check button when onCheckStatus is omitted', () => {
+  it('renders QR from qrCodeImage alone when qrCodeUrl is absent', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeImage: 'data:image/jpeg;base64,/9j/4AAQ',
+          qrCodeUrl: null,
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toHaveAttribute(
+      'src',
+      'data:image/jpeg;base64,/9j/4AAQ',
+    );
+  });
+
+  it('does not show a status check button on the QR wait screen', () => {
     renderForm(
       <OrderPaymentForm
         payment={{
@@ -119,15 +140,51 @@ describe('OrderPaymentForm', () => {
         }}
         loading={false}
         error={undefined}
+        onCheckStatus={vi.fn()}
       />,
     );
 
     expect(
       screen.queryByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }),
     ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ชำระเงินเสร็จสิ้น' })).toBeDisabled();
   });
 
-  it('shows retry panel when pending PromptPay QR countdown has expired', () => {
+  it('enables ชำระเงินเสร็จสิ้น after 5 seconds and completes payment', () => {
+    vi.useFakeTimers();
+    const onPromptPayComplete = vi.fn();
+
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: futureExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+        onPromptPayComplete={onPromptPayComplete}
+      />,
+    );
+
+    const complete = screen.getByRole('button', { name: 'ชำระเงินเสร็จสิ้น' });
+    expect(complete).toBeDisabled();
+
+    act(() => {
+      vi.advanceTimersByTime(4_999);
+    });
+    expect(complete).toBeDisabled();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(complete).toBeEnabled();
+
+    fireEvent.click(complete);
+    expect(onPromptPayComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps QR and hides retry panel while pending PromptPay countdown has expired', () => {
     renderForm(
       <OrderPaymentForm
         payment={{
@@ -140,10 +197,33 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    expect(screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่')).toBeInTheDocument();
-    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
-    expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+    expect(screen.getByTestId('payment-late-success-check')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'),
+    ).not.toBeInTheDocument();
     expect(screen.queryByTestId('payment-order-not-payable')).not.toBeInTheDocument();
+  });
+
+  it('does not render retry panel while confirmingLateSuccess on failed PromptPay', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          status: 'failed',
+          qrCodeUrl: 'https://example.com/qr.png',
+          expiresAt: pastExpiresAt,
+        }}
+        loading={false}
+        error={undefined}
+        confirmingLateSuccess
+      />,
+    );
+
+    expect(screen.getByTestId('payment-late-success-check')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('payment-failed-state')).not.toBeInTheDocument();
   });
 
   it('authorizeUri present → redirecting state and auto-navigates once (AC-003/004)', () => {
@@ -277,6 +357,63 @@ describe('OrderPaymentForm', () => {
 
     expect(screen.getByText('การชำระเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')).toBeInTheDocument();
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+  });
+
+  it('maps Beam failureCode to Thai shopper copy on failed payments', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          status: 'failed',
+          expiresAt: null,
+          failureCode: 'CH_CARD_DECLINED',
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.getByText(/บัตรถูกปฏิเสธ/)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveAttribute('data-failure-code', 'CH_CARD_DECLINED');
+  });
+
+  it('does not treat BEAM_ERROR as a card decline message', () => {
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          status: 'failed',
+          expiresAt: null,
+          failureCode: 'BEAM_ERROR',
+        }}
+        loading={false}
+        error={undefined}
+      />,
+    );
+
+    expect(screen.queryByText(/บัตรถูกปฏิเสธ/)).not.toBeInTheDocument();
+    expect(screen.getByText(/ไม่สามารถดำเนินการชำระเงินได้/)).toBeInTheDocument();
+  });
+
+  it('logs only the hostname when authorizeUri host is disallowed', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const evilUri = 'https://evil.example/phish?token=secret';
+
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...cardPendingPayment,
+          authorizeUri: evilUri,
+        }}
+        loading={false}
+        error={undefined}
+        navigateToAuthorizeUri={navigate}
+      />,
+    );
+
+    expect(warn).toHaveBeenCalledWith('Disallowed 3DS authorize host:', 'evil.example');
+    expect(warn.mock.calls.flat().join(' ')).not.toContain('token=secret');
+    warn.mockRestore();
   });
 
   it('retrySubmitting swaps failed chrome for processing stage (no unsuccessful banner)', () => {
@@ -433,7 +570,7 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    const cta = screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' });
+    const cta = screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' });
     expect(cta).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
@@ -456,9 +593,9 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }));
 
-    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
       'aria-expanded',
       'true',
     );
@@ -467,7 +604,7 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
     expect(onRetryPayment).not.toHaveBeenCalled();
   });
 
@@ -483,21 +620,21 @@ describe('OrderPaymentForm', () => {
       <OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }));
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
 
     unmount();
 
     renderForm(<OrderPaymentForm payment={liveQrPayment} loading={false} error={undefined} />);
 
-    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
       'aria-expanded',
       'false',
     );
     expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
   });
 
-  it('QR-expired interim shows retry panel and does not mount Mid-QR change-method CTA', () => {
+  it('QR-expired interim keeps QR, shows late-success check, and does not mount Mid-QR or retry CTA', () => {
     renderForm(
       <OrderPaymentForm
         payment={{
@@ -510,9 +647,16 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+    expect(screen.getByTestId('payment-late-success-check')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
-    expect(screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่')).toBeInTheDocument();
+    expect(
+      screen.queryByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'),
+    ).not.toBeInTheDocument();
   });
 
   it('frictionless pending (no qrCodeUrl) does not mount Mid-QR CTA', () => {
@@ -555,5 +699,42 @@ describe('OrderPaymentForm', () => {
     expect(screen.getByRole('heading', { name: /คัดลอกบัญชีธนาคาร/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ยืนยันชำระเงินแล้ว' })).toBeInTheDocument();
     expect(screen.getByTestId('payment-busy-back')).toBeInTheDocument();
+  });
+
+  it('hides bank-transfer instructions while choosing a new payment method', async () => {
+    const user = userEvent.setup();
+    renderForm(
+      <OrderPaymentForm
+        payment={{
+          ...basePayment,
+          paymentMethod: 'bank_transfer',
+          qrCodeUrl: null,
+          authorizeUri: null,
+          expiresAt: null,
+        }}
+        loading={false}
+        error={undefined}
+        onCheckStatus={vi.fn()}
+        onRetryPayment={vi.fn()}
+        orderCreatedAt="2024-05-12T07:30:00.000Z"
+      />,
+    );
+
+    expect(screen.getByTestId('bank-transfer-waiting')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+
+    expect(screen.queryByTestId('bank-transfer-waiting')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ยืนยันชำระเงินแล้ว' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'ปิดวิธีชำระเงินอื่น' }));
+
+    expect(screen.getByTestId('bank-transfer-waiting')).toBeInTheDocument();
+    expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ยืนยันชำระเงินแล้ว' })).toBeInTheDocument();
   });
 });

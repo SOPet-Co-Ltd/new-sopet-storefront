@@ -7,6 +7,8 @@ describe('PolicyMarkdownLayout', () => {
     render(
       <PolicyMarkdownLayout
         title="ทดสอบ"
+        path="/policy/privacy-policy"
+        description="คำอธิบายนโยบายทดสอบ"
         source={`
 อัปเดตครั้งล่าสุดเมื่อ: 9 สิงหาคม 2026
 

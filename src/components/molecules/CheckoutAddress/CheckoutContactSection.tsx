@@ -10,8 +10,11 @@ type CheckoutContactSectionProps = {
   email: string;
   onContactPhoneChange: (value: string) => void;
   onEmailChange: (value: string) => void;
+  onContactPhoneBlur?: () => void;
   errors?: Partial<Pick<Record<GuestCheckoutField, string>, 'guestPhone' | 'email'>>;
   showErrors?: boolean;
+  /** When false, only the email field is shown (saved-address checkout). */
+  showPhone?: boolean;
 };
 
 export function CheckoutContactSection({
@@ -19,8 +22,10 @@ export function CheckoutContactSection({
   email,
   onContactPhoneChange,
   onEmailChange,
+  onContactPhoneBlur,
   errors,
   showErrors = false,
+  showPhone = true,
 }: CheckoutContactSectionProps) {
   const guestPhoneError = showErrors ? errors?.guestPhone : undefined;
   const emailError = showErrors ? errors?.email : undefined;
@@ -38,17 +43,26 @@ export function CheckoutContactSection({
         การติดต่อ
       </h3>
 
-      <div className="grid grid-cols-1 gap-sop-12px md:grid-cols-2">
-        <ThaiPhoneInput
-          title="เบอร์โทรศัพท์"
-          hasTitle
-          isRequired
-          value={contactPhone}
-          onValueChange={onContactPhoneChange}
-          state={guestPhoneError ? 'error' : 'default'}
-          description={guestPhoneError}
-          data-testid="contact-phone-field"
-        />
+      <div
+        className={
+          showPhone
+            ? 'grid grid-cols-1 gap-sop-12px md:grid-cols-2'
+            : 'grid grid-cols-1 gap-sop-12px'
+        }
+      >
+        {showPhone ? (
+          <ThaiPhoneInput
+            title="เบอร์โทรศัพท์"
+            hasTitle
+            isRequired
+            value={contactPhone}
+            onValueChange={onContactPhoneChange}
+            onBlur={onContactPhoneBlur}
+            state={guestPhoneError ? 'error' : 'default'}
+            description={guestPhoneError}
+            data-testid="contact-phone-field"
+          />
+        ) : null}
 
         <div className="min-w-0">
           <Input

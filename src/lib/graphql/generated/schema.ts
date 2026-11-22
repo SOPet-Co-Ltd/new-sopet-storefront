@@ -42,12 +42,8 @@ export type ActiveSaleCampaignItemType = {
 };
 
 export type AddPaymentMethodInput = {
-  brand: Scalars['String']['input'];
-  expiryMonth: Scalars['Int']['input'];
-  expiryYear: Scalars['Int']['input'];
+  cardCipher: Scalars['String']['input'];
   isDefault?: InputMaybe<Scalars['Boolean']['input']>;
-  lastFour: Scalars['String']['input'];
-  omiseCardToken: Scalars['String']['input'];
 };
 
 export type AddProductImageInput = {
@@ -110,6 +106,7 @@ export type AdminCustomerDetailType = {
   id: Scalars['String']['output'];
   insights: AdminCustomerInsightsType;
   isActive: Scalars['Boolean']['output'];
+  isGuest: Scalars['Boolean']['output'];
   isVerified: Scalars['Boolean']['output'];
   lastLoginAt?: Maybe<Scalars['DateTime']['output']>;
   phone: Scalars['String']['output'];
@@ -153,6 +150,7 @@ export type AdminCustomerType = {
   fullName?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   isActive: Scalars['Boolean']['output'];
+  isGuest: Scalars['Boolean']['output'];
   isVerified: Scalars['Boolean']['output'];
   lastLoginAt?: Maybe<Scalars['DateTime']['output']>;
   phone: Scalars['String']['output'];
@@ -199,13 +197,17 @@ export type AdminManualPayoutType = {
   amount: Scalars['Float']['output'];
   bankAccountName?: Maybe<Scalars['String']['output']>;
   bankAccountNumber?: Maybe<Scalars['String']['output']>;
+  bankAccountVerificationStatus?: Maybe<Scalars['String']['output']>;
   bankCode?: Maybe<Scalars['String']['output']>;
   bankName?: Maybe<Scalars['String']['output']>;
   commissionAmount?: Maybe<Scalars['Float']['output']>;
   commissionRate?: Maybe<Scalars['Int']['output']>;
   createdAt: Scalars['DateTime']['output'];
+  failureReason?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   netAmount: Scalars['Float']['output'];
+  notes?: Maybe<Scalars['String']['output']>;
+  processedAt?: Maybe<Scalars['DateTime']['output']>;
   productSold?: Maybe<Scalars['Float']['output']>;
   settlementRail: Scalars['String']['output'];
   shippingFees?: Maybe<Scalars['Float']['output']>;
@@ -214,11 +216,46 @@ export type AdminManualPayoutType = {
   storeName: Scalars['String']['output'];
 };
 
+export type AdminOrder = {
+  __typename?: 'AdminOrder';
+  customer?: Maybe<AdminOrderCustomer>;
+  order: OrderType;
+  stores: Array<AdminOrderStore>;
+};
+
+export type AdminOrderConnection = {
+  __typename?: 'AdminOrderConnection';
+  items: Array<AdminOrder>;
+  pagination: PaginationMeta;
+};
+
+export type AdminOrderCustomer = {
+  __typename?: 'AdminOrderCustomer';
+  email?: Maybe<Scalars['String']['output']>;
+  fullName?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  phone: Scalars['String']['output'];
+};
+
+export type AdminOrderStore = {
+  __typename?: 'AdminOrderStore';
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
+export type AdminStoreConnection = {
+  __typename?: 'AdminStoreConnection';
+  items: Array<AdminStoreType>;
+  pagination: PaginationMeta;
+};
+
 export type AdminStoreType = {
   __typename?: 'AdminStoreType';
   address?: Maybe<Scalars['String']['output']>;
   bankAccountName?: Maybe<Scalars['String']['output']>;
   bankAccountNumber?: Maybe<Scalars['String']['output']>;
+  bankAccountRejectionReason?: Maybe<Scalars['String']['output']>;
+  bankAccountVerificationStatus: Scalars['String']['output'];
   bankCode?: Maybe<Scalars['String']['output']>;
   bankName?: Maybe<Scalars['String']['output']>;
   bannerUrl?: Maybe<Scalars['String']['output']>;
@@ -261,6 +298,12 @@ export type AdminVendorActivityType = {
   storeName?: Maybe<Scalars['String']['output']>;
 };
 
+export type AdminVendorConnection = {
+  __typename?: 'AdminVendorConnection';
+  items: Array<AdminVendorListItem>;
+  pagination: PaginationMeta;
+};
+
 export type AdminVendorDetailType = {
   __typename?: 'AdminVendorDetailType';
   createdAt: Scalars['DateTime']['output'];
@@ -287,6 +330,18 @@ export type AdminVendorInsightsType = {
   recentOrders: Array<AdminCustomerRecentOrder>;
   storeCount: Scalars['Int']['output'];
   totalRevenue: Scalars['Float']['output'];
+};
+
+export type AdminVendorListItem = {
+  __typename?: 'AdminVendorListItem';
+  createdAt: Scalars['DateTime']['output'];
+  email: Scalars['String']['output'];
+  fullName: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  isActive: Scalars['Boolean']['output'];
+  lastLoginAt?: Maybe<Scalars['DateTime']['output']>;
+  role: Scalars['String']['output'];
+  storeCount: Scalars['Int']['output'];
 };
 
 export type AdminVendorMembershipType = {
@@ -486,12 +541,15 @@ export type CreateOrderInput = {
 };
 
 export type CreatePaymentInput = {
-  amount: Scalars['Float']['input'];
+  amount?: InputMaybe<Scalars['Float']['input']>;
+  cardSecurityCodeCipher?: InputMaybe<Scalars['String']['input']>;
+  cardToken?: InputMaybe<Scalars['String']['input']>;
   currency?: Scalars['String']['input'];
   guestPayToken?: InputMaybe<Scalars['String']['input']>;
-  omiseToken?: InputMaybe<Scalars['String']['input']>;
   orderId: Scalars['String']['input'];
   paymentMethod: Scalars['String']['input'];
+  platformType?: InputMaybe<Scalars['String']['input']>;
+  saveCard?: InputMaybe<SaveCardOnPaymentInput>;
   savedPaymentMethodId?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -651,6 +709,15 @@ export type CustomerAuthPayload = {
   tokens?: Maybe<AuthTokens>;
 };
 
+export type CustomerExistsByPhoneInput = {
+  phone: Scalars['String']['input'];
+};
+
+export type CustomerExistsByPhonePayload = {
+  __typename?: 'CustomerExistsByPhonePayload';
+  exists: Scalars['Boolean']['output'];
+};
+
 export enum CustomerOrderListFilter {
   All = 'ALL',
   Cancelled = 'CANCELLED',
@@ -669,6 +736,19 @@ export type CustomerProfile = {
   profilePhotoUrl?: Maybe<Scalars['String']['output']>;
 };
 
+export type CustomerPurchaseSummaryType = {
+  __typename?: 'CustomerPurchaseSummaryType';
+  averageOrderValue?: Maybe<Scalars['Float']['output']>;
+  cohortLabel: Scalars['String']['output'];
+  cohortLabelTh: Scalars['String']['output'];
+  daysSinceLastOrder?: Maybe<Scalars['Int']['output']>;
+  lastOrderAt?: Maybe<Scalars['DateTime']['output']>;
+  month: Scalars['Int']['output'];
+  monthsSinceLastOrder?: Maybe<Scalars['Int']['output']>;
+  purchasesInMonth: Scalars['Int']['output'];
+  year: Scalars['Int']['output'];
+};
+
 export type CustomerReviewType = {
   __typename?: 'CustomerReviewType';
   comment?: Maybe<Scalars['String']['output']>;
@@ -682,6 +762,7 @@ export type CustomerReviewType = {
   productSlug?: Maybe<Scalars['String']['output']>;
   rating: Scalars['Int']['output'];
   status: Scalars['String']['output'];
+  variantOptions?: Maybe<Scalars['String']['output']>;
 };
 
 export type CustomerReviewableItemType = {
@@ -695,6 +776,24 @@ export type CustomerReviewableItemType = {
   productName: Scalars['String']['output'];
   productSlug?: Maybe<Scalars['String']['output']>;
   reviewDeadline?: Maybe<Scalars['DateTime']['output']>;
+};
+
+export enum DashboardActivityKind {
+  BankTransfer = 'BANK_TRANSFER',
+  Order = 'ORDER',
+  Payout = 'PAYOUT',
+  Reactivation = 'REACTIVATION',
+  Review = 'REVIEW',
+  StoreRequest = 'STORE_REQUEST',
+  StoreStatus = 'STORE_STATUS',
+  Taxonomy = 'TAXONOMY',
+}
+
+export type DashboardActivityType = {
+  __typename?: 'DashboardActivityType';
+  entityId: Scalars['String']['output'];
+  kind: DashboardActivityKind;
+  storeId?: Maybe<Scalars['String']['output']>;
 };
 
 export type DeleteTaxonomyInput = {
@@ -846,6 +945,7 @@ export type Mutation = {
   approveStoreReactivationRequest: StoreReactivationRequestType;
   approveStoreRequest: StoreRequestType;
   approveTag: TagType;
+  cancelPayoutRequest: PayoutType;
   cancelVendorOrder: OrderType;
   changeCustomerPhone: CustomerAuthPayload;
   changePassword: MessagePayload;
@@ -857,6 +957,7 @@ export type Mutation = {
   createAddress: SavedAddressType;
   createBrand: BrandType;
   createCategory: CategoryType;
+  createCustomerAddressAsAdmin: SavedAddressType;
   createEmailContainer: EmailContainerType;
   createOrder: OrderType;
   createPayment: PaymentType;
@@ -881,6 +982,7 @@ export type Mutation = {
   deleteAddress: Scalars['Boolean']['output'];
   deleteBrand: DeleteTaxonomyResultType;
   deleteCategory: DeleteTaxonomyResultType;
+  deleteCustomerAddressAsAdmin: Scalars['Boolean']['output'];
   deletePaymentMethod: Scalars['Boolean']['output'];
   deletePetType: DeleteTaxonomyResultType;
   deletePlatformAd: Scalars['Boolean']['output'];
@@ -898,8 +1000,6 @@ export type Mutation = {
   inviteAdmin: AdminInvitationType;
   inviteStoreMember: StoreMemberInvitationType;
   inviteVendor: VendorInvitationType;
-  linkStoreOmiseRecipient: MyStoreType;
-  linkStoreOmiseRecipientAsAdmin: AdminStoreType;
   markAllNotificationsRead: Scalars['Boolean']['output'];
   markNotificationRead: Scalars['Boolean']['output'];
   markVendorOrderPaid: OrderType;
@@ -917,6 +1017,7 @@ export type Mutation = {
   rejectPetType: PetTypeType;
   rejectReview: ReviewType;
   rejectStore: StoreType;
+  rejectStoreBankAccount: AdminStoreType;
   rejectStoreReactivationRequest: StoreReactivationRequestType;
   rejectStoreRequest: StoreRequestType;
   rejectTag: TagType;
@@ -941,6 +1042,7 @@ export type Mutation = {
   setAdminActive: AdminTeamMemberType;
   setCategoryImage: CategoryType;
   setCustomerActive: AdminCustomerType;
+  setCustomerDefaultAddressAsAdmin: SavedAddressType;
   setDefaultAddress: SavedAddressType;
   setDefaultEmailContainer: EmailContainerType;
   setDefaultPaymentMethod: SavedPaymentMethodType;
@@ -960,10 +1062,12 @@ export type Mutation = {
   updateBrand: BrandType;
   updateCartItem: CartType;
   updateCategory: CategoryType;
+  updateCustomerAddressAsAdmin: SavedAddressType;
   updateCustomerAsAdmin: AdminCustomerType;
   updateEmailContainer: EmailContainerType;
   updateEmailContentTemplate: EmailContentTemplateType;
   updateLoginPageImages: LoginPageImagesType;
+  updateOrderShippingAddressAsAdmin: OrderType;
   updateOrderStatus: OrderType;
   updatePetType: PetTypeType;
   updatePlatformAd: PlatformAdType;
@@ -991,7 +1095,9 @@ export type Mutation = {
   uploadImage: UploadResultType;
   vendorLogin: VendorAuthPayload;
   verifyCustomerOtp: CustomerAuthPayload;
+  verifyCustomerPhoneAsAdmin: AdminCustomerType;
   verifyEmail: MessagePayload;
+  verifyStoreBankAccount: AdminStoreType;
 };
 
 export type MutationAcceptAdminInvitationArgs = {
@@ -1012,6 +1118,7 @@ export type MutationAcceptVendorInvitationArgs = {
 
 export type MutationAcknowledgeVendorOrderArgs = {
   orderId: Scalars['String']['input'];
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationAddFavoriteArgs = {
@@ -1099,6 +1206,7 @@ export type MutationApproveTagArgs = {
 
 export type MutationCancelVendorOrderArgs = {
   orderId: Scalars['String']['input'];
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationChangeCustomerPhoneArgs = {
@@ -1132,6 +1240,11 @@ export type MutationCreateBrandArgs = {
 
 export type MutationCreateCategoryArgs = {
   input: CreateCategoryInput;
+};
+
+export type MutationCreateCustomerAddressAsAdminArgs = {
+  customerId: Scalars['String']['input'];
+  input: CreateAddressInput;
 };
 
 export type MutationCreateEmailContainerArgs = {
@@ -1168,6 +1281,7 @@ export type MutationCreatePlatformSponsorArgs = {
 
 export type MutationCreateProductArgs = {
   input: CreateProductInput;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationCreateProductVariantArgs = {
@@ -1197,6 +1311,7 @@ export type MutationCreateSearchSynonymArgs = {
 
 export type MutationCreateShippingOptionArgs = {
   input: CreateShippingOptionInput;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationCreateShippingProviderArgs = {
@@ -1230,6 +1345,11 @@ export type MutationDeleteBrandArgs = {
 
 export type MutationDeleteCategoryArgs = {
   input: DeleteTaxonomyInput;
+};
+
+export type MutationDeleteCustomerAddressAsAdminArgs = {
+  customerId: Scalars['String']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type MutationDeletePaymentMethodArgs = {
@@ -1278,6 +1398,7 @@ export type MutationDeleteSearchSynonymArgs = {
 
 export type MutationDeleteShippingOptionArgs = {
   id: Scalars['String']['input'];
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationDeleteShippingProviderArgs = {
@@ -1294,14 +1415,11 @@ export type MutationInviteAdminArgs = {
 
 export type MutationInviteStoreMemberArgs = {
   input: InviteStoreMemberInput;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationInviteVendorArgs = {
   input: InviteVendorInput;
-};
-
-export type MutationLinkStoreOmiseRecipientAsAdminArgs = {
-  storeId: Scalars['String']['input'];
 };
 
 export type MutationMarkNotificationReadArgs = {
@@ -1310,6 +1428,7 @@ export type MutationMarkNotificationReadArgs = {
 
 export type MutationMarkVendorOrderPaidArgs = {
   orderId: Scalars['String']['input'];
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationMergeCartArgs = {
@@ -1368,6 +1487,11 @@ export type MutationRejectStoreArgs = {
   input: RejectStoreInput;
 };
 
+export type MutationRejectStoreBankAccountArgs = {
+  reason: Scalars['String']['input'];
+  storeId: Scalars['String']['input'];
+};
+
 export type MutationRejectStoreReactivationRequestArgs = {
   input: RejectStoreReactivationRequestInput;
 };
@@ -1390,6 +1514,7 @@ export type MutationRemoveFavoriteArgs = {
 
 export type MutationRemoveStoreMemberArgs = {
   memberId: Scalars['String']['input'];
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationReorderPlatformBannersArgs = {
@@ -1424,6 +1549,7 @@ export type MutationRevokeStoreApiKeyArgs = {
 
 export type MutationRevokeStoreInvitationArgs = {
   invitationId: Scalars['String']['input'];
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationSendCustomerOtpArgs = {
@@ -1446,6 +1572,11 @@ export type MutationSetCategoryImageArgs = {
 export type MutationSetCustomerActiveArgs = {
   id: Scalars['String']['input'];
   isActive: Scalars['Boolean']['input'];
+};
+
+export type MutationSetCustomerDefaultAddressAsAdminArgs = {
+  customerId: Scalars['String']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type MutationSetDefaultAddressArgs = {
@@ -1475,6 +1606,7 @@ export type MutationSettleManualPayoutArgs = {
 
 export type MutationShipVendorOrderArgs = {
   input: ShipVendorOrderInput;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationSubmitStoreReactivationRequestArgs = {
@@ -1529,6 +1661,12 @@ export type MutationUpdateCategoryArgs = {
   input: UpdateCategoryInput;
 };
 
+export type MutationUpdateCustomerAddressAsAdminArgs = {
+  customerId: Scalars['String']['input'];
+  id: Scalars['String']['input'];
+  input: UpdateAddressInput;
+};
+
 export type MutationUpdateCustomerAsAdminArgs = {
   input: UpdateCustomerAsAdminInput;
 };
@@ -1545,6 +1683,10 @@ export type MutationUpdateEmailContentTemplateArgs = {
 
 export type MutationUpdateLoginPageImagesArgs = {
   input: UpdateLoginPageImagesInput;
+};
+
+export type MutationUpdateOrderShippingAddressAsAdminArgs = {
+  input: UpdateOrderShippingAddressAsAdminInput;
 };
 
 export type MutationUpdateOrderStatusArgs = {
@@ -1612,6 +1754,7 @@ export type MutationUpdateSearchSynonymArgs = {
 export type MutationUpdateShippingOptionArgs = {
   id: Scalars['String']['input'];
   input: UpdateShippingOptionInput;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationUpdateShippingProviderArgs = {
@@ -1621,6 +1764,7 @@ export type MutationUpdateShippingProviderArgs = {
 
 export type MutationUpdateStoreArgs = {
   input: UpdateStoreSettingsInput;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationUpdateStoreAsAdminArgs = {
@@ -1629,10 +1773,12 @@ export type MutationUpdateStoreAsAdminArgs = {
 
 export type MutationUpdateStoreMemberRoleArgs = {
   input: UpdateStoreMemberRoleInput;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationUpdateStorePayoutArgs = {
   input: UpdateStorePayoutInput;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationUpdateStorefrontMaintenanceArgs = {
@@ -1664,8 +1810,16 @@ export type MutationVerifyCustomerOtpArgs = {
   input: VerifyCustomerOtpInput;
 };
 
+export type MutationVerifyCustomerPhoneAsAdminArgs = {
+  id: Scalars['String']['input'];
+};
+
 export type MutationVerifyEmailArgs = {
   input: VerifyEmailInput;
+};
+
+export type MutationVerifyStoreBankAccountArgs = {
+  storeId: Scalars['String']['input'];
 };
 
 export type MyPendingStoreInvitationType = {
@@ -1684,6 +1838,8 @@ export type MyStoreType = {
   address?: Maybe<Scalars['String']['output']>;
   bankAccountName?: Maybe<Scalars['String']['output']>;
   bankAccountNumber?: Maybe<Scalars['String']['output']>;
+  bankAccountRejectionReason?: Maybe<Scalars['String']['output']>;
+  bankAccountVerificationStatus: Scalars['String']['output'];
   bankCode?: Maybe<Scalars['String']['output']>;
   bankName?: Maybe<Scalars['String']['output']>;
   bannerUrl?: Maybe<Scalars['String']['output']>;
@@ -1885,25 +2041,20 @@ export type PaymentType = {
   authorizeUri?: Maybe<Scalars['String']['output']>;
   currency: Scalars['String']['output'];
   expiresAt?: Maybe<Scalars['DateTime']['output']>;
+  failureCode?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   orderId: Scalars['String']['output'];
   orderNumber?: Maybe<Scalars['String']['output']>;
   paymentMethod: Scalars['String']['output'];
+  qrCodeImage?: Maybe<Scalars['String']['output']>;
   qrCodeUrl?: Maybe<Scalars['String']['output']>;
   status: Scalars['String']['output'];
 };
 
-export type PayoutRailSummaryType = {
-  __typename?: 'PayoutRailSummaryType';
-  availableBalance: Scalars['Float']['output'];
-  canRequestPayout: Scalars['Boolean']['output'];
-  commissionAmount: Scalars['Float']['output'];
-  commissionRate: Scalars['Int']['output'];
-  grossRevenue: Scalars['Float']['output'];
-  pendingPayoutAmount: Scalars['Float']['output'];
-  productSold: Scalars['Float']['output'];
-  shippingFees: Scalars['Float']['output'];
-  totalPaidOut: Scalars['Float']['output'];
+export type PayoutConnection = {
+  __typename?: 'PayoutConnection';
+  items: Array<PayoutType>;
+  pagination: PaginationMeta;
 };
 
 export type PayoutSummaryType = {
@@ -1913,9 +2064,7 @@ export type PayoutSummaryType = {
   commissionAmount: Scalars['Float']['output'];
   commissionRate: Scalars['Int']['output'];
   grossRevenue: Scalars['Float']['output'];
-  manual: PayoutRailSummaryType;
   minimumPayoutAmount: Scalars['Float']['output'];
-  omise: PayoutRailSummaryType;
   pendingPayoutAmount: Scalars['Float']['output'];
   productSold: Scalars['Float']['output'];
   shippingFees: Scalars['Float']['output'];
@@ -1929,8 +2078,11 @@ export type PayoutType = {
   commissionAmount?: Maybe<Scalars['Float']['output']>;
   commissionRate?: Maybe<Scalars['Int']['output']>;
   createdAt: Scalars['DateTime']['output'];
+  failureReason?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   netAmount: Scalars['Float']['output'];
+  notes?: Maybe<Scalars['String']['output']>;
+  processedAt?: Maybe<Scalars['DateTime']['output']>;
   productSold?: Maybe<Scalars['Float']['output']>;
   settlementRail: Scalars['String']['output'];
   shippingFees?: Maybe<Scalars['Float']['output']>;
@@ -2059,6 +2211,7 @@ export type ProductType = {
   averageRating: Scalars['Float']['output'];
   basePrice: Scalars['Float']['output'];
   brandId?: Maybe<Scalars['String']['output']>;
+  brandName?: Maybe<Scalars['String']['output']>;
   category?: Maybe<Scalars['String']['output']>;
   categoryId?: Maybe<Scalars['String']['output']>;
   compareAtPrice?: Maybe<Scalars['Float']['output']>;
@@ -2083,7 +2236,9 @@ export type ProductType = {
 
 export type ProductVariantSyncImpactRemovedType = {
   __typename?: 'ProductVariantSyncImpactRemovedType';
+  disposition: VariantRemovalDisposition;
   id: Scalars['String']['output'];
+  openCartCount: Scalars['Int']['output'];
   optionKey: Scalars['String']['output'];
   optionsJson?: Maybe<Scalars['String']['output']>;
   reasons: Array<VariantRemovalBlockReason>;
@@ -2108,6 +2263,12 @@ export type ProductVariantType = {
   product?: Maybe<ProductType>;
   sku: Scalars['String']['output'];
   stockQuantity: Scalars['Int']['output'];
+};
+
+export type PromotionConnection = {
+  __typename?: 'PromotionConnection';
+  items: Array<PromotionType>;
+  pagination: PaginationMeta;
 };
 
 export type PromotionEligibilityResult = {
@@ -2164,19 +2325,22 @@ export type Query = {
   addresses: Array<SavedAddressType>;
   adminAuditLogs: AdminAuditLogConnection;
   adminCustomer: AdminCustomerType;
+  adminCustomerAddresses: Array<SavedAddressType>;
   adminCustomerDetail: AdminCustomerDetailType;
   adminCustomers: AdminCustomerConnection;
+  adminOrder: AdminOrder;
+  adminOrders: AdminOrderConnection;
   adminStore: AdminStoreType;
   adminStorePayoutSummary: PayoutSummaryType;
-  adminStorePayouts: Array<PayoutType>;
+  adminStorePayouts: PayoutConnection;
   adminStoreReactivationRequests: Array<StoreReactivationRequestType>;
   adminStoreRequests: Array<StoreRequestType>;
   adminStoreShippingOptions: Array<StoreShippingOptionType>;
-  adminStores: Array<AdminStoreType>;
+  adminStores: AdminStoreConnection;
   adminTeamMembers: Array<AdminTeamMemberType>;
   adminVendor: AdminVendorType;
   adminVendorDetail: AdminVendorDetailType;
-  adminVendors: Array<AdminVendorType>;
+  adminVendors: AdminVendorConnection;
   allPlatformAds: Array<PlatformAdType>;
   allPlatformBanners: Array<PlatformBannerType>;
   allPlatformSponsors: Array<PlatformSponsorType>;
@@ -2187,8 +2351,11 @@ export type Query = {
   bankTransferDetails?: Maybe<BankTransferDetailsType>;
   bankTransferSettings: BankTransferSettingsType;
   brandDeleteImpact: TaxonomyDeleteImpactType;
+  cardTransportPublicKey: Scalars['String']['output'];
   cart: CartType;
   categoryDeleteImpact: TaxonomyDeleteImpactType;
+  customerExistsByPhone: CustomerExistsByPhonePayload;
+  customerPurchaseSummary: CustomerPurchaseSummaryType;
   customerReviewableItems: Array<CustomerReviewableItemType>;
   emailContainer?: Maybe<EmailContainerType>;
   emailContainers: Array<EmailContainerType>;
@@ -2240,7 +2407,7 @@ export type Query = {
   platformAds: Array<PlatformAdType>;
   platformAnalytics: PlatformAnalyticsType;
   platformBanners: Array<PlatformBannerType>;
-  platformPromotions: Array<PromotionType>;
+  platformPromotions: PromotionConnection;
   platformSalesByCategory: Array<SalesBreakdownItemType>;
   platformSalesByPaymentMethod: Array<SalesBreakdownItemType>;
   platformSalesOverTime: Array<SalesTimePointType>;
@@ -2249,11 +2416,13 @@ export type Query = {
   platformTopProducts: Array<TopProductType>;
   platformTopStores: Array<TopStoreType>;
   product: ProductType;
+  productByPath: ProductType;
   productBySlug: ProductType;
   productPublishChecklist: ProductPublishChecklistType;
   productReviews: Array<ReviewType>;
   productVariantSyncImpact: ProductVariantSyncImpactType;
   products: ProductConnection;
+  promotion: PromotionType;
   recommendedProducts: Array<ProductType>;
   rejectedBrands: Array<BrandType>;
   rejectedCategories: Array<CategoryType>;
@@ -2273,12 +2442,13 @@ export type Query = {
   storeAnalytics: StoreAnalyticsType;
   storeApiKeys: Array<StoreApiKeyType>;
   storeBySlug: StoreType;
+  storeCustomerSummary: StoreCustomerSummaryType;
   storeInvitations: Array<StoreMemberInvitationType>;
   storeMembers: Array<StoreMemberType>;
   storePayoutSummary: PayoutSummaryType;
-  storePayouts: Array<PayoutType>;
+  storePayouts: PayoutConnection;
   storeProductReviews: StoreProductReviewConnection;
-  storePromotions: Array<PromotionType>;
+  storePromotions: PromotionConnection;
   storeReactivationRequests: Array<StoreReactivationRequestType>;
   storeReviewSummary: StoreReviewSummaryType;
   storeReviews: Array<StoreProductReviewType>;
@@ -2294,7 +2464,8 @@ export type Query = {
   vendorCustomer: VendorCustomerType;
   vendorCustomerDetail: VendorCustomerDetailType;
   vendorCustomers: VendorCustomerConnection;
-  vendorOrders: Array<OrderType>;
+  vendorOrder: OrderType;
+  vendorOrders: VendorOrderConnection;
   vendorProduct: ProductType;
   vendorProducts: ProductConnection;
   vendorPublishableProductIds: VendorPublishableProductIdsType;
@@ -2323,6 +2494,10 @@ export type QueryAdminCustomerArgs = {
   id: Scalars['String']['input'];
 };
 
+export type QueryAdminCustomerAddressesArgs = {
+  customerId: Scalars['String']['input'];
+};
+
 export type QueryAdminCustomerDetailArgs = {
   id: Scalars['String']['input'];
 };
@@ -2331,6 +2506,17 @@ export type QueryAdminCustomersArgs = {
   limit?: Scalars['Int']['input'];
   page?: Scalars['Int']['input'];
   search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryAdminOrderArgs = {
+  id: Scalars['String']['input'];
+};
+
+export type QueryAdminOrdersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryAdminStoreArgs = {
@@ -2342,6 +2528,8 @@ export type QueryAdminStorePayoutSummaryArgs = {
 };
 
 export type QueryAdminStorePayoutsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
   storeId: Scalars['String']['input'];
 };
 
@@ -2353,6 +2541,14 @@ export type QueryAdminStoreShippingOptionsArgs = {
   storeId: Scalars['String']['input'];
 };
 
+export type QueryAdminStoresArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type QueryAdminVendorArgs = {
   id: Scalars['String']['input'];
 };
@@ -2362,7 +2558,11 @@ export type QueryAdminVendorDetailArgs = {
 };
 
 export type QueryAdminVendorsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryBrandDeleteImpactArgs = {
@@ -2375,6 +2575,16 @@ export type QueryCartArgs = {
 
 export type QueryCategoryDeleteImpactArgs = {
   categoryId: Scalars['String']['input'];
+};
+
+export type QueryCustomerExistsByPhoneArgs = {
+  input: CustomerExistsByPhoneInput;
+};
+
+export type QueryCustomerPurchaseSummaryArgs = {
+  customerId: Scalars['String']['input'];
+  month: Scalars['Int']['input'];
+  year: Scalars['Int']['input'];
 };
 
 export type QueryEmailContainerArgs = {
@@ -2392,6 +2602,11 @@ export type QueryEmailContentTemplateByKeyArgs = {
 export type QueryExportSearchAnalyticsCsvArgs = {
   fromDate?: InputMaybe<Scalars['DateTime']['input']>;
   toDate?: InputMaybe<Scalars['DateTime']['input']>;
+};
+
+export type QueryFavoritesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryGetAdminInvitationByTokenArgs = {
@@ -2415,7 +2630,17 @@ export type QueryMyReviewsArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type QueryMyStoreArgs = {
+  storeId?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryMyStoreShippingOptionsArgs = {
+  storeId?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type QueryNotificationsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
   unreadOnly?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
@@ -2472,6 +2697,11 @@ export type QueryPlatformAnalyticsArgs = {
   toDate?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type QueryPlatformPromotionsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type QueryPlatformSalesByCategoryArgs = {
   fromDate?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -2500,6 +2730,10 @@ export type QueryProductArgs = {
   id: Scalars['String']['input'];
 };
 
+export type QueryProductByPathArgs = {
+  path: Scalars['String']['input'];
+};
+
 export type QueryProductBySlugArgs = {
   slug: Scalars['String']['input'];
   storeId: Scalars['String']['input'];
@@ -2510,6 +2744,8 @@ export type QueryProductPublishChecklistArgs = {
 };
 
 export type QueryProductReviewsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
   productId: Scalars['String']['input'];
 };
 
@@ -2533,6 +2769,10 @@ export type QueryProductsArgs = {
   sortOrder?: InputMaybe<Scalars['String']['input']>;
   storeId?: InputMaybe<Scalars['String']['input']>;
   tag?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryPromotionArgs = {
+  id: Scalars['String']['input'];
 };
 
 export type QueryRecommendedProductsArgs = {
@@ -2601,6 +2841,25 @@ export type QueryStoreBySlugArgs = {
   slug: Scalars['String']['input'];
 };
 
+export type QueryStoreCustomerSummaryArgs = {
+  month: Scalars['Int']['input'];
+  storeId: Scalars['String']['input'];
+  year: Scalars['Int']['input'];
+};
+
+export type QueryStoreInvitationsArgs = {
+  storeId?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryStoreMembersArgs = {
+  storeId?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryStorePayoutsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type QueryStoreProductReviewsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -2610,6 +2869,8 @@ export type QueryStoreProductReviewsArgs = {
 };
 
 export type QueryStorePromotionsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
   storeId: Scalars['String']['input'];
 };
 
@@ -2622,6 +2883,8 @@ export type QueryStoreReviewSummaryArgs = {
 };
 
 export type QueryStoreReviewsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
   storeId: Scalars['String']['input'];
 };
 
@@ -2652,19 +2915,33 @@ export type QueryValidatePromotionsArgs = {
 
 export type QueryVendorCustomerArgs = {
   id: Scalars['String']['input'];
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryVendorCustomerDetailArgs = {
   id: Scalars['String']['input'];
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryVendorCustomersArgs = {
   limit?: Scalars['Int']['input'];
   page?: Scalars['Int']['input'];
   search?: InputMaybe<Scalars['String']['input']>;
+  storeId?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryVendorOrderArgs = {
+  id: Scalars['String']['input'];
+  storeId: Scalars['String']['input'];
 };
 
 export type QueryVendorOrdersArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  paymentMethod?: InputMaybe<Scalars['String']['input']>;
+  queue?: InputMaybe<VendorOrderQueueFilter>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
   storeId: Scalars['String']['input'];
 };
 
@@ -2682,17 +2959,20 @@ export type QueryVendorProductsArgs = {
   petTypeIds?: InputMaybe<Array<Scalars['String']['input']>>;
   search?: InputMaybe<Scalars['String']['input']>;
   status?: InputMaybe<Scalars['String']['input']>;
+  storeId?: InputMaybe<Scalars['String']['input']>;
   tag?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryVendorPublishableProductIdsArgs = {
   search?: InputMaybe<Scalars['String']['input']>;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryVendorPublishableProductsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
+  storeId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type ReactivateAccountInput = {
@@ -2777,6 +3057,7 @@ export type ReviewType = {
   comment?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
   customerName: Scalars['String']['output'];
+  customerProfilePhotoUrl?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   images: Array<ReviewImageType>;
   productId: Scalars['String']['output'];
@@ -2784,6 +3065,7 @@ export type ReviewType = {
   reply?: Maybe<ReviewReplyType>;
   source: Scalars['String']['output'];
   status: Scalars['String']['output'];
+  variantOptions?: Maybe<Scalars['String']['output']>;
 };
 
 export type SaleCampaignItemInput = {
@@ -2834,6 +3116,11 @@ export type SalesTimePointType = {
   revenue: Scalars['Float']['output'];
 };
 
+export type SaveCardOnPaymentInput = {
+  cardCipher: Scalars['String']['input'];
+  isDefault?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
 export type SavedAddressType = {
   __typename?: 'SavedAddressType';
   addressLine1: Scalars['String']['output'];
@@ -2857,6 +3144,7 @@ export type SavedPaymentMethodType = {
   id: Scalars['String']['output'];
   isDefault: Scalars['Boolean']['output'];
   lastFour: Scalars['String']['output'];
+  psp?: Maybe<Scalars['String']['output']>;
   type: Scalars['String']['output'];
 };
 
@@ -2886,6 +3174,7 @@ export type SearchProductSuggestionType = {
   id: Scalars['String']['output'];
   name: Scalars['String']['output'];
   slug: Scalars['String']['output'];
+  storeSlug: Scalars['String']['output'];
   thumbnailUrl?: Maybe<Scalars['String']['output']>;
 };
 
@@ -3013,6 +3302,22 @@ export type StoreApiKeyType = {
   revokedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
+export type StoreCustomerSummaryType = {
+  __typename?: 'StoreCustomerSummaryType';
+  averageOrderValue?: Maybe<Scalars['Float']['output']>;
+  buyersInMonth: Scalars['Int']['output'];
+  lifetimeMonths?: Maybe<Scalars['Float']['output']>;
+  month: Scalars['Int']['output'];
+  newCustomerCount: Scalars['Int']['output'];
+  oldCustomerCount: Scalars['Int']['output'];
+  oldCustomerPercent?: Maybe<Scalars['Float']['output']>;
+  orderCount: Scalars['Int']['output'];
+  purchasesPerMonth?: Maybe<Scalars['Float']['output']>;
+  repeatRate?: Maybe<Scalars['Float']['output']>;
+  totalCustomers: Scalars['Int']['output'];
+  year: Scalars['Int']['output'];
+};
+
 export type StoreInvitationPreviewType = {
   __typename?: 'StoreInvitationPreviewType';
   email: Scalars['String']['output'];
@@ -3052,7 +3357,9 @@ export type StoreProductReviewType = {
   __typename?: 'StoreProductReviewType';
   comment?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['DateTime']['output'];
+  customerId?: Maybe<Scalars['String']['output']>;
   customerName: Scalars['String']['output'];
+  customerProfilePhotoUrl?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   images: Array<ReviewImageType>;
   productId: Scalars['String']['output'];
@@ -3061,6 +3368,7 @@ export type StoreProductReviewType = {
   productSlug?: Maybe<Scalars['String']['output']>;
   rating: Scalars['Int']['output'];
   reply?: Maybe<ReviewReplyType>;
+  variantOptions?: Maybe<Scalars['String']['output']>;
 };
 
 export type StoreReactivationRequestImageType = {
@@ -3179,6 +3487,7 @@ export type SubmitStoreRequestInput = {
 
 export type Subscription = {
   __typename?: 'Subscription';
+  dashboardActivity: DashboardActivityType;
   paymentStatusUpdated: PaymentType;
 };
 
@@ -3197,6 +3506,7 @@ export type SyncProductVariantItemInput = {
   attributes: Scalars['String']['input'];
   compareAtPrice?: InputMaybe<Scalars['Float']['input']>;
   id?: InputMaybe<Scalars['String']['input']>;
+  price?: InputMaybe<Scalars['Float']['input']>;
   priceModifier?: InputMaybe<Scalars['Float']['input']>;
   sku: Scalars['String']['input'];
   stockQuantity: Scalars['Int']['input'];
@@ -3314,6 +3624,18 @@ export type UpdateLoginPageImagesInput = {
   altText?: InputMaybe<Scalars['String']['input']>;
   desktopImageUrl: Scalars['String']['input'];
   mobileImageUrl?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOrderShippingAddressAsAdminInput = {
+  addressLine1: Scalars['String']['input'];
+  addressLine2?: InputMaybe<Scalars['String']['input']>;
+  amphoe: Scalars['String']['input'];
+  fullName: Scalars['String']['input'];
+  orderId: Scalars['String']['input'];
+  phone: Scalars['String']['input'];
+  postalCode: Scalars['String']['input'];
+  province: Scalars['String']['input'];
+  tumbon?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpdateOrderStatusInput = {
@@ -3582,6 +3904,12 @@ export enum VariantRemovalBlockReason {
   HasOrders = 'HAS_ORDERS',
 }
 
+export enum VariantRemovalDisposition {
+  ClearCartAndDelete = 'CLEAR_CART_AND_DELETE',
+  Delete = 'DELETE',
+  Retire = 'RETIRE',
+}
+
 export type VendorAuthPayload = {
   __typename?: 'VendorAuthPayload';
   tokens: AuthTokens;
@@ -3658,6 +3986,18 @@ export type VendorLoginInput = {
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
 };
+
+export type VendorOrderConnection = {
+  __typename?: 'VendorOrderConnection';
+  actionableCount: Scalars['Int']['output'];
+  items: Array<OrderType>;
+  pagination: PaginationMeta;
+};
+
+export enum VendorOrderQueueFilter {
+  Action = 'ACTION',
+  All = 'ALL',
+}
 
 export type VendorPublishableProductIdsType = {
   __typename?: 'VendorPublishableProductIdsType';

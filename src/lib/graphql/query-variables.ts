@@ -1,5 +1,7 @@
+import { decodeRouteParam } from '@/lib/routing/categoryRoutes';
 import type {
   ProductByIdQueryVariables,
+  ProductByPathQueryVariables,
   ProductsQueryVariables,
   RecommendedProductsQueryVariables,
   SearchContextInput,
@@ -100,10 +102,18 @@ export function buildProductByIdVariables({ id }: { id: string }): ProductByIdQu
   return { id };
 }
 
+export function buildProductByPathVariables({
+  path,
+}: {
+  path: string;
+}): ProductByPathQueryVariables {
+  return { path };
+}
+
 export function buildSellerStorefrontVariables({
   handle,
 }: {
   handle: string;
 }): StoreBySlugQueryVariables {
-  return { slug: handle };
+  return { slug: decodeRouteParam(handle) };
 }

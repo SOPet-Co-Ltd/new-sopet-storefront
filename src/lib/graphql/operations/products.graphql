@@ -32,11 +32,6 @@ query Products(
   ) {
     items {
       ...ProductCardFields
-      store {
-        id
-        name
-        slug
-      }
     }
     pagination {
       page

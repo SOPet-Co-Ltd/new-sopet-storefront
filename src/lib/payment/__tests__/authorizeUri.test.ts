@@ -9,6 +9,26 @@ afterEach(() => {
 });
 
 describe('isAllowed3dsAuthorizeUri', () => {
+  it('allows Beam verify hosts and rejects other Beam subdomain lookalikes', () => {
+    expect(isAllowed3dsAuthorizeUri('https://verify.beamcheckout.com/3ds/abc')).toBe(true);
+    expect(isAllowed3dsAuthorizeUri('https://playground-verify.beamcheckout.com/3ds/abc')).toBe(
+      true,
+    );
+    expect(isAllowed3dsAuthorizeUri('https://verify.beamcheckout.com.evil.example/3ds')).toBe(
+      false,
+    );
+    expect(isAllowed3dsAuthorizeUri('https://notverify.beamcheckout.com/3ds')).toBe(false);
+    expect(isAllowed3dsAuthorizeUri('https://api.beamcheckout.com/3ds')).toBe(false);
+    expect(
+      isAllowed3dsAuthorizeUri(
+        'https://sandbox-gateway-357427797651.asia-southeast1.run.app/charges/c_test/force',
+      ),
+    ).toBe(true);
+    expect(isAllowed3dsAuthorizeUri('https://evil-gateway.asia-southeast1.run.app/charges')).toBe(
+      false,
+    );
+  });
+
   it('allows https Omise pay host', () => {
     expect(isAllowed3dsAuthorizeUri('https://pay.omise.co/offsites/ofsp_test/pay')).toBe(true);
   });
@@ -23,6 +43,12 @@ describe('isAllowed3dsAuthorizeUri', () => {
       isAllowed3dsAuthorizeUri('https://songbird.cardinalcommerce.com/cardinalcruise/v1'),
     ).toBe(true);
     expect(isAllowed3dsAuthorizeUri('https://secure4.arcot.com/acspage/cap')).toBe(true);
+  });
+
+  it('allows wallet offsite host suffixes', () => {
+    expect(isAllowed3dsAuthorizeUri('https://pay.truemoney.com/redirect')).toBe(true);
+    expect(isAllowed3dsAuthorizeUri('https://wallet.truemoney.co.th/pay')).toBe(true);
+    expect(isAllowed3dsAuthorizeUri('https://pay.shopee.co.th/wallet')).toBe(true);
   });
 
   it('rejects http and non-http schemes', () => {

@@ -1,13 +1,14 @@
 'use client';
 
-import { useCallback, useId, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useCallback, useId, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/atoms/Button';
 import { SearchSuggestionsDropdown } from '@/components/molecules/SearchSuggestionsDropdown/SearchSuggestionsDropdown';
 import { useNavbarSearchCombobox, type ComboboxOption } from '@/lib/hooks/useNavbarSearchCombobox';
 import { useRecentSearches } from '@/lib/hooks/useRecentSearches';
 import { useSearchSuggestions } from '@/lib/hooks/useSearchSuggestions';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 import { MIN_SEARCH_QUERY_LENGTH } from '@/lib/search/constants';
 import { queryGraphemeLength } from '@/lib/search/queryLength';
 import { cn } from '@/lib/utils';
@@ -31,16 +32,34 @@ function toProductOptions(
     type: 'product',
     id: product.id,
     label: product.name,
-    href: `/product/${product.id}`,
+    href: buildProductHref(
+      {
+        slug: product.slug,
+        store: { slug: product.storeSlug },
+        id: product.id,
+      },
+      { encode: true },
+    ),
     thumbnailUrl: product.thumbnailUrl,
   }));
 }
 
-export function NavbarSearch() {
+type NavbarSearchFormProps = {
+  urlQuery?: string;
+};
+
+function NavbarSearchForm({ urlQuery = '' }: NavbarSearchFormProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxId = useId();
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(urlQuery);
+  const [syncedUrlQuery, setSyncedUrlQuery] = useState(urlQuery);
+
+  if (urlQuery !== syncedUrlQuery) {
+    setSyncedUrlQuery(urlQuery);
+    setQuery(urlQuery);
+  }
+
   const [isOpen, setIsOpen] = useState(false);
 
   const graphemeLength = queryGraphemeLength(query);
@@ -179,5 +198,20 @@ export function NavbarSearch() {
         onClearRecent={clearRecentSearches}
       />
     </form>
+  );
+}
+
+function NavbarSearchFromUrl() {
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get(SEARCH_PARAM)?.trim() ?? '';
+
+  return <NavbarSearchForm urlQuery={urlQuery} />;
+}
+
+export function NavbarSearch() {
+  return (
+    <Suspense fallback={<NavbarSearchForm />}>
+      <NavbarSearchFromUrl />
+    </Suspense>
   );
 }

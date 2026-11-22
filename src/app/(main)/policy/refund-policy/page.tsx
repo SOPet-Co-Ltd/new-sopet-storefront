@@ -2,11 +2,14 @@ import type { Metadata } from 'next';
 import { PolicyMarkdownLayout } from '../PolicyMarkdownLayout';
 import { buildPolicyPageMetadata } from '../policy-metadata';
 
+const PAGE_TITLE = 'นโยบายการคืนเงิน';
+const PAGE_DESCRIPTION =
+  'เงื่อนไขการคืนเงินและคืนสินค้าสำหรับการสั่งซื้อผ่านแพลตฟอร์ม Sopet รวมถึงกรณีสินค้าชำรุด หมดอายุ และการคืนโดยไม่มีเหตุผล';
+
 export const metadata: Metadata = buildPolicyPageMetadata({
   pathSegment: 'refund-policy',
-  title: 'นโยบายการคืนเงิน',
-  description:
-    'เงื่อนไขการคืนเงินและคืนสินค้าสำหรับการสั่งซื้อผ่านแพลตฟอร์ม Sopet รวมถึงกรณีสินค้าชำรุด หมดอายุ และการคืนโดยไม่มีเหตุผล',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
 });
 
 const REFUND_POLICY = `
@@ -36,5 +39,12 @@ const REFUND_POLICY = `
 `;
 
 export default function RefundPolicyPage() {
-  return <PolicyMarkdownLayout title="นโยบายการคืนเงิน" source={REFUND_POLICY} />;
+  return (
+    <PolicyMarkdownLayout
+      title={PAGE_TITLE}
+      source={REFUND_POLICY}
+      path="/policy/refund-policy"
+      description={PAGE_DESCRIPTION}
+    />
+  );
 }

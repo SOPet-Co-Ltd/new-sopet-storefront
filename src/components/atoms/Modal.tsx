@@ -93,6 +93,9 @@ export const Modal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-14">
       <div
+        data-testid="modal-overlay"
+        role="presentation"
+        onClick={onClose}
         className={cn(
           'absolute inset-0 backdrop-blur-sm',
           transparentBackground ? 'bg-transparent' : 'bg-sop-neutral-whitealpha-400',

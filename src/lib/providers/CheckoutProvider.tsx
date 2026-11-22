@@ -6,7 +6,8 @@ import type { StorePromotionSelection } from '@/lib/checkout/storePromotionUtils
 
 export type CheckoutStep = 'shipping' | 'payment' | 'review';
 
-export type PaymentMethod = 'promptpay' | 'card' | 'cod' | 'bank_transfer';
+export type PaymentMethod =
+  'promptpay' | 'card' | 'cod' | 'bank_transfer' | 'truemoney' | 'shopeepay';
 
 export type ShippingSelection = {
   shippingOptionId: string;

@@ -85,6 +85,7 @@ export function ChatWithAdminFloatingButton() {
   }
 
   const isCheckoutPage = pathname === '/checkout' || pathname?.startsWith('/checkout/');
+  const isProductPage = pathname?.startsWith('/product/');
 
   const statusDot = (hidden?: string) => (
     <div
@@ -100,8 +101,12 @@ export function ChatWithAdminFloatingButton() {
     <div
       ref={buttonRef}
       className={cn(
-        'fixed z-20 bottom-4 right-2 md:bottom-10 md:right-10 transition-all duration-300 ease-out',
-        isCheckoutPage ? 'bottom-20' : 'bottom-4',
+        'fixed z-20 right-2 md:right-10 transition-all duration-300 ease-out',
+        isCheckoutPage
+          ? 'bottom-20 md:bottom-20 lg:bottom-10'
+          : isProductPage
+            ? 'bottom-[84px] lg:bottom-10'
+            : 'bottom-4 md:bottom-10',
         overlapping ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100',
       )}
     >

@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountStatusBadge } from '@/components/molecules/account/AccountStatusBadge';
 import { ReviewImagesGrid } from '@/components/molecules/ReviewImagesGrid/ReviewImagesGrid';
-import { buildProductHref } from '@/components/organisms/ProductCard';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 import type { CustomerReview } from '@/lib/hooks/useCustomerReviews';
 import { formatThaiDateTime } from '@/lib/datetime/formatThaiDatetime';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,7 @@ export function WrittenReviewCard({ review }: WrittenReviewCardProps) {
     label: review.status,
     variant: 'default' as const,
   };
-  const productHref = buildProductHref(review.productId);
+  const productHref = buildProductHref({ id: review.productId });
 
   return (
     <AccountCard>

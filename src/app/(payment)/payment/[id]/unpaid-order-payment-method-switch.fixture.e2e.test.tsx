@@ -22,7 +22,7 @@ import {
   resetPayment3dsAutoRedirectMemory,
   threeDSAutoRedirectStorageKey,
 } from '@/components/organisms/OrderPaymentForm/Payment3dsAutoRedirect';
-import { tokenizeCard } from '@/lib/payment/omise';
+import { tokenizeCard } from '@/lib/payment/beam';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import {
   CHECKOUT_ORDER_ID,
@@ -93,8 +93,20 @@ vi.mock('@/lib/hooks/usePaymentMethods', () => ({
   })),
 }));
 
-vi.mock('@/lib/payment/omise', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/payment/omise')>('@/lib/payment/omise');
+vi.mock('@/lib/payment/cardTransport', () => ({
+  encryptCardSecurityCodeTransport: vi.fn(async (cvv: string) => `rsa:v1:cvv-${cvv}`),
+  encryptCardTransportPayload: vi.fn(async () => 'rsa:v1:card-cipher'),
+}));
+
+vi.mock('@/lib/payment/saveCard', () => ({
+  buildSaveCardPayload: vi.fn(async () => ({
+    cardCipher: 'rsa:v1:card-cipher',
+    isDefault: true,
+  })),
+}));
+
+vi.mock('@/lib/payment/beam', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/payment/beam')>('@/lib/payment/beam');
   return {
     ...actual,
     tokenizeCard: vi.fn(),
@@ -107,13 +119,13 @@ async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>)
   await waitFor(() => {
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
   });
-  const cta = screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' });
+  const cta = screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' });
   expect(cta).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
 
   await user.click(cta);
 
-  expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+  expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
     'aria-expanded',
     'true',
   );
@@ -124,7 +136,7 @@ async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>)
 
 /** Mid-QR hides PromptPay — switch via card + Omise token (same as payment-page.test). */
 async function submitMidQrCardRetry(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i }));
+  await user.click(screen.getByRole('radio', { name: /Credit \/ Debit Card/i }));
   await user.type(screen.getByTestId('card-number-input'), '4111111111111111');
   await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
   await user.type(screen.getByTestId('card-expiry-input'), '12/30');
@@ -138,7 +150,13 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
     mockPush.mockReset();
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
-    vi.mocked(tokenizeCard).mockResolvedValue('tok_test_mid_qr');
+    vi.mocked(tokenizeCard).mockResolvedValue({
+      cardToken: 'tok_test_mid_qr',
+      lastFour: '4242',
+      brand: 'visa',
+      expiryMonth: 12,
+      expiryYear: 2030,
+    });
   });
 
   afterEach(() => {
@@ -178,12 +196,13 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(createVariables).toMatchObject({
         input: {
           orderId: CHECKOUT_ORDER_ID,
-          amount: midQrLivePayment.amount,
           currency: 'THB',
           paymentMethod: 'credit_card',
-          omiseToken: 'tok_test_mid_qr',
+          cardToken: 'tok_test_mid_qr',
+          cardSecurityCodeCipher: 'rsa:v1:cvv-123',
         },
       });
+      expect(JSON.stringify(createVariables)).not.toContain('4242424242424242');
       expect(mockPush).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
       expect(mockReplace).not.toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
       expect(sessionStorage.getItem(threeDSAutoRedirectStorageKey(CHECKOUT_PAYMENT_ID))).toBeNull();
@@ -202,7 +221,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(
         screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i }),
       ).not.toBeInTheDocument();
-      expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
       expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
     });
 
@@ -240,7 +259,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       });
       expect(mockPush).not.toHaveBeenCalled();
       expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+      expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
         'aria-expanded',
         'true',
       );
@@ -258,7 +277,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      await user.click(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i }));
+      await user.click(screen.getByRole('radio', { name: /Credit \/ Debit Card/i }));
       await user.type(screen.getByTestId('card-number-input'), '4111111111111111');
       await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
       await user.type(screen.getByTestId('card-expiry-input'), '12/30');
@@ -294,7 +313,7 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await expandMidQrChangeMethod(user);
-      expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toBeInTheDocument();
 
       await submitMidQrCardRetry(user);
 
@@ -353,19 +372,23 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
       expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
     });
 
-    it('QR-expired interim shows retry panel and does not mount Mid-QR CTA', async () => {
+    it('QR-expired interim keeps QR, shows late-success check, and does not mount Mid-QR or retry CTA', async () => {
       server.use(paymentQueryHandler(midQrExpiredInterimPayment));
 
       render(<PaymentPage />, { wrapper: createWrapper() });
 
       await waitFor(() => {
-        expect(
-          screen.getByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'),
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('payment-late-success-check')).toBeInTheDocument();
       });
-      expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+      expect(screen.queryByTestId('payment-retry-panel')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('QR Code หมดอายุแล้ว กรุณาเลือกวิธีชำระเงินใหม่'),
+      ).not.toBeInTheDocument();
       expect(screen.queryByTestId('payment-order-not-payable')).not.toBeInTheDocument();
     });
   });

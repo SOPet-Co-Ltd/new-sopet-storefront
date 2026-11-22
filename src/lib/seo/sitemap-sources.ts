@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 
-import { POLICY_PATHS } from './constants';
+import { buildProductHref } from '@/lib/routing/productRoutes';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
+import { POLICY_PATHS, REGULATORY_PATHS } from './constants';
 import { fetchAllSitemapProducts, fetchApprovedCategories, fetchApprovedStores } from './fetch';
 import { buildAbsoluteUrl } from './metadata';
 
@@ -17,6 +19,10 @@ export async function collectSitemapUrls(): Promise<MetadataRoute.Sitemap> {
     entries.push({ url: buildAbsoluteUrl(`/policy/${policy.pathSegment}`) });
   }
 
+  for (const page of REGULATORY_PATHS) {
+    entries.push({ url: buildAbsoluteUrl(page.path) });
+  }
+
   const [categories, products, stores] = await Promise.all([
     fetchApprovedCategories(),
     fetchAllSitemapProducts(),
@@ -31,13 +37,13 @@ export async function collectSitemapUrls(): Promise<MetadataRoute.Sitemap> {
 
   if (products) {
     for (const product of products) {
-      entries.push({ url: buildAbsoluteUrl(`/product/${product.id}`) });
+      entries.push({ url: buildAbsoluteUrl(buildProductHref(product, { encode: true })) });
     }
   }
 
   if (stores) {
     for (const store of stores) {
-      entries.push({ url: buildAbsoluteUrl(`/sellers/${store.slug}`) });
+      entries.push({ url: buildAbsoluteUrl(buildSellerHref(store.slug)) });
     }
   }
 

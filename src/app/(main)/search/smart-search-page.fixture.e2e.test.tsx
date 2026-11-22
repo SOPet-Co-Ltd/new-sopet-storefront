@@ -129,7 +129,11 @@ describe('Smart search page fixture-e2e', () => {
 
     expect(await screen.findByText('Smart Search Product C')).toBeInTheDocument();
     const firstPaintOrder = getRenderedProductOrder();
-    expect(firstPaintOrder).toEqual(['prod-c', 'prod-a', 'prod-b']);
+    expect(firstPaintOrder).toEqual([
+      'smart-search-product-c-sopet-pet-shop',
+      'smart-search-product-a-sopet-pet-shop',
+      'smart-search-product-b-sopet-pet-shop',
+    ]);
     expect(screen.queryByTestId('product-listing-skeleton')).not.toBeInTheDocument();
 
     rerender(<SearchResultsPage initialProducts={ORDERED_PRODUCTS} />);

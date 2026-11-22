@@ -111,6 +111,14 @@ function validateOptionalEmail(value: string | undefined): string | undefined {
     return undefined;
   }
 
+  if (trimmed.length > 254) {
+    return INVALID_EMAIL_MESSAGE;
+  }
+
+  if (/[<>]/.test(trimmed)) {
+    return INVALID_EMAIL_MESSAGE;
+  }
+
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailPattern.test(trimmed) ? undefined : INVALID_EMAIL_MESSAGE;
 }
@@ -167,10 +175,28 @@ function validateShippingFields(
   return errors;
 }
 
+export function validateOptionalCheckoutEmail(
+  email: string | undefined,
+): Partial<Record<GuestCheckoutField, string>> {
+  const emailError = validateOptionalEmail(email);
+  return emailError ? { email: emailError } : {};
+}
+
 export function validateAuthInlineShippingForm(
   formState: GuestCheckoutFormState,
 ): GuestCheckoutValidationResult {
-  const errors = validateShippingFields(formState);
+  const errors = {
+    ...validateShippingFields(formState),
+    ...validateOptionalCheckoutEmail(formState.email),
+  };
+
+  const contactPhoneError = validatePhoneField(
+    formState.contactPhone,
+    GUEST_PHONE_REQUIRED_MESSAGE,
+  );
+  if (contactPhoneError) {
+    errors.guestPhone = contactPhoneError;
+  }
 
   return {
     valid: Object.keys(errors).length === 0,
@@ -289,9 +315,16 @@ export function toCreateOrderInput(
     input.storePromotionCodes = checkoutContext.storePromotionCodes;
   }
 
+  const trimmedEmail = formState?.email?.trim();
+  if (trimmedEmail) {
+    input.guestEmail = trimmedEmail;
+  }
+
   if (checkoutContext.isAuthenticated) {
     if (checkoutContext.selectedAddressId) {
       input.savedAddressId = checkoutContext.selectedAddressId;
+    } else if (formState) {
+      input.shippingAddress = mapShippingAddress(formState);
     }
 
     return input;
@@ -301,13 +334,10 @@ export function toCreateOrderInput(
     throw new Error('Guest checkout requires form state');
   }
 
-  const trimmedEmail = formState.email?.trim();
-
   return {
     ...input,
     guestPhone: normalizeThaiPhoneNumber(formState.contactPhone),
     guestName: formState.recipientFullName.trim(),
-    guestEmail: trimmedEmail || undefined,
     notes: formState.notes?.trim() || undefined,
     shippingAddress: mapShippingAddress(formState),
   };

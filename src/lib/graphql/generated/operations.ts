@@ -121,6 +121,12 @@ export type SetDefaultAddressMutation = {
   };
 };
 
+export type CustomerExistsByPhoneQueryVariables = Exact<{
+  input: Types.CustomerExistsByPhoneInput;
+}>;
+
+export type CustomerExistsByPhoneQuery = { customerExistsByPhone: { exists: boolean } };
+
 export type RefreshTokenMutationVariables = Exact<{
   input: Types.RefreshTokenInput;
 }>;
@@ -538,8 +544,10 @@ export type CreatePaymentMutation = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -549,10 +557,14 @@ export type FavoriteProductFieldsFragment = {
   slug: string;
   basePrice: number;
   thumbnailUrl: string | null;
+  store: { id: string; name: string; slug: string } | null;
   images: Array<{ id: string; imageUrl: string; sortOrder: number }> | null;
 };
 
-export type FavoritesQueryVariables = Exact<{ [key: string]: never }>;
+export type FavoritesQueryVariables = Exact<{
+  page?: number | null | undefined;
+  limit?: number | null | undefined;
+}>;
 
 export type FavoritesQuery = {
   favorites: Array<{
@@ -564,6 +576,7 @@ export type FavoritesQuery = {
       slug: string;
       basePrice: number;
       thumbnailUrl: string | null;
+      store: { id: string; name: string; slug: string } | null;
       images: Array<{ id: string; imageUrl: string; sortOrder: number }> | null;
     } | null;
   }>;
@@ -583,6 +596,7 @@ export type AddFavoriteMutation = {
       slug: string;
       basePrice: number;
       thumbnailUrl: string | null;
+      store: { id: string; name: string; slug: string } | null;
       images: Array<{ id: string; imageUrl: string; sortOrder: number }> | null;
     } | null;
   };
@@ -605,6 +619,7 @@ export type ProductCardFieldsFragment = {
   averageRating: number;
   reviewCount: number;
   soldCount: number;
+  store: { id: string; name: string; slug: string } | null;
   variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
 };
 
@@ -628,6 +643,7 @@ export type LatestPurchaseProductsQuery = {
     averageRating: number;
     reviewCount: number;
     soldCount: number;
+    store: { id: string; name: string; slug: string } | null;
     variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
   }>;
 };
@@ -649,6 +665,8 @@ export type MeQuery = {
 
 export type NotificationsQueryVariables = Exact<{
   unreadOnly?: boolean | null | undefined;
+  page?: number | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 export type NotificationsQuery = {
@@ -872,8 +890,10 @@ export type PaymentFieldsFragment = {
   status: string;
   paymentMethod: string;
   authorizeUri: string | null;
+  qrCodeImage: string | null;
   qrCodeUrl: string | null;
   expiresAt: string | null;
+  failureCode: string | null;
 };
 
 export type PaymentQueryVariables = Exact<{
@@ -891,8 +911,10 @@ export type PaymentQuery = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -911,8 +933,10 @@ export type PaymentByOrderIdQuery = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -938,8 +962,10 @@ export type PaymentStatusUpdatedSubscription = {
     status: string;
     paymentMethod: string;
     authorizeUri: string | null;
+    qrCodeImage: string | null;
     qrCodeUrl: string | null;
     expiresAt: string | null;
+    failureCode: string | null;
   };
 };
 
@@ -951,7 +977,12 @@ export type SavedPaymentMethodFieldsFragment = {
   expiryMonth: number;
   expiryYear: number;
   isDefault: boolean;
+  psp: string | null;
 };
+
+export type CardTransportPublicKeyQueryVariables = Exact<{ [key: string]: never }>;
+
+export type CardTransportPublicKeyQuery = { cardTransportPublicKey: string };
 
 export type PaymentMethodsQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -964,6 +995,7 @@ export type PaymentMethodsQuery = {
     expiryMonth: number;
     expiryYear: number;
     isDefault: boolean;
+    psp: string | null;
   }>;
 };
 
@@ -980,6 +1012,7 @@ export type AddPaymentMethodMutation = {
     expiryMonth: number;
     expiryYear: number;
     isDefault: boolean;
+    psp: string | null;
   };
 };
 
@@ -1002,6 +1035,7 @@ export type SetDefaultPaymentMethodMutation = {
     expiryMonth: number;
     expiryYear: number;
     isDefault: boolean;
+    psp: string | null;
   };
 };
 
@@ -1092,6 +1126,7 @@ export type ProductDetailFieldsFragment = {
   soldCount: number;
   status: string;
   category: string | null;
+  brandName: string | null;
   tags: Array<string>;
   warning: string | null;
   expiryDate: string | null;
@@ -1134,6 +1169,50 @@ export type ProductBySlugQuery = {
     soldCount: number;
     status: string;
     category: string | null;
+    brandName: string | null;
+    tags: Array<string>;
+    warning: string | null;
+    expiryDate: string | null;
+    store: {
+      id: string;
+      name: string;
+      slug: string;
+      logoUrl: string | null;
+      bannerUrl: string | null;
+      description: string | null;
+    } | null;
+    images: Array<{ id: string; imageUrl: string; isThumbnail: boolean; sortOrder: number }> | null;
+    variants: Array<{
+      id: string;
+      sku: string;
+      price: number;
+      compareAtPrice: number | null;
+      stockQuantity: number;
+      optionsJson: string | null;
+    }> | null;
+  };
+};
+
+export type ProductByPathQueryVariables = Exact<{
+  path: string;
+}>;
+
+export type ProductByPathQuery = {
+  productByPath: {
+    id: string;
+    slug: string;
+    storeId: string;
+    name: string;
+    description: string | null;
+    basePrice: number;
+    compareAtPrice: number | null;
+    thumbnailUrl: string | null;
+    averageRating: number;
+    reviewCount: number;
+    soldCount: number;
+    status: string;
+    category: string | null;
+    brandName: string | null;
     tags: Array<string>;
     warning: string | null;
     expiryDate: string | null;
@@ -1176,6 +1255,7 @@ export type ProductByIdQuery = {
     soldCount: number;
     status: string;
     category: string | null;
+    brandName: string | null;
     tags: Array<string>;
     warning: string | null;
     expiryDate: string | null;
@@ -1350,12 +1430,15 @@ export type RecommendedProductsQuery = {
     averageRating: number;
     reviewCount: number;
     soldCount: number;
+    store: { id: string; name: string; slug: string } | null;
     variants: Array<{ id: string; price: number; compareAtPrice: number | null }> | null;
   }>;
 };
 
 export type ProductReviewsQueryVariables = Exact<{
   productId: string;
+  page?: number | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 export type ProductReviewsQuery = {
@@ -1367,6 +1450,8 @@ export type ProductReviewsQuery = {
     status: string;
     createdAt: string;
     customerName: string;
+    customerProfilePhotoUrl: string | null;
+    variantOptions: string | null;
     images: Array<{ id: string; url: string }>;
     reply: { id: string; body: string; createdAt: string; updatedAt: string } | null;
   }>;
@@ -1374,6 +1459,8 @@ export type ProductReviewsQuery = {
 
 export type StoreReviewsQueryVariables = Exact<{
   storeId: string;
+  page?: number | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 export type StoreReviewsQuery = {
@@ -1387,6 +1474,8 @@ export type StoreReviewsQuery = {
     comment: string | null;
     createdAt: string;
     customerName: string;
+    customerProfilePhotoUrl: string | null;
+    variantOptions: string | null;
     images: Array<{ id: string; url: string }>;
     reply: { id: string; body: string; createdAt: string; updatedAt: string } | null;
   }>;
@@ -1397,16 +1486,7 @@ export type StoreReviewSummaryQueryVariables = Exact<{
 }>;
 
 export type StoreReviewSummaryQuery = {
-  storeReviewSummary: {
-    averageRating: number;
-    totalCount: number;
-    productBreakdown: Array<{
-      productId: string;
-      productName: string;
-      averageRating: number;
-      reviewCount: number;
-    }>;
-  };
+  storeReviewSummary: { averageRating: number; totalCount: number };
 };
 
 export type CreateReviewMutationVariables = Exact<{
@@ -1422,6 +1502,7 @@ export type CreateReviewMutation = {
     status: string;
     createdAt: string;
     customerName: string;
+    variantOptions: string | null;
     images: Array<{ id: string; url: string }>;
   };
 };
@@ -1459,6 +1540,7 @@ export type MyReviewsQuery = {
     comment: string | null;
     status: string;
     createdAt: string;
+    variantOptions: string | null;
     images: Array<{ id: string; url: string }>;
   }>;
 };
@@ -1516,7 +1598,13 @@ export type SearchSuggestionsQueryVariables = Exact<{
 
 export type SearchSuggestionsQuery = {
   searchSuggestions: {
-    products: Array<{ id: string; name: string; slug: string; thumbnailUrl: string | null }>;
+    products: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      storeSlug: string;
+      thumbnailUrl: string | null;
+    }>;
     queries: Array<{ query: string }>;
   };
 };
@@ -2017,6 +2105,18 @@ export const FavoriteProductFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'thumbnailUrl' } },
           {
             kind: 'Field',
+            name: { kind: 'Name', value: 'store' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
             name: { kind: 'Name', value: 'images' },
             selectionSet: {
               kind: 'SelectionSet',
@@ -2052,6 +2152,18 @@ export const ProductCardFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
           { kind: 'Field', name: { kind: 'Name', value: 'reviewCount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'soldCount' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'store' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
+              ],
+            },
+          },
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'variants' },
@@ -2234,8 +2346,10 @@ export const PaymentFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'status' } },
           { kind: 'Field', name: { kind: 'Name', value: 'paymentMethod' } },
           { kind: 'Field', name: { kind: 'Name', value: 'authorizeUri' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'qrCodeImage' } },
           { kind: 'Field', name: { kind: 'Name', value: 'qrCodeUrl' } },
           { kind: 'Field', name: { kind: 'Name', value: 'expiresAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failureCode' } },
         ],
       },
     },
@@ -2258,6 +2372,7 @@ export const SavedPaymentMethodFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'expiryMonth' } },
           { kind: 'Field', name: { kind: 'Name', value: 'expiryYear' } },
           { kind: 'Field', name: { kind: 'Name', value: 'isDefault' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'psp' } },
         ],
       },
     },
@@ -2286,6 +2401,7 @@ export const ProductDetailFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'soldCount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'status' } },
           { kind: 'Field', name: { kind: 'Name', value: 'category' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'brandName' } },
           { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
           { kind: 'Field', name: { kind: 'Name', value: 'warning' } },
           { kind: 'Field', name: { kind: 'Name', value: 'expiryDate' } },
@@ -2723,6 +2839,49 @@ export const SetDefaultAddressDocument = {
     },
   ],
 } as unknown as DocumentNode<SetDefaultAddressMutation, SetDefaultAddressMutationVariables>;
+export const CustomerExistsByPhoneDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'CustomerExistsByPhone' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'CustomerExistsByPhoneInput' },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'customerExistsByPhone' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'exists' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CustomerExistsByPhoneQuery, CustomerExistsByPhoneQueryVariables>;
 export const RefreshTokenDocument = {
   kind: 'Document',
   definitions: [
@@ -3304,12 +3463,36 @@ export const FavoritesDocument = {
       kind: 'OperationDefinition',
       operation: 'query',
       name: { kind: 'Name', value: 'Favorites' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+      ],
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'favorites' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'page' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+              },
+            ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
@@ -3546,6 +3729,16 @@ export const NotificationsDocument = {
           variable: { kind: 'Variable', name: { kind: 'Name', value: 'unreadOnly' } },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -3558,6 +3751,16 @@ export const NotificationsDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'unreadOnly' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'unreadOnly' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'page' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
               },
             ],
             selectionSet: {
@@ -4054,6 +4257,20 @@ export const PaymentStatusUpdatedDocument = {
   PaymentStatusUpdatedSubscription,
   PaymentStatusUpdatedSubscriptionVariables
 >;
+export const CardTransportPublicKeyDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'CardTransportPublicKey' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'cardTransportPublicKey' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CardTransportPublicKeyQuery, CardTransportPublicKeyQueryVariables>;
 export const PaymentMethodsDocument = {
   kind: 'Document',
   definitions: [
@@ -4445,6 +4662,48 @@ export const ProductBySlugDocument = {
     },
   ],
 } as unknown as DocumentNode<ProductBySlugQuery, ProductBySlugQueryVariables>;
+export const ProductByPathDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ProductByPath' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'path' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'productByPath' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'path' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'path' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'ProductDetailFields' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ProductByPathQuery, ProductByPathQueryVariables>;
 export const ProductByIdDocument = {
   kind: 'Document',
   definitions: [
@@ -4668,18 +4927,6 @@ export const ProductsDocument = {
                       {
                         kind: 'FragmentSpread',
                         name: { kind: 'Name', value: 'ProductCardFields' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'store' },
-                        selectionSet: {
-                          kind: 'SelectionSet',
-                          selections: [
-                            { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
-                          ],
-                        },
                       },
                     ],
                   },
@@ -4977,6 +5224,16 @@ export const ProductReviewsDocument = {
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
           },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -4990,6 +5247,16 @@ export const ProductReviewsDocument = {
                 name: { kind: 'Name', value: 'productId' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'productId' } },
               },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'page' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+              },
             ],
             selectionSet: {
               kind: 'SelectionSet',
@@ -5001,6 +5268,8 @@ export const ProductReviewsDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'status' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'customerName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'customerProfilePhotoUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
                 {
                   kind: 'Field',
                   name: { kind: 'Name', value: 'images' },
@@ -5049,6 +5318,16 @@ export const StoreReviewsDocument = {
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
           },
         },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
       ],
       selectionSet: {
         kind: 'SelectionSet',
@@ -5061,6 +5340,16 @@ export const StoreReviewsDocument = {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'storeId' },
                 value: { kind: 'Variable', name: { kind: 'Name', value: 'storeId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'page' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'page' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
               },
             ],
             selectionSet: {
@@ -5075,6 +5364,8 @@ export const StoreReviewsDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'comment' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'customerName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'customerProfilePhotoUrl' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
                 {
                   kind: 'Field',
                   name: { kind: 'Name', value: 'images' },
@@ -5142,19 +5433,6 @@ export const StoreReviewSummaryDocument = {
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'totalCount' } },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'productBreakdown' },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'productId' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'productName' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'averageRating' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'reviewCount' } },
-                    ],
-                  },
-                },
               ],
             },
           },
@@ -5203,6 +5481,7 @@ export const CreateReviewDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'status' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'customerName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
                 {
                   kind: 'Field',
                   name: { kind: 'Name', value: 'images' },
@@ -5305,6 +5584,7 @@ export const MyReviewsDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'comment' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'status' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'variantOptions' } },
                 {
                   kind: 'Field',
                   name: { kind: 'Name', value: 'images' },
@@ -5485,6 +5765,7 @@ export const SearchSuggestionsDocument = {
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'slug' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'storeSlug' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'thumbnailUrl' } },
                     ],
                   },

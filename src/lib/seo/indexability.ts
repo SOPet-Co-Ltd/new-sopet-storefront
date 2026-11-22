@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { parseListingPageParam } from '@/lib/search/parseListingPageParam';
 import { PRODUCT_STATUS_PUBLISHED, STORE_STATUS_APPROVED } from './constants';
 
 export { PRODUCT_STATUS_PUBLISHED, STORE_STATUS_APPROVED };
@@ -20,9 +21,8 @@ function hasCategoryFilters(params: CategorySearchParams): boolean {
 }
 
 function getCategoryPageNumber(page: string | undefined): number {
-  return Math.max(1, Number(page ?? 1));
+  return parseListingPageParam(page);
 }
-
 export function getCategoryIndexation(
   slug: string,
   params: CategorySearchParams = {},

@@ -1,0 +1,11 @@
+import { OutlineIcon, type OutlineIconProps } from '../OutlineIcon';
+
+export type ShareArrowIconProps = Omit<OutlineIconProps, 'children'>;
+
+export function ShareArrowIcon(props: ShareArrowIconProps) {
+  return (
+    <OutlineIcon viewBox="0 0 18 16" {...props}>
+      <path d="M10.7495 1.50958L14.4904 4.83484C15.9677 6.14796 16.7063 6.80452 16.7063 7.65034C16.7063 8.49616 15.9677 9.15272 14.4904 10.4658L10.7495 13.7911C10.0752 14.3905 9.73803 14.6902 9.46005 14.5653C9.18207 14.4405 9.18207 13.9894 9.18207 13.0872V10.8792C5.79176 10.8792 2.11893 12.4936 0.706299 15.1844C0.706299 6.57405 5.72898 4.42148 9.18207 4.42148V2.21346C9.18207 1.31127 9.18207 0.860168 9.46005 0.735338C9.73803 0.610507 10.0752 0.910199 10.7495 1.50958Z" />
+    </OutlineIcon>
+  );
+}

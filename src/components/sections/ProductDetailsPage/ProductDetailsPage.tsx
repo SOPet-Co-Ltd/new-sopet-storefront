@@ -2,51 +2,49 @@
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { notFound } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
 import { ProductDetails } from '@/components/organisms/ProductDetails/ProductDetails';
 import ProductDetailsSeller from '@/components/organisms/ProductDetailsSeller';
 import ProductDetailsSellerReviews from '@/components/organisms/ProductDetailsSellerReviews';
-import { getDefaultVariant } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
+import { ProductFloatingBuyCard } from '@/components/organisms/ProductFloatingBuyCard';
+import {
+  getDefaultVariant,
+  readClientSearchParams,
+  resolveSelectedOptionsFromSearchParams,
+  toSearchParamsGetter,
+  type VariantOptions,
+} from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 import { ProductGallery } from '@/components/organisms/ProductGallery/ProductGallery';
 import { ProductDetailDescription } from '@/components/sections/ProductDetailDescription/ProductDetailDescription';
 import { ProductDetailWarning } from '@/components/sections/ProductDetailWarning/ProductDetailWarning';
-import { HomeFaqSection, HOME_FAQ_ITEMS } from '@/components/sections/HomeFaqSection';
 import { HomeProductSection } from '@/components/sections/HomeProductSection/HomeProductSection';
 import { trackViewItem } from '@/lib/analytics';
+import {
+  PRODUCT_REVIEWS_INITIAL_LIMIT,
+  PRODUCT_REVIEWS_MAX_LIMIT,
+} from '@/lib/constants/listPageSize';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import type { ProductByIdQuery } from '@/lib/graphql/generated/graphql';
 import { useCategories } from '@/lib/hooks/useCategories';
 import { useProduct } from '@/lib/hooks/useProduct';
-import { useReviews } from '@/lib/hooks/useReviews';
+import { useReviews, type ProductReview } from '@/lib/hooks/useReviews';
 import { buildCategoryHref, resolveCategoryBySlug } from '@/lib/routing/categoryRoutes';
+import { buildProductHref } from '@/lib/routing/productRoutes';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
+import { cn } from '@/lib/utils';
+import { HomeFaqSection, HOME_FAQ_ITEMS } from '@/components/sections/HomeFaqSection';
 
 type ProductDetailsPageProps = {
-  productId: string;
+  /** SEO path segment `{productSlug}-{storeSlug}`, or legacy UUID before redirect. */
+  productPath: string;
+  /** When SSR already resolved the product, client refetches by id. */
+  productId?: string;
   initialProduct?: ProductByIdQuery['product'];
+  /** Server-fetched reviews so review text is present in the first HTML. */
+  initialProductReviews?: ProductReview[];
   variantSearchParams?: Record<string, string | string[] | undefined>;
 };
-
-function computeReviewSummary(
-  productReviews: { rating: number }[],
-  productAverageRating: number,
-  productReviewCount: number,
-) {
-  if (productReviews.length === 0) {
-    return {
-      averageRating: productAverageRating,
-      totalReviews: productReviewCount,
-    };
-  }
-
-  const totalReviews = productReviews.length;
-  const averageRating =
-    Math.round(
-      (productReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews) * 10,
-    ) / 10;
-
-  return { averageRating, totalReviews };
-}
 
 function ProductDetailsSkeleton() {
   return (
@@ -64,36 +62,86 @@ function ProductDetailsSkeleton() {
 }
 
 export default function ProductDetailsPage({
-  productId,
+  productPath,
+  productId: productIdProp,
   initialProduct,
+  initialProductReviews,
   variantSearchParams,
 }: ProductDetailsPageProps) {
+  const resolvedProductId = productIdProp ?? initialProduct?.id;
   const {
     product: fetchedProduct,
     loading,
     error,
-  } = useProduct({
-    mode: 'id',
-    id: productId,
-  });
+  } = useProduct(
+    resolvedProductId ? { mode: 'id', id: resolvedProductId } : { mode: 'path', path: productPath },
+  );
   const product = fetchedProduct ?? initialProduct ?? null;
   const showLoading = !initialProduct && loading;
+  const productId = product?.id ?? resolvedProductId ?? productPath;
 
-  const { productReviews, loading: reviewsLoading } = useReviews({
-    productId: product?.id,
-    storeId: product?.storeId,
-    skip: !product,
+  const [reviewWindow, setReviewWindow] = useState({
+    productId,
+    limit: PRODUCT_REVIEWS_INITIAL_LIMIT,
+    filterActive: false,
   });
 
+  if (reviewWindow.productId !== productId) {
+    setReviewWindow({
+      productId,
+      limit: PRODUCT_REVIEWS_INITIAL_LIMIT,
+      filterActive: false,
+    });
+  }
+
+  const productReviewLimit =
+    reviewWindow.productId === productId ? reviewWindow.limit : PRODUCT_REVIEWS_INITIAL_LIMIT;
+  const productReviewFilterActive =
+    reviewWindow.productId === productId ? reviewWindow.filterActive : false;
+
+  // PDP only needs product reviews; store review dumps belong on the seller page.
+  // Page 1 with a growing limit avoids the page/limit offset skipping the first 4.
+  const { productReviews, loading: reviewsLoading } = useReviews({
+    productId: product?.id,
+    skip: !product,
+    initialProductReviews,
+    productPage: 1,
+    productLimit: productReviewFilterActive ? PRODUCT_REVIEWS_MAX_LIMIT : productReviewLimit,
+  });
+
+  // Keep the visible summary on product-level aggregates so it matches JSON-LD.
   const reviewSummary = useMemo(
     () =>
       product
-        ? computeReviewSummary(productReviews, product.averageRating, product.reviewCount)
+        ? { averageRating: product.averageRating, totalReviews: product.reviewCount }
         : { averageRating: 0, totalReviews: 0 },
-    [product, productReviews],
+    [product],
   );
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedOptions, setSelectedOptions] = useState<VariantOptions>(() =>
+    resolveSelectedOptionsFromSearchParams(
+      product?.variants,
+      toSearchParamsGetter(variantSearchParams) ?? readClientSearchParams(),
+    ),
+  );
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [isFloatingBuyVisible, setIsFloatingBuyVisible] = useState(false);
+  const mainArticleRef = useRef<HTMLElement | null>(null);
+
+  const handleFloatingBuyVisibilityChange = useCallback((visible: boolean) => {
+    setIsFloatingBuyVisible(visible);
+  }, []);
+
+  const handleVariantChange = (
+    _variantId: string | null,
+    _price: number,
+    _stockQuantity: number,
+    quantity: number,
+  ) => {
+    setSelectedQuantity(quantity);
+  };
+
   const { categories } = useCategories();
   const trackedViewItemIdRef = useRef<string | null>(null);
 
@@ -138,7 +186,7 @@ export default function ProductDetailsPage({
       });
     }
 
-    items.push({ label: product.name, path: `/product/${product.id}` });
+    items.push({ label: product.name, path: buildProductHref(product) });
     return items;
   }, [categories, product]);
 
@@ -171,37 +219,79 @@ export default function ProductDetailsPage({
   const breadcrumbs = breadcrumbItems;
 
   return (
-    <div data-testid="product-details-page" className="flex min-w-0 flex-col gap-2 md:gap-5">
-      <div className="py-2">
+    <div
+      data-testid="product-details-page"
+      className="mx-auto flex w-full min-w-0 max-w-[1064px] flex-col gap-sop-20px md:gap-5"
+    >
+      <div className="hidden py-2 md:block">
         <Breadcrumbs items={breadcrumbs} />
       </div>
 
-      <article aria-labelledby="product-title">
-        <div className="-mx-4 grid min-w-0 grid-cols-1 gap-4 overflow-x-hidden rounded-none bg-sop-base-white px-4 pb-4 md:mx-0 md:px-4 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-4 lg:rounded-sop-8 lg:px-6 lg:py-5">
+      <article aria-labelledby="product-title" ref={mainArticleRef}>
+        <div className="-mx-4 grid min-w-0 grid-cols-1 gap-6 overflow-x-hidden rounded-none border border-[#F0EDF5] bg-sop-base-white pb-4 shadow-xs md:mx-0 md:rounded-sop-32px md:p-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)] lg:gap-8 lg:rounded-sop-32px lg:p-8">
           <ProductGallery images={product.images} thumbnailUrl={product.thumbnailUrl} />
           <ProductDetails
             product={product}
             variantSearchParams={variantSearchParams}
+            selectedOptions={selectedOptions}
+            onSelectedOptionsChange={setSelectedOptions}
+            onVariantChange={handleVariantChange}
             shareModalOpen={shareModalOpen}
             onShareModalOpenChange={setShareModalOpen}
           />
         </div>
       </article>
 
-      <ProductDetailsSeller store={product.store} />
+      <div
+        className={cn(
+          'grid grid-cols-1 items-start transition-[grid-template-columns,gap] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]',
+          isFloatingBuyVisible
+            ? 'lg:grid-cols-[1fr_360px] lg:gap-5'
+            : 'lg:grid-cols-[1fr_0px] lg:gap-0',
+        )}
+      >
+        <div className="flex min-w-0 flex-col gap-sop-20px md:gap-5">
+          <ProductDetailsSeller store={product.store} />
 
-      <ProductDetailDescription description={product.description} />
+          <ProductDetailDescription description={product.description} />
 
-      <ProductDetailWarning warning={product.warning} />
+          <ProductDetailWarning warning={product.warning} />
 
-      <ProductDetailsSellerReviews
-        productReviews={productReviews}
-        averageRating={reviewSummary.averageRating}
-        totalReviews={reviewSummary.totalReviews}
-        loading={reviewsLoading}
-      />
+          <ProductDetailsSellerReviews
+            key={product.id}
+            productReviews={productReviews}
+            averageRating={reviewSummary.averageRating}
+            totalReviews={reviewSummary.totalReviews}
+            loading={reviewsLoading}
+            onLoadMore={(nextLimit) =>
+              setReviewWindow((current) => ({ ...current, limit: nextLimit }))
+            }
+            onFilterActiveChange={(filterActive) =>
+              setReviewWindow((current) =>
+                current.filterActive === filterActive ? current : { ...current, filterActive },
+              )
+            }
+          />
+        </div>
 
-      <HomeFaqSection items={HOME_FAQ_ITEMS} />
+        <aside
+          aria-label="สั่งซื้อด่วน"
+          className={cn(
+            'sticky top-36 z-30 hidden min-w-0 bg-transparent lg:block',
+            // Clip only while collapsed so the 360px card cannot force the track open;
+            // leave overflow visible when open so the card shadow is not cut off.
+            !isFloatingBuyVisible && 'overflow-hidden',
+          )}
+        >
+          <ProductFloatingBuyCard
+            product={product}
+            selectedOptions={selectedOptions}
+            productQuantity={selectedQuantity}
+            triggerRef={mainArticleRef}
+            onVisibilityChange={handleFloatingBuyVisibilityChange}
+          />
+        </aside>
+      </div>
 
       <div className="mt-2 flex flex-col gap-8 md:mt-3">
         <HomeProductSection
@@ -210,7 +300,7 @@ export default function ProductDetailsPage({
           excludeProductId={product.id}
           sameStoreOnly
           layout="grid"
-          viewAllHref={product.store ? `/sellers/${product.store.slug}` : '/products'}
+          viewAllHref={product.store ? buildSellerHref(product.store.slug) : '/products'}
         />
 
         <HomeProductSection
@@ -224,6 +314,10 @@ export default function ProductDetailsPage({
           layout="grid"
           viewAllHref={`/recommend?from=${product.id}`}
         />
+
+        <div className="max-md:-mx-4">
+          <HomeFaqSection items={HOME_FAQ_ITEMS} />
+        </div>
       </div>
     </div>
   );

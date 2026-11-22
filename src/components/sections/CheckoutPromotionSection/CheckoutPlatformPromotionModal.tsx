@@ -28,6 +28,7 @@ import {
   mergeListTimeEligibility,
   parseStorePromotionConditions,
   type ListTimeBatchStatus,
+  type MergedListTimeEligibility,
   type PromotionEligibilityBatchItem,
   type PromotionEstimateCartLine,
   type StorePromotion,
@@ -60,6 +61,12 @@ function PromoSection({ title, count, children }: PromoSectionProps) {
   );
 }
 
+export type SharedPlatformListTimeEligibility = {
+  batchStatus: ListTimeBatchStatus;
+  batchItems: PromotionEligibilityBatchItem[] | null;
+  merged: MergedListTimeEligibility;
+};
+
 type CheckoutPlatformPromotionModalProps = {
   isOpen: boolean;
   subtotal: number;
@@ -70,6 +77,8 @@ type CheckoutPlatformPromotionModalProps = {
   appliedPromotion: PlatformPromotionSelection;
   onClose: () => void;
   onConfirm: (promotion: PlatformPromotionSelection) => void;
+  /** Section-level list-time batch — avoids duplicate validatePromotions + keeps banner parity. */
+  sharedListTime?: SharedPlatformListTimeEligibility;
 };
 
 export function CheckoutPlatformPromotionModal({
@@ -80,6 +89,7 @@ export function CheckoutPlatformPromotionModal({
   appliedPromotion,
   onClose,
   onConfirm,
+  sharedListTime,
 }: CheckoutPlatformPromotionModalProps) {
   const isMobile = useIsMobile(768);
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -116,17 +126,29 @@ export function CheckoutPlatformPromotionModal({
 
   const catalogPromotions = allPromotions as StorePromotion[];
 
-  const { available, unavailable, softEligibilityError } = useMemo(
-    () =>
-      mergeListTimeEligibility(
-        catalogPromotions,
-        subtotal,
-        { isGuest, cartLines },
-        batchStatus === 'success' ? batchItems : null,
-        batchStatus,
-      ),
-    [batchItems, batchStatus, cartLines, catalogPromotions, isGuest, subtotal],
-  );
+  const effectiveBatchStatus = sharedListTime?.batchStatus ?? batchStatus;
+  const effectiveBatchItems = sharedListTime?.batchItems ?? batchItems;
+
+  const { available, unavailable, softEligibilityError } = useMemo(() => {
+    if (sharedListTime) {
+      return sharedListTime.merged;
+    }
+    return mergeListTimeEligibility(
+      catalogPromotions,
+      subtotal,
+      { isGuest, cartLines },
+      effectiveBatchStatus === 'success' ? effectiveBatchItems : null,
+      effectiveBatchStatus,
+    );
+  }, [
+    cartLines,
+    catalogPromotions,
+    effectiveBatchItems,
+    effectiveBatchStatus,
+    isGuest,
+    sharedListTime,
+    subtotal,
+  ]);
 
   const selectedPromotion = useMemo(() => {
     if (selection.type !== 'promo') return null;
@@ -148,7 +170,8 @@ export function CheckoutPlatformPromotionModal({
   }, [cartLines, selectedPromotion, selection, shippingFee, subtotal]);
 
   const listTimePending =
-    promotions.length > 0 && (batchStatus === 'idle' || batchStatus === 'loading');
+    promotions.length > 0 &&
+    (effectiveBatchStatus === 'idle' || effectiveBatchStatus === 'loading');
   // Hold skeleton until auth + catalog + list-time batch settle — avoids available/unavailable flash.
   const showListSkeleton = authLoading || loading || listTimePending;
   const showApplyFooter = available.length > 0 || Boolean(appliedPromotion);
@@ -186,7 +209,7 @@ export function CheckoutPlatformPromotionModal({
 
   // List-time batch on open (AC-046) — one validatePromotions; cancel stale on close/catalog change.
   useEffect(() => {
-    if (!isOpen || loading || error || promotions.length === 0) return;
+    if (sharedListTime || !isOpen || loading || error || promotions.length === 0) return;
 
     let cancelled = false;
 
@@ -217,7 +240,17 @@ export function CheckoutPlatformPromotionModal({
     return () => {
       cancelled = true;
     };
-  }, [cartLines, error, isOpen, loading, promotions, shippingFee, subtotal, validatePromotions]);
+  }, [
+    cartLines,
+    error,
+    isOpen,
+    loading,
+    promotions,
+    sharedListTime,
+    shippingFee,
+    subtotal,
+    validatePromotions,
+  ]);
 
   const handleApplyManualCode = async () => {
     const normalizedCode = manualCode.trim();

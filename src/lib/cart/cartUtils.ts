@@ -18,6 +18,14 @@ export function getCartItemUnitPrice(item: CartItem): number {
   return item.productVariant?.price ?? 0;
 }
 
+/** Stock 0 (or missing stock treated as 0 when variant present) — unselectable at checkout. */
+export function isCartItemOutOfStock(item: CartItem): boolean {
+  if (!item.productVariant) {
+    return false;
+  }
+  return (item.productVariant.stockQuantity ?? 0) <= 0;
+}
+
 /** Honest strikethrough was; only when strictly greater than the payable unit. */
 export function getCartItemCompareAtPrice(item: CartItem): number | null {
   const unitPrice = getCartItemUnitPrice(item);

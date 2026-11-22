@@ -3,7 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { ChatDotsIcon, ShopVendorIcon } from '@/components/atoms/icons';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
 
 type ProductDetailsSellerProps = {
   store: ProductDetail['store'];
@@ -12,44 +14,86 @@ type ProductDetailsSellerProps = {
 export default function ProductDetailsSeller({ store }: ProductDetailsSellerProps) {
   if (!store) return null;
 
-  const handleFollow = () => {
-    toast.message('ฟีเจอร์ติดตามร้านค้าจะเปิดใช้งานเร็วๆ นี้');
+  const handleChat = () => {
+    toast.message('ฟีเจอร์แชทพูดคุยจะเปิดใช้งานเร็วๆ นี้');
   };
+  const sellerHref = buildSellerHref(store.slug);
 
   return (
     <div
-      className="-mx-4 bg-sop-base-white px-4 py-5 rounded-none md:mx-0 md:rounded-sop-16px"
+      className="w-full rounded-sop-16px border border-[#F0EDF5] bg-sop-base-white px-sop-16px py-4 shadow-xs md:rounded-2xl md:p-6"
       data-testid="product-seller"
     >
-      <div className="flex items-center justify-between gap-4">
-        <Link href={`/sellers/${store.slug}`} className="flex items-center gap-4 min-w-0">
-          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-sop-neutral-grayalpha-200 bg-sop-neutral-gray-500">
-            {store.logoUrl ? (
-              <Image
-                src={store.logoUrl}
-                alt={store.name}
-                width={48}
-                height={48}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center sop-body-xs-regular text-sop-neutral-gray-400">
-                {store.name.charAt(0)}
-              </div>
-            )}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        {/* Left / Top: Store Info */}
+        <div className="flex items-center gap-3.5 min-w-0">
+          <Link href={sellerHref} className="shrink-0" aria-label={store.name}>
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-sop-neutral-gray-500">
+              {store.logoUrl ? (
+                <Image
+                  src={store.logoUrl}
+                  alt={store.name}
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center sop-body-xs-regular text-sop-neutral-gray-400">
+                  {store.name.charAt(0)}
+                </div>
+              )}
+            </div>
+          </Link>
+
+          <div className="flex flex-col gap-1 min-w-0">
+            <Link href={sellerHref} className="min-w-0">
+              <p className="sop-body-md-medium text-sop-neutral-gray-100 truncate hover:underline">
+                {store.name}
+              </p>
+            </Link>
+            <div className="inline-flex items-center gap-sop-4px rounded-full bg-sop-system-success-100 px-sop-12px py-sop-8px w-fit">
+              <svg
+                className="h-sop-12px w-sop-12px text-sop-system-success-500 shrink-0"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16Zm3.78-9.72a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="text-xs font-medium text-sop-system-success-500">ร้านค้าแนะนำ</span>
+            </div>
           </div>
-          <p className="md:sop-headline-sm-regular sop-body-sm-regular text-sop-neutral-gray-300 truncate">
-            {store.name}
-          </p>
-        </Link>
-        <button
-          type="button"
-          onClick={handleFollow}
-          className="shrink-0 sop-body-xs-regular md:sop-body-md-regular py-1.5 md:px-8 px-5 border rounded-full border-sop-primary-500 text-sop-primary-500 cursor-pointer"
-          data-testid="seller-follow-button"
-        >
-          ติดตาม
-        </button>
+        </div>
+
+        {/* Right / Bottom: Action Buttons */}
+        <div className="grid grid-cols-2 gap-3 md:flex md:items-center md:gap-3">
+          <button
+            type="button"
+            onClick={handleChat}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-sop-neutral-grayalpha-200 bg-sop-base-white px-4 py-2.5 text-sm font-medium text-sop-neutral-gray-200 shadow-2xs transition-colors hover:bg-sop-neutral-gray-500 cursor-pointer"
+            data-testid="seller-chat-button"
+          >
+            <ChatDotsIcon size={{ mobile: 18, desktop: 18 }} color="#FF6F61" className="shrink-0" />
+            <span>แชทพูดคุย</span>
+          </button>
+
+          <Link
+            href={sellerHref}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-sop-neutral-grayalpha-200 bg-sop-base-white px-4 py-2.5 text-sm font-medium text-sop-neutral-gray-200 shadow-2xs transition-colors hover:bg-sop-neutral-gray-500"
+            data-testid="seller-store-link"
+          >
+            <ShopVendorIcon
+              size={{ mobile: 18, desktop: 18 }}
+              color="#FF6F61"
+              className="shrink-0"
+            />
+            <span>ไปยังร้านค้า</span>
+          </Link>
+        </div>
       </div>
     </div>
   );

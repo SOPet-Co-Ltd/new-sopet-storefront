@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation } from '@apollo/client/react';
+import { NOTIFICATIONS_PAGE_SIZE } from '@/lib/constants/listPageSize';
 import {
   NotificationsDocument,
   MarkNotificationReadDocument,
@@ -17,16 +18,21 @@ export type Notification = {
   createdAt: string;
 };
 
-export function useNotifications(unreadOnly = false) {
+export function useNotifications(unreadOnly = false, page = 1) {
+  const limit = NOTIFICATIONS_PAGE_SIZE;
+  const variables = { unreadOnly, page, limit };
   const { data, loading, error, refetch } = useQuery(NotificationsDocument, {
-    variables: { unreadOnly },
+    variables,
     pollInterval: unreadOnly ? 15_000 : 0,
   });
+  const notifications = (data?.notifications ?? []) as Notification[];
   return {
-    notifications: (data?.notifications ?? []) as Notification[],
+    notifications,
     loading,
     error,
     refetch,
+    page,
+    hasMore: notifications.length >= limit,
   };
 }
 

@@ -29,6 +29,7 @@ function buildProduct(overrides: Partial<ProductCardProduct> = {}): ProductCardP
     averageRating: 0,
     reviewCount: 0,
     soldCount: 0,
+    store: { id: 'store-1', name: 'Test Store', slug: 'test-store' },
     variants: [],
     ...overrides,
   };

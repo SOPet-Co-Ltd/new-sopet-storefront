@@ -19,6 +19,7 @@ export const samplePaymentMethod = {
   expiryMonth: 12,
   expiryYear: 2028,
   isDefault: true,
+  psp: 'beam',
 };
 
 export const sampleReviewableItem = {
@@ -44,6 +45,7 @@ export const sampleMyReview = {
   comment: 'ดีมาก',
   status: 'pending',
   createdAt: '2026-07-01T10:00:00.000Z',
+  variantOptions: null,
   images: [
     {
       id: 'review-image-1',

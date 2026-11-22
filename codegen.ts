@@ -6,7 +6,11 @@ function resolveSchemaPath(): string {
     return process.env.GRAPHQL_SCHEMA_PATH;
   }
 
-  const candidates = ['../sopet-backend/src/schema.gql', 'sopet-backend/src/schema.gql'];
+  const candidates = [
+    '../new-sopet-backend/src/schema.gql',
+    '../sopet-backend/src/schema.gql',
+    'sopet-backend/src/schema.gql',
+  ];
 
   for (const candidate of candidates) {
     if (existsSync(candidate)) {

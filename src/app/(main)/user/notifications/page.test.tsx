@@ -1,6 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import UserNotificationsPage from './page';
+import { useNotifications } from '@/lib/hooks/useNotifications';
+
+const mockPush = vi.fn();
+const mockMarkRead = vi.fn();
 
 const mockNotifications = [
   {
@@ -28,17 +33,32 @@ vi.mock('@/lib/hooks/useNotifications', () => ({
     notifications: mockNotifications,
     loading: false,
     refetch: vi.fn(),
+    page: 1,
+    hasMore: false,
   })),
-  useMarkNotificationRead: vi.fn(() => [vi.fn()]),
+  useMarkNotificationRead: vi.fn(() => [mockMarkRead]),
   useMarkAllNotificationsRead: vi.fn(() => [vi.fn()]),
 }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/user/notifications',
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 describe('UserNotificationsPage', () => {
+  beforeEach(() => {
+    mockPush.mockReset();
+    mockMarkRead.mockReset();
+    vi.mocked(useNotifications).mockReturnValue({
+      notifications: mockNotifications,
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+      page: 1,
+      hasMore: false,
+    } as ReturnType<typeof useNotifications>);
+  });
+
   it('uses AccountTabBar for tabs', () => {
     render(<UserNotificationsPage />);
 
@@ -75,5 +95,39 @@ describe('UserNotificationsPage', () => {
     expect(html).not.toMatch(/bg-brand/);
     expect(html).not.toMatch(/bg-danger/);
     expect(html).not.toMatch(/sop-base-gray/);
+  });
+
+  it('opens the order detail page when a payment_received card is clicked', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useNotifications).mockReturnValue({
+      notifications: [
+        {
+          id: 'n-pay',
+          type: 'payment_received',
+          title: 'ชำระเงินสำเร็จสำหรับออเดอร์ #ORD-TEST',
+          message: 'ชำระเงินสำเร็จสำหรับออเดอร์ #ORD-TEST',
+          metadata: JSON.stringify({ orderId: 'order-123' }),
+          isRead: false,
+          createdAt: '2025-01-01T00:00:00.000Z',
+        },
+      ],
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+      page: 1,
+      hasMore: false,
+    } as ReturnType<typeof useNotifications>);
+
+    render(<UserNotificationsPage />);
+
+    expect(screen.getByTestId('notification-order-link-payment_received')).toHaveAttribute(
+      'href',
+      '/user/orders/order-123',
+    );
+
+    await user.click(screen.getByRole('button', { name: /ชำระเงินสำเร็จสำหรับออเดอร์/ }));
+
+    expect(mockMarkRead).toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith('/user/orders/order-123');
   });
 });

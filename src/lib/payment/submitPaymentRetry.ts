@@ -1,7 +1,11 @@
 import type { PaymentRetrySubmitInput } from '@/components/organisms/OrderPaymentForm/PaymentRetryPanel';
 import { threeDSAutoRedirectStorageKey } from '@/components/organisms/OrderPaymentForm/Payment3dsAutoRedirect';
-import type { CreatePaymentInput } from '@/lib/graphql/generated/graphql';
+import type { CreatePaymentSubmitInput } from '@/lib/checkout/submitCheckout';
 import { persistGuestPayToken, resolveGuestPayToken } from '@/lib/payment/guestPayToken';
+import {
+  isOmiseWalletApiPaymentMethod,
+  resolveOmiseWalletPlatformType,
+} from '@/lib/payment/walletDevice';
 
 export class PaymentRetryError extends Error {
   constructor(
@@ -25,23 +29,38 @@ export type PaymentRetryContext = {
 export function buildPaymentRetryInput(
   context: PaymentRetryContext,
   submit: PaymentRetrySubmitInput,
-): CreatePaymentInput {
+): CreatePaymentSubmitInput {
   const guestPayToken = resolveGuestPayToken({
     guestPayToken: context.guestPayToken,
     orderId: context.orderId,
     paymentId: context.currentPaymentId,
   });
 
+  const walletFields = isOmiseWalletApiPaymentMethod(submit.paymentMethod)
+    ? { platformType: resolveOmiseWalletPlatformType() }
+    : {};
+
   return {
     orderId: context.orderId,
-    amount: context.amount,
     currency: context.currency || 'THB',
     paymentMethod: submit.paymentMethod,
     ...(guestPayToken ? { guestPayToken } : {}),
+    ...walletFields,
     ...(submit.savedPaymentMethodId
-      ? { savedPaymentMethodId: submit.savedPaymentMethodId }
-      : submit.omiseToken
-        ? { omiseToken: submit.omiseToken }
+      ? {
+          savedPaymentMethodId: submit.savedPaymentMethodId,
+          ...(submit.cardSecurityCodeCipher
+            ? { cardSecurityCodeCipher: submit.cardSecurityCodeCipher }
+            : {}),
+        }
+      : submit.cardToken
+        ? {
+            cardToken: submit.cardToken,
+            ...(submit.cardSecurityCodeCipher
+              ? { cardSecurityCodeCipher: submit.cardSecurityCodeCipher }
+              : {}),
+            ...(submit.saveCard ? { saveCard: submit.saveCard } : {}),
+          }
         : {}),
   };
 }

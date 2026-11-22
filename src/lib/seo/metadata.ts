@@ -6,7 +6,11 @@ import {
   DEFAULT_OG_IMAGE_PATH,
   DEFAULT_SITE_DESCRIPTION,
   DEFAULT_SITE_NAME,
+  DEFAULT_SITE_TITLE,
+  DEFAULT_SITE_TITLE_SEGMENT,
+  META_DESCRIPTION_MAX_LENGTH,
 } from './constants';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
 import { getSearchIndexation, isProductIndexable } from './indexability';
 
 export type PageMetadataInput = {
@@ -87,10 +91,36 @@ export function stripMarkdownForMeta(text: string): string {
     .trim();
 }
 
+/** Strip HTML tags and decode common entities for meta / JSON-LD plain text. */
+export function stripHtmlForMeta(text: string): string {
+  return text
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Strip HTML + markdown, then truncate for SERP meta descriptions. */
+export function sanitizeMetaDescription(
+  text: string | null | undefined,
+  maxLen: number = META_DESCRIPTION_MAX_LENGTH,
+): string {
+  if (text == null || text === '') {
+    return '';
+  }
+
+  return truncateDescription(stripMarkdownForMeta(stripHtmlForMeta(text)), maxLen);
+}
+
 export function buildPageMetadata(input: PageMetadataInput): Metadata {
   const { baseUrl, siteName } = getSiteConfig();
   const canonical = `${baseUrl}${input.path}`;
-  const description = truncateDescription(stripMarkdownForMeta(input.description));
+  const description = sanitizeMetaDescription(input.description);
   const robots = input.robots ?? { index: true, follow: true };
   const ogType = input.ogType ?? 'website';
   const ogImageUrl = resolveOgImageUrl(input.ogImage);
@@ -122,13 +152,27 @@ export function buildPageMetadata(input: PageMetadataInput): Metadata {
 }
 
 export function buildHomeMetadata(): Metadata {
-  const { siteName } = getSiteConfig();
-
-  return buildPageMetadata({
-    title: siteName,
+  const metadata = buildPageMetadata({
+    title: DEFAULT_SITE_TITLE_SEGMENT,
     description: DEFAULT_SITE_DESCRIPTION,
     path: '/',
   });
+
+  return {
+    ...metadata,
+    title: { absolute: DEFAULT_SITE_TITLE },
+    description: DEFAULT_SITE_DESCRIPTION,
+    openGraph: {
+      ...metadata.openGraph,
+      title: DEFAULT_SITE_TITLE,
+      description: DEFAULT_SITE_DESCRIPTION,
+    },
+    twitter: {
+      ...metadata.twitter,
+      title: DEFAULT_SITE_TITLE,
+      description: DEFAULT_SITE_DESCRIPTION,
+    },
+  };
 }
 
 export function buildProductMetadata(
@@ -187,7 +231,7 @@ export function buildSellerMetadata(
   return buildPageMetadata({
     title: store.name,
     description: store.description ?? `ร้านค้า ${store.name} บน Sopet`,
-    path: `/sellers/${store.slug}`,
+    path: buildSellerHref(store.slug),
     robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     ogImage,
   });

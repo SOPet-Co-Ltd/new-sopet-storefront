@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import nextConfig from './next.config';
+import { getBeamConnectSrcOrigins } from './src/lib/config';
+import nextConfig, { buildProductionCsp } from './next.config';
 
 describe('next.config redirects', () => {
   it('redirects /products to /search and /categories to home', async () => {
@@ -29,8 +30,11 @@ describe('next.config security headers', () => {
     const byKey = Object.fromEntries(globalHeaders.map((h) => [h.key, h.value]));
 
     // Vitest runs with NODE_ENV=test, so production CSP is applied.
+    // Beam origin follows process.env (CI may set playground NEXT_PUBLIC_BEAM_API_BASE_URL).
+    const [beamOrigin] = getBeamConnectSrcOrigins();
     expect(byKey['Content-Security-Policy']).toContain("frame-ancestors 'none'");
-    expect(byKey['Content-Security-Policy']).toContain('https://cdn.omise.co');
+    expect(byKey['Content-Security-Policy']).toContain(beamOrigin);
+    expect(byKey['Content-Security-Policy']).not.toContain('omise');
     expect(byKey['Content-Security-Policy']).toContain("img-src 'self' data: blob: https:");
     expect(byKey['Content-Security-Policy']).not.toContain("'wasm-unsafe-eval'");
     expect(byKey['Content-Security-Policy']).not.toContain("'unsafe-eval'");
@@ -39,11 +43,46 @@ describe('next.config security headers', () => {
     expect(byKey['X-Content-Type-Options']).toBe('nosniff');
     expect(byKey['Referrer-Policy']).toBe('strict-origin-when-cross-origin');
   });
+
+  it('allows GraphQL API WebSocket origin in connect-src when backend origin is set', () => {
+    const csp = buildProductionCsp({
+      NODE_ENV: 'test',
+      NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN: 'https://api.example.com',
+    });
+
+    expect(csp).toContain('wss://api.example.com');
+    expect(csp).toContain('https://api.beamcheckout.com');
+  });
+
+  it('allows explicit NEXT_PUBLIC_GRAPHQL_WS_URL origin in connect-src', () => {
+    const csp = buildProductionCsp({
+      NODE_ENV: 'test',
+      NEXT_PUBLIC_GRAPHQL_WS_URL: 'wss://payments-api.sopet.org/graphql',
+    });
+
+    expect(csp).toContain('wss://payments-api.sopet.org');
+  });
+
+  it('allows Beam playground API origin in connect-src when NEXT_PUBLIC_BEAM_API_BASE_URL is set', () => {
+    const csp = buildProductionCsp({
+      NODE_ENV: 'test',
+      NEXT_PUBLIC_BEAM_API_BASE_URL: 'https://playground.api.beamcheckout.com',
+    });
+
+    expect(csp).toContain('https://playground.api.beamcheckout.com');
+  });
+
+  it('defaults Beam connect-src to production API when NEXT_PUBLIC_BEAM_API_BASE_URL is unset', () => {
+    const csp = buildProductionCsp({ NODE_ENV: 'test' });
+
+    expect(csp).toContain('https://api.beamcheckout.com');
+    expect(csp).not.toContain('https://playground.api.beamcheckout.com');
+  });
 });
 
 describe('next.config images', () => {
-  it('enables Next.js Image Optimization', () => {
-    expect(nextConfig.images?.unoptimized).not.toBe(true);
+  it('skips Vercel Image Optimization so product and cart images load from the CDN', () => {
+    expect(nextConfig.images?.unoptimized).toBe(true);
   });
 
   it('allows local MinIO (OrbStack) private IPs for next/image', () => {

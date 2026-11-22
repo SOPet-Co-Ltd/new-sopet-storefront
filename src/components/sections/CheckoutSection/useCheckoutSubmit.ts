@@ -17,24 +17,29 @@ import {
   mapGuestFormToCreateAddressInput,
   validateAuthInlineShippingForm,
   validateGuestCheckoutForm,
+  validateOptionalCheckoutEmail,
   type GuestCheckoutField,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
 import { parseStorePromotionConditions } from '@/lib/checkout/storePromotionUtils';
-import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import {
-  cleanCardNumber,
-  detectCardBrand,
-} from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
-import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
+  prepareCardPayment,
+  SavedCardCvvCancelledError,
+} from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
+import { clearPendingCheckout, setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
-import { parseCardExpiry } from '@/lib/payment/omise';
-import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UseAddressesResult } from '@/lib/hooks/useAddresses';
 import { useCheckout as useCheckoutMutations } from '@/lib/hooks/useCheckout';
 import { useCheckoutCartSelection } from '@/lib/hooks/useCheckoutCartSelection';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
+import {
+  checkoutLoginRedirectUrl,
+  shouldRedirectCheckoutToLogin,
+} from '@/lib/checkout/checkoutSessionGuard';
+import { hasClientSession } from '@/lib/graphql/authLink';
+import { encryptCardSecurityCodeTransport } from '@/lib/payment/cardTransport';
+import { buildSaveCardPayload } from '@/lib/payment/saveCard';
 import { ensureSessionId } from '@/lib/session';
 
 export type AddressSubmitContext = {
@@ -55,7 +60,7 @@ export function useCheckoutSubmit(
   },
 ) {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, customer } = useAuth();
   const {
     selectedItems: items,
     selectedSubtotal: subtotal,
@@ -65,7 +70,6 @@ export function useCheckoutSubmit(
     clearBuyNow,
   } = useCheckoutCartSelection();
   const checkoutMutations = useCheckoutMutations();
-  const { addPaymentMethod } = usePaymentMethods();
   const {
     step,
     shippingByStoreId,
@@ -148,6 +152,9 @@ export function useCheckoutSubmit(
     }
     submittingRef.current = true;
     setIsSubmitting(true);
+    // Drop any prior unpaid pending id so a reload mid-create cannot resume a
+    // previous order's payment QR (SF-CHK-110).
+    clearPendingCheckout();
     return true;
   }, [setIsSubmitting]);
 
@@ -161,44 +168,47 @@ export function useCheckoutSubmit(
       try {
         const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
-        let finalOmiseToken = cardPayment?.type === 'token' ? cardPayment.omiseToken : undefined;
-        let finalSavedPaymentMethodId =
+        const finalCardToken = cardPayment?.type === 'token' ? cardPayment.cardToken : undefined;
+        const finalSavedPaymentMethodId =
           cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined;
+        // Defer vaulting to backend after paid — do not call addPaymentMethod before charge.
+        // Encrypt PAN/name/expiry and CVV in the browser before GraphQL.
+        const finalCardSecurityCodeCipher = cardPayment?.cardSecurityCode
+          ? await encryptCardSecurityCodeTransport(cardPayment.cardSecurityCode)
+          : undefined;
+        const saveCard =
+          cardPayment?.type === 'token' && cardPayment.saveCardForNextTime
+            ? await buildSaveCardPayload({
+                cardholderName: cardPayment.cardForm.cardName,
+                pan: cardPayment.cardForm.cardNumber,
+                expiryMonth: cardPayment.tokenizedCard.expiryMonth,
+                expiryYear: cardPayment.tokenizedCard.expiryYear,
+                isDefault: true,
+              })
+            : undefined;
 
-        if (cardPayment?.type === 'token' && cardPayment.saveCardForNextTime) {
-          const digits = cleanCardNumber(cardPayment.cardForm.cardNumber);
-          const { month, year } = parseCardExpiry(cardPayment.cardForm.expiry);
-          const brand = detectCardBrand(digits);
-
-          const savedMethod = await addPaymentMethod({
-            omiseCardToken: cardPayment.omiseToken,
-            brand,
-            lastFour: digits.slice(-4),
-            expiryMonth: month,
-            expiryYear: year,
-            isDefault: true,
-          });
-
-          if (savedMethod) {
-            finalSavedPaymentMethodId = savedMethod.id;
-            finalOmiseToken = undefined;
-          }
-        }
+        const sessionLive = hasClientSession();
+        const submitAsGuest = !isAuthenticated || !sessionLive;
+        const resolvedAddressId = overrideAddressId ?? checkoutContext.selectedAddressId;
 
         const result = await submitCheckout(
           {
             step,
             checkoutContext: {
               ...checkoutContext,
-              selectedAddressId: overrideAddressId ?? checkoutContext.selectedAddressId,
-              sessionId: isGuestCheckout ? ensureSessionId() : null,
+              isAuthenticated: isAuthenticated && sessionLive,
+              selectedAddressId: resolvedAddressId,
+              sessionId: submitAsGuest ? ensureSessionId() : null,
             },
             cart: { items, includeCartItemIds: !isBuyNow },
-            guestForm: isGuestCheckout ? guestForm : null,
+            // Keep form so checkout email reaches createOrder for guest and logged-in.
+            guestForm,
             subtotal,
             checkoutHook: checkoutMutations,
-            omiseToken: finalOmiseToken,
+            cardToken: finalCardToken,
+            cardSecurityCodeCipher: finalCardSecurityCodeCipher,
             savedPaymentMethodId: finalSavedPaymentMethodId,
+            saveCard,
           },
           submitGuardRef.current,
         );
@@ -216,27 +226,42 @@ export function useCheckoutSubmit(
           await refetch();
         }
 
-        router.push(result.redirectPath);
+        // Replace checkout so Back cannot open it again after payment has started.
+        router.replace(result.redirectPath);
         // Keep UI locked until unmount/reset so a slow navigation cannot double-submit.
         return true;
       } catch (error) {
+        if (error instanceof SavedCardCvvCancelledError) {
+          return false;
+        }
+
+        if (
+          error instanceof SubmitCheckoutError &&
+          (error.code === 'cart_stale' || error.code === 'price_changed')
+        ) {
+          await refetch();
+        }
+
         const message =
           error instanceof SubmitCheckoutError
             ? error.message
             : getErrorMessage(error, 'ไม่สามารถดำเนินการชำระเงินได้');
 
-        toast.error(message);
+        if (error instanceof SubmitCheckoutError && error.code === 'price_changed') {
+          toast.warning(message);
+        } else {
+          toast.error(message);
+        }
         return false;
       }
     },
     [
-      addPaymentMethod,
       checkoutContext,
       checkoutMutations,
       clearBuyNow,
       guestForm,
+      isAuthenticated,
       isBuyNow,
-      isGuestCheckout,
       items,
       paymentMethod,
       pruneDeselectedIds,
@@ -259,23 +284,34 @@ export function useCheckoutSubmit(
       return;
     }
 
+    if (
+      shouldRedirectCheckoutToLogin({
+        isAuthenticated,
+        hasCachedCustomer: Boolean(customer),
+        addressCount,
+        selectedAddressId,
+      })
+    ) {
+      router.push(checkoutLoginRedirectUrl());
+      return;
+    }
+
     if (isAuthInlineMode) {
       if (!guestForm) {
         toast.error('กรุณากรอกข้อมูลการจัดส่ง');
         return;
       }
 
-      const validation = validateAuthInlineShippingForm(guestForm);
-      if (!validation.valid) {
-        addressSubmitContext?.setShowFieldErrors(true);
-        addressSubmitContext?.setFieldErrors(validation.errors);
-        toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
+      if (!addressSubmitContext) {
+        toast.error('ไม่สามารถโหลดที่อยู่ได้ กรุณาลองอีกครั้ง');
         return;
       }
 
-      const createAddress = addressSubmitContext?.createAddress;
-      if (!createAddress) {
-        toast.error('ไม่สามารถบันทึกที่อยู่ได้');
+      const validation = validateAuthInlineShippingForm(guestForm);
+      if (!validation.valid) {
+        addressSubmitContext.setShowFieldErrors(true);
+        addressSubmitContext.setFieldErrors(validation.errors);
+        toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
         return;
       }
 
@@ -283,6 +319,19 @@ export function useCheckoutSubmit(
         return;
       }
 
+      if (!addressSubmitContext.saveAddressChecked) {
+        try {
+          const ok = await executeSubmit(null);
+          if (!ok) {
+            endSubmitting();
+          }
+        } catch {
+          endSubmitting();
+        }
+        return;
+      }
+
+      const createAddress = addressSubmitContext.createAddress;
       try {
         const created = await createAddress(
           mapGuestFormToCreateAddressInput(guestForm, {
@@ -303,7 +352,8 @@ export function useCheckoutSubmit(
         if (!ok) {
           endSubmitting();
         }
-      } catch {
+      } catch (error) {
+        toast.error(getErrorMessage(error, 'ไม่สามารถบันทึกที่อยู่ได้'));
         endSubmitting();
       }
       return;
@@ -312,6 +362,16 @@ export function useCheckoutSubmit(
     if (isAuthSummaryMode && !selectedAddressId) {
       toast.error('กรุณาเลือกที่อยู่จัดส่ง');
       return;
+    }
+
+    if (isAuthSummaryMode && guestForm) {
+      const emailErrors = validateOptionalCheckoutEmail(guestForm.email);
+      if (Object.keys(emailErrors).length > 0) {
+        addressSubmitContext?.setShowFieldErrors(true);
+        addressSubmitContext?.setFieldErrors(emailErrors);
+        toast.error('กรุณากรอกข้อมูลการจัดส่งให้ครบถ้วน');
+        return;
+      }
     }
 
     if (isGuestCheckout || !isAuthenticated) {
@@ -342,14 +402,17 @@ export function useCheckoutSubmit(
       endSubmitting();
     }
   }, [
+    addressCount,
     addressSubmitContext,
     beginSubmitting,
     canSubmit,
+    customer,
     endSubmitting,
     executeSubmit,
     guestForm,
     isAuthenticated,
     isAuthErrorMode,
+    router,
     isAuthInlineMode,
     isAuthSummaryMode,
     isGuestCheckout,

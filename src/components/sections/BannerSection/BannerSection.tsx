@@ -14,7 +14,7 @@ const isExternalHref = (href: string): boolean => /^https?:\/\//i.test(href);
 function BannerSkeleton() {
   return (
     <div
-      className="w-full aspect-3/4 bg-sop-neutral-gray-600 animate-pulse md:aspect-auto md:h-[480px]"
+      className="w-full aspect-4/3 bg-sop-neutral-gray-600 animate-pulse md:aspect-auto md:h-[480px]"
       aria-hidden="true"
     />
   );
@@ -109,7 +109,7 @@ export function BannerSection({ initialBanners }: BannerSectionProps = {}) {
         onDragStart={preventDragStart}
       >
         <div
-          className={`flex aspect-3/4 transition-transform ease-in-out md:aspect-auto md:h-[480px] ${
+          className={`flex aspect-4/3 transition-transform ease-in-out md:aspect-auto md:h-[480px] ${
             isDragging || !isTransitionEnabled ? 'duration-0' : 'duration-500'
           }`}
           style={{
@@ -143,7 +143,7 @@ export function BannerSection({ initialBanners }: BannerSectionProps = {}) {
                     src={banner.mobile_image_url as string}
                     alt={banner.name || 'แบนเนอร์'}
                     width={768}
-                    height={1024}
+                    height={576}
                     sizes="100vw"
                     className={`${imageClassName} md:hidden`}
                   />

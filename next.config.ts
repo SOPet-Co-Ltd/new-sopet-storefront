@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import type { RemotePattern } from 'next/dist/shared/lib/image-config';
+import { getBeamConnectSrcOrigins, getGraphqlWsConnectSrcOrigins } from './src/lib/config';
 
 function cdnRemotePattern(cdnUrl: string): RemotePattern | null {
   try {
@@ -66,31 +67,48 @@ function imageRemotePatterns(): RemotePattern[] {
   return patterns;
 }
 
-const isLocalDev = process.env.NODE_ENV === 'development';
+/** Exported for unit tests — reads WS env at call time. */
+export function buildProductionCsp(env: NodeJS.ProcessEnv = process.env): string {
+  const wsOrigins = getGraphqlWsConnectSrcOrigins(env);
+  const beamOrigins = getBeamConnectSrcOrigins(env);
+  const connectSrc = [
+    "'self'",
+    ...beamOrigins,
+    'https://www.google-analytics.com',
+    'https://www.googletagmanager.com',
+    'https://*.google-analytics.com',
+    'https://*.analytics.google.com',
+    'https://vercel.live',
+    'https://*.vercel.live',
+    ...wsOrigins,
+  ].join(' ');
 
-const productionCsp = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  // Next.js + Omise.js + GTM/GA + Vercel Preview require script hosts; tighten further when CMP lands.
-  "script-src 'self' 'unsafe-inline' https://cdn.omise.co https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live",
-  "connect-src 'self' https://api.omise.co https://vault.omise.co https://www.google-analytics.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://vercel.live https://*.vercel.live",
-  "frame-src 'self' https://cdn.omise.co https://www.googletagmanager.com https://vercel.live",
-  "form-action 'self'",
-].join('; ');
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    // Next.js + GTM/GA + Vercel Preview require script hosts; tighten further when CMP lands.
+    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live",
+    `connect-src ${connectSrc}`,
+    "frame-src 'self' https://www.googletagmanager.com https://vercel.live",
+    "form-action 'self'",
+  ].join('; ');
+}
 
 const nextConfig: NextConfig = {
   async headers() {
+    // Read NODE_ENV at call time (module load may see Vite's "development").
+    const skipCsp = process.env.NODE_ENV === 'development';
     return [
       {
         source: '/:path*',
         headers: [
           // Skip CSP locally so MinIO/http assets and HMR are unrestricted.
-          ...(isLocalDev ? [] : [{ key: 'Content-Security-Policy', value: productionCsp }]),
+          ...(skipCsp ? [] : [{ key: 'Content-Security-Policy', value: buildProductionCsp() }]),
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',
@@ -138,7 +156,7 @@ const nextConfig: NextConfig = {
     contentDispositionType: 'attachment',
     // Serve original CDN/R2 URLs. Vercel Image Optimization returns 402
     // OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED once the transform quota is hit.
-    // unoptimized: true,
+    unoptimized: true,
   },
 };
 

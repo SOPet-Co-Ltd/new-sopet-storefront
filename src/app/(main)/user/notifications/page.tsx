@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { BellIcon } from '@/components/atoms/icons/inline';
 import { AccountCard } from '@/components/molecules/account/AccountCard';
 import { AccountEmptyState } from '@/components/molecules/account/AccountEmptyState';
@@ -13,6 +15,44 @@ import {
   useMarkNotificationRead,
   useMarkAllNotificationsRead,
 } from '@/lib/hooks/useNotifications';
+
+function OffsetPageControls({
+  page,
+  hasMore,
+  loading,
+  onPageChange,
+}: {
+  page: number;
+  hasMore: boolean;
+  loading: boolean;
+  onPageChange: (page: number) => void;
+}) {
+  if (page <= 1 && !hasMore) {
+    return null;
+  }
+
+  return (
+    <div className="mt-6 flex items-center justify-center gap-4" data-testid="notifications-pager">
+      <button
+        type="button"
+        className="sop-body-sm-medium text-sop-secondary-500 underline disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={loading || page <= 1}
+        onClick={() => onPageChange(page - 1)}
+      >
+        ก่อนหน้า
+      </button>
+      <span className="sop-body-sm-regular text-sop-neutral-gray-300">หน้า {page}</span>
+      <button
+        type="button"
+        className="sop-body-sm-medium text-sop-secondary-500 underline disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={loading || !hasMore}
+        onClick={() => onPageChange(page + 1)}
+      >
+        ถัดไป
+      </button>
+    </div>
+  );
+}
 
 type NotificationTypeConfig = {
   label: string;
@@ -65,7 +105,8 @@ const DEFAULT_NOTIFICATION_TYPE_CONFIG: NotificationTypeConfig = {
 
 export default function UserNotificationsPage() {
   const [tab, setTab] = useState<'all' | 'unread'>('all');
-  const { notifications, loading, refetch } = useNotifications(tab === 'unread');
+  const [page, setPage] = useState(1);
+  const { notifications, loading, refetch, hasMore } = useNotifications(tab === 'unread', page);
   const [markRead] = useMarkNotificationRead();
   const [markAll] = useMarkAllNotificationsRead();
 
@@ -86,7 +127,10 @@ export default function UserNotificationsPage() {
         <div className="flex items-center gap-2">
           <AccountTabBar
             ariaLabel="แท็บการแจ้งเตือน"
-            onValueChange={(value) => setTab(value as 'all' | 'unread')}
+            onValueChange={(value) => {
+              setTab(value as 'all' | 'unread');
+              setPage(1);
+            }}
             tabs={[
               { id: 'all', label: 'ทั้งหมด' },
               { id: 'unread', label: 'ยังไม่อ่าน' },
@@ -129,8 +173,43 @@ export default function UserNotificationsPage() {
           ))
         )}
       </div>
+      <OffsetPageControls
+        page={page}
+        hasMore={Boolean(hasMore)}
+        loading={loading}
+        onPageChange={setPage}
+      />
     </AccountLayout>
   );
+}
+
+function resolveOrderHref(type: string, metadata: string | null): string | null {
+  if (
+    type !== 'order_items_on_hold' &&
+    type !== 'order_items_hold_resumed' &&
+    type !== 'payment_received' &&
+    type !== 'order_status_changed'
+  ) {
+    return null;
+  }
+
+  if (!metadata) {
+    return null;
+  }
+
+  try {
+    const parsed =
+      typeof metadata === 'string'
+        ? (JSON.parse(metadata) as { orderId?: unknown })
+        : (metadata as { orderId?: unknown });
+    if (typeof parsed?.orderId === 'string' && parsed.orderId.length > 0) {
+      return `/user/orders/${parsed.orderId}`;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 function NotificationCard({
@@ -148,32 +227,18 @@ function NotificationCard({
   };
   onMarkRead: () => void;
 }) {
+  const router = useRouter();
   const typeConfig = NOTIFICATION_TYPE_CONFIG[notification.type] ?? {
     ...DEFAULT_NOTIFICATION_TYPE_CONFIG,
     label: notification.type,
   };
-
-  let orderHref: string | null = null;
-  if (
-    notification.type === 'order_items_on_hold' ||
-    notification.type === 'order_items_hold_resumed' ||
-    notification.type === 'payment_received' ||
-    notification.type === 'order_status_changed'
-  ) {
-    try {
-      const parsed = notification.metadata
-        ? (JSON.parse(notification.metadata) as { orderId?: unknown })
-        : null;
-      if (parsed && typeof parsed.orderId === 'string' && parsed.orderId.length > 0) {
-        orderHref = `/user/orders/${parsed.orderId}`;
-      }
-    } catch {
-      orderHref = null;
-    }
-  }
+  const orderHref = resolveOrderHref(notification.type, notification.metadata);
 
   const handleActivate = () => {
-    onMarkRead();
+    void onMarkRead();
+    if (orderHref) {
+      router.push(orderHref);
+    }
   };
 
   return (
@@ -185,7 +250,10 @@ function NotificationCard({
       )}
       onClick={handleActivate}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') handleActivate();
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleActivate();
+        }
       }}
       role="button"
       tabIndex={0}
@@ -214,17 +282,17 @@ function NotificationCard({
             </div>
             <p className="sop-body-sm-regular text-sop-neutral-gray-400">{notification.message}</p>
             {orderHref ? (
-              <a
+              <Link
                 href={orderHref}
                 className="mt-2 inline-flex sop-body-xs-medium text-sop-secondary-500 underline"
                 data-testid={`notification-order-link-${notification.type}`}
                 onClick={(event) => {
                   event.stopPropagation();
-                  onMarkRead();
+                  void onMarkRead();
                 }}
               >
                 ดูคำสั่งซื้อ
-              </a>
+              </Link>
             ) : null}
             <p className="mt-2 sop-body-xs-regular text-sop-neutral-gray-400">
               {formatThaiDateTime(notification.createdAt)}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/atoms/Button';
 import { Modal } from '@/components/atoms/Modal';
+import { StarIcon } from '@/components/atoms/icons/filled/StarIcon';
 import { ReviewImagePicker } from '@/components/molecules/ReviewImagePicker/ReviewImagePicker';
 
 export type ReviewModalItem = {
@@ -149,16 +150,19 @@ function ReviewModalContent({ items, onClose, onSubmit }: ReviewModalContentProp
                 <p className="sop-body-md-medium text-sop-neutral-gray-300">{item.title}</p>
                 <div className="flex items-center gap-2">
                   <span className="sop-body-sm-medium text-sop-primary-500">ให้คะแนน</span>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1">
                     {Array.from({ length: 5 }, (_, index) => (
                       <button
                         key={index}
                         type="button"
                         aria-label={`ให้ ${index + 1} ดาว`}
                         onClick={() => updateItemReview(item.id, 'rating', index + 1)}
-                        className="text-lg"
+                        className="flex items-center justify-center p-0.5 cursor-pointer transition-transform hover:scale-110"
                       >
-                        {index < entry.rating ? '★' : '☆'}
+                        <StarIcon
+                          color={index < entry.rating ? '#ffb514' : '#949495'}
+                          size={{ mobile: 20, desktop: 20 }}
+                        />
                       </button>
                     ))}
                   </div>

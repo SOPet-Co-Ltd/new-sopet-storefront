@@ -100,7 +100,8 @@ describe('CategoryPLP search taxonomy layout', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'dog-food' })).toBeInTheDocument();
     expect(await screen.findByText('Premium Dog Food 5kg')).toBeInTheDocument();
-    expect(productsVariables).toMatchObject({ category: 'Dog Food' });
+    // SSR first page is reused; no duplicate Products refetch while params are unchanged.
+    expect(productsVariables).toBeUndefined();
   });
 
   it('shows empty state for unknown slug without unfiltered products query (AC-026)', async () => {
@@ -133,5 +134,46 @@ describe('CategoryPLP search taxonomy layout', () => {
     expect(screen.queryByTestId('product-listing')).not.toBeInTheDocument();
     expect(screen.getByTestId('search-filter-sidebar')).toBeInTheDocument();
     expect(productsRequested).toBe(false);
+  });
+
+  it('keeps SSR listing when client categories miss the slug but categoryFilter was provided', async () => {
+    let productsVariables: Record<string, unknown> | undefined;
+
+    server.use(
+      graphql.query('ApprovedCategories', () =>
+        HttpResponse.json({ data: { approvedCategories: sampleCategories } }),
+      ),
+      graphql.query('ApprovedPetTypes', () =>
+        HttpResponse.json({ data: { approvedPetTypes: samplePetTypes } }),
+      ),
+      graphql.query('Products', ({ variables }) => {
+        productsVariables = variables;
+        return HttpResponse.json({
+          data: {
+            products: {
+              items: [sampleProductCard],
+              pagination: { page: 1, limit: 24, total: 1, totalPages: 1 },
+            },
+          },
+        });
+      }),
+    );
+
+    render(
+      <CategoryPLP
+        categorySlug="บ้าน-กรง-และที่นอน"
+        categoryFilter="บ้าน กรง และที่นอน"
+        categoryName="บ้าน กรง และที่นอน"
+        initialProducts={[sampleProductCard]}
+        initialTotal={1}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByTestId('product-listing')).toBeInTheDocument();
+    expect(screen.getByText('Premium Dog Food 5kg')).toBeInTheDocument();
+    expect(screen.queryByText('ไม่พบสินค้าในหมวดหมู่นี้')).not.toBeInTheDocument();
+    // SSR first page is reused; no duplicate Products refetch while params are unchanged.
+    expect(productsVariables).toBeUndefined();
   });
 });

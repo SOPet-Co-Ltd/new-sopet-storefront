@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Button } from '@/components/atoms/Button';
+import { cn } from '@/lib/utils';
 
 type RenderReviewFilterButtonsProps = {
   starCounts: {
@@ -13,15 +13,25 @@ type RenderReviewFilterButtonsProps = {
     5: number;
   };
   totalReviews: number;
+  withImageCount: number;
+  withCommentCount: number;
   selectedRating?: string | null;
   onFilterChange?: (value: string | null) => void;
 };
 
 const RATING_QUERY_KEY = 'prf';
 
+function formatReviewCount(count: number): string {
+  if (count < 1000) return String(count);
+  const k = count / 1000;
+  return `${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}K`;
+}
+
 export function RenderReviewFilterButtons({
   starCounts,
   totalReviews,
+  withImageCount,
+  withCommentCount,
   selectedRating: controlledRating,
   onFilterChange,
 }: RenderReviewFilterButtonsProps) {
@@ -36,23 +46,23 @@ export function RenderReviewFilterButtons({
   const { allFilter, starFilters, miscFilters } = useMemo(() => {
     const starFilterButtons = [5, 4, 3, 2, 1].map((rating) => ({
       value: String(rating),
-      label: `${rating} ดาว ${starCounts[rating as 1 | 2 | 3 | 4 | 5]}`,
+      label: `${rating} ดาว (${formatReviewCount(starCounts[rating as 1 | 2 | 3 | 4 | 5])})`,
     }));
 
     const miscFilterButtons = [
-      { value: 'oc', label: 'เฉพาะความคิดเห็น' },
-      { value: 'wi', label: 'มีรูปภาพ' },
+      { value: 'wi', label: `มีรูปภาพ (${formatReviewCount(withImageCount)})` },
+      { value: 'oc', label: `ความคิดเห็น (${formatReviewCount(withCommentCount)})` },
     ];
 
     return {
       allFilter: {
         value: null as string | null,
-        label: `รีวิวทั้งหมด (${totalReviews})`,
+        label: `ทั้งหมด (${formatReviewCount(totalReviews)})`,
       },
       starFilters: starFilterButtons,
       miscFilters: miscFilterButtons,
     };
-  }, [starCounts, totalReviews]);
+  }, [starCounts, totalReviews, withImageCount, withCommentCount]);
 
   const handleFilterClick = useCallback(
     (value: string | null) => {
@@ -81,47 +91,54 @@ export function RenderReviewFilterButtons({
     [onFilterChange, selectedRating],
   );
 
+  const getButtonClass = (isActive: boolean) =>
+    cn(
+      'inline-flex h-[36px] items-center justify-center rounded-sop-12px px-5 py-2 sop-body-sm-medium transition-colors cursor-pointer border-[1.2px]',
+      isActive
+        ? 'bg-sop-primary-100 text-sop-primary-500 border-sop-primary-500'
+        : 'bg-sop-neutral-gray-500 text-sop-neutral-gray-200 border-transparent hover:bg-sop-neutral-grayalpha-200',
+    );
+
   return (
-    <div className="flex flex-col lg:gap-4 gap-3 flex-wrap">
-      <div className="flex gap-4 lg:gap-y-4 gap-y-3 flex-wrap">
-        <Button
+    <div className="flex flex-col gap-3">
+      {/* Row 1: All + misc filters */}
+      <div className="flex gap-3 flex-wrap">
+        <button
           type="button"
           onClick={() => handleFilterClick(allFilter.value)}
-          variant={selectedRating === allFilter.value ? 'secondary' : 'neutral'}
-          size="sm"
+          className={getButtonClass(selectedRating === allFilter.value)}
         >
           {allFilter.label}
-        </Button>
+        </button>
 
-        {starFilters.map((filter) => {
+        {miscFilters.map((filter) => {
           const isActive = selectedRating === filter.value;
           return (
-            <Button
+            <button
               key={filter.value}
               type="button"
               onClick={() => handleFilterClick(filter.value)}
-              variant={isActive ? 'secondary' : 'neutral'}
-              size="sm"
+              className={getButtonClass(isActive)}
             >
               {filter.label}
-            </Button>
+            </button>
           );
         })}
       </div>
 
-      <div className="flex gap-4">
-        {miscFilters.map((filter) => {
+      {/* Row 2+: Star filters */}
+      <div className="flex gap-3 flex-wrap">
+        {starFilters.map((filter) => {
           const isActive = selectedRating === filter.value;
           return (
-            <Button
+            <button
               key={filter.value}
               type="button"
               onClick={() => handleFilterClick(filter.value)}
-              variant={isActive ? 'secondary' : 'neutral'}
-              size="sm"
+              className={getButtonClass(isActive)}
             >
               {filter.label}
-            </Button>
+            </button>
           );
         })}
       </div>

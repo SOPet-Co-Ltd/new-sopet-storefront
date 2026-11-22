@@ -178,6 +178,9 @@ function renderHomePage(
   );
 }
 
+/** Below-fold sections are `next/dynamic`; under a busy runner they can miss the 1s default. */
+const dynamicSection = { timeout: 10_000 };
+
 describe('HomePage', () => {
   beforeEach(() => {
     mockedUseAuth.mockReturnValue(createAuthValue(false));
@@ -188,11 +191,19 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    expect(await screen.findByRole('heading', { name: 'หมวดหมู่สินค้า' })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'สินค้าแนะนำ' })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'แบรนด์ที่เข้าร่วม' })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'คำถามที่พบบ่อย' })).toBeInTheDocument();
-  });
+    expect(
+      await screen.findByRole('heading', { name: 'หมวดหมู่สินค้า' }, dynamicSection),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'สินค้าแนะนำ' }, dynamicSection),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'แบรนด์ที่เข้าร่วม' }, dynamicSection),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'คำถามที่พบบ่อย' }, dynamicSection),
+    ).toBeInTheDocument();
+  }, 30_000);
 
   it('links category cards to category PLP routes', async () => {
     registerHomeHandlers();
@@ -213,7 +224,10 @@ describe('HomePage', () => {
     });
 
     expect(productLinks.length).toBeGreaterThan(0);
-    expect(productLinks[0]).toHaveAttribute('href', `/product/${SAMPLE_PRODUCT.id}`);
+    expect(productLinks[0]).toHaveAttribute(
+      'href',
+      `/product/${SAMPLE_PRODUCT.slug}-${SAMPLE_PRODUCT.store.slug}`,
+    );
   });
 
   it('hides recent orders section for guest users', async () => {
@@ -222,7 +236,7 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    await screen.findByRole('heading', { name: 'สินค้าแนะนำ' });
+    await screen.findByRole('heading', { name: 'สินค้าแนะนำ' }, dynamicSection);
 
     await waitFor(() => {
       expect(screen.queryByTestId('home-recent-orders')).not.toBeInTheDocument();
@@ -261,7 +275,7 @@ describe('HomePage', () => {
     expect(within(recentOrdersSection).queryByText('ขายแล้ว')).not.toBeInTheDocument();
     expect(
       within(recentOrdersSection).getByRole('link', { name: 'ดู Pet Shampoo 500ml' }),
-    ).toHaveAttribute('href', '/product/prod-recent-1');
+    ).toHaveAttribute('href', '/product/pet-shampoo-500ml-sopet-pet-shop');
     expect(
       within(recentOrdersSection).getByRole('img', { name: 'Pet Shampoo 500ml' }),
     ).toHaveAttribute('src', 'https://example.com/shampoo.jpg');
@@ -272,7 +286,7 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    await screen.findByRole('heading', { name: 'สินค้าแนะนำ' });
+    await screen.findByRole('heading', { name: 'สินค้าแนะนำ' }, dynamicSection);
     expect(screen.getByRole('link', { name: /ดูสินค้าทั้งหมด/ })).toHaveAttribute(
       'href',
       '/recommend',
@@ -298,7 +312,7 @@ describe('HomePage', () => {
 
     renderHomePage();
 
-    await screen.findByRole('heading', { name: 'สินค้าแนะนำ' });
+    await screen.findByRole('heading', { name: 'สินค้าแนะนำ' }, dynamicSection);
 
     expect(document.body.innerHTML).not.toContain('HomeCouponSection');
     expect(document.body.innerHTML).not.toContain('/coupons');

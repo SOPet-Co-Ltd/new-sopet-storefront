@@ -581,6 +581,18 @@ describe('storePromotionUtils', () => {
       });
     });
 
+    it('shows fallback warning for UNKNOWN when condition text is empty', () => {
+      const promo: StorePromotion = {
+        ...promotionWithConditions,
+        id: 'promo-plain',
+        code: 'PLAIN',
+        minPurchaseAmount: null,
+        conditions: null,
+      };
+      const warning = getUnavailablePromotionWarning('UNKNOWN', promo, 500);
+      expect(warning).toBe('ยังใช้โปรโมชันนี้ไม่ได้ในขณะนี้');
+    });
+
     it('never moves batch soft-ineligible into available even when reason absent', () => {
       const merged = mergeListTimeEligibility(
         [availablePromo],

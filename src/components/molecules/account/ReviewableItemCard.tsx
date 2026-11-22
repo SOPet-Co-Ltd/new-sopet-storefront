@@ -23,7 +23,7 @@ export function ReviewableItemCard({ item, onWriteReview }: ReviewableItemCardPr
   return (
     <AccountCard>
       <div className="flex gap-4" data-testid="reviewable-item-card">
-        <div className="relative aspect-square h-20 w-20 flex-shrink-0 overflow-hidden rounded-sop-8px bg-sop-neutral-gray-500">
+        <div className="relative aspect-square h-20 w-20 flex-shrink-0 overflow-hidden rounded-sop-12px bg-sop-neutral-gray-500">
           {item.productImageUrl ? (
             <Image
               alt={item.productName}

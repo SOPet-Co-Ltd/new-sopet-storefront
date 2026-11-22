@@ -9,6 +9,7 @@ import {
   OrdersDocument,
   PaymentMethodsDocument,
 } from '@/lib/graphql/generated/graphql';
+import { FAVORITES_PAGE_SIZE, NOTIFICATIONS_PAGE_SIZE } from '@/lib/constants/listPageSize';
 import { ORDERS_PAGE_SIZE } from '@/lib/constants/orderListFilters';
 import { getApolloClient } from '@/lib/graphql/client';
 import {
@@ -30,7 +31,9 @@ const ACCOUNT_PREFETCH_SPECS: Record<string, AccountPrefetchSpec[] | null> = {
     },
   ],
   '/user/addresses': [{ query: AddressesDocument }],
-  '/user/favorites': [{ query: FavoritesDocument }],
+  '/user/favorites': [
+    { query: FavoritesDocument, variables: { page: 1, limit: FAVORITES_PAGE_SIZE } },
+  ],
   '/user/reviews': [
     { query: CustomerReviewableItemsDocument },
     {
@@ -41,7 +44,12 @@ const ACCOUNT_PREFETCH_SPECS: Record<string, AccountPrefetchSpec[] | null> = {
       },
     },
   ],
-  '/user/notifications': [{ query: NotificationsDocument, variables: { unreadOnly: false } }],
+  '/user/notifications': [
+    {
+      query: NotificationsDocument,
+      variables: { unreadOnly: false, page: 1, limit: NOTIFICATIONS_PAGE_SIZE },
+    },
+  ],
   '/user/credit': [{ query: PaymentMethodsDocument }],
   '/user/delete': null,
 };

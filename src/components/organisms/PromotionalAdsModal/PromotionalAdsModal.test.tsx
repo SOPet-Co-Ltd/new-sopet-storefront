@@ -154,4 +154,20 @@ describe('PromotionalAdsModal', () => {
 
     expect(localStorage.getItem(ADS_DISMISS_STORAGE_KEY)).not.toBeNull();
   });
+
+  it('dismisses the modal when the overlay is clicked', async () => {
+    const user = userEvent.setup();
+
+    render(<PromotionalAdsModal />, { wrapper: createWrapper() });
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('modal-overlay'));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    expect(localStorage.getItem(ADS_DISMISS_STORAGE_KEY)).not.toBeNull();
+  });
 });

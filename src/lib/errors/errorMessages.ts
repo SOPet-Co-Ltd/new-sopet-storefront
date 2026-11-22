@@ -27,6 +27,10 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.CARD_TOKEN_REQUIRED]: 'กรุณากรอกข้อมูลบัตรให้ครบถ้วน',
   [ERROR_CODES.CART_IDENTITY_REQUIRED]: 'ไม่สามารถระบุตะกร้าสินค้าได้ กรุณาลองใหม่อีกครั้ง',
   [ERROR_CODES.CART_ITEM_NOT_FOUND]: 'ไม่พบรายการในตะกร้า',
+  [ERROR_CODES.CART_ITEMS_MISMATCH]:
+    'รายการในตะกร้าไม่ตรงกับสรุปคำสั่งซื้อ กรุณาตรวจสอบตะกร้าแล้วลองอีกครั้ง',
+  [ERROR_CODES.CART_ITEMS_STALE]:
+    'มีรายการถูกลบออกจากตะกร้าแล้ว กรุณาตรวจสอบสรุปคำสั่งซื้ออีกครั้ง',
   [ERROR_CODES.CATEGORY_IMAGE_REQUIRED]: 'ต้องอัปโหลดรูปภาพหมวดหมู่ก่อนอนุมัติ',
   [ERROR_CODES.CATEGORY_NOT_APPROVED]: 'หมวดหมู่ยังไม่ได้รับอนุมัติ',
   [ERROR_CODES.CATEGORY_NOT_FOUND]: 'ไม่พบหมวดหมู่',
@@ -152,6 +156,8 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.ORDER_NOT_PAYABLE]:
     'คำสั่งซื้อนี้หมดเวลาชำระเงินแล้ว หรือถูกยกเลิกแล้ว กรุณาทำรายการสั่งซื้อใหม่',
   [ERROR_CODES.ORDER_NOT_REVIEWABLE]: 'ยังไม่สามารถรีวิวคำสั่งซื้อนี้ได้',
+  [ERROR_CODES.ORDER_REVIEWED_CANNOT_CANCEL]:
+    'ไม่สามารถยกเลิกหรือคืนเงินได้ เนื่องจากคำสั่งซื้อนี้มีการรีวิวแล้ว',
   [ERROR_CODES.OWNER_REQUIRED]: 'ต้องมีเจ้าของร้าน',
   [ERROR_CODES.PAYLOAD_TOO_LARGE]: 'ไฟล์หรือข้อมูลมีขนาดใหญ่เกินไป',
   [ERROR_CODES.PAYMENT_HELD_PORTION_BLOCKED]:
@@ -177,6 +183,7 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.PRODUCT_NOT_IN_ORDER]: 'สินค้าไม่อยู่ในคำสั่งซื้อนี้',
   [ERROR_CODES.PRODUCT_NOT_IN_STORE]: 'สินค้าไม่อยู่ในร้านนี้',
   [ERROR_CODES.PRODUCT_NOT_PUBLISHABLE]: 'ยังไม่สามารถเผยแพร่สินค้าได้ กรุณาเติมข้อมูลให้ครบ',
+  [ERROR_CODES.PRICE_CHANGED]: 'ราคาสินค้ามีการเปลี่ยนแปลง กรุณาตรวจสอบยอดรวมใหม่ก่อนชำระเงิน',
   [ERROR_CODES.PRODUCT_STORE_MISMATCH]: 'สินค้าไม่ตรงกับร้านค้า',
   [ERROR_CODES.PROMOTION_CUSTOMER_LIMIT]: 'คุณใช้โค้ดส่วนลดนี้ครบจำนวนครั้งแล้ว',
   [ERROR_CODES.PROMOTION_EXPIRED]: 'โค้ดส่วนลดหมดอายุแล้ว',
@@ -309,6 +316,8 @@ const CODE_GROUPS: Record<string, ErrorCode[]> = {
     ERROR_CODES.ADDRESS_NOT_FOUND,
     ERROR_CODES.CART_IDENTITY_REQUIRED,
     ERROR_CODES.CART_ITEM_NOT_FOUND,
+    ERROR_CODES.CART_ITEMS_MISMATCH,
+    ERROR_CODES.CART_ITEMS_STALE,
     ERROR_CODES.GUEST_PHONE_REQUIRED,
     ERROR_CODES.INSUFFICIENT_STOCK,
     ERROR_CODES.INVALID_ADDRESS,
@@ -317,6 +326,7 @@ const CODE_GROUPS: Record<string, ErrorCode[]> = {
     ERROR_CODES.MULTI_VENDOR_ORDER,
     ERROR_CODES.NO_STORE_ITEMS,
     ERROR_CODES.ORDER_CONTAINS_SUSPENDED_STORE,
+    ERROR_CODES.PRICE_CHANGED,
     ERROR_CODES.PRODUCT_NOT_FOUND,
     ERROR_CODES.PRODUCT_NOT_IN_STORE,
     ERROR_CODES.PRODUCT_STORE_MISMATCH,
@@ -354,6 +364,7 @@ const CODE_GROUPS: Record<string, ErrorCode[]> = {
     ERROR_CODES.ORDER_NOT_FULLY_SHIPPED,
     ERROR_CODES.ORDER_NOT_PAYABLE,
     ERROR_CODES.ORDER_NOT_REVIEWABLE,
+    ERROR_CODES.ORDER_REVIEWED_CANNOT_CANCEL,
     ERROR_CODES.PAYMENT_HELD_PORTION_BLOCKED,
     ERROR_CODES.PAYMENT_METHOD_ALREADY_EXISTS,
     ERROR_CODES.PAYMENT_METHOD_NOT_FOUND,

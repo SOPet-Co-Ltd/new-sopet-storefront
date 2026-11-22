@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { RenderStars } from '@/components/molecules/RenderStars/RenderStars';
 import { SellerStoreReviewList } from '@/components/molecules/SellerStoreReviewList/SellerStoreReviewList';
+import { STORE_REVIEWS_PAGE_SIZE } from '@/lib/constants/listPageSize';
 import { useReviews } from '@/lib/hooks/useReviews';
 
 type SellerReviewTabProps = {
   storeId: string;
+  storeSlug: string;
 };
 
 function SellerReviewTabSkeleton() {
@@ -46,7 +48,7 @@ function SellerScorePanel({
   );
 }
 
-export function SellerReviewTab({ storeId }: SellerReviewTabProps) {
+export function SellerReviewTab({ storeId, storeSlug }: SellerReviewTabProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const {
     storeReviewSummary,
@@ -55,7 +57,11 @@ export function SellerReviewTab({ storeId }: SellerReviewTabProps) {
     storeReviewsLoading,
     storeReviewsError,
     refetchStoreReviews,
-  } = useReviews({ storeId });
+  } = useReviews({
+    storeId,
+    storePage: currentPage,
+    storeLimit: STORE_REVIEWS_PAGE_SIZE,
+  });
 
   if (storeReviewSummaryLoading && storeReviewsLoading) {
     return <SellerReviewTabSkeleton />;
@@ -96,7 +102,9 @@ export function SellerReviewTab({ storeId }: SellerReviewTabProps) {
         ) : (
           <SellerStoreReviewList
             reviews={storeReviews}
+            storeSlug={storeSlug}
             currentPage={currentPage}
+            totalCount={summary?.totalCount ?? 0}
             onPageChange={setCurrentPage}
           />
         )}

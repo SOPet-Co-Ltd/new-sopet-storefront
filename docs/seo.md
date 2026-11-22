@@ -34,8 +34,17 @@ Non-indexable pages still render `follow: true` (except search) so link equity f
 
 **File:** `src/lib/seo/json-ld.ts` · **Component:** `src/components/seo/JsonLdScript.tsx`
 
-- `buildProductJsonLd()` — `Product` schema with `Offer` (price from server-fetched data only, never client variant-selection state), `AggregateRating` when reviews exist
+- `buildProductJsonLd(product, pageUrl, reviews?)` — `Product` schema with:
+  - `Offer` (price from server-fetched data only, never client variant-selection state; includes `seller` when the store is present)
+  - `brand` when `brandName` is present (approved catalog brand)
+  - `AggregateRating` when `reviewCount > 0` (`bestRating: 5`, `worstRating: 1`)
+  - up to 4 `Review` entries from the server-fetched review list (matches the PDP’s initial visible count)
+- `buildFaqJsonLd()` — `FAQPage` from `HOME_FAQ_ITEMS`, emitted on the homepage only (product pages may still show the FAQ UI without duplicating FAQ schema)
+- `buildWebPageJsonLd()` — policy and regulatory pages (`/policy/*`, `/security`) via `PolicyMarkdownLayout`, with breadcrumbs
+- `buildCollectionPageJsonLd()` — indexable category listings, with breadcrumbs
 - `buildOrganizationJsonLd()`, `buildWebSiteJsonLd()` (includes `SearchAction` for sitelinks search box), `buildBreadcrumbJsonLd()`
+
+Product pages SSR-fetch `productReviews` alongside the product so review text is in the first HTML and in JSON-LD. A review-query failure still renders the product page and omits the `review` array.
 
 `JsonLdScript` renders `<script type="application/ld+json">`, escaping `<` and returning `null` for empty payloads.
 
@@ -43,7 +52,7 @@ Non-indexable pages still render `follow: true` (except search) so link equity f
 
 **File:** `src/app/sitemap.ts` → `src/lib/seo/sitemap-sources.ts`
 
-`collectSitemapUrls()` combines the home page, all `POLICY_PATHS`, and GraphQL-backed approved categories, published products, and approved stores (fetched in parallel via `src/lib/seo/fetch.ts`). If a GraphQL source fails, its URLs are omitted rather than failing the whole sitemap. Revalidates hourly (`revalidate = 3600`).
+`collectSitemapUrls()` combines the home page, all `POLICY_PATHS`, `REGULATORY_PATHS` (e.g. `/security`), and GraphQL-backed approved categories, published products, and approved stores (fetched in parallel via `src/lib/seo/fetch.ts`). If a GraphQL source fails, its URLs are omitted rather than failing the whole sitemap. Revalidates hourly (`revalidate = 3600`).
 
 ## Robots
 
@@ -55,7 +64,7 @@ Disallows account, auth, cart, checkout, payment, order-tracking, order-confirma
 
 **File:** `src/app/llms.txt/route.ts`
 
-Plain-text route handler describing the site to LLM crawlers: key URLs, policy links, URL patterns, and a note that search/checkout/account/order-tracking are not intended for indexing. Revalidates daily (`revalidate = 86400`).
+Plain-text route handler describing the site to LLM crawlers: home URL, live approved categories from GraphQL (`fetchApprovedCategories`), policy links, trust/security links (`REGULATORY_PATHS`), URL patterns, and notes that search/checkout/account/order-tracking are not intended for indexing and that each product page carries that product’s rating and reviews. If the category fetch fails, category lines are omitted. Revalidates daily (`revalidate = 86400`).
 
 ## Related docs
 

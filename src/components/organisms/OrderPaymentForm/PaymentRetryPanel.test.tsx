@@ -1,10 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaymentRetryPanel } from './PaymentRetryPanel';
 import { PaymentFailedState } from './PaymentFailedState';
 import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
+import { tokenizeCard } from '@/lib/payment/beam';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from '@/test/mocks/server';
 
@@ -33,13 +36,25 @@ vi.mock('@/lib/hooks/usePaymentMethods', () => ({
   })),
 }));
 
-vi.mock('@/lib/payment/omise', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/payment/omise')>('@/lib/payment/omise');
+vi.mock('@/lib/payment/beam', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/payment/beam')>('@/lib/payment/beam');
   return {
     ...actual,
     tokenizeCard: vi.fn(),
   };
 });
+
+vi.mock('@/lib/payment/cardTransport', () => ({
+  encryptCardSecurityCodeTransport: vi.fn(async (cvv: string) => `rsa:v1:cvv-${cvv}`),
+  encryptCardTransportPayload: vi.fn(async () => 'rsa:v1:card-cipher'),
+}));
+
+vi.mock('@/lib/payment/saveCard', () => ({
+  buildSaveCardPayload: vi.fn(async () => ({
+    cardCipher: 'rsa:v1:card-cipher',
+    isDefault: true,
+  })),
+}));
 
 function renderWithApollo(ui: React.ReactElement) {
   const Wrapper = createApolloTestWrapper();
@@ -56,7 +71,7 @@ describe('PaymentRetryPanel', () => {
 
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /QR Code \/ PromptPay/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByTestId('payment-method-bank_transfer')).not.toBeInTheDocument();
@@ -137,7 +152,7 @@ describe('PaymentRetryPanel', () => {
     renderWithApollo(<PaymentRetryPanel hidePromptPay />);
 
     expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
   });
 
   it('heading uses text-gray-900 for AA contrast (UI Spec lock)', () => {
@@ -272,5 +287,126 @@ describe('PaymentWaitingAfterReturnState entry (collapsed)', () => {
 
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
     expect(screen.queryByTestId('payment-retry-stub')).not.toBeInTheDocument();
+  });
+});
+
+describe('PaymentRetryPanel saved card CVV', () => {
+  const savedMethod = {
+    id: 'saved-card-1',
+    brand: 'visa',
+    lastFour: '4242',
+    expiryMonth: 12,
+    expiryYear: 2030,
+    isDefault: true,
+    psp: 'beam',
+  };
+
+  beforeEach(() => {
+    vi.mocked(useAuth).mockReturnValue({
+      customer: null,
+      isAuthenticated: true,
+      isLoading: false,
+      pendingDeletion: false,
+      sendOtp: vi.fn(),
+      verifyOtp: vi.fn(),
+      reactivateAccount: vi.fn(),
+      logout: vi.fn(),
+    } as unknown as ReturnType<typeof useAuth>);
+    vi.mocked(usePaymentMethods).mockReturnValue({
+      paymentMethods: [savedMethod],
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+      addPaymentMethod: vi.fn(),
+      deletePaymentMethod: vi.fn(),
+      setDefaultPaymentMethod: vi.fn(),
+    } as unknown as ReturnType<typeof usePaymentMethods>);
+  });
+
+  afterEach(() => {
+    vi.mocked(useAuth).mockReset();
+    vi.mocked(usePaymentMethods).mockReset();
+  });
+
+  it('opens CVV modal for a saved card and submits CVV with savedPaymentMethodId', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    renderWithApollo(<PaymentRetryPanel onSubmit={onSubmit} amountLabel="฿907.00" />);
+
+    await user.click(screen.getByTestId('payment-method-card'));
+    expect(screen.queryByTestId('saved-card-cvv-input')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
+    expect(await screen.findByTestId('saved-card-cvv-modal')).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    await user.type(screen.getByTestId('saved-card-cvv-modal-input'), '456');
+    await user.click(screen.getByTestId('saved-card-cvv-modal-confirm'));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        paymentMethod: 'credit_card',
+        savedPaymentMethodId: 'saved-card-1',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-456',
+      }),
+    );
+  });
+
+  it('passes saveCard with new-card tokenize and does not call addPaymentMethod', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const addPaymentMethod = vi.fn();
+    vi.mocked(tokenizeCard).mockResolvedValue({
+      cardToken: 'beam_tok_retry',
+      lastFour: '4242',
+      brand: 'visa',
+      expiryMonth: 12,
+      expiryYear: 2030,
+    });
+    vi.mocked(usePaymentMethods).mockReturnValue({
+      paymentMethods: [],
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+      addPaymentMethod,
+      deletePaymentMethod: vi.fn(),
+      setDefaultPaymentMethod: vi.fn(),
+    } as unknown as ReturnType<typeof usePaymentMethods>);
+    vi.mocked(useAuth).mockReturnValue({
+      customer: null,
+      isAuthenticated: true,
+      isLoading: false,
+      pendingDeletion: false,
+      sendOtp: vi.fn(),
+      verifyOtp: vi.fn(),
+      reactivateAccount: vi.fn(),
+      logout: vi.fn(),
+    } as unknown as ReturnType<typeof useAuth>);
+
+    renderWithApollo(<PaymentRetryPanel onSubmit={onSubmit} initialPaymentMethod="card" />);
+
+    await user.type(screen.getByTestId('card-number-input'), '4242424242424242');
+    await user.type(screen.getByTestId('card-name-input'), 'Test User');
+    await user.type(screen.getByTestId('card-expiry-input'), '12/30');
+    await user.type(screen.getByTestId('card-cvv-input'), '123');
+    await user.click(
+      screen.getByRole('checkbox', { name: 'บันทึกไว้ใช้ครั้งถัดไป และตั้งเป็นค่าเริ่มต้น' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        paymentMethod: 'credit_card',
+        cardToken: 'beam_tok_retry',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-123',
+        saveCard: {
+          cardCipher: 'rsa:v1:card-cipher',
+          isDefault: true,
+        },
+      }),
+    );
+    expect(JSON.stringify(onSubmit.mock.calls[0]?.[0])).not.toContain('4242424242424242');
+    expect(addPaymentMethod).not.toHaveBeenCalled();
   });
 });

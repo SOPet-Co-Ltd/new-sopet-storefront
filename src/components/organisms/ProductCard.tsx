@@ -2,10 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
 import { StarIcon } from '@/components/atoms/icons/filled/StarIcon';
 import { prefetchProductById } from '@/lib/catalog/prefetchProduct';
 import type { ProductListItem } from '@/lib/hooks/useProducts';
+import { buildProductHref } from '@/lib/routing/productRoutes';
 
 export type ProductCardProduct = Pick<
   ProductListItem,
@@ -18,6 +18,7 @@ export type ProductCardProduct = Pick<
   | 'averageRating'
   | 'reviewCount'
   | 'soldCount'
+  | 'store'
 > & {
   storeId?: string;
   /** Present on list/card queries; used to show min variant price when basePrice is 0. */
@@ -102,10 +103,6 @@ type ProductCardProps = {
   /** Pre-resolved campaign sale unit; when set, used as the highlighted payable price. */
   campaignSalePrice?: number | null;
 };
-
-function buildProductHref(productId: string): string {
-  return `/product/${productId}`;
-}
 
 function formatPrice(amount: number): string {
   return `฿${amount.toLocaleString('th-TH', {
@@ -246,31 +243,12 @@ export default function ProductCard({
   campaignCompareAt = null,
   campaignSalePrice = null,
 }: ProductCardProps) {
-  const href = buildProductHref(product.id);
+  const href = buildProductHref(product, { encode: true });
   const catalogPrice = getProductCardDisplayPrice(product);
   const displayPrice =
     campaignSalePrice != null && campaignSalePrice > 0 ? campaignSalePrice : catalogPrice;
   const compareAtPrice = getProductCardCompareAtPrice(product, campaignCompareAt);
   const discountPercent = getDiscountPercent(displayPrice, compareAtPrice);
-  const cardRef = useRef<HTMLAnchorElement>(null);
-
-  useEffect(() => {
-    const element = cardRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          prefetchProductById(product.id);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [product.id]);
 
   const handlePrefetch = () => {
     prefetchProductById(product.id);
@@ -280,7 +258,6 @@ export default function ProductCard({
 
   return (
     <Link
-      ref={cardRef}
       href={href}
       prefetch
       aria-label={`ดู ${product.name}`}
@@ -292,8 +269,8 @@ export default function ProductCard({
       onFocus={handlePrefetch}
     >
       <div
-        className={`flex flex-col gap-2 overflow-hidden rounded-sop-16px bg-sop-base-white ${
-          compact ? 'pb-4' : 'pb-4 md:rounded-sop-24px md:pb-5'
+        className={`flex flex-col gap-2 overflow-hidden rounded-sop-8px bg-sop-base-white ${
+          compact ? 'pb-4' : 'pb-4 md:pb-5'
         } ${cardWidthClass}`}
       >
         <ProductCardImage
@@ -324,4 +301,4 @@ export default function ProductCard({
   );
 }
 
-export { buildProductHref };
+export { buildProductHref } from '@/lib/routing/productRoutes';

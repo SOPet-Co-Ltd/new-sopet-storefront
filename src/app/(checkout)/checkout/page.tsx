@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckoutErrorToast } from '@/components/atoms/CheckoutErrorToast/CheckoutErrorToast';
 import { CheckoutMobileBottomBar } from '@/components/molecules/CheckoutMobileBottomBar/CheckoutMobileBottomBar';
+import { CheckoutProcessingShield } from '@/components/molecules/CheckoutProcessingShield/CheckoutProcessingShield';
 import { CheckoutPaymentSelection } from '@/components/molecules/CheckoutPaymentSelection/CheckoutPaymentSelection';
 import { CheckoutSummarySection } from '@/components/molecules/CheckoutSummarySection/CheckoutSummarySection';
 import { CheckoutPromotionSection } from '@/components/sections/CheckoutPromotionSection/CheckoutPromotionSection';
@@ -24,6 +25,7 @@ import { clearAutoApplyAttempted } from '@/lib/checkout/autoApplyOnceGate';
 import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useCheckoutCardPaymentReady } from '@/lib/hooks/useCheckoutCardPaymentReady';
 import {
   BUY_NOW_CHECKOUT_MODE,
   useCheckoutCartSelection,
@@ -147,6 +149,8 @@ export default function CheckoutPage() {
   const { handleSubmit, isSubmitting, canSubmit } = useCheckoutSubmit(guestForm, {
     addressSubmitContext,
   });
+  const cardPaymentReady = useCheckoutCardPaymentReady();
+  const canPay = canSubmit && cardPaymentReady;
 
   const handleGuestFormChange = (field: keyof GuestCheckoutFormState, value: string) => {
     setGuestForm((prev) => ({ ...prev, [field]: value }));
@@ -183,44 +187,47 @@ export default function CheckoutPage() {
     }
   }, [loading, router, selectedItemCount]);
 
-  if (!loading && selectedItemCount === 0) {
+  if (!loading && selectedItemCount === 0 && !isSubmitting) {
     return null;
   }
 
   return (
-    <div data-testid="checkout-page">
-      <CheckoutPageReset />
-      <CheckoutAutoApplyController />
-      <CheckoutErrorToast />
-      <div className="lg:px-sop-80px flex flex-col px-0 pb-28 md:pb-0 lg:pb-sop-80px lg:pt-sop-20px">
-        <div className="flex w-full flex-col gap-sop-16px xl:flex-row xl:items-start xl:gap-sop-20px">
-          <div className="min-w-0 flex-1">
-            <CheckoutSection
-              guestForm={guestForm}
-              onGuestFormChange={handleGuestFormChange}
-              fieldErrors={fieldErrors}
-              showFieldErrors={showFieldErrors}
-              saveAddressChecked={saveAddressChecked}
-              onSaveAddressPreferenceChange={setSaveAddressChecked}
-            />
-          </div>
+    <>
+      <div data-testid="checkout-page" aria-busy={isSubmitting || undefined}>
+        <CheckoutPageReset />
+        <CheckoutAutoApplyController />
+        <CheckoutErrorToast />
+        <div className="lg:px-sop-80px flex flex-col px-0 pb-28 md:pb-0 lg:pb-sop-80px lg:pt-sop-20px">
+          <div className="flex w-full flex-col gap-sop-16px xl:flex-row xl:items-start xl:gap-sop-20px">
+            <div className="min-w-0 flex-1">
+              <CheckoutSection
+                guestForm={guestForm}
+                onGuestFormChange={handleGuestFormChange}
+                fieldErrors={fieldErrors}
+                showFieldErrors={showFieldErrors}
+                saveAddressChecked={saveAddressChecked}
+                onSaveAddressPreferenceChange={setSaveAddressChecked}
+              />
+            </div>
 
-          <div className="flex w-full shrink-0 flex-col gap-sop-12px px-sop-16px pb-sop-40px xl:w-[413px] xl:px-0 xl:pt-[60px]">
-            <CheckoutPromotionSection />
-            <CheckoutPaymentSelection />
-            <CheckoutSummarySection
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
-              canSubmit={canSubmit}
-            />
+            <div className="flex w-full shrink-0 flex-col gap-sop-12px px-sop-16px pb-sop-40px xl:w-[413px] xl:px-0 xl:pt-[60px]">
+              <CheckoutPromotionSection />
+              <CheckoutPaymentSelection />
+              <CheckoutSummarySection
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+                canSubmit={canPay}
+              />
+            </div>
           </div>
         </div>
+        <CheckoutMobileBottomBar
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          canSubmit={canPay}
+        />
       </div>
-      <CheckoutMobileBottomBar
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        canSubmit={canSubmit}
-      />
-    </div>
+      {isSubmitting ? <CheckoutProcessingShield /> : null}
+    </>
   );
 }

@@ -139,7 +139,7 @@ describe('CheckoutAddressSection integration', () => {
 
     it('renders auth-summary mode with summary card', async () => {
       mockedUseAuth.mockReturnValue({
-        customer: { id: 'cust-1' } as never,
+        customer: { id: 'cust-1', email: 'user@example.com' } as never,
         isAuthenticated: true,
         isLoading: false,
         pendingDeletion: false,
@@ -156,7 +156,8 @@ describe('CheckoutAddressSection integration', () => {
         ),
       );
 
-      renderCheckoutAddressSection();
+      const onGuestFormChange = vi.fn();
+      renderCheckoutAddressSection({ onGuestFormChange });
 
       await waitFor(() => {
         expect(screen.getByTestId('checkout-address-mode-auth-summary')).toBeInTheDocument();
@@ -164,8 +165,15 @@ describe('CheckoutAddressSection integration', () => {
 
       expect(screen.getByTestId('address-summary')).toBeInTheDocument();
       expect(screen.getByTestId('address-change-button')).toBeInTheDocument();
+      expect(screen.getByTestId('checkout-contact-section')).toBeInTheDocument();
+      expect(screen.getByTestId('guest-email-field')).toBeInTheDocument();
+      expect(screen.queryByTestId('contact-phone-field')).not.toBeInTheDocument();
       expect(screen.queryByTestId('address-list')).not.toBeInTheDocument();
       expect(screen.queryByTestId('shipping-address-line1')).not.toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(onGuestFormChange).toHaveBeenCalledWith('email', 'user@example.com');
+      });
     });
 
     it('renders auth-loading skeleton while addresses query is in flight', async () => {
@@ -253,6 +261,128 @@ describe('CheckoutAddressSection integration', () => {
       await user.type(contactPhoneField, '0822222222');
 
       expect(recipientPhoneField).toHaveValue('089-999-9999');
+    });
+  });
+
+  describe('existing-customer phone prompt', () => {
+    function renderStatefulCheckoutForExistingCustomer() {
+      function StatefulSection() {
+        const [guestForm, setGuestForm] = useState<GuestCheckoutFormState>(EMPTY_GUEST_FORM);
+        return (
+          <CheckoutAddressSection
+            guestForm={guestForm}
+            onGuestFormChange={(field, value) => {
+              setGuestForm((prev) => ({ ...prev, [field]: value }));
+            }}
+          />
+        );
+      }
+
+      return render(
+        <ApolloTestWrapper>
+          <CheckoutProvider>
+            <StatefulSection />
+          </CheckoutProvider>
+        </ApolloTestWrapper>,
+      );
+    }
+
+    it('does not open modal when phone has no account', async () => {
+      const user = userEvent.setup();
+      let lookupResolved = false;
+
+      server.use(
+        graphql.query('CustomerExistsByPhone', async () => {
+          await delay(10);
+          lookupResolved = true;
+          return HttpResponse.json({
+            data: { customerExistsByPhone: { exists: false } },
+          });
+        }),
+      );
+
+      renderStatefulCheckoutForExistingCustomer();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      const contactPhoneField = screen.getByTestId('contact-phone-field');
+      await user.type(contactPhoneField, '0812345678');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(lookupResolved).toBe(true);
+      });
+      expect(screen.queryByTestId('checkout-existing-customer-modal')).not.toBeInTheDocument();
+    });
+
+    it('opens account-found modal when phone belongs to an account', async () => {
+      const user = userEvent.setup();
+
+      server.use(
+        graphql.query('CustomerExistsByPhone', () =>
+          HttpResponse.json({
+            data: { customerExistsByPhone: { exists: true } },
+          }),
+        ),
+      );
+
+      renderStatefulCheckoutForExistingCustomer();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      const contactPhoneField = screen.getByTestId('contact-phone-field');
+      await user.type(contactPhoneField, '0812345678');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-existing-customer-modal')).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId('checkout-existing-customer-prompt')).toBeInTheDocument();
+      expect(contactPhoneField).toHaveValue('081-234-5678');
+    });
+
+    it('does not re-prompt after continue as guest for the same phone', async () => {
+      const user = userEvent.setup();
+
+      server.use(
+        graphql.query('CustomerExistsByPhone', () =>
+          HttpResponse.json({
+            data: { customerExistsByPhone: { exists: true } },
+          }),
+        ),
+      );
+
+      renderStatefulCheckoutForExistingCustomer();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      const contactPhoneField = screen.getByTestId('contact-phone-field');
+      await user.type(contactPhoneField, '0812345678');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-existing-customer-continue-guest')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('checkout-existing-customer-continue-guest'));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('checkout-existing-customer-modal')).not.toBeInTheDocument();
+      });
+
+      await user.click(contactPhoneField);
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('checkout-existing-customer-modal')).not.toBeInTheDocument();
+      });
     });
   });
 

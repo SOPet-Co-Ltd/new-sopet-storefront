@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,7 +17,7 @@ import {
   sampleRetryPendingPayment,
 } from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
-import { tokenizeCard } from '@/lib/payment/omise';
+import { tokenizeCard } from '@/lib/payment/beam';
 
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
@@ -69,8 +69,20 @@ vi.mock('@/lib/hooks/useOrders', () => ({
   })),
 }));
 
-vi.mock('@/lib/payment/omise', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/payment/omise')>('@/lib/payment/omise');
+vi.mock('@/lib/payment/cardTransport', () => ({
+  encryptCardSecurityCodeTransport: vi.fn(async (cvv: string) => `rsa:v1:cvv-${cvv}`),
+  encryptCardTransportPayload: vi.fn(async () => 'rsa:v1:card-cipher'),
+}));
+
+vi.mock('@/lib/payment/saveCard', () => ({
+  buildSaveCardPayload: vi.fn(async () => ({
+    cardCipher: 'rsa:v1:card-cipher',
+    isDefault: true,
+  })),
+}));
+
+vi.mock('@/lib/payment/beam', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/payment/beam')>('@/lib/payment/beam');
   return {
     ...actual,
     tokenizeCard: vi.fn(),
@@ -134,6 +146,7 @@ vi.mock('@/lib/hooks/usePayment', () => ({
     error: undefined,
     refetch: vi.fn(),
     poll: vi.fn(),
+    confirmingLateSuccess: false,
   }),
 }));
 
@@ -146,7 +159,7 @@ async function submitPromptPayRetry(user: ReturnType<typeof userEvent.setup>) {
 
 /** Mid-QR hides PromptPay — switch via card + Omise token. */
 async function submitMidQrCardRetry(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i }));
+  await user.click(screen.getByRole('radio', { name: /Credit \/ Debit Card/i }));
   await user.type(screen.getByTestId('card-number-input'), '4111111111111111');
   await user.type(screen.getByTestId('card-name-input'), 'TEST USER');
   await user.type(screen.getByTestId('card-expiry-input'), '12/30');
@@ -158,7 +171,7 @@ async function expandMidQrChangeMethod(user: ReturnType<typeof userEvent.setup>)
   await waitFor(() => {
     expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
   });
-  await user.click(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' }));
+  await user.click(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' }));
   expect(screen.getByRole('heading', { name: 'เลือกวิธีชำระเงินใหม่' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeInTheDocument();
 }
@@ -173,12 +186,29 @@ describe('PaymentPage', () => {
     paymentState.payment = samplePendingPayment;
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
-    vi.mocked(tokenizeCard).mockResolvedValue('tok_test_mid_qr');
+    vi.mocked(tokenizeCard).mockResolvedValue({
+      cardToken: 'tok_test_mid_qr',
+      lastFour: '4242',
+      brand: 'visa',
+      expiryMonth: 12,
+      expiryYear: 2030,
+    });
   });
 
   afterEach(() => {
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
+    vi.useRealTimers();
+  });
+
+  it('stays on this payment page when Back would open checkout', () => {
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    window.history.pushState({}, '', '/checkout?mode=buy-now');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    expect(mockReplace).toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
+    window.history.pushState({}, '', `/payment/${CHECKOUT_PAYMENT_ID}`);
   });
 
   it('redirects to thank-you when subscription reports paid status', async () => {
@@ -266,8 +296,7 @@ describe('PaymentPage', () => {
     expect(paymentState.payment.status).toBe('pending');
   });
 
-  it('PromptPay status check does not navigate to thank-you while pending', async () => {
-    const user = userEvent.setup();
+  it('PromptPay QR wait keeps ชำระเงินเสร็จสิ้น disabled and does not navigate yet', async () => {
     paymentState.payment = samplePendingPayment;
 
     render(<PaymentPage />, { wrapper: createWrapper() });
@@ -276,9 +305,29 @@ describe('PaymentPage', () => {
       expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }));
-
+    expect(screen.getByRole('button', { name: 'ชำระเงินเสร็จสิ้น' })).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: 'ตรวจสอบสถานะการชำระเงิน' }),
+    ).not.toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+  });
+
+  it('PromptPay ชำระเงินเสร็จสิ้น redirects to thank-you after 5 seconds', () => {
+    vi.useFakeTimers();
+    paymentState.payment = samplePendingPayment;
+
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    const complete = screen.getByRole('button', { name: 'ชำระเงินเสร็จสิ้น' });
+    expect(complete).toBeDisabled();
+
+    act(() => {
+      vi.advanceTimersByTime(5_000);
+    });
+    expect(complete).toBeEnabled();
+
+    fireEvent.click(complete);
+    expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
   });
 
   it('falls back to paymentByOrderId when payment id lookup is not found', async () => {
@@ -325,7 +374,6 @@ describe('PaymentPage', () => {
     await waitFor(() => {
       expect(mockCreatePayment).toHaveBeenCalledWith({
         orderId: CHECKOUT_ORDER_ID,
-        amount: samplePendingCardPayment.amount,
         currency: 'THB',
         paymentMethod: 'promptpay',
       });
@@ -433,10 +481,10 @@ describe('PaymentPage', () => {
     await waitFor(() => {
       expect(mockCreatePayment).toHaveBeenCalledWith({
         orderId: CHECKOUT_ORDER_ID,
-        amount: samplePendingPayment.amount,
         currency: 'THB',
         paymentMethod: 'credit_card',
-        omiseToken: 'tok_test_mid_qr',
+        cardToken: 'tok_test_mid_qr',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-123',
       });
     });
 
@@ -460,7 +508,7 @@ describe('PaymentPage', () => {
     await expandMidQrChangeMethod(user);
 
     expect(screen.queryByRole('radio', { name: /QR Code \/ PromptPay/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /บัตรเครดิต\/บัตรเดบิต/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Credit \/ Debit Card/i })).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /เก็บเงินปลายทาง/i })).not.toBeInTheDocument();
   });
 
@@ -526,7 +574,7 @@ describe('PaymentPage', () => {
     });
     expect(mockPush).not.toHaveBeenCalled();
     expect(screen.getByTestId('payment-retry-panel')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'เปลี่ยนช่องทางการชำระเงิน' })).toHaveAttribute(
       'aria-expanded',
       'true',
     );

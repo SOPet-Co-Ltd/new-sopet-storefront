@@ -2,6 +2,8 @@
 
 export const CATALOG_STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
 export const CATALOG_PRODUCT_ID = 'prod-001';
+/** SEO path segment `{productSlug}-{storeSlug}` for sample catalog product. */
+export const CATALOG_PRODUCT_PATH = 'premium-dog-food-5kg-sopet-pet-shop';
 
 export const sampleProductCard = {
   __typename: 'ProductType' as const,
@@ -29,6 +31,7 @@ export const sampleProductDetail = {
   description: 'High quality dog food',
   status: 'published',
   category: 'dog-food',
+  brandName: 'Premium Pet',
   tags: ['dog', 'food'],
   warning: null,
   expiryDate: null,
@@ -99,6 +102,8 @@ export const sampleProductReview = {
   status: 'approved',
   createdAt: '2026-01-01T00:00:00.000Z',
   customerName: 'Test Customer',
+  customerProfilePhotoUrl: null,
+  variantOptions: null,
   images: [],
   reply: null,
 };
@@ -124,6 +129,8 @@ export const sampleStoreReview = {
   comment: 'Great product',
   createdAt: '2026-01-01T00:00:00.000Z',
   customerName: 'Test Customer',
+  customerProfilePhotoUrl: null,
+  variantOptions: null,
   reply: null,
   images: [],
 };

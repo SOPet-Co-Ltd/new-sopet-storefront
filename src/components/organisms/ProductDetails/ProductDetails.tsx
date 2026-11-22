@@ -1,21 +1,34 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
+
+import { showSavedProductToast } from '@/components/atoms/SavedProductToast/SavedProductToast';
 import { ProductReviewStars } from '@/components/molecules/ProductReviewStars/ProductReviewStars';
+import { ProductShareWishlistActions } from '@/components/molecules/ProductShareWishlistActions/ProductShareWishlistActions';
 import ProductDetailsVariantSelection from '@/components/organisms/ProductDetailsVariantSelection/ProductDetailsVariantSelection';
-import { ProductExpiryDate } from '@/components/sections/ProductExpiryDate/ProductExpiryDate';
+import { ProductShareModal } from '@/components/organisms/ProductShareModal/ProductShareModal';
+import { ProductShowPrice } from '@/components/sections/ProductShowPrice/ProductShowPrice';
+
 import {
   getDefaultVariant,
+  readClientSearchParams,
   resolveSelectedOptionsFromSearchParams,
+  toSearchParamsGetter,
   type VariantOptions,
 } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
-import { ProductShowPrice } from '@/components/sections/ProductShowPrice/ProductShowPrice';
+
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useFavorites } from '@/lib/hooks/useFavorites';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
 
 type ProductDetailsProps = {
   product: ProductDetail;
   /** Raw Next.js `searchParams` so shared links like `?test=test` select on first paint. */
   variantSearchParams?: Record<string, string | string[] | undefined>;
+  selectedOptions?: VariantOptions;
+  onSelectedOptionsChange?: (options: VariantOptions) => void;
   onVariantChange?: (
     variantId: string | null,
     price: number,
@@ -26,55 +39,105 @@ type ProductDetailsProps = {
   onShareModalOpenChange?: (open: boolean) => void;
 };
 
-function toSearchParamsGetter(
-  raw: Record<string, string | string[] | undefined> | undefined,
-): Pick<URLSearchParams, 'get'> | null {
-  if (!raw) return null;
-
-  return {
-    get(key: string) {
-      const value = raw[key];
-      if (typeof value === 'string') return value;
-      if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
-      return null;
-    },
-  };
-}
-
-function readClientSearchParams(): Pick<URLSearchParams, 'get'> | null {
-  if (typeof window === 'undefined') return null;
-  return new URLSearchParams(window.location.search);
-}
-
 export function ProductDetails({
   product,
   variantSearchParams,
+  selectedOptions: controlledSelectedOptions,
+  onSelectedOptionsChange: controlledOnSelectedOptionsChange,
   onVariantChange,
   shareModalOpen,
   onShareModalOpenChange,
 }: ProductDetailsProps) {
-  const [selectedOptions, setSelectedOptions] = useState<VariantOptions>(() =>
+  const router = useRouter();
+
+  const { isAuthenticated } = useAuth();
+
+  // Cap matches backend favorites max so the heart state stays correct beyond page size 24.
+  const {
+    isFavorite,
+    addFavorite,
+    removeFavorite,
+    loading: favoritesLoading,
+  } = useFavorites({
+    page: 1,
+    limit: 100,
+  });
+
+  const [internalSelectedOptions, setInternalSelectedOptions] = useState<VariantOptions>(() =>
     resolveSelectedOptionsFromSearchParams(
       product.variants,
       toSearchParamsGetter(variantSearchParams) ?? readClientSearchParams(),
     ),
   );
 
+  const selectedOptions = controlledSelectedOptions ?? internalSelectedOptions;
+  const setSelectedOptions = controlledOnSelectedOptionsChange ?? setInternalSelectedOptions;
+
+  const [wishlistPending, setWishlistPending] = useState(false);
+
+  const [internalShareOpen, setInternalShareOpen] = useState(false);
+
+  const isShareModalOpen = shareModalOpen ?? internalShareOpen;
+
+  const setShareModalOpen = onShareModalOpenChange ?? setInternalShareOpen;
+
   const hasAnyPrice = useMemo(() => {
     const defaultVariant = getDefaultVariant(product.variants);
+
     return (defaultVariant?.price ?? product.basePrice) > 0;
   }, [product.basePrice, product.variants]);
 
+  const isWishlisted = isFavorite(product.id);
+
+  const handleWishlist = async () => {
+    if (!isAuthenticated) {
+      router.push('/login?notice=sessionRequired');
+      return;
+    }
+
+    try {
+      setWishlistPending(true);
+
+      if (isWishlisted) {
+        await removeFavorite(product.id);
+      } else {
+        await addFavorite(product.id);
+        showSavedProductToast();
+      }
+    } catch {
+      toast.error('เกิดข้อผิดพลาด', {
+        description: 'ไม่สามารถอัปเดตรายการโปรดได้',
+      });
+    } finally {
+      setWishlistPending(false);
+    }
+  };
+
+  const handleShareOpen = () => {
+    setShareModalOpen(true);
+  };
+
   return (
-    <div className="flex min-w-0 flex-col gap-4 lg:gap-8">
-      <div className="flex flex-col gap-5">
+    <div className="flex min-w-0 flex-col gap-4 max-md:px-sop-16px lg:gap-6">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <h1
-            id="product-title"
-            className="sop-body-lg-medium text-sop-neutral-gray-300 lg:sop-headline-md-medium"
-          >
-            {product.name}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1
+              id="product-title"
+              className="text-lg font-semibold text-sop-neutral-gray-200 lg:text-xl lg:leading-snug"
+            >
+              {product.name}
+            </h1>
+
+            <ProductShareWishlistActions
+              productName={product.name}
+              onShare={handleShareOpen}
+              onWishlist={() => void handleWishlist()}
+              isWishlisted={isWishlisted}
+              wishlistLoading={wishlistPending || favoritesLoading}
+              className="flex shrink-0"
+            />
+          </div>
 
           <ProductReviewStars
             averageRating={product.averageRating}
@@ -86,8 +149,6 @@ export function ProductDetails({
         {hasAnyPrice ? (
           <ProductShowPrice product={product} selectedOptions={selectedOptions} />
         ) : null}
-
-        <ProductExpiryDate expiryDate={product.expiryDate} />
       </div>
 
       <ProductDetailsVariantSelection
@@ -95,8 +156,14 @@ export function ProductDetails({
         selectedOptions={selectedOptions}
         onSelectedOptionsChange={setSelectedOptions}
         onVariantChange={onVariantChange}
-        shareModalOpen={shareModalOpen}
-        onShareModalOpenChange={onShareModalOpenChange}
+        expiryDate={product.expiryDate}
+      />
+
+      <ProductShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        product={product}
+        selectedOptions={selectedOptions}
       />
     </div>
   );

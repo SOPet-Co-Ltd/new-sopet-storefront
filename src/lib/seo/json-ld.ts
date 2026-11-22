@@ -1,7 +1,9 @@
 import { getDefaultVariant } from '@/components/organisms/ProductDetailsVariantSelection/variantUtils';
 import type { ProductDetail } from '@/lib/hooks/useProduct';
+import type { ProductReview } from '@/lib/hooks/useReviews';
 
-import { resolveAbsoluteImageUrl, stripMarkdownForMeta, truncateDescription } from './metadata';
+import { buildSellerHref } from '@/lib/routing/sellerRoutes';
+import { buildAbsoluteUrl, resolveAbsoluteImageUrl, sanitizeMetaDescription } from './metadata';
 
 export type SiteConfig = {
   baseUrl: string;
@@ -12,6 +14,14 @@ type BreadcrumbItem = {
   name: string;
   url: string;
 };
+
+export type FaqItem = {
+  question: string;
+  answer: string;
+};
+
+/** Matches the PDP's initial visible review count. */
+export const PRODUCT_JSON_LD_REVIEW_LIMIT = 4;
 
 /**
  * JSON-LD offer price must come from server-fetched product data only — never from
@@ -54,15 +64,38 @@ function collectProductImages(product: ProductDetail): string[] {
   return [...images];
 }
 
+function mapReviewToJsonLd(review: ProductReview): Record<string, unknown> {
+  const reviewJsonLd: Record<string, unknown> = {
+    '@type': 'Review',
+    author: {
+      '@type': 'Person',
+      name: review.customerName || 'ลูกค้า',
+    },
+    datePublished: review.createdAt,
+    reviewRating: {
+      '@type': 'Rating',
+      ratingValue: review.rating,
+      bestRating: 5,
+      worstRating: 1,
+    },
+  };
+
+  const body = review.comment?.trim();
+  if (body) {
+    reviewJsonLd.reviewBody = body;
+  }
+
+  return reviewJsonLd;
+}
+
 export function buildProductJsonLd(
   product: ProductDetail,
   pageUrl: string,
+  reviews: ProductReview[] = [],
 ): Record<string, unknown> {
   const price = getDefaultOfferPrice(product);
-  const firstVariant = product.variants?.[0];
-  const description = truncateDescription(
-    stripMarkdownForMeta(product.description ?? product.name),
-  );
+  const defaultVariant = getDefaultVariant(product.variants);
+  const description = sanitizeMetaDescription(product.description ?? product.name);
   const images = collectProductImages(product);
 
   const jsonLd: Record<string, unknown> = {
@@ -74,21 +107,41 @@ export function buildProductJsonLd(
   };
 
   if (price > 0) {
-    jsonLd.offers = {
+    const offer: Record<string, unknown> = {
       '@type': 'Offer',
       price,
       priceCurrency: 'THB',
       availability: mapAvailability(getDefaultStockQuantity(product)),
       url: pageUrl,
     };
+
+    if (product.store?.name) {
+      const seller: Record<string, unknown> = {
+        '@type': 'Organization',
+        name: product.store.name,
+      };
+      if (product.store.slug) {
+        seller.url = buildAbsoluteUrl(buildSellerHref(product.store.slug));
+      }
+      offer.seller = seller;
+    }
+
+    jsonLd.offers = offer;
   }
 
   if (images.length > 0) {
     jsonLd.image = images.length === 1 ? images[0] : images;
   }
 
-  if (firstVariant?.sku) {
-    jsonLd.sku = firstVariant.sku;
+  if (defaultVariant?.sku) {
+    jsonLd.sku = defaultVariant.sku;
+  }
+
+  if (product.brandName) {
+    jsonLd.brand = {
+      '@type': 'Brand',
+      name: product.brandName,
+    };
   }
 
   if (product.reviewCount > 0 && product.averageRating != null) {
@@ -96,7 +149,14 @@ export function buildProductJsonLd(
       '@type': 'AggregateRating',
       ratingValue: product.averageRating,
       reviewCount: product.reviewCount,
+      bestRating: 5,
+      worstRating: 1,
     };
+  }
+
+  const reviewEntries = reviews.slice(0, PRODUCT_JSON_LD_REVIEW_LIMIT).map(mapReviewToJsonLd);
+  if (reviewEntries.length > 0) {
+    jsonLd.review = reviewEntries;
   }
 
   return jsonLd;
@@ -138,5 +198,48 @@ export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]): Record<string, u
       name: item.name,
       item: item.url,
     })),
+  };
+}
+
+export function buildFaqJsonLd(items: FaqItem[]): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  };
+}
+
+export function buildWebPageJsonLd(options: {
+  name: string;
+  description: string;
+  url: string;
+}): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: options.name,
+    description: sanitizeMetaDescription(options.description),
+    url: options.url,
+  };
+}
+
+export function buildCollectionPageJsonLd(options: {
+  name: string;
+  description: string;
+  url: string;
+}): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: options.name,
+    description: sanitizeMetaDescription(options.description),
+    url: options.url,
   };
 }

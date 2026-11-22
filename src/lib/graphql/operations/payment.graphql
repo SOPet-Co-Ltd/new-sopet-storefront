@@ -7,8 +7,10 @@ fragment PaymentFields on PaymentType {
   status
   paymentMethod
   authorizeUri
+  qrCodeImage
   qrCodeUrl
   expiresAt
+  failureCode
 }
 
 query Payment($id: String!, $guestPayToken: String) {

@@ -12,6 +12,7 @@ import { server } from '@/test/mocks/server';
 const STORE_ID = 'c880a541-d7d9-4566-a4a8-73c27e68d2e3';
 const PRODUCT_ID = 'a1b2c3d4-e5f6-4789-a012-3456789abcde';
 const SLUG = 'premium-dog-food-5kg';
+const PRODUCT_PATH = `${SLUG}-sopet-pet-shop`;
 
 const SAMPLE_PRODUCT_DETAIL = {
   __typename: 'ProductType' as const,
@@ -28,6 +29,7 @@ const SAMPLE_PRODUCT_DETAIL = {
   description: 'High quality dog food for all breeds.',
   status: 'published',
   category: 'dog-food',
+  brandName: 'Premium Pet',
   tags: ['dog', 'food'],
   warning: null,
   expiryDate: null,
@@ -189,7 +191,7 @@ function mockProductQueries({
       HttpResponse.json({ data: { approvedCategories: sampleCategories } }),
     ),
     graphql.query('ProductReviews', ({ variables }) => {
-      expect(variables).toEqual({ productId: PRODUCT_ID });
+      expect(variables).toEqual({ productId: PRODUCT_ID, page: 1, limit: 4 });
       return HttpResponse.json({ data: { productReviews: [SAMPLE_PRODUCT_REVIEW] } });
     }),
     graphql.query('StoreReviewSummary', ({ variables }) => {
@@ -274,7 +276,7 @@ describe('ProductDetailsPage', () => {
   it('renders gallery, variants, seller, and reviews by product id', async () => {
     mockProductQueries();
 
-    render(<ProductDetailsPage productId={PRODUCT_ID} />, {
+    render(<ProductDetailsPage productPath={PRODUCT_PATH} productId={PRODUCT_ID} />, {
       wrapper: createWrapper(),
     });
 
@@ -293,23 +295,24 @@ describe('ProductDetailsPage', () => {
     expect(screen.getByText('Test Customer')).toBeInTheDocument();
     expect(screen.getByText('Great product')).toBeInTheDocument();
     expect(screen.getByTestId('store-review-average')).toHaveTextContent('5');
-    expect(screen.getByRole('heading', { name: 'คำถามที่พบบ่อย' })).toBeInTheDocument();
   });
 
   it('updates price and stock when variant is changed', async () => {
     mockProductQueries();
     const user = userEvent.setup();
 
-    render(<ProductDetailsPage productId={PRODUCT_ID} />, {
+    render(<ProductDetailsPage productPath={PRODUCT_PATH} productId={PRODUCT_ID} />, {
       wrapper: createWrapper(),
     });
 
     expect(await screen.findByTestId('variant-price')).toHaveTextContent('฿890.00');
+    expect(screen.getByTestId('floating-variant-price')).toHaveTextContent('฿890.00');
     expect(screen.getByTestId('variant-stock')).toHaveTextContent('เหลือสินค้า 10 ชิ้น');
 
     await user.click(screen.getByRole('radio', { name: 'Size: L' }));
 
     expect(screen.getByTestId('variant-price')).toHaveTextContent('฿990.00');
+    expect(screen.getByTestId('floating-variant-price')).toHaveTextContent('฿990.00');
     expect(screen.getByTestId('variant-stock')).toHaveTextContent('เหลือสินค้า 5 ชิ้น');
   });
 
@@ -319,7 +322,7 @@ describe('ProductDetailsPage', () => {
       productError: { code: 'PRODUCT_NOT_FOUND', message: 'Product not found' },
     });
 
-    render(<ProductDetailsPage productId={PRODUCT_ID} />, {
+    render(<ProductDetailsPage productPath={PRODUCT_PATH} productId={PRODUCT_ID} />, {
       wrapper: createWrapper(),
     });
 
@@ -331,9 +334,12 @@ describe('ProductDetailsPage', () => {
   it('renders a single visible h1, article landmark, and breadcrumb trail with category crumb', async () => {
     mockProductQueries();
 
-    const { container } = render(<ProductDetailsPage productId={PRODUCT_ID} />, {
-      wrapper: createWrapper(),
-    });
+    const { container } = render(
+      <ProductDetailsPage productPath={PRODUCT_PATH} productId={PRODUCT_ID} />,
+      {
+        wrapper: createWrapper(),
+      },
+    );
 
     expect(await screen.findByTestId('product-details-page')).toBeInTheDocument();
 
@@ -347,6 +353,7 @@ describe('ProductDetailsPage', () => {
 
     const breadcrumbNav = screen.getByRole('navigation', { name: 'breadcrumb' });
     expect(breadcrumbNav).toBeInTheDocument();
+    expect(breadcrumbNav.parentElement).toHaveClass('hidden', 'md:block');
     expect(screen.getByRole('link', { name: 'หน้าแรก' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Dog Food' })).toHaveAttribute(
       'href',

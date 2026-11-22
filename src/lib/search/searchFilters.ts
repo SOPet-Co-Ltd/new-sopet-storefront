@@ -29,6 +29,23 @@ function parsePriceParam(value: string | null | undefined, fallback: number): nu
   return Math.min(SEARCH_FILTER_PRICE_MAX, Math.max(SEARCH_FILTER_PRICE_MIN, parsed));
 }
 
+/** True when the minimum bound is strictly greater than the maximum. */
+export function isInvertedPriceRange(minPrice: number, maxPrice: number): boolean {
+  return minPrice > maxPrice;
+}
+
+/** True when both price URL params are present and form an inverted range. */
+export function hasInvertedPriceParams(params: Pick<URLSearchParams, 'get'>): boolean {
+  const minRaw = params.get('minPrice');
+  const maxRaw = params.get('maxPrice');
+  if (!minRaw || !maxRaw) return false;
+
+  return isInvertedPriceRange(
+    parsePriceParam(minRaw, SEARCH_FILTER_PRICE_MIN),
+    parsePriceParam(maxRaw, SEARCH_FILTER_PRICE_MAX),
+  );
+}
+
 export function parseSearchFilters(params: Pick<URLSearchParams, 'get'>): SearchFilters {
   const petTypeIds = parseIdList(params.get('petType'));
   const brandIds = parseIdList(params.get('brand'));
@@ -36,6 +53,16 @@ export function parseSearchFilters(params: Pick<URLSearchParams, 'get'>): Search
   const tagId = tagParam || undefined;
   const minPrice = parsePriceParam(params.get('minPrice'), SEARCH_FILTER_PRICE_MIN);
   const maxPrice = parsePriceParam(params.get('maxPrice'), SEARCH_FILTER_PRICE_MAX);
+
+  if (isInvertedPriceRange(minPrice, maxPrice)) {
+    return {
+      petTypeIds,
+      brandIds,
+      tagId,
+      minPrice: undefined,
+      maxPrice: undefined,
+    };
+  }
 
   return {
     petTypeIds,

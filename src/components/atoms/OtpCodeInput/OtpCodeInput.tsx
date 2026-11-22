@@ -10,6 +10,8 @@ type OtpCodeInputProps = {
   onChange: (value: string) => void;
   error?: boolean;
   disabled?: boolean;
+  /** Compact slots match checkout OTP modal (44×56). Default is 56×56. */
+  size?: 'default' | 'compact';
   /** Links inputs to an external error message element (e.g. validation text). */
   ariaDescribedBy?: string;
   'data-testid'?: string;
@@ -28,6 +30,7 @@ export function OtpCodeInput({
   onChange,
   error = false,
   disabled = false,
+  size = 'default',
   ariaDescribedBy,
   'data-testid': testId,
 }: OtpCodeInputProps) {
@@ -35,6 +38,7 @@ export function OtpCodeInput({
   const groupId = useId();
   const sanitizedValue = sanitizeOtpValue(value);
   const describedBy = ariaDescribedBy || (error ? `${groupId}-error` : undefined);
+  const isCompact = size === 'compact';
 
   const focusInput = useCallback((index: number) => {
     const target = inputRefs.current[index];
@@ -122,7 +126,7 @@ export function OtpCodeInput({
     <div data-testid={testId} className="w-full">
       <div
         id={groupId}
-        className="flex items-start justify-center gap-3"
+        className="flex items-start justify-center gap-sop-12px"
         role="group"
         aria-label="รหัส OTP 6 หลัก"
         aria-required="true"
@@ -153,9 +157,12 @@ export function OtpCodeInput({
             onPaste={handlePaste}
             onFocus={(event) => event.target.select()}
             className={cn(
-              'h-14 min-h-14 w-14 min-w-14 shrink-0 rounded-[8px] border bg-sop-base-white text-center sop-headline-sm-medium text-sop-neutral-gray-200',
-              'px-2 py-3 transition-all duration-150 touch-manipulation',
+              'shrink-0 rounded-[8px] border bg-sop-base-white text-center sop-headline-sm-medium text-sop-neutral-gray-200',
+              'transition-all duration-150 touch-manipulation',
               'focus:border-sop-primary-500 focus:outline-none focus:ring-1 focus:ring-sop-primary-500',
+              isCompact
+                ? 'h-14 min-h-14 w-11 min-w-11 px-sop-16px py-sop-12px'
+                : 'h-14 min-h-14 w-14 min-w-14 px-2 py-3',
               error
                 ? 'border-sop-system-error-400 ring-1 ring-sop-system-error-400'
                 : 'border-sop-neutral-grayalpha-400',

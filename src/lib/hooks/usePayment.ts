@@ -1,7 +1,7 @@
 'use client';
 
 import { useApolloClient, useQuery, useSubscription } from '@apollo/client/react';
-import { useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   PaymentByOrderIdDocument,
   PaymentDocument,
@@ -11,7 +11,10 @@ import {
 import { setWsGuestPayToken } from '@/lib/graphql/wsConnectionParams';
 import { persistGuestPayToken, resolveGuestPayToken } from '@/lib/payment/guestPayToken';
 
-export type PaymentRecord = PaymentQuery['payment'];
+/** Widened until codegen includes PaymentType.failureCode. */
+export type PaymentRecord = PaymentQuery['payment'] & {
+  failureCode?: string | null;
+};
 export type PaymentStatus = PaymentRecord['status'];
 
 export type PollPaymentParams = {
@@ -33,6 +36,11 @@ export type UsePaymentParams = {
   orderId?: string | null;
   skip?: boolean;
   guestPayToken?: string | null;
+  /**
+   * Order status from the order detail query. Missing/undefined is treated as still
+   * payable so the late-success PromptPay check can run before order loads.
+   */
+  orderStatus?: string | null;
 };
 
 export type UsePaymentResult = {
@@ -41,6 +49,8 @@ export type UsePaymentResult = {
   error: Error | undefined;
   refetch: () => Promise<unknown>;
   poll: (params?: PollPaymentParams) => Promise<PollPaymentResult>;
+  /** True while a one-shot late-success refetch is in flight for a failed PromptPay row. */
+  confirmingLateSuccess: boolean;
 };
 
 const DEFAULT_POLL_INTERVAL_MS = 2_000;
@@ -61,11 +71,26 @@ function isTerminalStatus(status: PaymentStatus): boolean {
   return status === 'paid' || status === 'failed' || status === 'refunded';
 }
 
-function pickFreshestPayment(
+function isOrderStillPayable(orderStatus: string | null | undefined): boolean {
+  // Missing order status: treat as still payable so the late-success check can run.
+  if (orderStatus == null || orderStatus === '') {
+    return true;
+  }
+  return orderStatus === 'pending_payment';
+}
+
+/** Prefer `paid` from either source so a late success is never stuck behind a failed event. */
+export function pickFreshestPayment(
   fromSubscription: PaymentRecord | null | undefined,
   fromQuery: PaymentRecord | null | undefined,
 ): PaymentRecord | null {
   if (fromSubscription && fromQuery) {
+    if (fromQuery.status === 'paid') {
+      return fromQuery;
+    }
+    if (fromSubscription.status === 'paid') {
+      return fromSubscription;
+    }
     if (isTerminalStatus(fromQuery.status) && !isTerminalStatus(fromSubscription.status)) {
       return fromQuery;
     }
@@ -80,10 +105,14 @@ export function usePayment({
   orderId,
   skip = false,
   guestPayToken,
+  orderStatus,
 }: UsePaymentParams = {}): UsePaymentResult {
   const apolloClient = useApolloClient();
   const queryByOrderId = Boolean(orderId) && !id;
   const shouldQuery = !skip && Boolean(id || orderId);
+  const [lateSuccessCheckedIds, setLateSuccessCheckedIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
 
   const resolvedGuestPayToken = resolveGuestPayToken({
     guestPayToken,
@@ -146,6 +175,95 @@ export function usePayment({
       token: resolvedGuestPayToken,
     });
   }, [payment?.id, payment?.orderId, resolvedGuestPayToken]);
+
+  const { startPolling, stopPolling } = activeQuery;
+
+  // Hybrid live updates: keep the subscription for fast push when it works, but
+  // always HTTP-poll while pending. On UAT/prod the WebSocket often connects
+  // without error yet never delivers paymentStatusUpdated — without polling the
+  // page stays stuck until a manual check or full refresh. Bank transfer stays
+  // manual acknowledgment (admin confirms; no Beam charge to poll).
+  // Also keep one poll cycle after PromptPay flips to failed while the order is
+  // still pending_payment so a late Beam success can surface as paid.
+  useEffect(() => {
+    const shouldPollPending =
+      shouldQuery && payment?.status === 'pending' && payment.paymentMethod !== 'bank_transfer';
+
+    if (!shouldPollPending) {
+      stopPolling();
+      return;
+    }
+
+    startPolling(DEFAULT_POLL_INTERVAL_MS);
+    return () => {
+      stopPolling();
+    };
+  }, [payment?.paymentMethod, payment?.status, shouldQuery, startPolling, stopPolling]);
+
+  // Derived so the retry panel stays hidden as soon as a failed PromptPay row appears.
+  const confirmingLateSuccess = Boolean(
+    shouldQuery &&
+    payment &&
+    payment.status === 'failed' &&
+    payment.paymentMethod === 'promptpay' &&
+    isOrderStillPayable(orderStatus) &&
+    !lateSuccessCheckedIds.has(payment.id),
+  );
+
+  // One-shot late-success check: failed PromptPay + order still payable → network GET once.
+  // queryDeduplication is off so this is not collapsed into the just-finished useQuery.
+  useEffect(() => {
+    if (!confirmingLateSuccess || !payment) {
+      return;
+    }
+
+    const paymentId = payment.id;
+    let cancelled = false;
+
+    const lateSuccessQuery = queryByOrderId
+      ? apolloClient.query({
+          query: PaymentByOrderIdDocument,
+          variables: {
+            orderId: orderId ?? payment.orderId ?? '',
+            guestPayToken: resolvedGuestPayToken,
+          },
+          fetchPolicy: 'network-only',
+          context: { queryDeduplication: false },
+        })
+      : apolloClient.query({
+          query: PaymentDocument,
+          variables: { id: paymentId, guestPayToken: resolvedGuestPayToken },
+          fetchPolicy: 'network-only',
+          context: { queryDeduplication: false },
+        });
+
+    void lateSuccessQuery
+      .catch(() => undefined)
+      .finally(() => {
+        if (cancelled) {
+          return;
+        }
+        setLateSuccessCheckedIds((prev) => {
+          if (prev.has(paymentId)) {
+            return prev;
+          }
+          const next = new Set(prev);
+          next.add(paymentId);
+          return next;
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    apolloClient,
+    confirmingLateSuccess,
+    orderId,
+    payment,
+    queryByOrderId,
+    resolvedGuestPayToken,
+  ]);
 
   const poll = useCallback(
     async (params: PollPaymentParams = {}): Promise<PollPaymentResult> => {
@@ -213,5 +331,6 @@ export function usePayment({
     error: toHookError(activeQuery.error),
     refetch: () => activeQuery.refetch(),
     poll,
+    confirmingLateSuccess,
   };
 }

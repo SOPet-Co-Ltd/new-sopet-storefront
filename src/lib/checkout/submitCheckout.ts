@@ -10,6 +10,10 @@ import {
 } from '@/lib/checkout/checkoutPaymentMethod';
 import { persistGuestPayToken } from '@/lib/payment/guestPayToken';
 import {
+  isOmiseWalletApiPaymentMethod,
+  resolveOmiseWalletPlatformType,
+} from '@/lib/payment/walletDevice';
+import {
   extractPromotionErrorCode,
   isCreateOrderHardEligibilityCode,
   PromotionValidationError,
@@ -23,16 +27,46 @@ import {
   ORDER_CONTAINS_SUSPENDED_STORE_ERROR_CODE,
   STORE_SUSPENSION_HOLD_COPY,
 } from '@/lib/constants/storeSuspensionHoldCopy';
-import { getErrorMessage } from '@/lib/errors/getErrorMessage';
+import { ERROR_CODES } from '@/lib/errors/errorCodes';
+import {
+  extractErrorCode,
+  getErrorMessage,
+  getErrorMessageByCode,
+} from '@/lib/errors/getErrorMessage';
 import { mapCheckoutSuspendedStoreError } from '@/lib/store-suspension/mapSuspensionErrors';
+import type { SaveCardOnPaymentInput } from '@/lib/payment/saveCard';
+import type { CreatePaymentInput } from '@/lib/graphql/generated/graphql';
+
+export type SubmitCheckoutErrorCode =
+  | 'invalid_step'
+  | 'promotion_invalid'
+  | 'order_failed'
+  | 'payment_failed'
+  | 'cart_stale'
+  | 'price_changed';
 
 export class SubmitCheckoutError extends Error {
   constructor(
     message: string,
-    public readonly code: 'invalid_step' | 'promotion_invalid' | 'order_failed' | 'payment_failed',
+    public readonly code: SubmitCheckoutErrorCode,
   ) {
     super(message);
     this.name = 'SubmitCheckoutError';
+  }
+}
+
+const CART_LINE_SYNC_ERROR_CODES = new Set<string>([
+  ERROR_CODES.CART_ITEMS_STALE,
+  ERROR_CODES.CART_ITEMS_MISMATCH,
+]);
+
+function throwIfCheckoutQuoteInvalid(error: unknown): void {
+  const code = extractErrorCode(error);
+  if (code && CART_LINE_SYNC_ERROR_CODES.has(code)) {
+    throw new SubmitCheckoutError(getErrorMessageByCode(code), 'cart_stale');
+  }
+  if (code === ERROR_CODES.PRICE_CHANGED) {
+    throw new SubmitCheckoutError(getErrorMessageByCode(code), 'price_changed');
   }
 }
 
@@ -43,9 +77,19 @@ export type SubmitCheckoutParams = {
   guestForm: GuestCheckoutFormState | null;
   subtotal: number;
   checkoutHook: Pick<UseCheckoutResult, 'validatePromotion' | 'createOrder' | 'createPayment'>;
-  omiseToken?: string | null;
+  cardToken?: string | null;
+  /** RSA-encrypted CVV for the card token or saved card; sent with createPayment only, never persisted. */
+  cardSecurityCodeCipher?: string | null;
   savedPaymentMethodId?: string | null;
+  /**
+   * Save-card metadata for Beam CIT: server saves only after the charge is paid.
+   * Do not call addPaymentMethod before createPayment when this is set.
+   */
+  saveCard?: SaveCardOnPaymentInput | null;
 };
+
+/** Alias for createPayment variables (includes optional saveCard from schema). */
+export type CreatePaymentSubmitInput = CreatePaymentInput;
 
 export type SubmitCheckoutResult = {
   redirectPath: string;
@@ -115,6 +159,8 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
   try {
     order = await params.checkoutHook.createOrder(orderInput);
   } catch (error) {
+    throwIfCheckoutQuoteInvalid(error);
+
     const suspendedMessage = mapCheckoutSuspendedStoreError(error);
     if (suspendedMessage) {
       throw new SubmitCheckoutError(suspendedMessage, 'order_failed');
@@ -143,6 +189,8 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
         storePromotionCodes: undefined,
       });
     } catch (retryError) {
+      throwIfCheckoutQuoteInvalid(retryError);
+
       const retrySuspended = mapCheckoutSuspendedStoreError(retryError);
       if (retrySuspended) {
         throw new SubmitCheckoutError(retrySuspended, 'order_failed');
@@ -171,18 +219,33 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
     params.checkoutContext.paymentMethod ?? order.paymentMethod,
   );
 
-  const paymentInput = {
+  const walletFields = isOmiseWalletApiPaymentMethod(apiPaymentMethod)
+    ? { platformType: resolveOmiseWalletPlatformType() }
+    : {};
+
+  const paymentInput: CreatePaymentSubmitInput = {
     orderId: order.id,
-    amount: order.total,
     paymentMethod: apiPaymentMethod,
     currency: 'THB' as const,
     ...(order.guestPayToken ? { guestPayToken: order.guestPayToken } : {}),
+    ...walletFields,
     ...(isNonOmiseApiPaymentMethod(apiPaymentMethod)
       ? {}
       : params.savedPaymentMethodId
-        ? { savedPaymentMethodId: params.savedPaymentMethodId }
-        : params.omiseToken
-          ? { omiseToken: params.omiseToken }
+        ? {
+            savedPaymentMethodId: params.savedPaymentMethodId,
+            ...(params.cardSecurityCodeCipher
+              ? { cardSecurityCodeCipher: params.cardSecurityCodeCipher }
+              : {}),
+          }
+        : params.cardToken
+          ? {
+              cardToken: params.cardToken,
+              ...(params.cardSecurityCodeCipher
+                ? { cardSecurityCodeCipher: params.cardSecurityCodeCipher }
+                : {}),
+              ...(params.saveCard ? { saveCard: params.saveCard } : {}),
+            }
           : {}),
   };
 

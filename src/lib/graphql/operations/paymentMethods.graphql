@@ -6,6 +6,11 @@ fragment SavedPaymentMethodFields on SavedPaymentMethodType {
   expiryMonth
   expiryYear
   isDefault
+  psp
+}
+
+query CardTransportPublicKey {
+  cardTransportPublicKey
 }
 
 query PaymentMethods {

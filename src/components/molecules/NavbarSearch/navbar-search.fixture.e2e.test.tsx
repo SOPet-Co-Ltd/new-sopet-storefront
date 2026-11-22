@@ -12,6 +12,7 @@ const push = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock('next/image', () => ({
@@ -57,7 +58,7 @@ describe('Navbar search fixture-e2e', () => {
     await user.keyboard('{ArrowDown}{Enter}');
 
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith('/product/prod-royal-canin');
+      expect(push).toHaveBeenCalledWith('/product/royal-canin-cat-food-sopet-pet-shop');
     });
 
     const stored = JSON.parse(window.sessionStorage.getItem('sopet_recent_searches') ?? '[]');

@@ -12,19 +12,19 @@ export type UseOrdersReviewStatusResult = {
 
 export function useOrdersReviewStatus(orders: OrderSummary[]): UseOrdersReviewStatusResult {
   const deliveredOrderIds = useMemo(
-    () => orders.filter((order) => order.status === 'delivered').map((order) => order.id),
+    () => new Set(orders.filter((order) => order.status === 'delivered').map((order) => order.id)),
     [orders],
   );
 
   const { data, loading } = useQuery(CustomerReviewableItemsDocument, {
-    skip: deliveredOrderIds.length === 0,
+    skip: deliveredOrderIds.size === 0,
     fetchPolicy: 'cache-and-network',
   });
 
   const pendingReviewOrderIds = useMemo(() => {
     const ids = new Set<string>();
     for (const item of data?.customerReviewableItems ?? []) {
-      if (deliveredOrderIds.includes(item.orderId)) {
+      if (deliveredOrderIds.has(item.orderId)) {
         ids.add(item.orderId);
       }
     }
@@ -34,7 +34,7 @@ export function useOrdersReviewStatus(orders: OrderSummary[]): UseOrdersReviewSt
   const isOrderFullyReviewed = useCallback(
     (orderId: string, status: string) =>
       status === 'delivered' &&
-      deliveredOrderIds.includes(orderId) &&
+      deliveredOrderIds.has(orderId) &&
       !pendingReviewOrderIds.has(orderId) &&
       !loading,
     [deliveredOrderIds, pendingReviewOrderIds, loading],

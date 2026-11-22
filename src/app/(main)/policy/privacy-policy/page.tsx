@@ -2,11 +2,14 @@ import type { Metadata } from 'next';
 import { PolicyMarkdownLayout } from '../PolicyMarkdownLayout';
 import { buildPolicyPageMetadata } from '../policy-metadata';
 
+const PAGE_TITLE = 'นโยบายความเป็นส่วนตัว';
+const PAGE_DESCRIPTION =
+  'วิธีที่ Sopet เก็บรวบรวม ใช้ และปกป้องข้อมูลส่วนบุคคลของคุณ รวมถึงสิทธิ์และช่องทางติดต่อ';
+
 export const metadata: Metadata = buildPolicyPageMetadata({
   pathSegment: 'privacy-policy',
-  title: 'นโยบายความเป็นส่วนตัว',
-  description:
-    'วิธีที่ Sopet เก็บรวบรวม ใช้ และปกป้องข้อมูลส่วนบุคคลของคุณ รวมถึงสิทธิ์และช่องทางติดต่อ',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
 });
 
 const PRIVACY_POLICY = `
@@ -84,5 +87,12 @@ Sopet เป็นผู้ดูแลร้านค้าและเว็�
 `;
 
 export default function PrivacyPolicyPage() {
-  return <PolicyMarkdownLayout title="นโยบายความเป็นส่วนตัว" source={PRIVACY_POLICY} />;
+  return (
+    <PolicyMarkdownLayout
+      title={PAGE_TITLE}
+      source={PRIVACY_POLICY}
+      path="/policy/privacy-policy"
+      description={PAGE_DESCRIPTION}
+    />
+  );
 }

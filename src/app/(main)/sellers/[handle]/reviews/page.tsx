@@ -1,11 +1,13 @@
 import { SellerStorefront } from '@/components/organisms/SellerTabs';
+import { decodeRouteParam } from '@/lib/routing/categoryRoutes';
 
 type Props = {
   params: Promise<{ handle: string }>;
 };
 
 export default async function SellerReviewsPage({ params }: Props) {
-  const { handle } = await params;
+  const { handle: rawHandle } = await params;
+  const handle = decodeRouteParam(rawHandle);
 
   return (
     <main className="w-full min-h-[calc(100dvh-109px)] px-4 py-4 lg:px-20">

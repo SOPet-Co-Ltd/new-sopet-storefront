@@ -171,7 +171,6 @@ describe('submitCheckout', () => {
     expect(createOrder).toHaveBeenCalledTimes(1);
     expect(createPayment).toHaveBeenCalledWith({
       orderId: CHECKOUT_ORDER_ID,
-      amount: sampleOrder.total,
       paymentMethod: 'promptpay',
       currency: 'THB',
     });
@@ -283,7 +282,7 @@ describe('submitCheckout', () => {
         ...promptPayParams.checkoutContext,
         paymentMethod: 'card',
       },
-      omiseToken: 'tokn_test_midflight',
+      cardToken: 'tokn_test_midflight',
     });
 
     const [first, second] = await Promise.all([
@@ -295,8 +294,13 @@ describe('submitCheckout', () => {
     expect(first.redirectPath).toBe(second.redirectPath);
   });
 
-  it('passes omiseToken for card payments and skips it for COD', async () => {
+  it('passes cardToken and cardSecurityCodeCipher for card payments and skips it for COD', async () => {
     const createPayment = vi.fn().mockResolvedValue(samplePendingPayment);
+    const cvvCipher = 'rsa:v1:cvv-cipher';
+    const saveCardCipher = {
+      cardCipher: 'rsa:v1:card-cipher',
+      isDefault: true,
+    };
 
     await submitCheckout(
       createSubmitParams({
@@ -310,7 +314,8 @@ describe('submitCheckout', () => {
           storePromotionCodes: [],
           paymentMethod: 'card',
         },
-        omiseToken: 'tokn_test_123',
+        cardToken: 'tokn_test_123',
+        cardSecurityCodeCipher: cvvCipher,
         checkoutHook: createCheckoutHook({ createPayment }),
       }),
       createSubmitCheckoutGuard(),
@@ -319,7 +324,51 @@ describe('submitCheckout', () => {
     expect(createPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         paymentMethod: 'credit_card',
-        omiseToken: 'tokn_test_123',
+        cardToken: 'tokn_test_123',
+        cardSecurityCodeCipher: cvvCipher,
+      }),
+    );
+    expect(JSON.stringify(createPayment.mock.calls[0]?.[0])).not.toContain('4242424242424242');
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        saveCard: expect.anything(),
+      }),
+    );
+
+    createPayment.mockClear();
+
+    await submitCheckout(
+      createSubmitParams({
+        checkoutContext: {
+          isAuthenticated: true,
+          shippingByStoreId: {
+            [CATALOG_STORE_ID]: { shippingOptionId: SHIPPING_OPTION_ID },
+          },
+          selectedAddressId: 'addr-1',
+          promotionCode: null,
+          storePromotionCodes: [],
+          paymentMethod: 'card',
+        },
+        cardToken: 'tokn_save_me',
+        cardSecurityCodeCipher: cvvCipher,
+        saveCard: saveCardCipher,
+        checkoutHook: createCheckoutHook({ createPayment }),
+      }),
+      createSubmitCheckoutGuard(),
+    );
+
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentMethod: 'credit_card',
+        cardToken: 'tokn_save_me',
+        cardSecurityCodeCipher: cvvCipher,
+        saveCard: saveCardCipher,
+      }),
+    );
+    expect(JSON.stringify(createPayment.mock.calls[0]?.[0])).not.toContain('4242424242424242');
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        savedPaymentMethodId: expect.anything(),
       }),
     );
 
@@ -337,7 +386,8 @@ describe('submitCheckout', () => {
           storePromotionCodes: [],
           paymentMethod: 'cod',
         },
-        omiseToken: 'tokn_test_123',
+        cardToken: 'tokn_test_123',
+        cardSecurityCodeCipher: cvvCipher,
         checkoutHook: createCheckoutHook({ createPayment }),
       }),
       createSubmitCheckoutGuard(),
@@ -345,7 +395,41 @@ describe('submitCheckout', () => {
 
     expect(createPayment).toHaveBeenCalledWith(
       expect.not.objectContaining({
-        omiseToken: expect.anything(),
+        cardToken: expect.anything(),
+      }),
+    );
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        cardSecurityCodeCipher: expect.anything(),
+      }),
+    );
+
+    createPayment.mockClear();
+
+    await submitCheckout(
+      createSubmitParams({
+        checkoutContext: {
+          isAuthenticated: false,
+          shippingByStoreId: {
+            [CATALOG_STORE_ID]: { shippingOptionId: SHIPPING_OPTION_ID },
+          },
+          selectedAddressId: null,
+          promotionCode: null,
+          storePromotionCodes: [],
+          paymentMethod: 'card',
+        },
+        savedPaymentMethodId: 'saved-card-1',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-456',
+        checkoutHook: createCheckoutHook({ createPayment }),
+      }),
+      createSubmitCheckoutGuard(),
+    );
+
+    expect(createPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentMethod: 'credit_card',
+        savedPaymentMethodId: 'saved-card-1',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-456',
       }),
     );
   });
@@ -415,6 +499,46 @@ describe('submitCheckout', () => {
         }),
       ),
     ).rejects.toMatchObject({ code: 'order_failed' });
+
+    expect(createOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps PRICE_CHANGED to price_changed with Thai message (SF-CHK-114)', async () => {
+    const createOrder = vi.fn().mockRejectedValue({
+      graphQLErrors: [
+        {
+          extensions: { code: 'PRICE_CHANGED' },
+          message: 'Product price changed since checkout started',
+        },
+      ],
+    });
+
+    await expect(
+      submitCheckout(createSubmitParams({ checkoutHook: createCheckoutHook({ createOrder }) })),
+    ).rejects.toMatchObject({
+      code: 'price_changed',
+      message: 'ราคาสินค้ามีการเปลี่ยนแปลง กรุณาตรวจสอบยอดรวมใหม่ก่อนชำระเงิน',
+    });
+
+    expect(createOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps CART_ITEMS_STALE to cart_stale with Thai message (SF-CHK-112)', async () => {
+    const createOrder = vi.fn().mockRejectedValue({
+      graphQLErrors: [
+        {
+          extensions: { code: 'CART_ITEMS_STALE' },
+          message: 'One or more cart items are no longer in the cart',
+        },
+      ],
+    });
+
+    await expect(
+      submitCheckout(createSubmitParams({ checkoutHook: createCheckoutHook({ createOrder }) })),
+    ).rejects.toMatchObject({
+      code: 'cart_stale',
+      message: 'มีรายการถูกลบออกจากตะกร้าแล้ว กรุณาตรวจสอบสรุปคำสั่งซื้ออีกครั้ง',
+    });
 
     expect(createOrder).toHaveBeenCalledTimes(1);
   });

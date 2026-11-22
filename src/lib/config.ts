@@ -1,3 +1,5 @@
+import { BEAM_API_BASE_URL_DEFAULT } from './payment/beam';
+
 const DEFAULT_SERVER_GRAPHQL_URL = 'http://localhost:3002/graphql';
 const DEFAULT_SERVER_GRAPHQL_WS_URL = 'ws://localhost:3002/graphql';
 
@@ -40,6 +42,54 @@ export function buildGraphqlSsrBypassHeaders(
     return {};
   }
   return { [GRAPHQL_SSR_BYPASS_HEADER]: secret };
+}
+
+/**
+ * CSP `connect-src` origins for GraphQL subscriptions.
+ * Browser opens WS directly to the API (not the Next.js `/graphql` HTTP rewrite).
+ * Set `NEXT_PUBLIC_GRAPHQL_WS_URL` or `NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN` in UAT/prod.
+ */
+export function getGraphqlWsConnectSrcOrigins(env: NodeJS.ProcessEnv = process.env): string[] {
+  const explicit = env.NEXT_PUBLIC_GRAPHQL_WS_URL?.trim();
+  if (explicit) {
+    try {
+      const url = new URL(explicit);
+      return [`${url.protocol}//${url.host}`];
+    } catch {
+      return [];
+    }
+  }
+
+  const backendOrigin = env.NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN?.trim();
+  if (backendOrigin) {
+    try {
+      const url = new URL(backendOrigin);
+      const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      return [`${protocol}//${url.host}`];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+/**
+ * CSP `connect-src` origin for Beam browser card tokenization.
+ * Uses the same `NEXT_PUBLIC_BEAM_API_BASE_URL` as `getBeamApiBaseUrl()` (build-time on Vercel).
+ */
+export function getBeamConnectSrcOrigins(env: NodeJS.ProcessEnv = process.env): string[] {
+  const configured = env.NEXT_PUBLIC_BEAM_API_BASE_URL?.trim();
+  if (configured) {
+    try {
+      const url = new URL(configured);
+      return [`${url.protocol}//${url.host}`];
+    } catch {
+      // fall through to production default
+    }
+  }
+
+  return [BEAM_API_BASE_URL_DEFAULT];
 }
 
 /** WebSocket endpoint for GraphQL subscriptions (browser connects directly to API). */

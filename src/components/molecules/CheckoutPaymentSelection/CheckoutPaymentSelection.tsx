@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/atoms/Button';
 import {
@@ -14,18 +15,25 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
-import { parseCardExpiry } from '@/lib/payment/omise';
+import { useCheckoutTotals } from '@/lib/hooks/useCheckoutTotals';
+import { parseCardExpiry } from '@/lib/payment/beam';
+import { encryptCardTransportPayload } from '@/lib/payment/cardTransport';
+import { isBeamSavedPaymentMethod } from '@/lib/payment/savedPaymentMethod';
 import { cn } from '@/lib/utils';
 import { CardPaymentForm } from './CardPaymentForm';
 import {
   createCheckoutCardPaymentBridge,
   EMPTY_CHECKOUT_CARD_FORM,
+  getCheckoutCardFieldErrors,
+  notifyCheckoutCardPaymentValidityChange,
   registerCheckoutCardPaymentBridge,
+  SavedCardCvvCancelledError,
   validateCheckoutCardForm,
   type CheckoutCardFormState,
 } from './checkoutCardPaymentBridge';
-import { cleanCardNumber, detectCardBrand } from './paymentFormat';
+import { cleanCardNumber } from './paymentFormat';
 import { PaymentMethodRadio } from './PaymentMethodRadio';
+import { SavedCardCvvModal } from './SavedCardCvvModal';
 import { SavedPaymentMethodOption } from './SavedPaymentMethodOption';
 
 type PaymentOption = {
@@ -42,7 +50,7 @@ const BASE_PAYMENT_OPTIONS: PaymentOption[] = [
   },
   {
     value: 'card',
-    label: 'บัตรเครดิต/บัตรเดบิต',
+    label: 'Credit / Debit Card (บัตรเครดิต / เดบิต)',
     icon: <SubtractIcon size={{ mobile: 28 }} color="#9C6ADE" />,
   },
 ];
@@ -52,6 +60,37 @@ const BANK_TRANSFER_OPTION: PaymentOption = {
   label: 'Bank Account (บัญชีธนาคาร)',
   icon: <WalletIcon size={{ mobile: 28 }} color="#9C6ADE" />,
 };
+
+const WALLET_PAYMENT_OPTIONS: PaymentOption[] = [
+  {
+    value: 'truemoney',
+    label: 'TrueMoney Wallet',
+    icon: (
+      <Image
+        src="/images/payment/truemoney.png"
+        alt=""
+        width={112}
+        height={112}
+        unoptimized
+        className="h-7 w-7 object-contain"
+      />
+    ),
+  },
+  {
+    value: 'shopeepay',
+    label: 'Shopee Pay',
+    icon: (
+      <Image
+        src="/images/payment/shopeepay.png"
+        alt=""
+        width={150}
+        height={112}
+        unoptimized
+        className="h-7 w-7 object-contain"
+      />
+    ),
+  },
+];
 
 type CardEntryMode = 'saved' | 'new';
 
@@ -101,15 +140,24 @@ function PaymentMethodOption({
 function resolveDefaultSavedCardId(
   paymentMethods: ReturnType<typeof usePaymentMethods>['paymentMethods'],
 ): string | null {
-  if (paymentMethods.length === 0) {
+  const usable = paymentMethods.filter(isBeamSavedPaymentMethod);
+  if (usable.length === 0) {
     return null;
   }
 
-  return paymentMethods.find((method) => method.isDefault)?.id ?? paymentMethods[0]?.id ?? null;
+  return usable.find((method) => method.isDefault)?.id ?? usable[0]?.id ?? null;
+}
+
+function formatCheckoutAmount(amount: number): string {
+  return `฿${amount.toLocaleString('th-TH', {
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export function CheckoutPaymentSelection() {
   const { paymentMethod, setPaymentMethod, isSubmitting } = useCheckout();
+  const { finalPrice } = useCheckoutTotals();
   const { isAuthenticated } = useAuth();
   const { paymentMethods, addPaymentMethod } = usePaymentMethods();
   const { data: bankTransferData, loading: bankTransferLoading } = useQuery(
@@ -120,8 +168,8 @@ export function CheckoutPaymentSelection() {
   const paymentOptions = useMemo(
     () =>
       bankTransferAvailable
-        ? [...BASE_PAYMENT_OPTIONS, BANK_TRANSFER_OPTION]
-        : BASE_PAYMENT_OPTIONS,
+        ? [BANK_TRANSFER_OPTION, ...BASE_PAYMENT_OPTIONS, ...WALLET_PAYMENT_OPTIONS]
+        : [...BASE_PAYMENT_OPTIONS, ...WALLET_PAYMENT_OPTIONS],
     [bankTransferAvailable],
   );
   const [cardForm, setCardForm] = useState<CheckoutCardFormState>(EMPTY_CHECKOUT_CARD_FORM);
@@ -129,16 +177,22 @@ export function CheckoutPaymentSelection() {
   const [cardEntryMode, setCardEntryMode] = useState<CardEntryMode>('new');
   const [selectedSavedCardId, setSelectedSavedCardId] = useState<string | null>(null);
   const [saveCardForNextTime, setSaveCardForNextTime] = useState(false);
+  const [savedCardCvv, setSavedCardCvv] = useState('');
+  const [cvvModalOpen, setCvvModalOpen] = useState(false);
   const [isSavingCard, setIsSavingCard] = useState(false);
   const cardFormRef = useRef(cardForm);
   const cardEntryModeRef = useRef(cardEntryMode);
   const selectedSavedCardIdRef = useRef(selectedSavedCardId);
   const saveCardForNextTimeRef = useRef(saveCardForNextTime);
+  const savedCardCvvRef = useRef(savedCardCvv);
+  const cvvPromptResolverRef = useRef<((cvv: string) => void) | null>(null);
+  const cvvPromptRejectRef = useRef<((error: Error) => void) | null>(null);
   const [prevHasSavedCards, setPrevHasSavedCards] = useState<boolean | null>(null);
 
   const hasSavedCards = isAuthenticated && paymentMethods.length > 0;
   const showSavedCards = paymentMethod === 'card' && hasSavedCards && cardEntryMode === 'saved';
   const showNewCardForm = paymentMethod === 'card' && !showSavedCards;
+  const selectedSavedCard = paymentMethods.find((method) => method.id === selectedSavedCardId);
 
   // Adjust saved-card selection state when availability changes, following the
   // "adjusting state when a prop changes" pattern (no effect needed for this).
@@ -157,15 +211,22 @@ export function CheckoutPaymentSelection() {
     cardEntryModeRef.current = cardEntryMode;
     selectedSavedCardIdRef.current = selectedSavedCardId;
     saveCardForNextTimeRef.current = saveCardForNextTime;
-  }, [cardEntryMode, cardForm, saveCardForNextTime, selectedSavedCardId]);
+    savedCardCvvRef.current = savedCardCvv;
+    notifyCheckoutCardPaymentValidityChange();
+  }, [cardEntryMode, cardForm, saveCardForNextTime, savedCardCvv, selectedSavedCardId]);
+
+  const cardFieldErrors = useMemo(() => getCheckoutCardFieldErrors(cardForm), [cardForm]);
 
   useEffect(() => {
+    if (bankTransferLoading) return;
+
     if (paymentMethod === null) {
-      setPaymentMethod('promptpay');
+      setPaymentMethod(bankTransferAvailable ? 'bank_transfer' : 'promptpay');
       return;
     }
+
     // Bank transfer is off until admin configures account details.
-    if (paymentMethod === 'bank_transfer' && !bankTransferLoading && !bankTransferAvailable) {
+    if (paymentMethod === 'bank_transfer' && !bankTransferAvailable) {
       setPaymentMethod('promptpay');
     }
   }, [bankTransferAvailable, bankTransferLoading, paymentMethod, setPaymentMethod]);
@@ -173,6 +234,31 @@ export function CheckoutPaymentSelection() {
     setCardForm(EMPTY_CHECKOUT_CARD_FORM);
     setCardFormError(null);
     setSaveCardForNextTime(false);
+    setSavedCardCvv('');
+  }, []);
+
+  const rejectCvvPrompt = useCallback(() => {
+    setCvvModalOpen(false);
+    setSavedCardCvv('');
+    const reject = cvvPromptRejectRef.current;
+    cvvPromptResolverRef.current = null;
+    cvvPromptRejectRef.current = null;
+    reject?.(new SavedCardCvvCancelledError());
+  }, []);
+
+  const promptSavedCardCvv = useCallback(() => {
+    return new Promise<string>((resolve, reject) => {
+      cvvPromptResolverRef.current = (cvv: string) => {
+        cvvPromptResolverRef.current = null;
+        cvvPromptRejectRef.current = null;
+        setCvvModalOpen(false);
+        setSavedCardCvv('');
+        resolve(cvv);
+      };
+      cvvPromptRejectRef.current = reject;
+      setSavedCardCvv('');
+      setCvvModalOpen(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -181,6 +267,8 @@ export function CheckoutPaymentSelection() {
         getCardForm: () => cardFormRef.current,
         clearCardForm,
         getSavedPaymentMethodId: () => selectedSavedCardIdRef.current,
+        getSavedCardCvv: () => savedCardCvvRef.current,
+        promptSavedCardCvv,
         shouldUseSavedCard: () =>
           cardEntryModeRef.current === 'saved' && Boolean(selectedSavedCardIdRef.current),
         getSaveCardForNextTime: () => saveCardForNextTimeRef.current,
@@ -189,8 +277,9 @@ export function CheckoutPaymentSelection() {
 
     return () => {
       registerCheckoutCardPaymentBridge(null);
+      rejectCvvPrompt();
     };
-  }, [clearCardForm]);
+  }, [clearCardForm, promptSavedCardCvv, rejectCvvPrompt]);
 
   const handlePaymentMethodChange = useCallback(
     (method: PaymentMethod) => {
@@ -249,26 +338,15 @@ export function CheckoutPaymentSelection() {
     setCardFormError(null);
 
     try {
-      const { tokenizeCard } = await import('@/lib/payment/omise');
       const { month, year } = parseCardExpiry(cardForm.expiry);
-      const digits = cleanCardNumber(cardForm.cardNumber);
-      const omiseToken = await tokenizeCard({
-        number: digits,
-        expirationMonth: month,
-        expirationYear: year,
-        securityCode: cardForm.cvv,
-        name: cardForm.cardName.trim(),
-      });
-
-      const brand = detectCardBrand(cardForm.cardNumber);
-      const lastFour = digits.slice(-4);
-
-      const saved = await addPaymentMethod({
-        omiseCardToken: omiseToken,
-        brand,
-        lastFour,
+      const cardCipher = await encryptCardTransportPayload({
+        cardholderName: cardForm.cardName.trim(),
+        pan: cleanCardNumber(cardForm.cardNumber),
         expiryMonth: month,
         expiryYear: year,
+      });
+      const saved = await addPaymentMethod({
+        cardCipher,
       });
 
       clearCardForm();
@@ -346,6 +424,9 @@ export function CheckoutPaymentSelection() {
                       disabled={isSubmitting}
                       onSelect={() => {
                         if (!isSubmitting) {
+                          if (selectedSavedCardId !== method.id) {
+                            setSavedCardCvv('');
+                          }
                           setSelectedSavedCardId(method.id);
                         }
                       }}
@@ -396,6 +477,7 @@ export function CheckoutPaymentSelection() {
                       setCardFormError(null);
                     }
                   }}
+                  fieldErrors={cardFieldErrors}
                   error={cardFormError}
                   showSaveCardCheckbox={isAuthenticated}
                   saveCardChecked={saveCardForNextTime}
@@ -410,6 +492,17 @@ export function CheckoutPaymentSelection() {
           </>
         ) : null}
       </div>
+
+      <SavedCardCvvModal
+        open={cvvModalOpen}
+        brand={selectedSavedCard?.brand ?? ''}
+        lastFour={selectedSavedCard?.lastFour ?? ''}
+        amountLabel={formatCheckoutAmount(finalPrice)}
+        onCancel={rejectCvvPrompt}
+        onConfirm={(cvv) => {
+          cvvPromptResolverRef.current?.(cvv);
+        }}
+      />
     </div>
   );
 }

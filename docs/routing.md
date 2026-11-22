@@ -13,7 +13,7 @@ flowchart TD
   ROOT --> SEARCH["/search"]
   ROOT --> PROD_LIST["/products → /search"]
   ROOT --> CAT_INDEX["/categories → /"]
-  ROOT --> PROD["/product/[id]"]
+  ROOT --> PROD["/product/[slug]"]
   ROOT --> SELLER["/sellers/[handle]"]
   ROOT --> SELLER_REV["/sellers/[handle]/reviews"]
   ROOT --> USER["/user/*"]
@@ -116,20 +116,23 @@ export default function Page() { return <CartPage />; }
 ### Pattern 2: SSR with preload
 
 ```typescript
-// src/app/(main)/product/[id]/page.tsx
+// src/app/(main)/product/[slug]/page.tsx
 export const revalidate = 60;
 
 export default async function Page({ params }) {
-  const { id } = await params;
+  const { slug } = await params;
+  // Legacy UUID segments permanently redirect to /product/{productSlug}-{storeSlug}.
   const client = getClient();
   const { data } = await client.query({
-    query: ProductByIdDocument,
-    variables: buildProductByIdVariables(id),
+    query: ProductByPathDocument,
+    variables: buildProductByPathVariables({ path: slug }),
   });
   return (
-    <PreloadQuery query={ProductByIdDocument} variables={...}>
-      <ProductDetailsPage productId={id} />
-    </PreloadQuery>
+    <ProductDetailsPage
+      productPath={slug}
+      productId={data.productByPath.id}
+      initialProduct={data.productByPath}
+    />
   );
 }
 ```

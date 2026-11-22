@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildGraphqlSsrBypassHeaders,
+  getBeamConnectSrcOrigins,
   getGraphqlSsrBypassSecret,
+  getGraphqlWsConnectSrcOrigins,
   GRAPHQL_SSR_BYPASS_HEADER,
 } from './config';
 
@@ -48,5 +50,56 @@ describe('buildGraphqlSsrBypassHeaders', () => {
     expect(buildGraphqlSsrBypassHeaders()).toEqual({
       [GRAPHQL_SSR_BYPASS_HEADER]: 'from-env',
     });
+  });
+});
+
+describe('getGraphqlWsConnectSrcOrigins', () => {
+  it('returns empty when no WS env is set', () => {
+    expect(getGraphqlWsConnectSrcOrigins({ NODE_ENV: 'test' })).toEqual([]);
+  });
+
+  it('maps https backend origin to wss host for CSP', () => {
+    expect(
+      getGraphqlWsConnectSrcOrigins({
+        NODE_ENV: 'test',
+        NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN: 'https://api.example.com',
+      }),
+    ).toEqual(['wss://api.example.com']);
+  });
+
+  it('prefers explicit NEXT_PUBLIC_GRAPHQL_WS_URL origin', () => {
+    expect(
+      getGraphqlWsConnectSrcOrigins({
+        NODE_ENV: 'test',
+        NEXT_PUBLIC_GRAPHQL_WS_URL: 'wss://api.example.com/graphql',
+        NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN: 'https://ignored.example.com',
+      }),
+    ).toEqual(['wss://api.example.com']);
+  });
+});
+
+describe('getBeamConnectSrcOrigins', () => {
+  it('defaults to production Beam API origin when unset', () => {
+    expect(getBeamConnectSrcOrigins({ NODE_ENV: 'test' })).toEqual([
+      'https://api.beamcheckout.com',
+    ]);
+  });
+
+  it('uses NEXT_PUBLIC_BEAM_API_BASE_URL origin for CSP', () => {
+    expect(
+      getBeamConnectSrcOrigins({
+        NODE_ENV: 'test',
+        NEXT_PUBLIC_BEAM_API_BASE_URL: 'https://playground.api.beamcheckout.com',
+      }),
+    ).toEqual(['https://playground.api.beamcheckout.com']);
+  });
+
+  it('falls back to production when Beam API base URL is invalid', () => {
+    expect(
+      getBeamConnectSrcOrigins({
+        NODE_ENV: 'test',
+        NEXT_PUBLIC_BEAM_API_BASE_URL: 'not-a-url',
+      }),
+    ).toEqual(['https://api.beamcheckout.com']);
   });
 });

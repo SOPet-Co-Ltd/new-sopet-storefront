@@ -30,6 +30,34 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('calls onClose when the overlay is clicked', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    render(
+      <Modal onClose={onClose}>
+        <button type="button">Inside</button>
+      </Modal>,
+    );
+
+    await user.click(screen.getByTestId('modal-overlay'));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('does not call onClose when modal content is clicked', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    render(
+      <Modal onClose={onClose}>
+        <button type="button">Inside</button>
+      </Modal>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Inside' }));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('traps focus within modal on Tab', async () => {
     const user = userEvent.setup();
 

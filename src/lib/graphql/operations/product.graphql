@@ -12,6 +12,7 @@ fragment ProductDetailFields on ProductType {
   soldCount
   status
   category
+  brandName
   tags
   warning
   expiryDate
@@ -41,6 +42,12 @@ fragment ProductDetailFields on ProductType {
 
 query ProductBySlug($slug: String!, $storeId: String!) {
   productBySlug(slug: $slug, storeId: $storeId) {
+    ...ProductDetailFields
+  }
+}
+
+query ProductByPath($path: String!) {
+  productByPath(path: $path) {
     ...ProductDetailFields
   }
 }

@@ -14,6 +14,7 @@ import { CartProvider } from '@/lib/providers/CartProvider';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import {
   CATALOG_PRODUCT_ID,
+  CATALOG_PRODUCT_PATH,
   sampleCategories,
   samplePetTypes,
   sampleProductCard,
@@ -209,10 +210,14 @@ describe('fixture-e2e — SEO semantic HTML journeys', () => {
     unmountCategory();
 
     registerPdpFixtureHandlers();
-    pathname = `/product/${CATALOG_PRODUCT_ID}`;
+    pathname = `/product/${CATALOG_PRODUCT_PATH}`;
 
     render(
-      <ProductDetailsPage productId={CATALOG_PRODUCT_ID} initialProduct={sampleProductDetail} />,
+      <ProductDetailsPage
+        productPath={CATALOG_PRODUCT_PATH}
+        productId={CATALOG_PRODUCT_ID}
+        initialProduct={sampleProductDetail}
+      />,
       { wrapper: createJourneyWrapper() },
     );
 

@@ -30,6 +30,17 @@ describe('checkoutCardPaymentBridge inline validation', () => {
     expect(validateCheckoutCardForm(form)).toBe('กรุณากรอกรหัส CVV 3 หลัก');
   });
 
+  it('requires CVV by default when empty', () => {
+    const form = { ...validForm, cvv: '' };
+    expect(validateCheckoutCardForm(form)).toBe('กรุณากรอกรหัส CVV');
+  });
+
+  it('accepts empty CVV when requireCvv is false', () => {
+    const form = { ...validForm, cvv: '' };
+    expect(getCheckoutCardFieldErrors(form, { requireCvv: false })).toEqual({});
+    expect(validateCheckoutCardForm(form, { requireCvv: false })).toBeNull();
+  });
+
   it('accepts valid card form', () => {
     expect(getCheckoutCardFieldErrors(validForm)).toEqual({});
     expect(validateCheckoutCardForm(validForm)).toBeNull();

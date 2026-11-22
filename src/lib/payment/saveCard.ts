@@ -1,27 +1,27 @@
-/** Metadata for createPayment.saveCard — card is saved server-side only after paid. */
+import { encryptCardTransportPayload } from '@/lib/payment/cardTransport';
+
+/** Payload for createPayment.saveCard — cardCipher is RSA transport ciphertext. CVV is never included. */
 export type SaveCardOnPaymentInput = {
-  cardToken: string;
-  lastFour: string;
-  brand: string;
-  expiryMonth: number;
-  expiryYear: number;
+  cardCipher: string;
   isDefault?: boolean;
 };
 
-export function buildSaveCardPayload(input: {
-  cardToken: string;
-  lastFour: string;
-  brand: string;
+export async function buildSaveCardPayload(input: {
+  cardholderName: string;
+  pan: string;
   expiryMonth: number;
   expiryYear: number;
   isDefault?: boolean;
-}): SaveCardOnPaymentInput {
-  return {
-    cardToken: input.cardToken,
-    lastFour: input.lastFour,
-    brand: input.brand,
+}): Promise<SaveCardOnPaymentInput> {
+  const cardCipher = await encryptCardTransportPayload({
+    cardholderName: input.cardholderName,
+    pan: input.pan,
     expiryMonth: input.expiryMonth,
     expiryYear: input.expiryYear,
+  });
+
+  return {
+    cardCipher,
     ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
   };
 }

@@ -2,7 +2,7 @@ import { MockedProvider } from '@apollo/client/testing/react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
-import { act, useEffect } from 'react';
+import { act, useEffect, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CheckoutPage from '@/app/(checkout)/checkout/page';
@@ -196,6 +196,41 @@ describe('CheckoutPage', () => {
     expect(await screen.findByTestId('checkout-page')).toBeInTheDocument();
     expect(screen.getByTestId('checkout-promotion-section')).toBeInTheDocument();
     expect(screen.getByTestId('checkout-payment-selection')).toBeInTheDocument();
+    expect(screen.queryByTestId('checkout-processing-shield')).not.toBeInTheDocument();
+    expect(screen.getByTestId('checkout-page')).not.toHaveAttribute('inert');
+  });
+
+  it('blocks the page while checkout payment is processing', async () => {
+    function ForceSubmitting() {
+      const { setIsSubmitting } = useCheckout();
+
+      useEffect(() => {
+        setIsSubmitting(true);
+      }, [setIsSubmitting]);
+
+      return null;
+    }
+
+    render(
+      <MockedProvider
+        mocks={[
+          {
+            request: { query: CartDocument, variables: { sessionId: TEST_SESSION_ID } },
+            result: { data: { cart: sampleCart } },
+          },
+        ]}
+      >
+        <CartProvider>
+          <CheckoutProvider>
+            <CheckoutPage />
+            <ForceSubmitting />
+          </CheckoutProvider>
+        </CartProvider>
+      </MockedProvider>,
+    );
+
+    expect(await screen.findByTestId('checkout-processing-shield')).toBeInTheDocument();
+    expect(screen.getByTestId('checkout-page')).not.toHaveAttribute('inert');
   });
 });
 
@@ -349,23 +384,31 @@ describe('CheckoutPromotionSection', () => {
   });
 });
 
+function renderPaymentSelection(children: ReactNode) {
+  const ApolloTestWrapper = createApolloTestWrapper();
+  return render(
+    <ApolloTestWrapper>
+      <CartProvider>
+        <CheckoutProvider>{children}</CheckoutProvider>
+      </CartProvider>
+    </ApolloTestWrapper>,
+  );
+}
+
 describe('CheckoutPaymentSelection', () => {
   it('updates paymentMethod in context on tab click', async () => {
     const user = userEvent.setup();
     let context: CheckoutContextValue | null = null;
-    const ApolloTestWrapper = createApolloTestWrapper();
 
-    render(
-      <ApolloTestWrapper>
-        <CheckoutProvider>
-          <CheckoutStateProbe
-            onContext={(value) => {
-              context = value;
-            }}
-          />
-          <CheckoutPaymentSelection />
-        </CheckoutProvider>
-      </ApolloTestWrapper>,
+    renderPaymentSelection(
+      <>
+        <CheckoutStateProbe
+          onContext={(value) => {
+            context = value;
+          }}
+        />
+        <CheckoutPaymentSelection />
+      </>,
     );
 
     await user.click(await screen.findByTestId('payment-method-card'));
@@ -376,19 +419,16 @@ describe('CheckoutPaymentSelection', () => {
 
   it('defaults to promptpay on mount', async () => {
     let context: CheckoutContextValue | null = null;
-    const ApolloTestWrapper = createApolloTestWrapper();
 
-    render(
-      <ApolloTestWrapper>
-        <CheckoutProvider>
-          <CheckoutStateProbe
-            onContext={(value) => {
-              context = value;
-            }}
-          />
-          <CheckoutPaymentSelection />
-        </CheckoutProvider>
-      </ApolloTestWrapper>,
+    renderPaymentSelection(
+      <>
+        <CheckoutStateProbe
+          onContext={(value) => {
+            context = value;
+          }}
+        />
+        <CheckoutPaymentSelection />
+      </>,
     );
 
     await waitFor(() => {
@@ -397,15 +437,7 @@ describe('CheckoutPaymentSelection', () => {
   });
 
   it('hides bank_transfer when admin has not configured bank details', async () => {
-    const ApolloTestWrapper = createApolloTestWrapper();
-
-    render(
-      <ApolloTestWrapper>
-        <CheckoutProvider>
-          <CheckoutPaymentSelection />
-        </CheckoutProvider>
-      </ApolloTestWrapper>,
-    );
+    renderPaymentSelection(<CheckoutPaymentSelection />);
 
     expect(await screen.findByTestId('payment-method-promptpay')).toBeInTheDocument();
     expect(screen.queryByTestId('payment-method-bank_transfer')).not.toBeInTheDocument();
@@ -426,15 +458,7 @@ describe('CheckoutPaymentSelection', () => {
       ),
     );
 
-    const ApolloTestWrapper = createApolloTestWrapper();
-
-    render(
-      <ApolloTestWrapper>
-        <CheckoutProvider>
-          <CheckoutPaymentSelection />
-        </CheckoutProvider>
-      </ApolloTestWrapper>,
-    );
+    renderPaymentSelection(<CheckoutPaymentSelection />);
 
     const bankTransfer = await screen.findByTestId('payment-method-bank_transfer');
     const methods = screen.getAllByRole('radio');
@@ -445,15 +469,8 @@ describe('CheckoutPaymentSelection', () => {
 
   it('accepts card number input', async () => {
     const user = userEvent.setup();
-    const ApolloTestWrapper = createApolloTestWrapper();
 
-    render(
-      <ApolloTestWrapper>
-        <CheckoutProvider>
-          <CheckoutPaymentSelection />
-        </CheckoutProvider>
-      </ApolloTestWrapper>,
-    );
+    renderPaymentSelection(<CheckoutPaymentSelection />);
 
     await user.click(await screen.findByTestId('payment-method-card'));
     const cardNumberInput = screen.getByTestId('card-number-input');

@@ -264,6 +264,128 @@ describe('CheckoutAddressSection integration', () => {
     });
   });
 
+  describe('existing-customer phone prompt', () => {
+    function renderStatefulCheckoutForExistingCustomer() {
+      function StatefulSection() {
+        const [guestForm, setGuestForm] = useState<GuestCheckoutFormState>(EMPTY_GUEST_FORM);
+        return (
+          <CheckoutAddressSection
+            guestForm={guestForm}
+            onGuestFormChange={(field, value) => {
+              setGuestForm((prev) => ({ ...prev, [field]: value }));
+            }}
+          />
+        );
+      }
+
+      return render(
+        <ApolloTestWrapper>
+          <CheckoutProvider>
+            <StatefulSection />
+          </CheckoutProvider>
+        </ApolloTestWrapper>,
+      );
+    }
+
+    it('does not open modal when phone has no account', async () => {
+      const user = userEvent.setup();
+      let lookupResolved = false;
+
+      server.use(
+        graphql.query('CustomerExistsByPhone', async () => {
+          await delay(10);
+          lookupResolved = true;
+          return HttpResponse.json({
+            data: { customerExistsByPhone: { exists: false } },
+          });
+        }),
+      );
+
+      renderStatefulCheckoutForExistingCustomer();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      const contactPhoneField = screen.getByTestId('contact-phone-field');
+      await user.type(contactPhoneField, '0812345678');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(lookupResolved).toBe(true);
+      });
+      expect(screen.queryByTestId('checkout-existing-customer-modal')).not.toBeInTheDocument();
+    });
+
+    it('opens account-found modal when phone belongs to an account', async () => {
+      const user = userEvent.setup();
+
+      server.use(
+        graphql.query('CustomerExistsByPhone', () =>
+          HttpResponse.json({
+            data: { customerExistsByPhone: { exists: true } },
+          }),
+        ),
+      );
+
+      renderStatefulCheckoutForExistingCustomer();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      const contactPhoneField = screen.getByTestId('contact-phone-field');
+      await user.type(contactPhoneField, '0812345678');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-existing-customer-modal')).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId('checkout-existing-customer-prompt')).toBeInTheDocument();
+      expect(contactPhoneField).toHaveValue('081-234-5678');
+    });
+
+    it('does not re-prompt after continue as guest for the same phone', async () => {
+      const user = userEvent.setup();
+
+      server.use(
+        graphql.query('CustomerExistsByPhone', () =>
+          HttpResponse.json({
+            data: { customerExistsByPhone: { exists: true } },
+          }),
+        ),
+      );
+
+      renderStatefulCheckoutForExistingCustomer();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      const contactPhoneField = screen.getByTestId('contact-phone-field');
+      await user.type(contactPhoneField, '0812345678');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-existing-customer-continue-guest')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('checkout-existing-customer-continue-guest'));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('checkout-existing-customer-modal')).not.toBeInTheDocument();
+      });
+
+      await user.click(contactPhoneField);
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('checkout-existing-customer-modal')).not.toBeInTheDocument();
+      });
+    });
+  });
+
   describe('Test 2 — inline field validation display', () => {
     it('shows inline errors for invalid contact phone and empty subDistrict', async () => {
       renderCheckoutAddressSection({

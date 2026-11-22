@@ -12,29 +12,11 @@ import {
 } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import { cleanCardNumber } from '@/components/molecules/CheckoutPaymentSelection/paymentFormat';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
-import {
-  BeamConfigurationError,
-  detectBeamCardBrand,
-  getBeamCredentials,
-  parseCardExpiry,
-  tokenizeCard,
-} from '@/lib/payment/beam';
+import { detectBeamCardBrand, parseCardExpiry } from '@/lib/payment/beam';
+import { encryptCardTransportPayload } from '@/lib/payment/cardTransport';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 
-function getBeamConfigurationErrorMessage(): string | null {
-  try {
-    getBeamCredentials();
-    return null;
-  } catch (err) {
-    return err instanceof BeamConfigurationError ? err.message : null;
-  }
-}
-
 function getAddCardErrorMessage(error: unknown): string {
-  if (error instanceof BeamConfigurationError) {
-    return error.message;
-  }
-
   return getErrorMessage(error, 'ไม่สามารถเพิ่มบัตรได้');
 }
 
@@ -45,7 +27,7 @@ export default function AddCreditCardPage() {
   const [cardForm, setCardForm] = useState<CheckoutCardFormState>(EMPTY_CHECKOUT_CARD_FORM);
   const [isDefault, setIsDefault] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(getBeamConfigurationErrorMessage);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -77,19 +59,15 @@ export default function AddCreditCardPage() {
         return;
       }
 
-      const tokenized = await tokenizeCard({
-        number: digits,
-        expirationMonth: month,
-        expirationYear: year,
-        name: form.cardName.trim(),
+      // CVV is required by the shared form for UX validation but is never sent or stored.
+      const cardCipher = await encryptCardTransportPayload({
+        cardholderName: form.cardName.trim(),
+        pan: digits,
+        expiryMonth: month,
+        expiryYear: year,
       });
-
       const method = await addPaymentMethod({
-        cardToken: tokenized.cardToken,
-        brand: tokenized.brand,
-        lastFour: tokenized.lastFour,
-        expiryMonth: tokenized.expiryMonth,
-        expiryYear: tokenized.expiryYear,
+        cardCipher,
         isDefault: hasExistingCards ? isDefault : true,
       });
 

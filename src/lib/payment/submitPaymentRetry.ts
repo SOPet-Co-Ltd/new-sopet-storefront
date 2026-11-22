@@ -49,12 +49,16 @@ export function buildPaymentRetryInput(
     ...(submit.savedPaymentMethodId
       ? {
           savedPaymentMethodId: submit.savedPaymentMethodId,
-          ...(submit.cardSecurityCode ? { cardSecurityCode: submit.cardSecurityCode } : {}),
+          ...(submit.cardSecurityCodeCipher
+            ? { cardSecurityCodeCipher: submit.cardSecurityCodeCipher }
+            : {}),
         }
       : submit.cardToken
         ? {
             cardToken: submit.cardToken,
-            ...(submit.cardSecurityCode ? { cardSecurityCode: submit.cardSecurityCode } : {}),
+            ...(submit.cardSecurityCodeCipher
+              ? { cardSecurityCodeCipher: submit.cardSecurityCodeCipher }
+              : {}),
             ...(submit.saveCard ? { saveCard: submit.saveCard } : {}),
           }
         : {}),

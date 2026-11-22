@@ -45,6 +45,29 @@ vi.mock('@/lib/hooks/usePaymentMethods', () => ({
   })),
 }));
 
+vi.mock('@/lib/hooks/useCheckoutTotals', () => ({
+  useCheckoutTotals: vi.fn(() => ({
+    subtotal: 907,
+    itemCount: 1,
+    storeDiscountTotal: 0,
+    storeDiscountByStoreId: {},
+    platformPromotionDiscount: 0,
+    totalDiscount: 0,
+    shippingFeeTotal: 0,
+    finalPrice: 907,
+    savingsTotal: 0,
+    isShippingComplete: true,
+  })),
+}));
+
+vi.mock('@/lib/hooks/useCheckoutCartSelection', () => ({
+  useCheckoutCartSelection: vi.fn(() => ({
+    selectedItemCount: 1,
+    selectedSubtotal: 907,
+    selectedItemsByStore: [],
+  })),
+}));
+
 function renderSelection() {
   const Wrapper = createApolloTestWrapper();
   return render(
@@ -65,20 +88,22 @@ describe('CheckoutPaymentSelection saved card CVV', () => {
     registerCheckoutCardPaymentBridge(null);
   });
 
-  it('collects CVV for the selected saved card and requires it before paying', async () => {
+  it('opens the CVV modal when paying with a selected saved card', async () => {
     const user = userEvent.setup();
     renderSelection();
 
     await user.click(await screen.findByTestId('payment-method-card'));
-
-    const cvvInput = await screen.findByTestId('saved-card-cvv-input');
-    await waitFor(() => expect(isCheckoutCardPaymentReady()).toBe(false));
-    await expect(prepareCardPayment()).rejects.toThrow('กรุณากรอกรหัส CVV ของบัตรที่บันทึกไว้');
-
-    await user.type(cvvInput, '123');
+    expect(screen.queryByTestId('saved-card-cvv-input')).not.toBeInTheDocument();
 
     await waitFor(() => expect(isCheckoutCardPaymentReady()).toBe(true));
-    await expect(prepareCardPayment()).resolves.toEqual({
+
+    const preparePromise = prepareCardPayment();
+    expect(await screen.findByTestId('saved-card-cvv-modal')).toBeInTheDocument();
+
+    await user.type(screen.getByTestId('saved-card-cvv-modal-input'), '123');
+    await user.click(screen.getByTestId('saved-card-cvv-modal-confirm'));
+
+    await expect(preparePromise).resolves.toEqual({
       type: 'saved',
       savedPaymentMethodId: 'saved-card-1',
       cardSecurityCode: '123',

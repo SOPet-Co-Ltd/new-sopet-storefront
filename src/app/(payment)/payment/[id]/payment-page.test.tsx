@@ -69,6 +69,18 @@ vi.mock('@/lib/hooks/useOrders', () => ({
   })),
 }));
 
+vi.mock('@/lib/payment/cardTransport', () => ({
+  encryptCardSecurityCodeTransport: vi.fn(async (cvv: string) => `rsa:v1:cvv-${cvv}`),
+  encryptCardTransportPayload: vi.fn(async () => 'rsa:v1:card-cipher'),
+}));
+
+vi.mock('@/lib/payment/saveCard', () => ({
+  buildSaveCardPayload: vi.fn(async () => ({
+    cardCipher: 'rsa:v1:card-cipher',
+    isDefault: true,
+  })),
+}));
+
 vi.mock('@/lib/payment/beam', async () => {
   const actual = await vi.importActual<typeof import('@/lib/payment/beam')>('@/lib/payment/beam');
   return {
@@ -187,6 +199,16 @@ describe('PaymentPage', () => {
     sessionStorage.clear();
     resetPayment3dsAutoRedirectMemory();
     vi.useRealTimers();
+  });
+
+  it('stays on this payment page when Back would open checkout', () => {
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    window.history.pushState({}, '', '/checkout?mode=buy-now');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    expect(mockReplace).toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
+    window.history.pushState({}, '', `/payment/${CHECKOUT_PAYMENT_ID}`);
   });
 
   it('redirects to thank-you when subscription reports paid status', async () => {
@@ -462,7 +484,7 @@ describe('PaymentPage', () => {
         currency: 'THB',
         paymentMethod: 'credit_card',
         cardToken: 'tok_test_mid_qr',
-        cardSecurityCode: '123',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-123',
       });
     });
 

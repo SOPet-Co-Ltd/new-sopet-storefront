@@ -121,6 +121,12 @@ export type SetDefaultAddressMutation = {
   };
 };
 
+export type CustomerExistsByPhoneQueryVariables = Exact<{
+  input: Types.CustomerExistsByPhoneInput;
+}>;
+
+export type CustomerExistsByPhoneQuery = { customerExistsByPhone: { exists: boolean } };
+
 export type RefreshTokenMutationVariables = Exact<{
   input: Types.RefreshTokenInput;
 }>;
@@ -973,6 +979,10 @@ export type SavedPaymentMethodFieldsFragment = {
   isDefault: boolean;
   psp: string | null;
 };
+
+export type CardTransportPublicKeyQueryVariables = Exact<{ [key: string]: never }>;
+
+export type CardTransportPublicKeyQuery = { cardTransportPublicKey: string };
 
 export type PaymentMethodsQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -2829,6 +2839,49 @@ export const SetDefaultAddressDocument = {
     },
   ],
 } as unknown as DocumentNode<SetDefaultAddressMutation, SetDefaultAddressMutationVariables>;
+export const CustomerExistsByPhoneDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'CustomerExistsByPhone' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'CustomerExistsByPhoneInput' },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'customerExistsByPhone' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'exists' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CustomerExistsByPhoneQuery, CustomerExistsByPhoneQueryVariables>;
 export const RefreshTokenDocument = {
   kind: 'Document',
   definitions: [
@@ -4204,6 +4257,20 @@ export const PaymentStatusUpdatedDocument = {
   PaymentStatusUpdatedSubscription,
   PaymentStatusUpdatedSubscriptionVariables
 >;
+export const CardTransportPublicKeyDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'CardTransportPublicKey' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'cardTransportPublicKey' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CardTransportPublicKeyQuery, CardTransportPublicKeyQueryVariables>;
 export const PaymentMethodsDocument = {
   kind: 'Document',
   definitions: [

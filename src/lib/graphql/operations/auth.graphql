@@ -1,3 +1,9 @@
+query CustomerExistsByPhone($input: CustomerExistsByPhoneInput!) {
+  customerExistsByPhone(input: $input) {
+    exists
+  }
+}
+
 mutation RefreshToken($input: RefreshTokenInput!) {
   refreshToken(input: $input) {
     accessToken

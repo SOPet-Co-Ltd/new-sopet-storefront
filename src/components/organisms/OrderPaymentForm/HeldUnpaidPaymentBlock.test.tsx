@@ -16,6 +16,7 @@ const pendingPayment = {
   qrCodeImage: null,
   qrCodeUrl: 'https://example.com/qr.png',
   expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  failureCode: null,
 };
 
 describe('HeldUnpaidPaymentBlock', () => {

@@ -19,6 +19,14 @@ describe('isAllowed3dsAuthorizeUri', () => {
     );
     expect(isAllowed3dsAuthorizeUri('https://notverify.beamcheckout.com/3ds')).toBe(false);
     expect(isAllowed3dsAuthorizeUri('https://api.beamcheckout.com/3ds')).toBe(false);
+    expect(
+      isAllowed3dsAuthorizeUri(
+        'https://sandbox-gateway-357427797651.asia-southeast1.run.app/charges/c_test/force',
+      ),
+    ).toBe(true);
+    expect(isAllowed3dsAuthorizeUri('https://evil-gateway.asia-southeast1.run.app/charges')).toBe(
+      false,
+    );
   });
 
   it('allows https Omise pay host', () => {

@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLazyQuery } from '@apollo/client/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MapPinIcon } from '@/components/atoms/icons';
 import {
   AddressManagementModal,
@@ -13,11 +14,14 @@ import {
   ShippingAddressFields,
   resolveDisplayMode,
 } from '@/components/molecules/CheckoutAddress';
+import { CheckoutExistingCustomerModal } from '@/components/molecules/CheckoutExistingCustomerModal/CheckoutExistingCustomerModal';
 import {
   getCustomerContactPrefill,
   type GuestCheckoutField,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
+import { CustomerExistsByPhoneDocument } from '@/lib/graphql/generated/operations';
+import { isValidThaiPhoneNumber, normalizeThaiPhoneNumber } from '@/lib/helpers/phone';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
@@ -45,6 +49,15 @@ export function CheckoutAddressSection({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isRecipientPhoneDirty, setIsRecipientPhoneDirty] = useState(false);
+  const [existingCustomerModalOpen, setExistingCustomerModalOpen] = useState(false);
+  const [existingCustomerPhone, setExistingCustomerPhone] = useState('');
+  const [contactHydrateNonce, setContactHydrateNonce] = useState(0);
+  const forceContactHydrateRef = useRef(false);
+  const dismissedPhonesRef = useRef<Set<string>>(new Set());
+  const promptedPhonesRef = useRef<Set<string>>(new Set());
+  const [checkCustomerExists] = useLazyQuery(CustomerExistsByPhoneDocument, {
+    fetchPolicy: 'network-only',
+  });
 
   const displayMode = resolveDisplayMode({
     isAuthenticated,
@@ -62,18 +75,24 @@ export function CheckoutAddressSection({
     if (!isAuthenticated || !customer) return;
 
     const { contactPhone, email } = getCustomerContactPrefill(customer);
+    const shouldForce = forceContactHydrateRef.current;
 
-    if (contactPhone && !guestForm.contactPhone.trim()) {
+    if (contactPhone && (shouldForce || !guestForm.contactPhone.trim())) {
       onGuestFormChange('contactPhone', contactPhone);
-      if (!isRecipientPhoneDirty && !guestForm.recipientPhone.trim()) {
+      if (!isRecipientPhoneDirty && (shouldForce || !guestForm.recipientPhone.trim())) {
         onGuestFormChange('recipientPhone', contactPhone);
       }
     }
 
-    if (email && !(guestForm.email ?? '').trim()) {
+    if (email && (shouldForce || !(guestForm.email ?? '').trim())) {
       onGuestFormChange('email', email);
     }
+
+    if (shouldForce) {
+      forceContactHydrateRef.current = false;
+    }
   }, [
+    contactHydrateNonce,
     customer,
     guestForm.contactPhone,
     guestForm.email,
@@ -95,6 +114,56 @@ export function CheckoutAddressSection({
     },
     [isRecipientPhoneDirty, isSubmitting, onGuestFormChange],
   );
+
+  const handleContactPhoneBlur = useCallback(async () => {
+    if (isAuthenticated || isSubmitting || existingCustomerModalOpen) {
+      return;
+    }
+
+    const normalized = normalizeThaiPhoneNumber(guestForm.contactPhone);
+    if (!isValidThaiPhoneNumber(normalized)) {
+      return;
+    }
+
+    if (dismissedPhonesRef.current.has(normalized) || promptedPhonesRef.current.has(normalized)) {
+      return;
+    }
+
+    try {
+      const result = await checkCustomerExists({
+        variables: { input: { phone: normalized } },
+      });
+
+      if (result.error || !result.data?.customerExistsByPhone.exists) {
+        return;
+      }
+
+      promptedPhonesRef.current.add(normalized);
+      setExistingCustomerPhone(normalized);
+      setExistingCustomerModalOpen(true);
+    } catch {
+      // Silent failure — guest continues checkout unchanged.
+    }
+  }, [
+    checkCustomerExists,
+    existingCustomerModalOpen,
+    guestForm.contactPhone,
+    isAuthenticated,
+    isSubmitting,
+  ]);
+
+  const handleExistingCustomerClose = useCallback(() => {
+    if (existingCustomerPhone) {
+      dismissedPhonesRef.current.add(existingCustomerPhone);
+    }
+    setExistingCustomerModalOpen(false);
+  }, [existingCustomerPhone]);
+
+  const handleExistingCustomerLoginSuccess = useCallback(() => {
+    forceContactHydrateRef.current = true;
+    setExistingCustomerModalOpen(false);
+    setContactHydrateNonce((nonce) => nonce + 1);
+  }, []);
 
   useEffect(() => {
     if (addresses.length === 0) return;
@@ -172,6 +241,9 @@ export function CheckoutAddressSection({
               contactPhone={guestForm.contactPhone}
               email={guestForm.email ?? ''}
               onContactPhoneChange={handleContactPhoneChange}
+              onContactPhoneBlur={() => {
+                void handleContactPhoneBlur();
+              }}
               onEmailChange={(value) => onGuestFormChange('email', value)}
               errors={fieldErrors}
               showErrors={showFieldErrors}
@@ -228,6 +300,13 @@ export function CheckoutAddressSection({
           <CheckoutAddressCardFooterPattern />
         ) : null}
       </div>
+
+      <CheckoutExistingCustomerModal
+        open={existingCustomerModalOpen}
+        phone={existingCustomerPhone}
+        onClose={handleExistingCustomerClose}
+        onLoginSuccess={handleExistingCustomerLoginSuccess}
+      />
     </section>
   );
 }

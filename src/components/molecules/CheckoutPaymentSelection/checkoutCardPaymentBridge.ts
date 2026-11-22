@@ -47,6 +47,8 @@ type CheckoutCardPaymentBridge = {
   clearCardForm: () => void;
   getSavedPaymentMethodId: () => string | null;
   getSavedCardCvv: () => string;
+  /** Opens the CVV confirmation modal and resolves with the entered CVV. */
+  promptSavedCardCvv: () => Promise<string>;
   shouldUseSavedCard: () => boolean;
   getSaveCardForNextTime: () => boolean;
 };
@@ -82,9 +84,8 @@ export function isCheckoutCardPaymentReady(): boolean {
   }
 
   if (bridge.shouldUseSavedCard()) {
-    return (
-      Boolean(bridge.getSavedPaymentMethodId()) && isValidSavedCardCvv(bridge.getSavedCardCvv())
-    );
+    // CVV is collected in the confirmation modal at pay time.
+    return Boolean(bridge.getSavedPaymentMethodId());
   }
 
   return bridge.validateCardForm();
@@ -93,6 +94,14 @@ export function isCheckoutCardPaymentReady(): boolean {
 /** Saved cards keep no CVV; Beam requires one on every charge (3 digits, or 4 for Amex). */
 export function isValidSavedCardCvv(cvv: string): boolean {
   return /^\d{3,4}$/.test(cvv.trim());
+}
+
+/** Shopper closed the saved-card CVV dialog. Not a payment failure. */
+export class SavedCardCvvCancelledError extends Error {
+  constructor() {
+    super('ยกเลิกการยืนยันรหัส CVV');
+    this.name = 'SavedCardCvvCancelledError';
+  }
 }
 
 export type CheckoutCardFieldErrors = Partial<
@@ -194,7 +203,10 @@ export async function prepareCardPayment(): Promise<CardPaymentPayload> {
       throw new Error('กรุณาเลือกบัตรที่บันทึกไว้');
     }
 
-    const cardSecurityCode = bridge.getSavedCardCvv().trim();
+    let cardSecurityCode = bridge.getSavedCardCvv().trim();
+    if (!isValidSavedCardCvv(cardSecurityCode)) {
+      cardSecurityCode = (await bridge.promptSavedCardCvv()).trim();
+    }
     if (!isValidSavedCardCvv(cardSecurityCode)) {
       throw new Error('กรุณากรอกรหัส CVV ของบัตรที่บันทึกไว้');
     }
@@ -245,6 +257,7 @@ export function createCheckoutCardPaymentBridge(handlers: {
   clearCardForm: () => void;
   getSavedPaymentMethodId: () => string | null;
   getSavedCardCvv: () => string;
+  promptSavedCardCvv: () => Promise<string>;
   shouldUseSavedCard: () => boolean;
   getSaveCardForNextTime: () => boolean;
 }): CheckoutCardPaymentBridge {
@@ -253,6 +266,7 @@ export function createCheckoutCardPaymentBridge(handlers: {
     clearCardForm: handlers.clearCardForm,
     getSavedPaymentMethodId: handlers.getSavedPaymentMethodId,
     getSavedCardCvv: handlers.getSavedCardCvv,
+    promptSavedCardCvv: handlers.promptSavedCardCvv,
     shouldUseSavedCard: handlers.shouldUseSavedCard,
     getSaveCardForNextTime: handlers.getSaveCardForNextTime,
     validateCardForm: () => validateCheckoutCardForm(handlers.getCardForm()) === null,

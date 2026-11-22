@@ -78,8 +78,8 @@ export type SubmitCheckoutParams = {
   subtotal: number;
   checkoutHook: Pick<UseCheckoutResult, 'validatePromotion' | 'createOrder' | 'createPayment'>;
   cardToken?: string | null;
-  /** CVV for the card token or saved card; sent with createPayment only, never persisted. */
-  cardSecurityCode?: string | null;
+  /** RSA-encrypted CVV for the card token or saved card; sent with createPayment only, never persisted. */
+  cardSecurityCodeCipher?: string | null;
   savedPaymentMethodId?: string | null;
   /**
    * Save-card metadata for Beam CIT: server saves only after the charge is paid.
@@ -234,12 +234,16 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
       : params.savedPaymentMethodId
         ? {
             savedPaymentMethodId: params.savedPaymentMethodId,
-            ...(params.cardSecurityCode ? { cardSecurityCode: params.cardSecurityCode } : {}),
+            ...(params.cardSecurityCodeCipher
+              ? { cardSecurityCodeCipher: params.cardSecurityCodeCipher }
+              : {}),
           }
         : params.cardToken
           ? {
               cardToken: params.cardToken,
-              ...(params.cardSecurityCode ? { cardSecurityCode: params.cardSecurityCode } : {}),
+              ...(params.cardSecurityCodeCipher
+                ? { cardSecurityCodeCipher: params.cardSecurityCodeCipher }
+                : {}),
               ...(params.saveCard ? { saveCard: params.saveCard } : {}),
             }
           : {}),

@@ -10,6 +10,7 @@ type CheckoutContactSectionProps = {
   email: string;
   onContactPhoneChange: (value: string) => void;
   onEmailChange: (value: string) => void;
+  onContactPhoneBlur?: () => void;
   errors?: Partial<Pick<Record<GuestCheckoutField, string>, 'guestPhone' | 'email'>>;
   showErrors?: boolean;
   /** When false, only the email field is shown (saved-address checkout). */
@@ -21,6 +22,7 @@ export function CheckoutContactSection({
   email,
   onContactPhoneChange,
   onEmailChange,
+  onContactPhoneBlur,
   errors,
   showErrors = false,
   showPhone = true,
@@ -55,6 +57,7 @@ export function CheckoutContactSection({
             isRequired
             value={contactPhone}
             onValueChange={onContactPhoneChange}
+            onBlur={onContactPhoneBlur}
             state={guestPhoneError ? 'error' : 'default'}
             description={guestPhoneError}
             data-testid="contact-phone-field"

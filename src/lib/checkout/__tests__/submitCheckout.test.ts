@@ -294,8 +294,13 @@ describe('submitCheckout', () => {
     expect(first.redirectPath).toBe(second.redirectPath);
   });
 
-  it('passes cardToken and cardSecurityCode for card payments and skips it for COD', async () => {
+  it('passes cardToken and cardSecurityCodeCipher for card payments and skips it for COD', async () => {
     const createPayment = vi.fn().mockResolvedValue(samplePendingPayment);
+    const cvvCipher = 'rsa:v1:cvv-cipher';
+    const saveCardCipher = {
+      cardCipher: 'rsa:v1:card-cipher',
+      isDefault: true,
+    };
 
     await submitCheckout(
       createSubmitParams({
@@ -310,7 +315,7 @@ describe('submitCheckout', () => {
           paymentMethod: 'card',
         },
         cardToken: 'tokn_test_123',
-        cardSecurityCode: '123',
+        cardSecurityCodeCipher: cvvCipher,
         checkoutHook: createCheckoutHook({ createPayment }),
       }),
       createSubmitCheckoutGuard(),
@@ -320,9 +325,10 @@ describe('submitCheckout', () => {
       expect.objectContaining({
         paymentMethod: 'credit_card',
         cardToken: 'tokn_test_123',
-        cardSecurityCode: '123',
+        cardSecurityCodeCipher: cvvCipher,
       }),
     );
+    expect(JSON.stringify(createPayment.mock.calls[0]?.[0])).not.toContain('4242424242424242');
     expect(createPayment).toHaveBeenCalledWith(
       expect.not.objectContaining({
         saveCard: expect.anything(),
@@ -344,15 +350,8 @@ describe('submitCheckout', () => {
           paymentMethod: 'card',
         },
         cardToken: 'tokn_save_me',
-        cardSecurityCode: '123',
-        saveCard: {
-          cardToken: 'tokn_save_me',
-          lastFour: '4242',
-          brand: 'visa',
-          expiryMonth: 12,
-          expiryYear: 2030,
-          isDefault: true,
-        },
+        cardSecurityCodeCipher: cvvCipher,
+        saveCard: saveCardCipher,
         checkoutHook: createCheckoutHook({ createPayment }),
       }),
       createSubmitCheckoutGuard(),
@@ -362,17 +361,11 @@ describe('submitCheckout', () => {
       expect.objectContaining({
         paymentMethod: 'credit_card',
         cardToken: 'tokn_save_me',
-        cardSecurityCode: '123',
-        saveCard: {
-          cardToken: 'tokn_save_me',
-          lastFour: '4242',
-          brand: 'visa',
-          expiryMonth: 12,
-          expiryYear: 2030,
-          isDefault: true,
-        },
+        cardSecurityCodeCipher: cvvCipher,
+        saveCard: saveCardCipher,
       }),
     );
+    expect(JSON.stringify(createPayment.mock.calls[0]?.[0])).not.toContain('4242424242424242');
     expect(createPayment).toHaveBeenCalledWith(
       expect.not.objectContaining({
         savedPaymentMethodId: expect.anything(),
@@ -394,7 +387,7 @@ describe('submitCheckout', () => {
           paymentMethod: 'cod',
         },
         cardToken: 'tokn_test_123',
-        cardSecurityCode: '123',
+        cardSecurityCodeCipher: cvvCipher,
         checkoutHook: createCheckoutHook({ createPayment }),
       }),
       createSubmitCheckoutGuard(),
@@ -407,7 +400,7 @@ describe('submitCheckout', () => {
     );
     expect(createPayment).toHaveBeenCalledWith(
       expect.not.objectContaining({
-        cardSecurityCode: expect.anything(),
+        cardSecurityCodeCipher: expect.anything(),
       }),
     );
 
@@ -426,7 +419,7 @@ describe('submitCheckout', () => {
           paymentMethod: 'card',
         },
         savedPaymentMethodId: 'saved-card-1',
-        cardSecurityCode: '456',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-456',
         checkoutHook: createCheckoutHook({ createPayment }),
       }),
       createSubmitCheckoutGuard(),
@@ -436,7 +429,7 @@ describe('submitCheckout', () => {
       expect.objectContaining({
         paymentMethod: 'credit_card',
         savedPaymentMethodId: 'saved-card-1',
-        cardSecurityCode: '456',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-456',
       }),
     );
   });

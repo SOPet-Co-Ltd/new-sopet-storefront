@@ -41,6 +41,10 @@ function isPaymentNotFoundError(error: Error | undefined): boolean {
   return false;
 }
 
+function isCheckoutPath(pathname: string): boolean {
+  return pathname === '/checkout' || pathname.startsWith('/checkout/');
+}
+
 function retryErrorMessage(error: unknown): string {
   const heldMessage = mapPaymentHeldPortionBlockedError(error);
   if (heldMessage) {
@@ -139,6 +143,19 @@ export default function PaymentPage() {
 
     clearPendingCheckout();
   }, [payment?.status]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      if (!isCheckoutPath(window.location.pathname)) {
+        return;
+      }
+
+      router.replace(`/payment/${routeId}`);
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [routeId, router]);
 
   const handleRetryPayment = useCallback(
     async (input: PaymentRetrySubmitInput) => {

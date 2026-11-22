@@ -64,6 +64,7 @@ export function PaymentWaitingAfterReturnState({
         </Button>
         {recoveryExpanded ? (
           <PaymentRetryPanel
+            amountLabel={amountLabel}
             onSubmit={onRetrySubmit}
             submitError={submitError}
             isSubmitting={isSubmitting}

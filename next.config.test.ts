@@ -46,8 +46,9 @@ describe('next.config security headers', () => {
 
   it('allows GraphQL API WebSocket origin in connect-src when backend origin is set', () => {
     const csp = buildProductionCsp({
+      NODE_ENV: 'test',
       NEXT_PUBLIC_GRAPHQL_BACKEND_ORIGIN: 'https://api.example.com',
-    } as NodeJS.ProcessEnv);
+    });
 
     expect(csp).toContain('wss://api.example.com');
     expect(csp).toContain('https://api.beamcheckout.com');
@@ -55,22 +56,24 @@ describe('next.config security headers', () => {
 
   it('allows explicit NEXT_PUBLIC_GRAPHQL_WS_URL origin in connect-src', () => {
     const csp = buildProductionCsp({
+      NODE_ENV: 'test',
       NEXT_PUBLIC_GRAPHQL_WS_URL: 'wss://payments-api.sopet.org/graphql',
-    } as NodeJS.ProcessEnv);
+    });
 
     expect(csp).toContain('wss://payments-api.sopet.org');
   });
 
   it('allows Beam playground API origin in connect-src when NEXT_PUBLIC_BEAM_API_BASE_URL is set', () => {
     const csp = buildProductionCsp({
+      NODE_ENV: 'test',
       NEXT_PUBLIC_BEAM_API_BASE_URL: 'https://playground.api.beamcheckout.com',
-    } as NodeJS.ProcessEnv);
+    });
 
     expect(csp).toContain('https://playground.api.beamcheckout.com');
   });
 
   it('defaults Beam connect-src to production API when NEXT_PUBLIC_BEAM_API_BASE_URL is unset', () => {
-    const csp = buildProductionCsp({} as NodeJS.ProcessEnv);
+    const csp = buildProductionCsp({ NODE_ENV: 'test' });
 
     expect(csp).toContain('https://api.beamcheckout.com');
     expect(csp).not.toContain('https://playground.api.beamcheckout.com');

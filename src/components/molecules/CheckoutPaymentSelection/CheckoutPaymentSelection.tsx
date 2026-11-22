@@ -15,7 +15,9 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { useCheckout, type PaymentMethod } from '@/lib/providers/CheckoutProvider';
 import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
+import { useCheckoutTotals } from '@/lib/hooks/useCheckoutTotals';
 import { parseCardExpiry } from '@/lib/payment/beam';
+import { encryptCardTransportPayload } from '@/lib/payment/cardTransport';
 import { isBeamSavedPaymentMethod } from '@/lib/payment/savedPaymentMethod';
 import { cn } from '@/lib/utils';
 import { CardPaymentForm } from './CardPaymentForm';
@@ -25,12 +27,13 @@ import {
   getCheckoutCardFieldErrors,
   notifyCheckoutCardPaymentValidityChange,
   registerCheckoutCardPaymentBridge,
+  SavedCardCvvCancelledError,
   validateCheckoutCardForm,
   type CheckoutCardFormState,
 } from './checkoutCardPaymentBridge';
 import { cleanCardNumber } from './paymentFormat';
 import { PaymentMethodRadio } from './PaymentMethodRadio';
-import { SavedCardCvvField } from './SavedCardCvvField';
+import { SavedCardCvvModal } from './SavedCardCvvModal';
 import { SavedPaymentMethodOption } from './SavedPaymentMethodOption';
 
 type PaymentOption = {
@@ -145,8 +148,16 @@ function resolveDefaultSavedCardId(
   return usable.find((method) => method.isDefault)?.id ?? usable[0]?.id ?? null;
 }
 
+function formatCheckoutAmount(amount: number): string {
+  return `฿${amount.toLocaleString('th-TH', {
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 export function CheckoutPaymentSelection() {
   const { paymentMethod, setPaymentMethod, isSubmitting } = useCheckout();
+  const { finalPrice } = useCheckoutTotals();
   const { isAuthenticated } = useAuth();
   const { paymentMethods, addPaymentMethod } = usePaymentMethods();
   const { data: bankTransferData, loading: bankTransferLoading } = useQuery(
@@ -167,12 +178,15 @@ export function CheckoutPaymentSelection() {
   const [selectedSavedCardId, setSelectedSavedCardId] = useState<string | null>(null);
   const [saveCardForNextTime, setSaveCardForNextTime] = useState(false);
   const [savedCardCvv, setSavedCardCvv] = useState('');
+  const [cvvModalOpen, setCvvModalOpen] = useState(false);
   const [isSavingCard, setIsSavingCard] = useState(false);
   const cardFormRef = useRef(cardForm);
   const cardEntryModeRef = useRef(cardEntryMode);
   const selectedSavedCardIdRef = useRef(selectedSavedCardId);
   const saveCardForNextTimeRef = useRef(saveCardForNextTime);
   const savedCardCvvRef = useRef(savedCardCvv);
+  const cvvPromptResolverRef = useRef<((cvv: string) => void) | null>(null);
+  const cvvPromptRejectRef = useRef<((error: Error) => void) | null>(null);
   const [prevHasSavedCards, setPrevHasSavedCards] = useState<boolean | null>(null);
 
   const hasSavedCards = isAuthenticated && paymentMethods.length > 0;
@@ -223,6 +237,30 @@ export function CheckoutPaymentSelection() {
     setSavedCardCvv('');
   }, []);
 
+  const rejectCvvPrompt = useCallback(() => {
+    setCvvModalOpen(false);
+    setSavedCardCvv('');
+    const reject = cvvPromptRejectRef.current;
+    cvvPromptResolverRef.current = null;
+    cvvPromptRejectRef.current = null;
+    reject?.(new SavedCardCvvCancelledError());
+  }, []);
+
+  const promptSavedCardCvv = useCallback(() => {
+    return new Promise<string>((resolve, reject) => {
+      cvvPromptResolverRef.current = (cvv: string) => {
+        cvvPromptResolverRef.current = null;
+        cvvPromptRejectRef.current = null;
+        setCvvModalOpen(false);
+        setSavedCardCvv('');
+        resolve(cvv);
+      };
+      cvvPromptRejectRef.current = reject;
+      setSavedCardCvv('');
+      setCvvModalOpen(true);
+    });
+  }, []);
+
   useEffect(() => {
     registerCheckoutCardPaymentBridge(
       createCheckoutCardPaymentBridge({
@@ -230,6 +268,7 @@ export function CheckoutPaymentSelection() {
         clearCardForm,
         getSavedPaymentMethodId: () => selectedSavedCardIdRef.current,
         getSavedCardCvv: () => savedCardCvvRef.current,
+        promptSavedCardCvv,
         shouldUseSavedCard: () =>
           cardEntryModeRef.current === 'saved' && Boolean(selectedSavedCardIdRef.current),
         getSaveCardForNextTime: () => saveCardForNextTimeRef.current,
@@ -238,8 +277,9 @@ export function CheckoutPaymentSelection() {
 
     return () => {
       registerCheckoutCardPaymentBridge(null);
+      rejectCvvPrompt();
     };
-  }, [clearCardForm]);
+  }, [clearCardForm, promptSavedCardCvv, rejectCvvPrompt]);
 
   const handlePaymentMethodChange = useCallback(
     (method: PaymentMethod) => {
@@ -298,21 +338,15 @@ export function CheckoutPaymentSelection() {
     setCardFormError(null);
 
     try {
-      const { tokenizeCard } = await import('@/lib/payment/beam');
       const { month, year } = parseCardExpiry(cardForm.expiry);
-      const tokenized = await tokenizeCard({
-        number: cleanCardNumber(cardForm.cardNumber),
-        expirationMonth: month,
-        expirationYear: year,
-        name: cardForm.cardName.trim(),
+      const cardCipher = await encryptCardTransportPayload({
+        cardholderName: cardForm.cardName.trim(),
+        pan: cleanCardNumber(cardForm.cardNumber),
+        expiryMonth: month,
+        expiryYear: year,
       });
-
       const saved = await addPaymentMethod({
-        cardToken: tokenized.cardToken,
-        brand: tokenized.brand,
-        lastFour: tokenized.lastFour,
-        expiryMonth: tokenized.expiryMonth,
-        expiryYear: tokenized.expiryYear,
+        cardCipher,
       });
 
       clearCardForm();
@@ -399,16 +433,6 @@ export function CheckoutPaymentSelection() {
                     />
                   ))}
                 </div>
-
-                {selectedSavedCard ? (
-                  <SavedCardCvvField
-                    key={selectedSavedCard.id}
-                    value={savedCardCvv}
-                    brand={selectedSavedCard.brand}
-                    disabled={isSubmitting}
-                    onChange={setSavedCardCvv}
-                  />
-                ) : null}
               </div>
             ) : null}
 
@@ -468,6 +492,17 @@ export function CheckoutPaymentSelection() {
           </>
         ) : null}
       </div>
+
+      <SavedCardCvvModal
+        open={cvvModalOpen}
+        brand={selectedSavedCard?.brand ?? ''}
+        lastFour={selectedSavedCard?.lastFour ?? ''}
+        amountLabel={formatCheckoutAmount(finalPrice)}
+        onCancel={rejectCvvPrompt}
+        onConfirm={(cvv) => {
+          cvvPromptResolverRef.current?.(cvv);
+        }}
+      />
     </div>
   );
 }

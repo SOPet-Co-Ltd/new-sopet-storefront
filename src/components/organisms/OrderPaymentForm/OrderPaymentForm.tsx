@@ -140,6 +140,7 @@ function BankTransferActionsChrome({
   onCheckStatus,
   recoveryExpanded,
   onRecoveryExpandedChange,
+  amountLabel,
 }: {
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
@@ -148,6 +149,7 @@ function BankTransferActionsChrome({
   onCheckStatus?: () => void | Promise<unknown>;
   recoveryExpanded: boolean;
   onRecoveryExpandedChange: (open: boolean) => void;
+  amountLabel?: string;
 }) {
   const [checking, setChecking] = useState(false);
 
@@ -179,6 +181,7 @@ function BankTransferActionsChrome({
             <PaymentRetryPanel
               initialPaymentMethod={null}
               hideBankTransfer
+              amountLabel={amountLabel}
               onSubmit={onRetrySubmit}
               submitError={submitError}
               isSubmitting={isSubmitting}
@@ -209,12 +212,14 @@ function MidQrChangeMethodChrome({
   submitError,
   isSubmitting,
   onSubmittingChange,
+  amountLabel,
 }: {
   onComplete?: () => void;
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
   onSubmittingChange?: PaymentRetryPanelProps['onSubmittingChange'];
+  amountLabel?: string;
 }) {
   const [recoveryExpanded, setRecoveryExpanded] = useState(false);
   const [completeEnabled, setCompleteEnabled] = useState(false);
@@ -253,6 +258,7 @@ function MidQrChangeMethodChrome({
       {recoveryExpanded ? (
         <PaymentRetryPanel
           hidePromptPay
+          amountLabel={amountLabel}
           onSubmit={onRetrySubmit}
           submitError={submitError}
           isSubmitting={isSubmitting}
@@ -413,6 +419,7 @@ export function OrderPaymentForm({
         <PaymentFailedState
           isQrExpired={isQrExpired}
           failureCode={payment.failureCode}
+          amountLabel={formatAmount(payment.amount, payment.currency)}
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
           isSubmitting={retrySubmitting}
@@ -543,6 +550,7 @@ export function OrderPaymentForm({
           />
         )}
         <BankTransferActionsChrome
+          amountLabel={amountLabel}
           onCheckStatus={onCheckStatus}
           onRetrySubmit={onRetryPayment}
           submitError={retrySubmitError}
@@ -576,6 +584,7 @@ export function OrderPaymentForm({
           remainingMs={remainingMs}
           actions={
             <MidQrChangeMethodChrome
+              amountLabel={formatAmount(payment.amount, payment.currency)}
               onComplete={onPromptPayComplete}
               onRetrySubmit={onRetryPayment}
               submitError={retrySubmitError}

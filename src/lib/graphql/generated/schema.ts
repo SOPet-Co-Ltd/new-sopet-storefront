@@ -42,12 +42,8 @@ export type ActiveSaleCampaignItemType = {
 };
 
 export type AddPaymentMethodInput = {
-  brand: Scalars['String']['input'];
-  cardToken: Scalars['String']['input'];
-  expiryMonth: Scalars['Int']['input'];
-  expiryYear: Scalars['Int']['input'];
+  cardCipher: Scalars['String']['input'];
   isDefault?: InputMaybe<Scalars['Boolean']['input']>;
-  lastFour: Scalars['String']['input'];
 };
 
 export type AddProductImageInput = {
@@ -546,7 +542,7 @@ export type CreateOrderInput = {
 
 export type CreatePaymentInput = {
   amount?: InputMaybe<Scalars['Float']['input']>;
-  cardSecurityCode?: InputMaybe<Scalars['String']['input']>;
+  cardSecurityCodeCipher?: InputMaybe<Scalars['String']['input']>;
   cardToken?: InputMaybe<Scalars['String']['input']>;
   currency?: Scalars['String']['input'];
   guestPayToken?: InputMaybe<Scalars['String']['input']>;
@@ -2355,6 +2351,7 @@ export type Query = {
   bankTransferDetails?: Maybe<BankTransferDetailsType>;
   bankTransferSettings: BankTransferSettingsType;
   brandDeleteImpact: TaxonomyDeleteImpactType;
+  cardTransportPublicKey: Scalars['String']['output'];
   cart: CartType;
   categoryDeleteImpact: TaxonomyDeleteImpactType;
   customerExistsByPhone: CustomerExistsByPhonePayload;
@@ -3120,12 +3117,8 @@ export type SalesTimePointType = {
 };
 
 export type SaveCardOnPaymentInput = {
-  brand: Scalars['String']['input'];
-  cardToken: Scalars['String']['input'];
-  expiryMonth: Scalars['Int']['input'];
-  expiryYear: Scalars['Int']['input'];
+  cardCipher: Scalars['String']['input'];
   isDefault?: InputMaybe<Scalars['Boolean']['input']>;
-  lastFour: Scalars['String']['input'];
 };
 
 export type SavedAddressType = {

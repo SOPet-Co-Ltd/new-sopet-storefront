@@ -28,27 +28,23 @@ describe('submitPaymentRetry', () => {
       buildPaymentRetryInput(context, {
         paymentMethod: 'credit_card',
         cardToken: 'tokn_test',
-        cardSecurityCode: '123',
+        cardSecurityCodeCipher: 'rsa:v1:cvv',
       }),
     ).toEqual({
       orderId: 'order-1',
       currency: 'THB',
       paymentMethod: 'credit_card',
       cardToken: 'tokn_test',
-      cardSecurityCode: '123',
+      cardSecurityCodeCipher: 'rsa:v1:cvv',
     });
 
     expect(
       buildPaymentRetryInput(context, {
         paymentMethod: 'credit_card',
         cardToken: 'tokn_save',
-        cardSecurityCode: '123',
+        cardSecurityCodeCipher: 'rsa:v1:cvv',
         saveCard: {
-          cardToken: 'tokn_save',
-          lastFour: '4242',
-          brand: 'visa',
-          expiryMonth: 12,
-          expiryYear: 2030,
+          cardCipher: 'rsa:v1:card',
           isDefault: true,
         },
       }),
@@ -57,13 +53,9 @@ describe('submitPaymentRetry', () => {
       currency: 'THB',
       paymentMethod: 'credit_card',
       cardToken: 'tokn_save',
-      cardSecurityCode: '123',
+      cardSecurityCodeCipher: 'rsa:v1:cvv',
       saveCard: {
-        cardToken: 'tokn_save',
-        lastFour: '4242',
-        brand: 'visa',
-        expiryMonth: 12,
-        expiryYear: 2030,
+        cardCipher: 'rsa:v1:card',
         isDefault: true,
       },
     });
@@ -72,14 +64,14 @@ describe('submitPaymentRetry', () => {
       buildPaymentRetryInput(context, {
         paymentMethod: 'credit_card',
         savedPaymentMethodId: 'saved-1',
-        cardSecurityCode: '456',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-456',
       }),
     ).toEqual({
       orderId: 'order-1',
       currency: 'THB',
       paymentMethod: 'credit_card',
       savedPaymentMethodId: 'saved-1',
-      cardSecurityCode: '456',
+      cardSecurityCodeCipher: 'rsa:v1:cvv-456',
     });
 
     expect(buildPaymentRetryInput(context, { paymentMethod: 'promptpay' })).toEqual({

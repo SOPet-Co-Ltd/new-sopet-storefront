@@ -8,7 +8,6 @@ import {
   ValidatePromotionDocument,
   type CreateOrderInput,
   type CreateOrderMutation,
-  type CreatePaymentInput,
   type CreatePaymentMutation,
   type ValidatePromotionInput,
   type ValidatePromotionQuery,
@@ -65,9 +64,8 @@ export function useCheckout(): UseCheckoutResult {
 
   const createPayment = useCallback(
     async (input: CreatePaymentSubmitInput) => {
-      // Cast until codegen regenerates CreatePaymentInput with saveCard.
       const result = await createPaymentMutation({
-        variables: { input: input as CreatePaymentInput },
+        variables: { input },
       });
       return result.data?.createPayment;
     },

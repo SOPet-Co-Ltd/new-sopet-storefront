@@ -54,10 +54,10 @@ function createSubmitParams(paymentMethod: 'promptpay' | 'card' | 'cod'): Submit
 }
 
 describe('submitCheckout payment method boundaries', () => {
-  it('includes cardToken and cardSecurityCode for card payments when provided', async () => {
+  it('includes cardToken and cardSecurityCodeCipher for card payments when provided', async () => {
     const params = createSubmitParams('card');
     params.cardToken = 'tokn_test_123';
-    params.cardSecurityCode = '123';
+    params.cardSecurityCodeCipher = 'rsa:v1:cvv';
 
     await submitCheckout(params);
 
@@ -65,7 +65,7 @@ describe('submitCheckout payment method boundaries', () => {
       expect.objectContaining({
         paymentMethod: 'credit_card',
         cardToken: 'tokn_test_123',
-        cardSecurityCode: '123',
+        cardSecurityCodeCipher: 'rsa:v1:cvv',
       }),
     );
     expect(tokenizeCard).not.toHaveBeenCalled();
@@ -74,7 +74,7 @@ describe('submitCheckout payment method boundaries', () => {
   it('includes savedPaymentMethodId for saved card payments when provided', async () => {
     const params = createSubmitParams('card');
     params.savedPaymentMethodId = 'saved-card-1';
-    params.cardSecurityCode = '456';
+    params.cardSecurityCodeCipher = 'rsa:v1:cvv-456';
 
     await submitCheckout(params);
 
@@ -82,7 +82,7 @@ describe('submitCheckout payment method boundaries', () => {
       expect.objectContaining({
         paymentMethod: 'credit_card',
         savedPaymentMethodId: 'saved-card-1',
-        cardSecurityCode: '456',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-456',
       }),
     );
     expect(tokenizeCard).not.toHaveBeenCalled();

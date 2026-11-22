@@ -93,6 +93,18 @@ vi.mock('@/lib/hooks/usePaymentMethods', () => ({
   })),
 }));
 
+vi.mock('@/lib/payment/cardTransport', () => ({
+  encryptCardSecurityCodeTransport: vi.fn(async (cvv: string) => `rsa:v1:cvv-${cvv}`),
+  encryptCardTransportPayload: vi.fn(async () => 'rsa:v1:card-cipher'),
+}));
+
+vi.mock('@/lib/payment/saveCard', () => ({
+  buildSaveCardPayload: vi.fn(async () => ({
+    cardCipher: 'rsa:v1:card-cipher',
+    isDefault: true,
+  })),
+}));
+
 vi.mock('@/lib/payment/beam', async () => {
   const actual = await vi.importActual<typeof import('@/lib/payment/beam')>('@/lib/payment/beam');
   return {
@@ -187,9 +199,10 @@ describe('Unpaid order payment method switch — fixture-e2e', () => {
           currency: 'THB',
           paymentMethod: 'credit_card',
           cardToken: 'tok_test_mid_qr',
-          cardSecurityCode: '123',
+          cardSecurityCodeCipher: 'rsa:v1:cvv-123',
         },
       });
+      expect(JSON.stringify(createVariables)).not.toContain('4242424242424242');
       expect(mockPush).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
       expect(mockReplace).not.toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
       expect(sessionStorage.getItem(threeDSAutoRedirectStorageKey(CHECKOUT_PAYMENT_ID))).toBeNull();

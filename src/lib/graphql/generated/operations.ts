@@ -980,6 +980,10 @@ export type SavedPaymentMethodFieldsFragment = {
   psp: string | null;
 };
 
+export type CardTransportPublicKeyQueryVariables = Exact<{ [key: string]: never }>;
+
+export type CardTransportPublicKeyQuery = { cardTransportPublicKey: string };
+
 export type PaymentMethodsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type PaymentMethodsQuery = {
@@ -4253,6 +4257,20 @@ export const PaymentStatusUpdatedDocument = {
   PaymentStatusUpdatedSubscription,
   PaymentStatusUpdatedSubscriptionVariables
 >;
+export const CardTransportPublicKeyDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'CardTransportPublicKey' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'cardTransportPublicKey' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CardTransportPublicKeyQuery, CardTransportPublicKeyQueryVariables>;
 export const PaymentMethodsDocument = {
   kind: 'Document',
   definitions: [

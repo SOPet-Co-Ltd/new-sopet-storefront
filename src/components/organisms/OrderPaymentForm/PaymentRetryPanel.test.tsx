@@ -44,6 +44,18 @@ vi.mock('@/lib/payment/beam', async () => {
   };
 });
 
+vi.mock('@/lib/payment/cardTransport', () => ({
+  encryptCardSecurityCodeTransport: vi.fn(async (cvv: string) => `rsa:v1:cvv-${cvv}`),
+  encryptCardTransportPayload: vi.fn(async () => 'rsa:v1:card-cipher'),
+}));
+
+vi.mock('@/lib/payment/saveCard', () => ({
+  buildSaveCardPayload: vi.fn(async () => ({
+    cardCipher: 'rsa:v1:card-cipher',
+    isDefault: true,
+  })),
+}));
+
 function renderWithApollo(ui: React.ReactElement) {
   const Wrapper = createApolloTestWrapper();
   return render(<Wrapper>{ui}</Wrapper>);
@@ -316,27 +328,27 @@ describe('PaymentRetryPanel saved card CVV', () => {
     vi.mocked(usePaymentMethods).mockReset();
   });
 
-  it('requires CVV for a saved card and submits it with savedPaymentMethodId', async () => {
+  it('opens CVV modal for a saved card and submits CVV with savedPaymentMethodId', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);
 
-    renderWithApollo(<PaymentRetryPanel onSubmit={onSubmit} />);
+    renderWithApollo(<PaymentRetryPanel onSubmit={onSubmit} amountLabel="฿907.00" />);
 
     await user.click(screen.getByTestId('payment-method-card'));
-    expect(await screen.findByTestId('saved-card-cvv-input')).toBeInTheDocument();
+    expect(screen.queryByTestId('saved-card-cvv-input')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
-    expect(await screen.findByText('กรุณากรอกรหัส CVV ของบัตรที่บันทึกไว้')).toBeInTheDocument();
+    expect(await screen.findByTestId('saved-card-cvv-modal')).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
 
-    await user.type(screen.getByTestId('saved-card-cvv-input'), '456');
-    await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
+    await user.type(screen.getByTestId('saved-card-cvv-modal-input'), '456');
+    await user.click(screen.getByTestId('saved-card-cvv-modal-confirm'));
 
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith({
         paymentMethod: 'credit_card',
         savedPaymentMethodId: 'saved-card-1',
-        cardSecurityCode: '456',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-456',
       }),
     );
   });
@@ -387,17 +399,14 @@ describe('PaymentRetryPanel saved card CVV', () => {
       expect(onSubmit).toHaveBeenCalledWith({
         paymentMethod: 'credit_card',
         cardToken: 'beam_tok_retry',
-        cardSecurityCode: '123',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-123',
         saveCard: {
-          cardToken: 'beam_tok_retry',
-          lastFour: '4242',
-          brand: 'visa',
-          expiryMonth: 12,
-          expiryYear: 2030,
+          cardCipher: 'rsa:v1:card-cipher',
           isDefault: true,
         },
       }),
     );
+    expect(JSON.stringify(onSubmit.mock.calls[0]?.[0])).not.toContain('4242424242424242');
     expect(addPaymentMethod).not.toHaveBeenCalled();
   });
 });

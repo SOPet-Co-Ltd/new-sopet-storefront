@@ -7,6 +7,7 @@ export type PaymentFailedStateProps = {
   isQrExpired: boolean;
   /** Beam charge failureCode when status is failed (e.g. CH_CARD_DECLINED). */
   failureCode?: string | null;
+  amountLabel?: string;
   onRetrySubmit?: PaymentRetryPanelProps['onSubmit'];
   submitError?: PaymentRetryPanelProps['submitError'];
   isSubmitting?: PaymentRetryPanelProps['isSubmitting'];
@@ -16,6 +17,7 @@ export type PaymentFailedStateProps = {
 export function PaymentFailedState({
   isQrExpired,
   failureCode = null,
+  amountLabel,
   onRetrySubmit,
   submitError,
   isSubmitting,
@@ -37,6 +39,7 @@ export function PaymentFailedState({
       </div>
 
       <PaymentRetryPanel
+        amountLabel={amountLabel}
         onSubmit={onRetrySubmit}
         submitError={submitError}
         isSubmitting={isSubmitting}

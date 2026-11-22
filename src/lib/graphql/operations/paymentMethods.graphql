@@ -9,6 +9,10 @@ fragment SavedPaymentMethodFields on SavedPaymentMethodType {
   psp
 }
 
+query CardTransportPublicKey {
+  cardTransportPublicKey
+}
+
 query PaymentMethods {
   paymentMethods {
     ...SavedPaymentMethodFields

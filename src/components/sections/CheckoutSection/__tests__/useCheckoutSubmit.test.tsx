@@ -3,16 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
 import type { GuestCheckoutFormState } from '@/lib/checkout/guestCheckoutValidation';
 import { hasClientSession } from '@/lib/graphql/authLink';
+import type { PaymentMethod } from '@/lib/providers/CheckoutProvider';
+import { SavedCardCvvCancelledError } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import { useCheckoutSubmit } from '@/components/sections/CheckoutSection/useCheckoutSubmit';
 
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 const mockCreateOrder = vi.fn();
 const mockCreatePayment = vi.fn();
 const mockCreateAddress = vi.fn();
 const mockRefetch = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, replace: vi.fn() }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 vi.mock('sonner', () => ({
@@ -41,10 +44,32 @@ vi.mock('@/lib/graphql/authLink', () => ({
   hasClientSession: vi.fn(() => true),
 }));
 
-const mockPrepareCardPayment = vi.fn();
-vi.mock('@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge', () => ({
-  prepareCardPayment: () => mockPrepareCardPayment(),
+vi.mock('@/lib/payment/cardTransport', () => ({
+  encryptCardSecurityCodeTransport: vi.fn(async (cvv: string) => `rsa:v1:cvv-${cvv}`),
+  encryptCardTransportPayload: vi.fn(async () => 'rsa:v1:card-cipher'),
 }));
+
+vi.mock('@/lib/payment/saveCard', () => ({
+  buildSaveCardPayload: vi.fn(async () => ({
+    cardCipher: 'rsa:v1:card-cipher',
+    isDefault: true,
+  })),
+}));
+
+const mockPrepareCardPayment = vi.fn();
+vi.mock(
+  '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge',
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import('@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge')
+      >();
+    return {
+      ...actual,
+      prepareCardPayment: () => mockPrepareCardPayment(),
+    };
+  },
+);
 
 vi.mock('@/lib/hooks/useCheckoutCartSelection', () => ({
   useCheckoutCartSelection: () => ({
@@ -81,7 +106,7 @@ const checkoutState = {
   selectedAddressId: null as string | null,
   promotionCode: null,
   storePromotionsByStoreId: {},
-  paymentMethod: 'promptpay' as const,
+  paymentMethod: 'promptpay' as PaymentMethod,
   isSubmitting: false,
   setIsSubmitting: vi.fn(),
   setStep: vi.fn(),
@@ -117,6 +142,7 @@ describe('useCheckoutSubmit', () => {
     checkoutState.paymentMethod = 'promptpay';
     checkoutState.isSubmitting = false;
     mockPrepareCardPayment.mockReset();
+    mockReplace.mockReset();
     mockCreateAddress.mockReset();
     mockCreateOrder.mockReset();
     mockCreatePayment.mockReset();
@@ -186,6 +212,35 @@ describe('useCheckoutSubmit', () => {
     expect(toast.error).not.toHaveBeenCalled();
   });
 
+  it('unlocks checkout without an error toast when the CVV dialog is closed', async () => {
+    checkoutState.paymentMethod = 'card' as typeof checkoutState.paymentMethod;
+    mockPrepareCardPayment.mockRejectedValue(new SavedCardCvvCancelledError());
+
+    const { result } = renderHook(() =>
+      useCheckoutSubmit(guestForm, {
+        addressSubmitContext: {
+          createAddress: mockCreateAddress,
+          setAddress: vi.fn(),
+          saveAddressChecked: false,
+          setFieldErrors: vi.fn(),
+          setShowFieldErrors: vi.fn(),
+          addressQueryError: undefined,
+          addressQueryLoading: false,
+          addressCount: 0,
+        },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(mockPrepareCardPayment).toHaveBeenCalled();
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(checkoutState.setIsSubmitting).toHaveBeenLastCalledWith(false);
+  });
+
   it('skips createAddress when save-address is unchecked (SF-CHK-044)', async () => {
     mockCreateOrder.mockResolvedValue({
       id: 'ord-1',
@@ -221,6 +276,8 @@ describe('useCheckoutSubmit', () => {
     };
     expect(orderInput.shippingAddress?.recipientName).toBe('Somchai');
     expect(orderInput.savedAddressId).toBeUndefined();
+    expect(mockReplace).toHaveBeenCalledWith('/payment/pay-1');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('clears prior pending payment before create so reload cannot resume old QR (SF-CHK-110)', async () => {
@@ -299,17 +356,15 @@ describe('useCheckoutSubmit', () => {
     expect(mockCreatePayment).toHaveBeenCalledWith(
       expect.objectContaining({
         cardToken: 'beam_tok_new',
-        cardSecurityCode: '123',
+        cardSecurityCodeCipher: 'rsa:v1:cvv-123',
         saveCard: {
-          cardToken: 'beam_tok_new',
-          lastFour: '4242',
-          brand: 'visa',
-          expiryMonth: 12,
-          expiryYear: 2030,
+          cardCipher: 'rsa:v1:card-cipher',
           isDefault: true,
         },
       }),
     );
+    expect(JSON.stringify(mockCreatePayment.mock.calls[0]?.[0])).not.toContain('4242424242424242');
+    expect(JSON.stringify(mockCreatePayment.mock.calls[0]?.[0])).not.toMatch(/"123"/);
     expect(mockCreatePayment).toHaveBeenCalledWith(
       expect.not.objectContaining({
         savedPaymentMethodId: expect.anything(),

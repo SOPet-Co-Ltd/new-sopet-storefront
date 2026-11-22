@@ -166,6 +166,9 @@ describe('beam payment utilities', () => {
 describe('checkout card payment bridge', () => {
   const savedHandlers = {
     getSavedCardCvv: () => '',
+    promptSavedCardCvv: async () => {
+      throw new Error('กรุณากรอกรหัส CVV ของบัตรที่บันทึกไว้');
+    },
     getSavedPaymentMethodId: () => null as string | null,
     shouldUseSavedCard: () => false,
     getSaveCardForNextTime: () => false,
@@ -261,33 +264,28 @@ describe('checkout card payment bridge', () => {
     ).toBe('กรุณากรอกรหัส CVV 4 หลัก');
   });
 
-  it('requires CVV for a saved card and returns it with the saved payment method id', async () => {
-    let cvv = '';
+  it('prompts for CVV for a saved card and returns it with the saved payment method id', async () => {
+    const promptSavedCardCvv = vi.fn().mockResolvedValue('456');
 
     registerCheckoutCardPaymentBridge(
       createCheckoutCardPaymentBridge({
         getCardForm: () => VALID_CARD_FORM,
         clearCardForm: vi.fn(),
         getSavedPaymentMethodId: () => 'saved-card-1',
-        getSavedCardCvv: () => cvv,
+        getSavedCardCvv: () => '',
+        promptSavedCardCvv,
         shouldUseSavedCard: () => true,
         getSaveCardForNextTime: () => false,
       }),
     );
 
-    expect(isCheckoutCardPaymentReady()).toBe(false);
-    await expect(prepareCardPayment()).rejects.toThrow('กรุณากรอกรหัส CVV ของบัตรที่บันทึกไว้');
-
-    cvv = '12';
-    await expect(prepareCardPayment()).rejects.toThrow('กรุณากรอกรหัส CVV ของบัตรที่บันทึกไว้');
-
-    cvv = '456';
     expect(isCheckoutCardPaymentReady()).toBe(true);
     await expect(prepareCardPayment()).resolves.toEqual({
       type: 'saved',
       savedPaymentMethodId: 'saved-card-1',
       cardSecurityCode: '456',
     });
+    expect(promptSavedCardCvv).toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
   });
 });

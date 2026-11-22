@@ -22,7 +22,10 @@ import {
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
 import { parseStorePromotionConditions } from '@/lib/checkout/storePromotionUtils';
-import { prepareCardPayment } from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
+import {
+  prepareCardPayment,
+  SavedCardCvvCancelledError,
+} from '@/components/molecules/CheckoutPaymentSelection/checkoutCardPaymentBridge';
 import { clearPendingCheckout, setPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { getErrorMessage } from '@/lib/errors/getErrorMessage';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -35,6 +38,7 @@ import {
   shouldRedirectCheckoutToLogin,
 } from '@/lib/checkout/checkoutSessionGuard';
 import { hasClientSession } from '@/lib/graphql/authLink';
+import { encryptCardSecurityCodeTransport } from '@/lib/payment/cardTransport';
 import { buildSaveCardPayload } from '@/lib/payment/saveCard';
 import { ensureSessionId } from '@/lib/session';
 
@@ -165,16 +169,18 @@ export function useCheckoutSubmit(
         const cardPayment = paymentMethod === 'card' ? await prepareCardPayment() : undefined;
 
         const finalCardToken = cardPayment?.type === 'token' ? cardPayment.cardToken : undefined;
-        const finalCardSecurityCode = cardPayment?.cardSecurityCode;
         const finalSavedPaymentMethodId =
           cardPayment?.type === 'saved' ? cardPayment.savedPaymentMethodId : undefined;
         // Defer vaulting to backend after paid — do not call addPaymentMethod before charge.
+        // Encrypt PAN/name/expiry and CVV in the browser before GraphQL.
+        const finalCardSecurityCodeCipher = cardPayment?.cardSecurityCode
+          ? await encryptCardSecurityCodeTransport(cardPayment.cardSecurityCode)
+          : undefined;
         const saveCard =
           cardPayment?.type === 'token' && cardPayment.saveCardForNextTime
-            ? buildSaveCardPayload({
-                cardToken: cardPayment.cardToken,
-                brand: cardPayment.tokenizedCard.brand,
-                lastFour: cardPayment.tokenizedCard.lastFour,
+            ? await buildSaveCardPayload({
+                cardholderName: cardPayment.cardForm.cardName,
+                pan: cardPayment.cardForm.cardNumber,
                 expiryMonth: cardPayment.tokenizedCard.expiryMonth,
                 expiryYear: cardPayment.tokenizedCard.expiryYear,
                 isDefault: true,
@@ -200,7 +206,7 @@ export function useCheckoutSubmit(
             subtotal,
             checkoutHook: checkoutMutations,
             cardToken: finalCardToken,
-            cardSecurityCode: finalCardSecurityCode,
+            cardSecurityCodeCipher: finalCardSecurityCodeCipher,
             savedPaymentMethodId: finalSavedPaymentMethodId,
             saveCard,
           },
@@ -220,10 +226,15 @@ export function useCheckoutSubmit(
           await refetch();
         }
 
-        router.push(result.redirectPath);
+        // Replace checkout so Back cannot open it again after payment has started.
+        router.replace(result.redirectPath);
         // Keep UI locked until unmount/reset so a slow navigation cannot double-submit.
         return true;
       } catch (error) {
+        if (error instanceof SavedCardCvvCancelledError) {
+          return false;
+        }
+
         if (
           error instanceof SubmitCheckoutError &&
           (error.code === 'cart_stale' || error.code === 'price_changed')

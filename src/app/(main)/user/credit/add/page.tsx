@@ -37,7 +37,7 @@ export default function AddCreditCardPage() {
       setError(null);
 
       const form = cardForm;
-      const validationError = validateCheckoutCardForm(form);
+      const validationError = validateCheckoutCardForm(form, { requireCvv: false });
       if (validationError) {
         setError(validationError);
         return;
@@ -59,7 +59,6 @@ export default function AddCreditCardPage() {
         return;
       }
 
-      // CVV is required by the shared form for UX validation but is never sent or stored.
       const cardCipher = await encryptCardTransportPayload({
         cardholderName: form.cardName.trim(),
         pan: digits,
@@ -90,6 +89,7 @@ export default function AddCreditCardPage() {
         <div className="rounded-sop-12px border border-sop-neutral-grayalpha-200 bg-sop-base-white p-4">
           <CardPaymentForm
             value={cardForm}
+            showCvv={false}
             onChange={(next) => {
               setCardForm(next);
               if (error) setError(null);

@@ -110,9 +110,10 @@ export type CheckoutCardFieldErrors = Partial<
 
 export function getCheckoutCardFieldErrors(
   form: CheckoutCardFormState,
-  options?: { showEmptyRequired?: boolean },
+  options?: { showEmptyRequired?: boolean; requireCvv?: boolean },
 ): CheckoutCardFieldErrors {
   const errors: CheckoutCardFieldErrors = {};
+  const requireCvv = options?.requireCvv !== false;
   const cardDigits = cleanCardNumber(form.cardNumber);
 
   if (!cardDigits) {
@@ -142,14 +143,16 @@ export function getCheckoutCardFieldErrors(
     errors.expiry = 'กรุณากรอกวันหมดอายุให้ถูกต้อง (MM/YY)';
   }
 
-  const cvvDigits = form.cvv.replace(/\D/g, '');
-  if (!cvvDigits) {
-    if (options?.showEmptyRequired) {
-      errors.cvv = 'กรุณากรอกรหัส CVV';
+  if (requireCvv) {
+    const cvvDigits = form.cvv.replace(/\D/g, '');
+    if (!cvvDigits) {
+      if (options?.showEmptyRequired) {
+        errors.cvv = 'กรุณากรอกรหัส CVV';
+      }
+    } else if (!isValidCvv(form.cvv, form.cardNumber)) {
+      const cvvLength = getCvvLength(form.cardNumber);
+      errors.cvv = cvvLength === 4 ? 'กรุณากรอกรหัส CVV 4 หลัก' : 'กรุณากรอกรหัส CVV 3 หลัก';
     }
-  } else if (!isValidCvv(form.cvv, form.cardNumber)) {
-    const cvvLength = getCvvLength(form.cardNumber);
-    errors.cvv = cvvLength === 4 ? 'กรุณากรอกรหัส CVV 4 หลัก' : 'กรุณากรอกรหัส CVV 3 หลัก';
   }
 
   return errors;
@@ -166,8 +169,14 @@ function buildTokenizeInput(form: CheckoutCardFormState): TokenizeCardInput {
   };
 }
 
-export function validateCheckoutCardForm(form: CheckoutCardFormState): string | null {
-  const fieldErrors = getCheckoutCardFieldErrors(form, { showEmptyRequired: true });
+export function validateCheckoutCardForm(
+  form: CheckoutCardFormState,
+  options?: { requireCvv?: boolean },
+): string | null {
+  const fieldErrors = getCheckoutCardFieldErrors(form, {
+    showEmptyRequired: true,
+    requireCvv: options?.requireCvv,
+  });
   const firstError =
     fieldErrors.cardNumber ?? fieldErrors.cardName ?? fieldErrors.expiry ?? fieldErrors.cvv ?? null;
 

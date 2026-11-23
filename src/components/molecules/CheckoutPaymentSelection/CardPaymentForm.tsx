@@ -24,6 +24,8 @@ type CardPaymentFormProps = {
   saveCardChecked?: boolean;
   onSaveCardChange?: (checked: boolean) => void;
   showSaveCardCheckbox?: boolean;
+  /** When false, hide the CVV field (save-card-only flows that never send CVV). */
+  showCvv?: boolean;
   disabled?: boolean;
 };
 
@@ -35,6 +37,7 @@ export function CardPaymentForm({
   saveCardChecked = false,
   onSaveCardChange,
   showSaveCardCheckbox = false,
+  showCvv = true,
   disabled = false,
 }: CardPaymentFormProps) {
   const updateField = <K extends keyof CheckoutCardFormState>(
@@ -103,22 +106,26 @@ export function CardPaymentForm({
           onChange={(event) => updateField('expiry', formatExpiry(event.target.value))}
         />
 
-        <Input
-          isRequire
-          title="รหัส CVV"
-          size="md"
-          variant="bordered"
-          placeholder={getCvvPlaceholder(value.cardNumber)}
-          inputMode="numeric"
-          autoComplete="cc-csc"
-          data-testid="card-cvv-input"
-          disabled={disabled}
-          state={fieldErrors?.cvv ? 'error' : 'default'}
-          description={fieldErrors?.cvv ?? undefined}
-          value={value.cvv}
-          maxLength={getCvvLength(value.cardNumber)}
-          onChange={(event) => updateField('cvv', formatCvv(event.target.value, value.cardNumber))}
-        />
+        {showCvv ? (
+          <Input
+            isRequire
+            title="รหัส CVV"
+            size="md"
+            variant="bordered"
+            placeholder={getCvvPlaceholder(value.cardNumber)}
+            inputMode="numeric"
+            autoComplete="cc-csc"
+            data-testid="card-cvv-input"
+            disabled={disabled}
+            state={fieldErrors?.cvv ? 'error' : 'default'}
+            description={fieldErrors?.cvv ?? undefined}
+            value={value.cvv}
+            maxLength={getCvvLength(value.cardNumber)}
+            onChange={(event) =>
+              updateField('cvv', formatCvv(event.target.value, value.cardNumber))
+            }
+          />
+        ) : null}
       </div>
 
       {showSaveCardCheckbox ? (

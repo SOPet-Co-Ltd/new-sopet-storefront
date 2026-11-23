@@ -328,7 +328,7 @@ export function CheckoutPaymentSelection() {
       return;
     }
 
-    const validationError = validateCheckoutCardForm(cardForm);
+    const validationError = validateCheckoutCardForm(cardForm, { requireCvv: false });
     if (validationError) {
       setCardFormError(validationError);
       return;

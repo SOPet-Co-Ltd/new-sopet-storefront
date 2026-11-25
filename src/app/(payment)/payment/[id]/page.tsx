@@ -3,6 +3,7 @@
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import { OrderPaymentForm } from '@/components/organisms/OrderPaymentForm';
 import type { PaymentRetrySubmitInput } from '@/components/organisms/OrderPaymentForm/PaymentRetryPanel';
 import { clearPendingCheckout } from '@/lib/checkout/pendingCheckout';
@@ -14,6 +15,12 @@ import { usePayment } from '@/lib/hooks/usePayment';
 import { invalidateCustomerOrders } from '@/lib/orders/invalidateCustomerOrders';
 import { hasHeldFulfillmentItems } from '@/lib/order-tracking/holdVisibility';
 import { isOrderNotPayableError } from '@/lib/payment/orderNotPayable';
+import {
+  isPaymentOrderCompletedInSession,
+  isPaymentRouteClosed,
+  markPaymentOrderCompleted,
+  shouldHandoffToThankYou,
+} from '@/lib/payment/paymentRouteClosed';
 import {
   buildPaymentRetryInput,
   clearPriorPayment3dsAutoRedirect,
@@ -56,6 +63,19 @@ function retryErrorMessage(error: unknown): string {
   return getErrorMessage(error, 'ไม่สามารถสร้างการชำระเงินได้');
 }
 
+function PaymentPaidHandoff() {
+  return (
+    <section
+      className="flex w-full max-w-[500px] flex-col items-center gap-4 rounded-3xl bg-white p-8 shadow-xl"
+      aria-live="polite"
+      data-testid="payment-paid-handoff"
+    >
+      <SpinnerIcon size={{ mobile: 32, desktop: 32 }} />
+      <p className="text-sm text-gray-600">ชำระเงินสำเร็จ กำลังเปลี่ยนหน้า...</p>
+    </section>
+  );
+}
+
 export default function PaymentPage() {
   const params = useParams<{ id: string }>();
   const routeId = params.id;
@@ -86,33 +106,65 @@ export default function PaymentPage() {
   );
   const heldUnpaidBlocked = heldUnpaidFromOrder || heldUnpaidFromError;
 
-  // Adjust state during render when the order detail status becomes available.
-  if (order?.status && order.status !== orderStatusForPayment) {
-    setOrderStatusForPayment(order.status);
+  const paymentOrderId = payment?.orderId ?? null;
+  const paymentStatus = payment?.status ?? null;
+  const effectiveOrderStatus =
+    payment?.orderStatus ?? order?.status ?? orderStatusForPayment ?? null;
+  const paymentForRoute = payment
+    ? {
+        status: payment.status,
+        orderId: payment.orderId,
+        orderStatus: effectiveOrderStatus,
+      }
+    : null;
+  const routeClosed = paymentForRoute ? isPaymentRouteClosed(paymentForRoute) : false;
+  const thankYouHandoff = paymentForRoute ? shouldHandoffToThankYou(paymentForRoute) : false;
+  const sessionCompleted = isPaymentOrderCompletedInSession(
+    paymentOrderId ?? (lookupMode === 'orderId' ? routeId : null),
+  );
+  const blockPaymentForm = thankYouHandoff || sessionCompleted;
+
+  // Adjust state during render from one preferred value only. Prefer payment.orderStatus,
+  // then authenticated order.status; if both are missing (e.g. guest + subscription
+  // without orderStatus), keep the previous value so sources cannot oscillate.
+  const nextOrderStatus = payment?.orderStatus ?? order?.status;
+  if (nextOrderStatus != null && nextOrderStatus !== orderStatusForPayment) {
+    setOrderStatusForPayment(nextOrderStatus);
   }
 
+  const redirectToThankYou = useCallback(
+    (orderId: string, markCompleted: boolean) => {
+      if (hasRedirected.current) {
+        return;
+      }
+      hasRedirected.current = true;
+      if (markCompleted) {
+        markPaymentOrderCompleted(orderId);
+      }
+      clearPendingCheckout();
+      void invalidateCustomerOrders();
+      router.replace(`/thank-you/${orderId}`);
+    },
+    [router],
+  );
+
   const handlePromptPayComplete = useCallback(() => {
-    if (!payment?.orderId || hasRedirected.current) {
+    if (!payment?.orderId) {
       return;
     }
-    hasRedirected.current = true;
-    clearPendingCheckout();
-    void invalidateCustomerOrders();
-    router.replace(`/thank-you/${payment.orderId}`);
-  }, [payment, router]);
+    // Customer ack before paid — allow Back onto the payment page until the order is paid.
+    redirectToThankYou(payment.orderId, false);
+  }, [payment, redirectToThankYou]);
 
   const handleCheckStatus = useCallback(() => {
     // Bank transfer: customer acknowledges they transferred. Admin still confirms paid —
     // do not wait for status===paid and do not call any mark-paid mutation.
-    if (payment?.paymentMethod === 'bank_transfer' && payment.orderId && !hasRedirected.current) {
-      hasRedirected.current = true;
-      clearPendingCheckout();
-      void invalidateCustomerOrders();
-      router.replace(`/thank-you/${payment.orderId}`);
+    if (payment?.paymentMethod === 'bank_transfer' && payment.orderId) {
+      redirectToThankYou(payment.orderId, false);
       return;
     }
     return refetch();
-  }, [payment, refetch, router]);
+  }, [payment, refetch, redirectToThankYou]);
 
   useEffect(() => {
     if (lookupMode !== 'paymentId' || hasTriedFallback.current || loading) {
@@ -126,25 +178,50 @@ export default function PaymentPage() {
   }, [lookupMode, loading, error]);
 
   useEffect(() => {
-    if (hasRedirected.current || payment?.status !== 'paid' || !payment.orderId) {
+    if (hasRedirected.current) {
       return;
     }
 
-    hasRedirected.current = true;
-    clearPendingCheckout();
-    void invalidateCustomerOrders();
-    router.replace(`/thank-you/${payment.orderId}`);
-  }, [payment?.orderId, payment?.status, router]);
+    const orderId = paymentOrderId ?? (lookupMode === 'orderId' ? routeId : null);
+    if (orderId && isPaymentOrderCompletedInSession(orderId)) {
+      redirectToThankYou(orderId, true);
+      return;
+    }
+
+    if (
+      paymentOrderId &&
+      paymentStatus &&
+      shouldHandoffToThankYou({
+        status: paymentStatus,
+        orderId: paymentOrderId,
+        orderStatus: effectiveOrderStatus,
+      })
+    ) {
+      redirectToThankYou(paymentOrderId, true);
+    }
+  }, [
+    effectiveOrderStatus,
+    lookupMode,
+    paymentOrderId,
+    paymentStatus,
+    redirectToThankYou,
+    routeId,
+  ]);
 
   useEffect(() => {
-    if (payment?.status !== 'failed') {
+    if (paymentStatus !== 'failed') {
       return;
     }
 
     clearPendingCheckout();
-  }, [payment?.status]);
+  }, [paymentStatus]);
 
   useEffect(() => {
+    // After paid, do not force the customer back onto /payment from checkout history.
+    if (routeClosed || sessionCompleted) {
+      return;
+    }
+
     const onPopState = () => {
       if (!isCheckoutPath(window.location.pathname)) {
         return;
@@ -155,7 +232,7 @@ export default function PaymentPage() {
 
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [routeId, router]);
+  }, [routeClosed, routeId, router, sessionCompleted]);
 
   const handleRetryPayment = useCallback(
     async (input: PaymentRetrySubmitInput) => {
@@ -208,6 +285,17 @@ export default function PaymentPage() {
     [confirmingLateSuccess, createPayment, payment, router],
   );
 
+  if (blockPaymentForm) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-sop-primary-100 px-4 py-8">
+        <PaymentPaidHandoff />
+      </main>
+    );
+  }
+
+  const cancelledOrRefundedClosed =
+    routeClosed && paymentForRoute && !shouldHandoffToThankYou(paymentForRoute);
+
   return (
     <main className="flex min-h-dvh items-center justify-center bg-sop-primary-100 px-4 py-8">
       <OrderPaymentForm
@@ -226,7 +314,9 @@ export default function PaymentPage() {
         retrySubmitError={retrySubmitError}
         retrySubmitting={creatingPayment || retryNavigating}
         confirmingLateSuccess={confirmingLateSuccess}
-        paymentRecoveryUnavailable={paymentRecoveryUnavailable}
+        paymentRecoveryUnavailable={
+          paymentRecoveryUnavailable || Boolean(cancelledOrRefundedClosed)
+        }
         heldUnpaidBlocked={heldUnpaidBlocked}
         orderCreatedAt={order?.createdAt ?? null}
       />

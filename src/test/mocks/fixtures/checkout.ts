@@ -146,6 +146,7 @@ export const samplePendingPayment = {
   id: CHECKOUT_PAYMENT_ID,
   orderId: CHECKOUT_ORDER_ID,
   orderNumber: 'ORD-TEST-0001',
+  orderStatus: 'pending_payment' as string | null,
   amount: 540,
   currency: 'THB',
   status: 'pending',
@@ -160,6 +161,7 @@ export const samplePendingPayment = {
 export const samplePaidPayment = {
   ...samplePendingPayment,
   status: 'paid',
+  orderStatus: 'paid',
 };
 
 /** Pending card payment after createPayment recovery (new id ≠ superseded pending). */

@@ -18,6 +18,10 @@ import {
 } from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
 import { tokenizeCard } from '@/lib/payment/beam';
+import {
+  clearCompletedPaymentOrder,
+  markPaymentOrderCompleted,
+} from '@/lib/payment/paymentRouteClosed';
 
 const mockReplace = vi.fn();
 const mockPush = vi.fn();
@@ -185,6 +189,7 @@ describe('PaymentPage', () => {
     checkoutState.creatingPayment = false;
     paymentState.payment = samplePendingPayment;
     sessionStorage.clear();
+    clearCompletedPaymentOrder();
     resetPayment3dsAutoRedirectMemory();
     vi.mocked(tokenizeCard).mockResolvedValue({
       cardToken: 'tok_test_mid_qr',
@@ -197,6 +202,7 @@ describe('PaymentPage', () => {
 
   afterEach(() => {
     sessionStorage.clear();
+    clearCompletedPaymentOrder();
     resetPayment3dsAutoRedirectMemory();
     vi.useRealTimers();
   });
@@ -209,6 +215,79 @@ describe('PaymentPage', () => {
 
     expect(mockReplace).toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
     window.history.pushState({}, '', `/payment/${CHECKOUT_PAYMENT_ID}`);
+  });
+
+  it('does not trap Back onto payment after the order is paid', async () => {
+    paymentState.payment = samplePaidPayment;
+
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+    });
+    mockReplace.mockClear();
+
+    window.history.pushState({}, '', '/checkout?mode=buy-now');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    expect(mockReplace).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
+  });
+
+  it('revisiting a paid payment shows handoff and never the QR', async () => {
+    paymentState.payment = samplePaidPayment;
+
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    expect(screen.getByTestId('payment-paid-handoff')).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'PromptPay QR Code' })).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+    });
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+  });
+
+  it('redirects a superseded failed charge when orderStatus is paid', async () => {
+    paymentState.payment = {
+      ...sampleFailedCardPayment,
+      orderStatus: 'paid',
+    };
+
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    expect(screen.getByTestId('payment-paid-handoff')).toBeInTheDocument();
+    expect(screen.queryByText('ชำระเงินไม่สำเร็จ')).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+    });
+  });
+
+  it('keeps the payment form when the order is still awaiting payment', async () => {
+    paymentState.payment = samplePendingPayment;
+
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: 'PromptPay QR Code' })).toBeInTheDocument();
+    });
+    expect(mockReplace).not.toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+  });
+
+  it('redirects from session when Back reopens a completed order payment', async () => {
+    markPaymentOrderCompleted(CHECKOUT_ORDER_ID);
+    paymentState.payment = {
+      ...samplePendingPayment,
+      status: 'failed',
+      orderStatus: 'pending_payment',
+    };
+
+    render(<PaymentPage />, { wrapper: createWrapper() });
+
+    expect(screen.getByTestId('payment-paid-handoff')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+    });
   });
 
   it('redirects to thank-you when subscription reports paid status', async () => {

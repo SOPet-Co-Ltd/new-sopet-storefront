@@ -539,6 +539,7 @@ export type CreatePaymentMutation = {
     id: string;
     orderId: string;
     orderNumber: string | null;
+    orderStatus: string | null;
     amount: number;
     currency: string;
     status: string;
@@ -885,6 +886,7 @@ export type PaymentFieldsFragment = {
   id: string;
   orderId: string;
   orderNumber: string | null;
+  orderStatus: string | null;
   amount: number;
   currency: string;
   status: string;
@@ -906,6 +908,7 @@ export type PaymentQuery = {
     id: string;
     orderId: string;
     orderNumber: string | null;
+    orderStatus: string | null;
     amount: number;
     currency: string;
     status: string;
@@ -928,6 +931,7 @@ export type PaymentByOrderIdQuery = {
     id: string;
     orderId: string;
     orderNumber: string | null;
+    orderStatus: string | null;
     amount: number;
     currency: string;
     status: string;
@@ -957,6 +961,7 @@ export type PaymentStatusUpdatedSubscription = {
     id: string;
     orderId: string;
     orderNumber: string | null;
+    orderStatus: string | null;
     amount: number;
     currency: string;
     status: string;
@@ -2341,6 +2346,7 @@ export const PaymentFieldsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'id' } },
           { kind: 'Field', name: { kind: 'Name', value: 'orderId' } },
           { kind: 'Field', name: { kind: 'Name', value: 'orderNumber' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'orderStatus' } },
           { kind: 'Field', name: { kind: 'Name', value: 'amount' } },
           { kind: 'Field', name: { kind: 'Name', value: 'currency' } },
           { kind: 'Field', name: { kind: 'Name', value: 'status' } },

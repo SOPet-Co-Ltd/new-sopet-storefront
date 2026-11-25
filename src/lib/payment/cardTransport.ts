@@ -1,4 +1,8 @@
 import { GRAPHQL_URL } from '@/lib/config';
+import {
+  cardPaymentNetworkAbortSignal,
+  toCardPaymentNetworkError,
+} from '@/lib/payment/cardPaymentNetwork';
 
 export const CARD_TRANSPORT_PREFIX = 'rsa:v1:';
 
@@ -49,14 +53,20 @@ async function importPublicKey(pem: string): Promise<CryptoKey> {
 }
 
 async function fetchPublicKeyPem(): Promise<string> {
-  const response = await fetch(GRAPHQL_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({
-      query: 'query CardTransportPublicKey { cardTransportPublicKey }',
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(GRAPHQL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        query: 'query CardTransportPublicKey { cardTransportPublicKey }',
+      }),
+      signal: cardPaymentNetworkAbortSignal(),
+    });
+  } catch (error) {
+    throw toCardPaymentNetworkError(error);
+  }
 
   const body = (await response.json().catch(() => null)) as CardTransportPublicKeyQuery | null;
   const pem = body?.data?.cardTransportPublicKey?.trim();
@@ -69,12 +79,17 @@ async function fetchPublicKeyPem(): Promise<string> {
 
 async function getPublicKey(): Promise<CryptoKey> {
   if (!publicKeyPromise) {
-    publicKeyPromise = fetchPublicKeyPem()
+    const pending = fetchPublicKeyPem()
       .then((pem) => importPublicKey(pem))
       .catch((error) => {
-        publicKeyPromise = null;
+        // Only clear the cache entry for this failed attempt so a concurrent
+        // retry that already replaced publicKeyPromise is not wiped.
+        if (publicKeyPromise === pending) {
+          publicKeyPromise = null;
+        }
         throw error;
       });
+    publicKeyPromise = pending;
   }
   return publicKeyPromise;
 }

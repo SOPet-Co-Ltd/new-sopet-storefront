@@ -8,6 +8,8 @@ import { PaymentWaitingAfterReturnState } from './PaymentWaitingAfterReturnState
 import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { tokenizeCard } from '@/lib/payment/beam';
+import { CARD_PAYMENT_NETWORK_TIMEOUT_MESSAGE } from '@/lib/payment/cardPaymentNetwork';
+import { encryptCardSecurityCodeTransport } from '@/lib/payment/cardTransport';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { server } from '@/test/mocks/server';
 
@@ -321,6 +323,9 @@ describe('PaymentRetryPanel saved card CVV', () => {
       deletePaymentMethod: vi.fn(),
       setDefaultPaymentMethod: vi.fn(),
     } as unknown as ReturnType<typeof usePaymentMethods>);
+    vi.mocked(encryptCardSecurityCodeTransport).mockImplementation(
+      async (cvv: string) => `rsa:v1:cvv-${cvv}`,
+    );
   });
 
   afterEach(() => {
@@ -351,6 +356,62 @@ describe('PaymentRetryPanel saved card CVV', () => {
         cardSecurityCodeCipher: 'rsa:v1:cvv-456',
       }),
     );
+  });
+
+  it('disables confirm while CVV encryption is pending and ignores a second click', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    let resolveEncrypt!: (value: string) => void;
+    let encryptCalls = 0;
+    vi.mocked(encryptCardSecurityCodeTransport).mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          encryptCalls += 1;
+          resolveEncrypt = resolve;
+        }),
+    );
+
+    renderWithApollo(<PaymentRetryPanel onSubmit={onSubmit} amountLabel="฿907.00" />);
+
+    await user.click(screen.getByTestId('payment-method-card'));
+    await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
+    await user.type(screen.getByTestId('saved-card-cvv-modal-input'), '456');
+
+    encryptCalls = 0;
+    await user.click(screen.getByTestId('saved-card-cvv-modal-confirm'));
+
+    const submitButton = await screen.findByRole('button', { name: 'ยืนยันการชำระเงิน' });
+    await waitFor(() => expect(submitButton).toBeDisabled());
+    // One in-flight encrypt (click-through onto the panel button is blocked by the lock).
+    expect(encryptCalls).toBe(1);
+
+    const encryptCallsWhilePending = encryptCalls;
+    await user.click(submitButton);
+    expect(encryptCalls).toBe(encryptCallsWhilePending);
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    resolveEncrypt('rsa:v1:cvv-456');
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+  });
+
+  it('re-enables confirm and shows an error when CVV encryption fails', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const { CardPaymentNetworkError } = await import('@/lib/payment/cardPaymentNetwork');
+    vi.mocked(encryptCardSecurityCodeTransport).mockRejectedValue(new CardPaymentNetworkError());
+
+    renderWithApollo(<PaymentRetryPanel onSubmit={onSubmit} amountLabel="฿907.00" />);
+
+    await user.click(screen.getByTestId('payment-method-card'));
+    await user.click(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' }));
+    await user.type(screen.getByTestId('saved-card-cvv-modal-input'), '456');
+    await user.click(screen.getByTestId('saved-card-cvv-modal-confirm'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      CARD_PAYMENT_NETWORK_TIMEOUT_MESSAGE,
+    );
+    expect(screen.getByRole('button', { name: 'ยืนยันการชำระเงิน' })).toBeEnabled();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it('passes saveCard with new-card tokenize and does not call addPaymentMethod', async () => {

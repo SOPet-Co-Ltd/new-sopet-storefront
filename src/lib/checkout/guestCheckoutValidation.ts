@@ -182,6 +182,17 @@ export function validateOptionalCheckoutEmail(
   return emailError ? { email: emailError } : {};
 }
 
+/** Shipping fields only — for checkout address add/edit modal (no contact phone). */
+export function validateAddressManagementShippingForm(
+  formState: GuestCheckoutFormState,
+): GuestCheckoutValidationResult {
+  const errors = validateShippingFields(formState);
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+  };
+}
+
 export function validateAuthInlineShippingForm(
   formState: GuestCheckoutFormState,
 ): GuestCheckoutValidationResult {

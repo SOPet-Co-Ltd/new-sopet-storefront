@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { graphql, HttpResponse, delay } from 'msw';
+import { toast } from 'sonner';
 import { CheckoutAddressSection } from '@/components/sections/CheckoutSection/CheckoutAddressSection';
 import { CheckoutProvider } from '@/lib/providers/CheckoutProvider';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
@@ -16,6 +17,15 @@ import { server } from '@/test/mocks/server';
 
 vi.mock('@/lib/hooks/useAuth', () => ({
   useAuth: vi.fn(),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    custom: vi.fn(),
+    dismiss: vi.fn(),
+    error: vi.fn(),
+    success: vi.fn(),
+  },
 }));
 
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -383,6 +393,122 @@ describe('CheckoutAddressSection integration', () => {
       await waitFor(() => {
         expect(screen.queryByTestId('checkout-existing-customer-modal')).not.toBeInTheDocument();
       });
+    });
+
+    it('shows saved-address toast after OTP login when addresses load', async () => {
+      const user = userEvent.setup();
+      const sendOtp = vi.fn().mockResolvedValue({ message: 'ok', referenceCode: '526547' });
+      const verifyOtp = vi.fn().mockImplementation(async () => {
+        mockedUseAuth.mockReturnValue({
+          customer: {
+            id: 'cust-1',
+            phone: '0812345678',
+            email: 'user@example.com',
+          } as never,
+          isAuthenticated: true,
+          isLoading: false,
+          pendingDeletion: false,
+          sendOtp,
+          verifyOtp,
+          changeCustomerPhone: vi.fn(),
+          reactivateAccount: vi.fn(),
+          logout: vi.fn(),
+        });
+        return {
+          pendingDeletion: false,
+          customer: { id: 'cust-1', phone: '0812345678' },
+          tokens: { accessToken: 'a', refreshToken: 'r' },
+        };
+      });
+
+      mockedUseAuth.mockReturnValue({
+        customer: null,
+        isAuthenticated: false,
+        isLoading: false,
+        pendingDeletion: false,
+        sendOtp,
+        verifyOtp,
+        changeCustomerPhone: vi.fn(),
+        reactivateAccount: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      server.use(
+        graphql.query('CustomerExistsByPhone', () =>
+          HttpResponse.json({
+            data: { customerExistsByPhone: { exists: true } },
+          }),
+        ),
+        graphql.query('Addresses', () =>
+          HttpResponse.json({
+            data: { addresses: [sampleSavedAddress] },
+          }),
+        ),
+      );
+
+      renderStatefulCheckoutForExistingCustomer();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-address-mode-guest')).toBeInTheDocument();
+      });
+
+      const contactPhoneField = screen.getByTestId('contact-phone-field');
+      await user.type(contactPhoneField, '0812345678');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-existing-customer-login-otp')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId('checkout-existing-customer-login-otp'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('checkout-existing-customer-otp-input')).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByTestId('checkout-existing-customer-otp-input-digit-1'), '123456');
+
+      await waitFor(() => {
+        expect(toast.custom).toHaveBeenCalledTimes(1);
+      });
+
+      const [, options] = vi.mocked(toast.custom).mock.calls[0];
+      expect(options).toMatchObject({
+        id: 'checkout-saved-address',
+        position: 'top-right',
+      });
+    });
+
+    it('does not toast when checkout opens already authenticated', async () => {
+      mockedUseAuth.mockReturnValue({
+        customer: { id: 'cust-1', email: 'user@example.com' } as never,
+        isAuthenticated: true,
+        isLoading: false,
+        pendingDeletion: false,
+        sendOtp: vi.fn(),
+        verifyOtp: vi.fn(),
+        changeCustomerPhone: vi.fn(),
+        reactivateAccount: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      server.use(
+        graphql.query('Addresses', () =>
+          HttpResponse.json({
+            data: { addresses: [sampleSavedAddress] },
+          }),
+        ),
+      );
+
+      renderCheckoutAddressSection();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('address-summary-name')).toHaveTextContent(
+          sampleSavedAddress.fullName,
+        );
+      });
+
+      expect(toast.custom).not.toHaveBeenCalled();
     });
   });
 

@@ -10,7 +10,7 @@ type OtpCodeInputProps = {
   onChange: (value: string) => void;
   error?: boolean;
   disabled?: boolean;
-  /** Compact slots match checkout OTP modal (44×56). Default is 56×56. */
+  /** Compact slots match checkout OTP modal (56×56). Default is 56×56. */
   size?: 'default' | 'compact';
   /** Links inputs to an external error message element (e.g. validation text). */
   ariaDescribedBy?: string;
@@ -161,7 +161,7 @@ export function OtpCodeInput({
               'transition-all duration-150 touch-manipulation',
               'focus:border-sop-primary-500 focus:outline-none focus:ring-1 focus:ring-sop-primary-500',
               isCompact
-                ? 'h-14 min-h-14 w-11 min-w-11 px-sop-16px py-sop-12px'
+                ? 'h-14 min-h-14 w-14 min-w-14 px-2 py-sop-12px'
                 : 'h-14 min-h-14 w-14 min-w-14 px-2 py-3',
               error
                 ? 'border-sop-system-error-400 ring-1 ring-sop-system-error-400'

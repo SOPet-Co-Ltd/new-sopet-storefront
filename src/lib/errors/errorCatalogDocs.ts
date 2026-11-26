@@ -54,9 +54,14 @@ export const ERROR_CATALOG_DOCS: Partial<Record<ErrorCode, ErrorCatalogDocs>> = 
     howToFix: 'ตรวจสอบเบอร์โทรและรหัสผ่าน แล้วลองใหม่',
   },
   [ERROR_CODES.INVALID_OTP]: {
-    why: 'รหัส OTP ที่กรอกไม่ถูกต้องหรือหมดอายุ',
-    possibleIssue: 'พิมพ์ผิด ใช้รหัสเก่า หรือหมดเวลา',
-    howToFix: 'ขอรหัส OTP ใหม่แล้วกรอกภายในเวลาที่กำหนด',
+    why: 'รหัส OTP ที่กรอกไม่ถูกต้อง',
+    possibleIssue: 'พิมพ์ผิดหรือใช้รหัสเก่าที่ถูกแทนที่แล้ว',
+    howToFix: 'ตรวจสอบรหัสจาก SMS แล้วลองใหม่อีกครั้ง',
+  },
+  [ERROR_CODES.OTP_EXPIRED]: {
+    why: 'รหัส OTP หมดอายุแล้ว',
+    possibleIssue: 'กรอกช้ากว่าเวลาที่กำหนด',
+    howToFix: 'กดส่งรหัสใหม่แล้วกรอกภายในเวลาที่กำหนด',
   },
   [ERROR_CODES.INVALID_PASSWORD]: {
     why: 'รหัสผ่านไม่ถูกต้อง',

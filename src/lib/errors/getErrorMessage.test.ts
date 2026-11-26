@@ -54,6 +54,7 @@ describe('extractErrorCode', () => {
 describe('getErrorMessage', () => {
   it('maps known codes to Thai catalog copy', () => {
     expect(getErrorMessage(gqlError('INVALID_OTP'))).toBe(ERROR_MESSAGES.INVALID_OTP);
+    expect(getErrorMessage(gqlError('OTP_EXPIRED'))).toBe(ERROR_MESSAGES.OTP_EXPIRED);
     expect(getErrorMessage(gqlError('STORE_SUSPENDED'))).toBe(ERROR_MESSAGES.STORE_SUSPENDED);
   });
 

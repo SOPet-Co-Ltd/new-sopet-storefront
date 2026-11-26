@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CheckoutExistingCustomerModal } from './CheckoutExistingCustomerModal';
 
@@ -28,11 +28,18 @@ import { useAuth } from '@/lib/hooks/useAuth';
 
 const mockedUseAuth = vi.mocked(useAuth);
 
+const OTP_TTL_MS = 5 * 60 * 1000;
+const OTP_TTL_AND_HALF_MS = OTP_TTL_MS + 30 * 1000;
+
 describe('CheckoutExistingCustomerModal', () => {
   const sendOtp = vi.fn();
   const verifyOtp = vi.fn();
   const onClose = vi.fn();
   const onLoginSuccess = vi.fn();
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -173,5 +180,110 @@ describe('CheckoutExistingCustomerModal', () => {
     await waitFor(() => {
       expect(onLoginSuccess).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('shows expired message when OTP TTL elapses before typing', async () => {
+    vi.useFakeTimers();
+    sendOtp.mockResolvedValue({ message: 'ok', referenceCode: '526547' });
+
+    render(
+      <CheckoutExistingCustomerModal
+        open
+        phone="0999999999"
+        onClose={onClose}
+        onLoginSuccess={onLoginSuccess}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('checkout-existing-customer-login-otp'));
+    });
+
+    expect(screen.getByTestId('checkout-existing-customer-otp-input')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(OTP_TTL_MS);
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('รหัส OTP หมดอายุแล้ว');
+    expect(screen.getByTestId('checkout-existing-customer-otp-resend')).toBeInTheDocument();
+    expect(verifyOtp).not.toHaveBeenCalled();
+  });
+
+  it('AFOTP-Checkout-11: after 5½ minutes bypass 000000 shows expired and does not verify', async () => {
+    vi.useFakeTimers();
+    sendOtp.mockResolvedValue({ message: 'ok', referenceCode: '526547' });
+
+    render(
+      <CheckoutExistingCustomerModal
+        open
+        phone="0999999999"
+        onClose={onClose}
+        onLoginSuccess={onLoginSuccess}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('checkout-existing-customer-login-otp'));
+    });
+
+    expect(screen.getByTestId('checkout-existing-customer-otp-input')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(OTP_TTL_AND_HALF_MS);
+    });
+
+    const firstDigit = screen.getByTestId('checkout-existing-customer-otp-input-digit-1');
+    fireEvent.change(firstDigit, { target: { value: '000000' } });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('รหัส OTP หมดอายุแล้ว');
+    expect(verifyOtp).not.toHaveBeenCalled();
+    expect(onLoginSuccess).not.toHaveBeenCalled();
+    expect(screen.getByTestId('checkout-existing-customer-otp-resend')).toBeInTheDocument();
+  });
+
+  it('clears expired state after resend and allows bypass login', async () => {
+    vi.useFakeTimers();
+    sendOtp.mockResolvedValue({ message: 'ok', referenceCode: '526547' });
+    verifyOtp.mockResolvedValue({
+      pendingDeletion: false,
+      customer: { id: 'c1', phone: '0999999999' },
+      tokens: { accessToken: 'a', refreshToken: 'r' },
+    });
+
+    render(
+      <CheckoutExistingCustomerModal
+        open
+        phone="0999999999"
+        onClose={onClose}
+        onLoginSuccess={onLoginSuccess}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('checkout-existing-customer-login-otp'));
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(OTP_TTL_MS);
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('รหัส OTP หมดอายุแล้ว');
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('checkout-existing-customer-otp-resend'));
+    });
+
+    expect(sendOtp).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await act(async () => {
+      const firstDigit = screen.getByTestId('checkout-existing-customer-otp-input-digit-1');
+      fireEvent.change(firstDigit, { target: { value: '000000' } });
+      await Promise.resolve();
+    });
+
+    expect(verifyOtp).toHaveBeenCalledWith('0999999999', '000000');
+    expect(onLoginSuccess).toHaveBeenCalledTimes(1);
   });
 });

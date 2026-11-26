@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   computeCartItemCount,
@@ -17,6 +17,7 @@ import {
   toBuyNowCartItem,
 } from '@/lib/checkout/buyNowCheckout';
 import { useCart } from '@/lib/providers/CartProvider';
+import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 export const BUY_NOW_CHECKOUT_MODE = 'buy-now';
 
@@ -39,9 +40,13 @@ export type CheckoutCartSelection = {
  *
  * Buy-now only applies when `/checkout?mode=buy-now` so a leftover session
  * cannot override a later cart checkout.
+ *
+ * While checkout is submitting, keep the pre-pay selection so totals stay
+ * visible after createOrder clears the cart (and buy-now session) before leave.
  */
 export function useCheckoutCartSelection(): CheckoutCartSelection {
   const cart = useCart();
+  const { isSubmitting } = useCheckout();
   const searchParams = useSearchParams();
   const isBuyNowMode = searchParams.get('mode') === BUY_NOW_CHECKOUT_MODE;
   const buyNowSnapshot = useSyncExternalStore(
@@ -64,7 +69,7 @@ export function useCheckoutCartSelection(): CheckoutCartSelection {
     clearBuyNowCheckout();
   }, []);
 
-  return useMemo(() => {
+  const liveSelection = useMemo((): CheckoutCartSelection => {
     if (buyNowItems) {
       return {
         selectedItems: buyNowItems,
@@ -104,4 +109,20 @@ export function useCheckoutCartSelection(): CheckoutCartSelection {
     cart.refetch,
     cart.pruneDeselectedIds,
   ]);
+
+  const [frozenSelection, setFrozenSelection] = useState<{
+    submitting: boolean;
+    selection: CheckoutCartSelection | null;
+  }>({ submitting: false, selection: null });
+
+  const submitting = Boolean(isSubmitting);
+
+  // Capture the paid selection on the first submitting render; clear when unlocked.
+  if (submitting && !frozenSelection.submitting) {
+    setFrozenSelection({ submitting: true, selection: liveSelection });
+  } else if (!submitting && frozenSelection.submitting) {
+    setFrozenSelection({ submitting: false, selection: null });
+  }
+
+  return submitting && frozenSelection.selection ? frozenSelection.selection : liveSelection;
 }

@@ -469,14 +469,15 @@ describe('CheckoutAddressSection integration', () => {
       await user.type(screen.getByTestId('checkout-existing-customer-otp-input-digit-1'), '123456');
 
       await waitFor(() => {
-        expect(toast.custom).toHaveBeenCalledTimes(1);
+        expect(toast.success).toHaveBeenCalledTimes(1);
       });
 
-      const [, options] = vi.mocked(toast.custom).mock.calls[0];
-      expect(options).toMatchObject({
-        id: 'checkout-saved-address',
-        position: 'top-right',
-      });
+      expect(toast.success).toHaveBeenCalledWith(
+        'เข้าสู่ระบบแล้ว ดึงที่อยู่เดิมให้แล้ว',
+        expect.objectContaining({
+          id: 'checkout-saved-address',
+        }),
+      );
     });
 
     it('does not toast when checkout opens already authenticated', async () => {
@@ -508,7 +509,7 @@ describe('CheckoutAddressSection integration', () => {
         );
       });
 
-      expect(toast.custom).not.toHaveBeenCalled();
+      expect(toast.success).not.toHaveBeenCalled();
     });
   });
 

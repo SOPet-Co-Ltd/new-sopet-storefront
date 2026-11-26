@@ -6,7 +6,7 @@ import ProductDetailsSeller from './ProductDetailsSeller';
 
 vi.mock('sonner', () => ({
   toast: {
-    message: vi.fn(),
+    info: vi.fn(),
   },
 }));
 
@@ -54,7 +54,7 @@ describe('ProductDetailsSeller', () => {
     expect(chatButton).toHaveTextContent('แชทพูดคุย');
 
     await user.click(chatButton);
-    expect(toast.message).toHaveBeenCalledWith('ฟีเจอร์แชทพูดคุยจะเปิดใช้งานเร็วๆ นี้');
+    expect(toast.info).toHaveBeenCalledWith('ฟีเจอร์แชทพูดคุยจะเปิดใช้งานเร็วๆ นี้');
   });
 
   it('renders store link button navigating to store slug', () => {

@@ -76,6 +76,9 @@
   --color-sop-system-success-400: #54c570;
   --color-sop-system-success-500: #31b953;
 
+  /* System (Info) */
+  --color-sop-system-info-400: #6ca4ff;
+
   /* Brand: Primary */
   --color-sop-primary-100: #f9f6fe;
   --color-sop-primary-200: #f2ebfc;
@@ -1091,4 +1094,91 @@ input[type='range'].slider-thumb:focus::-moz-range-thumb {
 
 @theme {
   --shadow-lg: 0px 0px 24px -4px rgba(34, 34, 41, 0.2), 0px 20px 24px -8px rgba(34, 34, 41, 0.2);
+}
+
+/* ========================================================================== */
+/* Toast — design-system card (overrides Sonner defaults)                      */
+/* ========================================================================== */
+[data-sonner-toaster] [data-sonner-toast][data-styled='false'] {
+  --sopet-toast-tint: var(--color-sop-system-info-400);
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  width: min(364px, calc(100vw - 32px));
+  padding: var(--spacing-sop-12px);
+  overflow: hidden;
+  border: 1px solid var(--color-sop-neutral-grayalpha-100);
+  border-radius: var(--radius-sop-12px);
+  background-color: var(--color-sop-base-white);
+  background-image:
+    linear-gradient(
+      116.15deg,
+      color-mix(in srgb, var(--sopet-toast-tint) 12%, transparent) 0.532%,
+      rgba(255, 255, 255, 0.12) 65.054%
+    ),
+    linear-gradient(var(--color-sop-base-white), var(--color-sop-base-white));
+  box-shadow:
+    0 -8px 24px -8px var(--color-sop-neutral-grayalpha-100),
+    0 20px 24px -8px var(--color-sop-neutral-grayalpha-100);
+  color: var(--color-sop-neutral-gray-200);
+  font-family: var(--font-sans);
+}
+
+[data-sonner-toaster][data-x-position='right'] [data-sonner-toast][data-styled='false'] {
+  right: 0;
+  left: auto;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='false'][data-type='success'] {
+  --sopet-toast-tint: var(--color-sop-system-success-400);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='false'][data-type='warning'] {
+  --sopet-toast-tint: var(--color-sop-system-warning-300);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='false'][data-type='error'] {
+  --sopet-toast-tint: var(--color-sop-secondary-600);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='false'][data-type='info'] {
+  --sopet-toast-tint: var(--color-sop-system-info-400);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='false']:focus-visible {
+  box-shadow:
+    0 -8px 24px -8px var(--color-sop-neutral-grayalpha-100),
+    0 20px 24px -8px var(--color-sop-neutral-grayalpha-100);
+}
+
+/* Visible stack: the newest toast stays in front, and each one behind it
+   peeks out by the toaster gap so the pile is visible. */
+[data-sonner-toaster]
+  [data-sonner-toast][data-styled='false'][data-mounted='true'][data-front='true']:not(
+    [data-swiping='true']
+  ) {
+  transform: translateY(var(--offset, 0px));
+}
+
+[data-sonner-toaster]
+  [data-sonner-toast][data-styled='false'][data-mounted='true'][data-front='false']:not(
+    [data-expanded='true']
+  ):not([data-swiping='true']) {
+  height: var(--front-toast-height);
+  transform: translateY(calc(var(--index) * var(--gap))) scale(calc(1 - var(--index) * 0.05));
+  transform-origin: top center;
+}
+
+[data-sonner-toaster]
+  [data-sonner-toast][data-styled='false'][data-front='false']:not([data-expanded='true'])
+  > * {
+  opacity: 0;
+}
+
+[data-sonner-toaster]
+  [data-sonner-toast][data-styled='false'][data-mounted='true'][data-expanded='true']:not(
+    [data-swiping='true']
+  ) {
+  height: var(--initial-height);
+  transform: translateY(var(--offset, 0px));
 }

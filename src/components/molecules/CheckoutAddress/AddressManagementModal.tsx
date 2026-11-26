@@ -5,7 +5,7 @@ import { Button } from '@/components/atoms/Button';
 import { Modal } from '@/components/atoms/Modal';
 import {
   mapGuestFormToCreateAddressInput,
-  validateAuthInlineShippingForm,
+  validateAddressManagementShippingForm,
   type GuestCheckoutField,
   type GuestCheckoutFormState,
 } from '@/lib/checkout/guestCheckoutValidation';
@@ -169,7 +169,7 @@ export function AddressManagementModal({
   };
 
   const validateForm = () => {
-    const validation = validateAuthInlineShippingForm({
+    const validation = validateAddressManagementShippingForm({
       contactPhone: '',
       ...formValues,
     });

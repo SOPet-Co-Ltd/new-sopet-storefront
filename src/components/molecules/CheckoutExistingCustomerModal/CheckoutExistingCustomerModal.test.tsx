@@ -115,7 +115,7 @@ describe('CheckoutExistingCustomerModal', () => {
     );
   });
 
-  it('stays on OTP step and shows error with purple resend when verify fails', async () => {
+  it('AF-OTP-18: wrong OTP keeps digits, shows error and cooldown, hides resend during cooldown', async () => {
     const user = userEvent.setup();
     sendOtp.mockResolvedValue({ message: 'ok', referenceCode: '526547' });
     verifyOtp.mockRejectedValue({
@@ -145,11 +145,60 @@ describe('CheckoutExistingCustomerModal', () => {
       );
     });
 
-    expect(screen.getByTestId('checkout-existing-customer-otp-resend')).toHaveTextContent(
-      'ส่งใหม่อีกครั้ง',
-    );
+    expect(screen.getByTestId('checkout-existing-customer-otp-input-digit-1')).toHaveValue('1');
+    expect(screen.getByText(/ส่งรหัสใหม่ได้ใน/)).toBeInTheDocument();
+    expect(screen.queryByTestId('checkout-existing-customer-otp-resend')).not.toBeInTheDocument();
+    expect(sendOtp).toHaveBeenCalledTimes(1);
     expect(onLoginSuccess).not.toHaveBeenCalled();
     expect(screen.getByTestId('checkout-existing-customer-otp')).toBeInTheDocument();
+  });
+
+  it('shows resend and sends new OTP after cooldown following wrong OTP', async () => {
+    vi.useFakeTimers();
+    sendOtp.mockResolvedValue({ message: 'ok', referenceCode: '526547' });
+    verifyOtp.mockRejectedValue({
+      code: 'INVALID_OTP',
+      message: 'INVALID_OTP',
+    });
+
+    render(
+      <CheckoutExistingCustomerModal
+        open
+        phone="0999999999"
+        onClose={onClose}
+        onLoginSuccess={onLoginSuccess}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('checkout-existing-customer-login-otp'));
+    });
+
+    await act(async () => {
+      const firstDigit = screen.getByTestId('checkout-existing-customer-otp-input-digit-1');
+      fireEvent.change(firstDigit, { target: { value: '111111' } });
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+
+    act(() => {
+      vi.advanceTimersByTime(120 * 1000);
+    });
+
+    expect(screen.getByTestId('checkout-existing-customer-otp-resend')).toBeInTheDocument();
+
+    sendOtp.mockResolvedValue({ message: 'ok', referenceCode: '999111' });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('checkout-existing-customer-otp-resend'));
+      await Promise.resolve();
+    });
+
+    expect(sendOtp).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('checkout-existing-customer-otp-reference')).toHaveTextContent(
+      'รหัสอ้างอิง: 999111',
+    );
   });
 
   it('calls onLoginSuccess when OTP verifies', async () => {
@@ -237,6 +286,7 @@ describe('CheckoutExistingCustomerModal', () => {
     fireEvent.change(firstDigit, { target: { value: '000000' } });
 
     expect(screen.getByRole('alert')).toHaveTextContent('รหัส OTP หมดอายุแล้ว');
+    expect(screen.getByTestId('checkout-existing-customer-otp-input-digit-1')).toHaveValue('0');
     expect(verifyOtp).not.toHaveBeenCalled();
     expect(onLoginSuccess).not.toHaveBeenCalled();
     expect(screen.getByTestId('checkout-existing-customer-otp-resend')).toBeInTheDocument();

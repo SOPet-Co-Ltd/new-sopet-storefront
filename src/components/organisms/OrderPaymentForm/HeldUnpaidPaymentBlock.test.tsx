@@ -8,6 +8,7 @@ const pendingPayment = {
   id: 'pay-1',
   orderId: 'order-1',
   orderNumber: 'ORD-TEST-0001',
+  orderStatus: 'pending_payment' as string | null,
   amount: 100,
   currency: 'THB',
   status: 'pending' as const,

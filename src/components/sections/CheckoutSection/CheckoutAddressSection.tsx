@@ -2,6 +2,7 @@
 
 import { useLazyQuery } from '@apollo/client/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { showCheckoutSavedAddressToast } from '@/components/atoms/CheckoutSavedAddressToast/CheckoutSavedAddressToast';
 import { MapPinIcon } from '@/components/atoms/icons';
 import {
   AddressManagementModal,
@@ -53,6 +54,7 @@ export function CheckoutAddressSection({
   const [existingCustomerPhone, setExistingCustomerPhone] = useState('');
   const [contactHydrateNonce, setContactHydrateNonce] = useState(0);
   const forceContactHydrateRef = useRef(false);
+  const awaitingSavedAddressToastRef = useRef(false);
   const dismissedPhonesRef = useRef<Set<string>>(new Set());
   const promptedPhonesRef = useRef<Set<string>>(new Set());
   const [checkCustomerExists] = useLazyQuery(CustomerExistsByPhoneDocument, {
@@ -161,9 +163,21 @@ export function CheckoutAddressSection({
 
   const handleExistingCustomerLoginSuccess = useCallback(() => {
     forceContactHydrateRef.current = true;
+    awaitingSavedAddressToastRef.current = true;
     setExistingCustomerModalOpen(false);
     setContactHydrateNonce((nonce) => nonce + 1);
   }, []);
+
+  useEffect(() => {
+    if (!awaitingSavedAddressToastRef.current || loading) {
+      return;
+    }
+
+    awaitingSavedAddressToastRef.current = false;
+    if (addresses.length > 0) {
+      showCheckoutSavedAddressToast();
+    }
+  }, [addresses.length, contactHydrateNonce, loading]);
 
   useEffect(() => {
     if (addresses.length === 0) return;
@@ -207,6 +221,13 @@ export function CheckoutAddressSection({
     } finally {
       setIsRetrying(false);
     }
+  };
+
+  const handleOpenAddressModal = () => {
+    void (async () => {
+      await refetch();
+      setIsModalOpen(true);
+    })();
   };
 
   return (
@@ -271,7 +292,7 @@ export function CheckoutAddressSection({
           >
             <SavedAddressSummaryCard
               address={selectedAddress}
-              onChangeClick={() => setIsModalOpen(true)}
+              onChangeClick={handleOpenAddressModal}
               isModalOpen={isModalOpen}
               disabled={isSubmitting}
             />

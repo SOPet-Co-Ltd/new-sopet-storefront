@@ -7,12 +7,16 @@ import { RefreshIcon } from '@/components/atoms/icons';
 import { Modal } from '@/components/atoms/Modal';
 import { OtpCodeInput } from '@/components/atoms/OtpCodeInput/OtpCodeInput';
 import { ReactivateAccountModal } from '@/components/molecules/ReactivateAccountModal/ReactivateAccountModal';
-import { getErrorMessage } from '@/lib/errors/getErrorMessage';
+import { ERROR_CODES } from '@/lib/errors/errorCodes';
+import { ERROR_MESSAGES } from '@/lib/errors/errorMessages';
+import { extractErrorCode, getErrorMessage, isConnectionError } from '@/lib/errors/getErrorMessage';
 import { formatThaiPhoneNumber } from '@/lib/helpers/phone';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 const RESEND_COOLDOWN_SECONDS = 120;
+const OTP_TTL_SECONDS = 5 * 60;
+const OTP_EXPIRED_MESSAGE = 'รหัส OTP หมดอายุแล้ว';
 
 export type CheckoutExistingCustomerModalStep = 'prompt' | 'otp';
 
@@ -43,6 +47,7 @@ function CheckoutExistingCustomerModalContent({
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [otpTtlRemaining, setOtpTtlRemaining] = useState(0);
   const [showReactivateModal, setShowReactivateModal] = useState(false);
   const [reactivationToken, setReactivationToken] = useState<string | null>(null);
   const verifyingRef = useRef(false);
@@ -57,6 +62,24 @@ function CheckoutExistingCustomerModalContent({
     return () => window.clearInterval(timer);
   }, [cooldown]);
 
+  useEffect(() => {
+    if (otpTtlRemaining <= 0) return;
+
+    const timer = window.setInterval(() => {
+      setOtpTtlRemaining((prev) => {
+        if (prev <= 1) {
+          setError(OTP_EXPIRED_MESSAGE);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [otpTtlRemaining]);
+
+  const isOtpExpired = step === 'otp' && otpTtlRemaining <= 0 && referenceCode !== null;
+
   const handleRequestOtp = useCallback(async () => {
     if (!phone || sendingOtp) return;
 
@@ -67,6 +90,7 @@ function CheckoutExistingCustomerModalContent({
       setReferenceCode(result.referenceCode);
       setCode('');
       setCooldown(RESEND_COOLDOWN_SECONDS);
+      setOtpTtlRemaining(OTP_TTL_SECONDS);
       setStep('otp');
     } catch (sendError) {
       setError(getErrorMessage(sendError, 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));
@@ -78,6 +102,11 @@ function CheckoutExistingCustomerModalContent({
   const handleVerify = useCallback(
     async (otpCode: string) => {
       if (!/^\d{6}$/.test(otpCode) || !phone || verifyingRef.current || verifying) return;
+
+      if (isOtpExpired) {
+        setError(OTP_EXPIRED_MESSAGE);
+        return;
+      }
 
       verifyingRef.current = true;
       try {
@@ -93,18 +122,26 @@ function CheckoutExistingCustomerModalContent({
 
         onLoginSuccess();
       } catch (verifyError) {
-        setError(getErrorMessage(verifyError, 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'));
-        setCode('');
+        const errorCode = extractErrorCode(verifyError);
+        if (errorCode === ERROR_CODES.OTP_EXPIRED) {
+          setError(OTP_EXPIRED_MESSAGE);
+        } else if (isConnectionError(verifyError)) {
+          setError(ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR]);
+        } else {
+          setError(getErrorMessage(verifyError, 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'));
+        }
       } finally {
         setVerifying(false);
         verifyingRef.current = false;
       }
     },
-    [onLoginSuccess, phone, verifyOtp, verifying],
+    [isOtpExpired, onLoginSuccess, phone, verifyOtp, verifying],
   );
 
   const handleCodeChange = (next: string) => {
-    setError(null);
+    if (!isOtpExpired) {
+      setError(null);
+    }
     setCode(next);
     if (next.length === 6) {
       void handleVerify(next);
@@ -116,13 +153,21 @@ function CheckoutExistingCustomerModalContent({
 
     try {
       setResending(true);
-      setError(null);
+      if (!isOtpExpired) {
+        setError(null);
+      }
       const result = await sendOtp(phone);
       setReferenceCode(result.referenceCode);
       setCode('');
       setCooldown(RESEND_COOLDOWN_SECONDS);
+      setOtpTtlRemaining(OTP_TTL_SECONDS);
+      setError(null);
     } catch (resendError) {
-      setError(getErrorMessage(resendError, 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));
+      if (isOtpExpired) {
+        setError(OTP_EXPIRED_MESSAGE);
+      } else {
+        setError(getErrorMessage(resendError, 'ส่งรหัส OTP ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'));
+      }
     } finally {
       setResending(false);
     }
@@ -130,6 +175,9 @@ function CheckoutExistingCustomerModalContent({
 
   const formattedPhone = formatThaiPhoneNumber(phone);
   const isOtpStep = step === 'otp';
+  const isWrongOtpError = Boolean(
+    error && error !== OTP_EXPIRED_MESSAGE && error !== ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR],
+  );
 
   return (
     <>
@@ -231,34 +279,35 @@ function CheckoutExistingCustomerModalContent({
                 value={code}
                 onChange={handleCodeChange}
                 size="compact"
+                error={isWrongOtpError}
                 ariaDescribedBy={error ? 'checkout-existing-customer-otp-error' : undefined}
                 disabled={verifying}
                 data-testid="checkout-existing-customer-otp-input"
               />
 
-              <div className="flex w-full flex-col items-center gap-sop-8px">
+              <div className="flex w-full flex-col items-center gap-0">
                 {error ? (
                   <p
                     id="checkout-existing-customer-otp-error"
                     role="alert"
-                    className="sop-body-md-regular text-center text-sop-system-error-400"
+                    className="sop-body-sm-regular text-center text-sop-system-error-400"
                   >
                     {error}
                   </p>
                 ) : null}
 
-                {cooldown > 0 && !error ? (
+                {cooldown > 0 ? (
                   <p className="sop-body-md-regular text-sop-neutral-gray-300">
                     ส่งรหัสใหม่ได้ใน {formatCooldown(cooldown)} น.
                   </p>
                 ) : (
                   <button
                     type="button"
-                    disabled={resending || !phone || (cooldown > 0 && !error)}
+                    disabled={resending || !phone}
                     onClick={() => void handleResend()}
                     data-testid="checkout-existing-customer-otp-resend"
                     className={cn(
-                      'inline-flex items-center justify-center gap-sop-8px sop-body-md-medium text-sop-primary-500',
+                      'inline-flex h-8 items-center justify-center gap-sop-8px px-sop-12px py-sop-8px sop-body-sm-medium text-sop-primary-500',
                       'cursor-pointer disabled:cursor-not-allowed disabled:opacity-40',
                     )}
                   >

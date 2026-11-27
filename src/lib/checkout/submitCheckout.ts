@@ -43,7 +43,8 @@ export type SubmitCheckoutErrorCode =
   | 'order_failed'
   | 'payment_failed'
   | 'cart_stale'
-  | 'price_changed';
+  | 'price_changed'
+  | 'address_not_found';
 
 export class SubmitCheckoutError extends Error {
   constructor(
@@ -173,6 +174,12 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
         'order_failed',
       );
     }
+    if (code === ERROR_CODES.SAVED_ADDRESS_NOT_FOUND) {
+      throw new SubmitCheckoutError(
+        getErrorMessage(error, 'ไม่พบที่อยู่ที่บันทึกไว้'),
+        'address_not_found',
+      );
+    }
     // Candidate-001: only hard eligibility / unknown → order_failed.
     // INSUFFICIENT_QTY is apply-skip — retry once without promo codes.
     if (isCreateOrderHardEligibilityCode(code) || code == null) {
@@ -194,6 +201,13 @@ async function runSubmitCheckout(params: SubmitCheckoutParams): Promise<SubmitCh
       const retrySuspended = mapCheckoutSuspendedStoreError(retryError);
       if (retrySuspended) {
         throw new SubmitCheckoutError(retrySuspended, 'order_failed');
+      }
+      const retryCode = extractPromotionErrorCode(retryError);
+      if (retryCode === ERROR_CODES.SAVED_ADDRESS_NOT_FOUND) {
+        throw new SubmitCheckoutError(
+          getErrorMessage(retryError, 'ไม่พบที่อยู่ที่บันทึกไว้'),
+          'address_not_found',
+        );
       }
       throw new SubmitCheckoutError(
         getErrorMessage(retryError, 'ไม่สามารถสร้างคำสั่งซื้อได้'),

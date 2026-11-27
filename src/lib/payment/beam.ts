@@ -1,3 +1,5 @@
+import { cardPaymentNetworkAbortSignal, toCardPaymentNetworkError } from './cardPaymentNetwork';
+
 export const BEAM_API_BASE_URL_DEFAULT = 'https://api.beamcheckout.com';
 export const BEAM_CARD_TOKENS_PATH = '/client/v1/card-tokens';
 
@@ -96,19 +98,25 @@ export async function tokenizeCard(input: TokenizeCardInput): Promise<TokenizedC
   const { merchantId, publishableKey } = getBeamCredentials();
   const pan = input.number.replace(/\D/g, '');
 
-  const response = await fetch(`${getBeamApiBaseUrl()}${BEAM_CARD_TOKENS_PATH}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: encodeBasicAuth(merchantId, publishableKey),
-    },
-    body: JSON.stringify({
-      pan,
-      expiryMonth: input.expirationMonth,
-      expiryYear: toBeamExpiryYearYy(input.expirationYear),
-      cardHolderName: input.name.trim(),
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${getBeamApiBaseUrl()}${BEAM_CARD_TOKENS_PATH}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: encodeBasicAuth(merchantId, publishableKey),
+      },
+      body: JSON.stringify({
+        pan,
+        expiryMonth: input.expirationMonth,
+        expiryYear: toBeamExpiryYearYy(input.expirationYear),
+        cardHolderName: input.name.trim(),
+      }),
+      signal: cardPaymentNetworkAbortSignal(),
+    });
+  } catch (error) {
+    throw toCardPaymentNetworkError(error);
+  }
 
   const body = (await response.json().catch(() => null)) as BeamCardTokenResponse | null;
 

@@ -2,7 +2,7 @@
 
 import { ApolloNextAppProvider } from '@apollo/client-integration-nextjs';
 import type { ReactNode } from 'react';
-import { Toaster } from 'sonner';
+import { AppToaster } from '@/components/atoms/SopetToast/AppToaster';
 import { GuestAddressImportOnLogin } from '@/components/providers/GuestAddressImportOnLogin';
 import { LoadingLottieWarmupProvider } from '@/components/organisms/GlobalLoadingStage';
 import { makeApolloClient } from '@/lib/graphql/client';
@@ -21,7 +21,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
             <CartProvider>
               <CheckoutProvider>
                 {children}
-                <Toaster position="top-right" />
+                <AppToaster />
               </CheckoutProvider>
             </CartProvider>
           </LoginModalProvider>

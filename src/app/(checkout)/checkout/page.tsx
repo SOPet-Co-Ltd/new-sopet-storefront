@@ -22,7 +22,7 @@ import type {
 import { useGuestCheckoutRememberHydration } from '@/lib/checkout/useGuestCheckoutRememberHydration';
 import { clearBuyNowCheckout } from '@/lib/checkout/buyNowCheckout';
 import { clearAutoApplyAttempted } from '@/lib/checkout/autoApplyOnceGate';
-import { getPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { clearPendingCheckout, getPendingCheckout } from '@/lib/checkout/pendingCheckout';
 import { useAddresses } from '@/lib/hooks/useAddresses';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCheckoutCardPaymentReady } from '@/lib/hooks/useCheckoutCardPaymentReady';
@@ -30,6 +30,7 @@ import {
   BUY_NOW_CHECKOUT_MODE,
   useCheckoutCartSelection,
 } from '@/lib/hooks/useCheckoutCartSelection';
+import { isPaymentOrderCompletedInSession } from '@/lib/payment/paymentRouteClosed';
 import { useCheckout } from '@/lib/providers/CheckoutProvider';
 
 const EMPTY_GUEST_FORM: GuestCheckoutFormState = {
@@ -97,6 +98,7 @@ export default function CheckoutPage() {
     loading: addressesLoading,
     error: addressesError,
     createAddress,
+    refetch: refetchAddresses,
   } = useAddresses();
   const beginCheckoutTrackedRef = useRef(false);
 
@@ -128,6 +130,7 @@ export default function CheckoutPage() {
   const addressSubmitContext = useMemo<AddressSubmitContext>(
     () => ({
       createAddress,
+      refetchAddresses,
       setAddress,
       saveAddressChecked,
       setFieldErrors,
@@ -141,6 +144,7 @@ export default function CheckoutPage() {
       addressesError,
       addressesLoading,
       createAddress,
+      refetchAddresses,
       saveAddressChecked,
       setAddress,
     ],
@@ -178,6 +182,11 @@ export default function CheckoutPage() {
     const pendingCheckout = getPendingCheckout();
 
     if (pendingCheckout && selectedItemCount === 0) {
+      if (isPaymentOrderCompletedInSession(pendingCheckout.orderId)) {
+        clearPendingCheckout();
+        router.replace(`/thank-you/${pendingCheckout.orderId}`);
+        return;
+      }
       router.replace(`/payment/${pendingCheckout.paymentId}`);
       return;
     }

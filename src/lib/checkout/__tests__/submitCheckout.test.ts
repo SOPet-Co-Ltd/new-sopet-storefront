@@ -477,6 +477,42 @@ describe('submitCheckout', () => {
     expect(result.orderId).toBe(sampleOrder.id);
   });
 
+  it('maps SAVED_ADDRESS_NOT_FOUND to address_not_found without promo retry (AF-ADDR-14)', async () => {
+    const createOrder = vi.fn().mockRejectedValue({
+      graphQLErrors: [
+        {
+          extensions: { code: 'SAVED_ADDRESS_NOT_FOUND' },
+          message: 'Saved address not found',
+        },
+      ],
+    });
+
+    await expect(
+      submitCheckout(
+        createSubmitParams({
+          guestForm: null,
+          checkoutContext: {
+            isAuthenticated: true,
+            shippingByStoreId: {
+              [CATALOG_STORE_ID]: { shippingOptionId: SHIPPING_OPTION_ID },
+            },
+            selectedAddressId: 'deleted-addr',
+            promotionCode: 'SAVE10',
+            storePromotionCodes: [],
+            paymentMethod: 'promptpay',
+          },
+          checkoutHook: createCheckoutHook({ createOrder }),
+        }),
+        createSubmitCheckoutGuard(),
+      ),
+    ).rejects.toMatchObject({
+      code: 'address_not_found',
+      message: 'ไม่พบที่อยู่ที่บันทึกไว้',
+    });
+
+    expect(createOrder).toHaveBeenCalledTimes(1);
+  });
+
   it('surfaces hard eligibility as order_failed without retry', async () => {
     const createOrder = vi.fn().mockRejectedValue({
       graphQLErrors: [{ extensions: { code: 'GUEST' }, message: 'Promotion not eligible: GUEST' }],

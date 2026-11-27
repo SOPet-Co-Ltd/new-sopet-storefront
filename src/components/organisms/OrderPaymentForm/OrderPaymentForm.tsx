@@ -1,8 +1,6 @@
 'use client';
 
-import Link from 'next/link';
 import { Button } from '@/components/atoms/Button';
-import { ArrowLeftIcon } from '@/components/atoms/icons';
 import { SpinnerIcon } from '@/components/atoms/icons/outline';
 import type { PaymentRecord } from '@/lib/hooks/usePayment';
 import { usePaymentCountdown } from '@/lib/hooks/usePaymentCountdown';
@@ -77,8 +75,6 @@ function PaymentBusyShell({
   titleId,
   title,
   busy,
-  backHref,
-  backLabel,
   hideTitle,
   ariaLabel,
   className,
@@ -87,8 +83,6 @@ function PaymentBusyShell({
   titleId: string;
   title: string;
   busy: boolean;
-  backHref?: string;
-  backLabel?: string;
   /** When title is rendered by children (e.g. Figma bank-transfer layout). */
   hideTitle?: boolean;
   /** Replaces aria-labelledby when the title element is not in the document. */
@@ -106,20 +100,6 @@ function PaymentBusyShell({
       aria-label={ariaLabel}
       aria-busy={busy || undefined}
     >
-      {backHref && backLabel ? (
-        <Link
-          href={backHref}
-          data-testid="payment-busy-back"
-          className={cn(
-            'mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-sop-secondary-500',
-            'transition-colors hover:text-sop-secondary-600',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sop-primary-300 focus-visible:ring-offset-2',
-          )}
-        >
-          <ArrowLeftIcon size={{ mobile: 16, desktop: 16 }} color="currentColor" />
-          {backLabel}
-        </Link>
-      ) : null}
       {hideTitle ? null : (
         <h1 id={titleId} className="text-xl font-bold text-gray-900">
           {title}
@@ -530,15 +510,11 @@ export function OrderPaymentForm({
 
   if (payment.paymentMethod === 'bank_transfer' && payment.status === 'pending') {
     const amountLabel = formatAmount(payment.amount, payment.currency);
-    const leaveHref = payment.orderId ? `/user/orders/${payment.orderId}` : '/';
-    const leaveLabel = payment.orderId ? 'กลับไปที่คำสั่งซื้อ' : 'กลับหน้าแรก';
     return (
       <PaymentBusyShell
         titleId="payment-bank-transfer-title"
         title="คัดลอกบัญชีธนาคาร เพื่อชำระเงิน"
         busy={isRetryBusy}
-        backHref={leaveHref}
-        backLabel={leaveLabel}
         hideTitle
         ariaLabel={bankTransferMethodChangeOpen ? 'เลือกวิธีชำระเงินใหม่' : undefined}
       >

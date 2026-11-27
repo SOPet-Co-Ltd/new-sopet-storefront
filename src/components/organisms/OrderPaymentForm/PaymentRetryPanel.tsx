@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useQuery } from '@apollo/client/react';
 import { Button } from '@/components/atoms/Button';
@@ -22,6 +22,7 @@ import { BankTransferDetailsDocument } from '@/lib/graphql/generated/graphql';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { usePaymentMethods } from '@/lib/hooks/usePaymentMethods';
 import { BeamConfigurationError, parseCardExpiry, tokenizeCard } from '@/lib/payment/beam';
+import { CardPaymentNetworkError } from '@/lib/payment/cardPaymentNetwork';
 import { encryptCardSecurityCodeTransport } from '@/lib/payment/cardTransport';
 import { buildSaveCardPayload, type SaveCardOnPaymentInput } from '@/lib/payment/saveCard';
 import { isBeamSavedPaymentMethod } from '@/lib/payment/savedPaymentMethod';
@@ -179,6 +180,8 @@ export function PaymentRetryPanel({
   const [cvvModalOpen, setCvvModalOpen] = useState(false);
   const [localSubmitting, setLocalSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  /** Sync lock so a second click cannot start encrypt/tokenize before state commits. */
+  const submittingRef = useRef(false);
 
   const isSubmitting = externalSubmitting || localSubmitting;
   const hasSavedCards = isAuthenticated && paymentMethods.length > 0;
@@ -227,40 +230,40 @@ export function PaymentRetryPanel({
     setPaymentMethod(method);
   };
 
-  const submitWithPayload = async (payload: PaymentRetrySubmitInput) => {
-    // Lock the panel before any async work (tokenize + createPayment) so values cannot change.
-    // On success, stay locked until unmount/navigation (same as checkout isSubmitting).
-    setLocalSubmitting(true);
-    try {
-      if (
-        payload.savedPaymentMethodId &&
-        selectedSavedCard &&
-        !isBeamSavedPaymentMethod(selectedSavedCard)
-      ) {
-        setCardFormError('บัตรนี้ไม่สามารถใช้ได้');
-        setLocalSubmitting(false);
-        return;
-      }
-
-      await onSubmit?.(payload);
-      // Clear sensitive card fields only after a successful submit.
-      if (selectedPaymentMethod === 'card') {
-        clearCardForm();
-      }
-      setCvvModalOpen(false);
-      setSavedCardCvv('');
-    } catch (error) {
-      const message =
-        error instanceof BeamConfigurationError || error instanceof PaymentRetryError
-          ? error.message
-          : getErrorMessage(error, 'ไม่สามารถสร้างการชำระเงินได้');
-      setLocalError(message);
-      setLocalSubmitting(false);
+  const beginLocalSubmitting = (): boolean => {
+    if (submittingRef.current || externalSubmitting) {
+      return false;
     }
+    submittingRef.current = true;
+    setLocalSubmitting(true);
+    // Close CVV modal only after the lock so the confirm click cannot fall through
+    // onto ยืนยันการชำระเงิน underneath.
+    setCvvModalOpen(false);
+    return true;
+  };
+
+  const endLocalSubmitting = () => {
+    submittingRef.current = false;
+    setLocalSubmitting(false);
+  };
+
+  const cardPrepErrorMessage = (error: unknown, fallback: string): string => {
+    if (
+      error instanceof BeamConfigurationError ||
+      error instanceof CardPaymentNetworkError ||
+      error instanceof PaymentRetryError
+    ) {
+      return error.message;
+    }
+    if (error instanceof Error && error.message.trim()) {
+      return error.message;
+    }
+    return getErrorMessage(error, fallback);
   };
 
   const handleSubmit = async (confirmedCvv?: string) => {
-    if (isSubmitting) {
+    // Ref + state: ignore double-clicks before React commits localSubmitting.
+    if (submittingRef.current || isSubmitting) {
       return;
     }
 
@@ -293,6 +296,7 @@ export function PaymentRetryPanel({
     const usesNewCardForm =
       selectedPaymentMethod === 'card' && !(cardEntryMode === 'saved' && selectedSavedCardId);
 
+    // Sync validation / CVV modal stay unlocked; lock only before the first await.
     if (selectedPaymentMethod === 'card') {
       if (cardEntryMode === 'saved' && selectedSavedCardId) {
         const cvv = (confirmedCvv ?? savedCardCvv).trim();
@@ -300,11 +304,19 @@ export function PaymentRetryPanel({
           setCvvModalOpen(true);
           return;
         }
+        if (selectedSavedCard && !isBeamSavedPaymentMethod(selectedSavedCard)) {
+          setLocalError('บัตรนี้ไม่สามารถใช้ได้');
+          return;
+        }
         payload.savedPaymentMethodId = selectedSavedCardId;
+        if (!beginLocalSubmitting()) {
+          return;
+        }
         try {
           payload.cardSecurityCodeCipher = await encryptCardSecurityCodeTransport(cvv);
         } catch (error) {
-          setCardFormError(getErrorMessage(error, 'ไม่สามารถเข้ารหัส CVV ได้'));
+          setLocalError(cardPrepErrorMessage(error, 'ไม่สามารถเข้ารหัส CVV ได้'));
+          endLocalSubmitting();
           return;
         }
       } else {
@@ -317,6 +329,9 @@ export function PaymentRetryPanel({
     }
 
     if (usesNewCardForm) {
+      if (!beginLocalSubmitting()) {
+        return;
+      }
       try {
         const { month, year } = parseCardExpiry(cardForm.expiry);
         const tokenized = await tokenizeCard({
@@ -337,16 +352,35 @@ export function PaymentRetryPanel({
           });
         }
       } catch (error) {
-        const message =
-          error instanceof BeamConfigurationError
-            ? error.message
-            : getErrorMessage(error, 'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร');
+        const message = cardPrepErrorMessage(
+          error,
+          'ไม่สามารถสร้าง token บัตรได้ กรุณาตรวจสอบข้อมูลบัตร',
+        );
         setCardFormError(message);
+        setLocalError(message);
+        endLocalSubmitting();
         return;
       }
     }
 
-    await submitWithPayload(payload);
+    if (!submittingRef.current && !beginLocalSubmitting()) {
+      return;
+    }
+
+    try {
+      await onSubmit?.(payload);
+      // Clear sensitive card fields only after a successful submit.
+      // Stay locked until unmount/navigation (same as checkout isSubmitting).
+      if (selectedPaymentMethod === 'card') {
+        clearCardForm();
+      }
+      setCvvModalOpen(false);
+      setSavedCardCvv('');
+    } catch (error) {
+      const message = cardPrepErrorMessage(error, 'ไม่สามารถสร้างการชำระเงินได้');
+      setLocalError(message);
+      endLocalSubmitting();
+    }
   };
 
   return (
@@ -511,7 +545,8 @@ export function PaymentRetryPanel({
         }}
         onConfirm={(cvv) => {
           setSavedCardCvv(cvv);
-          setCvvModalOpen(false);
+          // Keep modal open until beginLocalSubmitting closes it — avoids the
+          // confirm click falling through onto ยืนยันการชำระเงิน.
           void handleSubmit(cvv);
         }}
       />

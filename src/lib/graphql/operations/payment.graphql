@@ -2,6 +2,7 @@ fragment PaymentFields on PaymentType {
   id
   orderId
   orderNumber
+  orderStatus
   amount
   currency
   status

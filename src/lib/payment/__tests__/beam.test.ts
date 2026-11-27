@@ -8,6 +8,7 @@ import {
   toBeamExpiryYearYy,
   tokenizeCard,
 } from '@/lib/payment/beam';
+import { CARD_PAYMENT_NETWORK_TIMEOUT_MESSAGE } from '@/lib/payment/cardPaymentNetwork';
 import {
   createCheckoutCardPaymentBridge,
   isCheckoutCardPaymentReady,
@@ -130,6 +131,19 @@ describe('beam payment utilities', () => {
 
     const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('https://playground.api.beamcheckout.com/client/v1/card-tokens');
+  });
+
+  it('passes an abort signal and maps TimeoutError to the slow-connection message', async () => {
+    const timeoutError = Object.assign(new Error('The operation was aborted due to timeout'), {
+      name: 'TimeoutError',
+    });
+    const fetchMock = vi.fn().mockRejectedValue(timeoutError);
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(tokenizeCard(TOKEN_INPUT)).rejects.toThrow(CARD_PAYMENT_NETWORK_TIMEOUT_MESSAGE);
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 
   it('rejects when Beam returns a non-OK response', async () => {

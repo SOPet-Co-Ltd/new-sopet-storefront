@@ -18,8 +18,13 @@ import {
 import { SESSION_ID_COOKIE } from '@/lib/session';
 import { createApolloTestWrapper } from '@/test/createApolloTestWrapper';
 import { setPendingCheckout } from '@/lib/checkout/pendingCheckout';
+import { markPaymentOrderCompleted } from '@/lib/payment/paymentRouteClosed';
 import { sampleCart } from '@/test/mocks/fixtures/cart';
-import { CHECKOUT_PAYMENT_ID, samplePromotionValidation } from '@/test/mocks/fixtures/checkout';
+import {
+  CHECKOUT_ORDER_ID,
+  CHECKOUT_PAYMENT_ID,
+  samplePromotionValidation,
+} from '@/test/mocks/fixtures/checkout';
 import { server } from '@/test/mocks/server';
 
 const mockReplace = vi.fn();
@@ -146,6 +151,37 @@ describe('CheckoutPage', () => {
       expect(mockReplace).toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
     });
     expect(mockReplace).not.toHaveBeenCalledWith('/cart');
+  });
+
+  it('redirects to thank-you when pending checkout order was already completed', async () => {
+    setPendingCheckout({ paymentId: CHECKOUT_PAYMENT_ID, orderId: CHECKOUT_ORDER_ID });
+    markPaymentOrderCompleted(CHECKOUT_ORDER_ID);
+
+    render(
+      <MockedProvider
+        mocks={[
+          {
+            request: { query: CartDocument, variables: { sessionId: TEST_SESSION_ID } },
+            result: {
+              data: {
+                cart: { id: 'cart-1', sessionId: TEST_SESSION_ID, customerId: null, items: [] },
+              },
+            },
+          },
+        ]}
+      >
+        <CartProvider>
+          <CheckoutProvider>
+            <CheckoutPage />
+          </CheckoutProvider>
+        </CartProvider>
+      </MockedProvider>,
+    );
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(`/thank-you/${CHECKOUT_ORDER_ID}`);
+    });
+    expect(mockReplace).not.toHaveBeenCalledWith(`/payment/${CHECKOUT_PAYMENT_ID}`);
   });
 
   it('redirects away when cart is empty', async () => {

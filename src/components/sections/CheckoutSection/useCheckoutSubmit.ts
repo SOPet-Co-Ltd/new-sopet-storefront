@@ -44,6 +44,7 @@ import { ensureSessionId } from '@/lib/session';
 
 export type AddressSubmitContext = {
   createAddress: UseAddressesResult['createAddress'];
+  refetchAddresses: UseAddressesResult['refetch'];
   setAddress: (id: string | null) => void;
   saveAddressChecked: boolean;
   setFieldErrors: (errors: Partial<Record<GuestCheckoutField, string>>) => void;
@@ -67,7 +68,6 @@ export function useCheckoutSubmit(
     refetch,
     pruneDeselectedIds,
     isBuyNow,
-    clearBuyNow,
   } = useCheckoutCartSelection();
   const checkoutMutations = useCheckoutMutations();
   const {
@@ -219,9 +219,9 @@ export function useCheckoutSubmit(
           orderId: result.orderId,
           orderNumber: result.orderNumber,
         });
-        if (isBuyNow) {
-          clearBuyNow();
-        } else {
+        // Buy-now: keep session payload until checkout unmounts (CheckoutPageReset)
+        // so the summary does not flash the account cart before navigation.
+        if (!isBuyNow) {
           pruneDeselectedIds(checkedOutItemIds);
           await refetch();
         }
@@ -242,6 +242,14 @@ export function useCheckoutSubmit(
           await refetch();
         }
 
+        if (
+          error instanceof SubmitCheckoutError &&
+          error.code === 'address_not_found' &&
+          addressSubmitContext?.refetchAddresses
+        ) {
+          await addressSubmitContext.refetchAddresses();
+        }
+
         const message =
           error instanceof SubmitCheckoutError
             ? error.message
@@ -256,9 +264,9 @@ export function useCheckoutSubmit(
       }
     },
     [
+      addressSubmitContext,
       checkoutContext,
       checkoutMutations,
-      clearBuyNow,
       guestForm,
       isAuthenticated,
       isBuyNow,

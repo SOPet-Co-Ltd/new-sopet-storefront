@@ -7,6 +7,7 @@ import {
   formatFallbackErrorMessage,
   getErrorMessage,
   getErrorMessageByCode,
+  isConnectionError,
 } from './getErrorMessage';
 import { ERROR_CODES } from './errorCodes';
 
@@ -54,6 +55,7 @@ describe('extractErrorCode', () => {
 describe('getErrorMessage', () => {
   it('maps known codes to Thai catalog copy', () => {
     expect(getErrorMessage(gqlError('INVALID_OTP'))).toBe(ERROR_MESSAGES.INVALID_OTP);
+    expect(getErrorMessage(gqlError('OTP_EXPIRED'))).toBe(ERROR_MESSAGES.OTP_EXPIRED);
     expect(getErrorMessage(gqlError('STORE_SUSPENDED'))).toBe(ERROR_MESSAGES.STORE_SUSPENDED);
   });
 
@@ -82,5 +84,21 @@ describe('getErrorMessage', () => {
     expect(getErrorMessageByCode('NOPE_NOT_REAL', 'fallback')).toBe(
       formatFallbackErrorMessage('fallback', 'NOPE_NOT_REAL'),
     );
+  });
+});
+
+describe('isConnectionError', () => {
+  it('detects fetch failures without a GraphQL code', () => {
+    expect(isConnectionError(new TypeError('Failed to fetch'))).toBe(true);
+    expect(
+      isConnectionError(new TypeError('NetworkError when attempting to fetch resource.')),
+    ).toBe(true);
+    expect(isConnectionError(new TypeError('Load failed'))).toBe(true);
+  });
+
+  it('does not treat coded or generic errors as connection failures', () => {
+    expect(isConnectionError(gqlError('INVALID_OTP'))).toBe(false);
+    expect(isConnectionError(new Error('oops'))).toBe(false);
+    expect(isConnectionError({ code: 'INVALID_OTP', message: 'INVALID_OTP' })).toBe(false);
   });
 });

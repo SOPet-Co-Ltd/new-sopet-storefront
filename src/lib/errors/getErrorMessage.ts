@@ -126,3 +126,39 @@ export function getErrorMessageByCode(
 export function getErrorMessage(error: unknown, fallback: string = DEFAULT_ERROR_MESSAGE): string {
   return getErrorMessageByCode(extractErrorCode(error), fallback);
 }
+
+const CONNECTION_ERROR_MESSAGE_PATTERNS = [
+  'failed to fetch',
+  'networkerror when attempting to fetch',
+  'load failed',
+  'network request failed',
+  'internet connection appears to be offline',
+] as const;
+
+function errorMessageText(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (
+    error &&
+    typeof error === 'object' &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message;
+  }
+  return '';
+}
+
+/** Uncoded fetch / offline failures from Apollo HttpLink (not GraphQL business errors). */
+export function isConnectionError(error: unknown): boolean {
+  if (extractErrorCode(error)) {
+    return false;
+  }
+
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return true;
+  }
+
+  const message = errorMessageText(error).toLowerCase();
+  return CONNECTION_ERROR_MESSAGE_PATTERNS.some((pattern) => message.includes(pattern));
+}

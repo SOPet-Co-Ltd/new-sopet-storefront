@@ -218,6 +218,8 @@ export type AdminManualPayoutType = {
 
 export type AdminOrder = {
   __typename?: 'AdminOrder';
+  beamChargeId?: Maybe<Scalars['String']['output']>;
+  beamTransactionUrl?: Maybe<Scalars['String']['output']>;
   customer?: Maybe<AdminOrderCustomer>;
   order: OrderType;
   stores: Array<AdminOrderStore>;
@@ -2045,6 +2047,7 @@ export type PaymentType = {
   id: Scalars['String']['output'];
   orderId: Scalars['String']['output'];
   orderNumber?: Maybe<Scalars['String']['output']>;
+  orderStatus?: Maybe<Scalars['String']['output']>;
   paymentMethod: Scalars['String']['output'];
   qrCodeImage?: Maybe<Scalars['String']['output']>;
   qrCodeUrl?: Maybe<Scalars['String']['output']>;

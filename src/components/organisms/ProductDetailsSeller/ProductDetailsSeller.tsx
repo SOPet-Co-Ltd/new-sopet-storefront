@@ -15,7 +15,7 @@ export default function ProductDetailsSeller({ store }: ProductDetailsSellerProp
   if (!store) return null;
 
   const handleChat = () => {
-    toast.message('ฟีเจอร์แชทพูดคุยจะเปิดใช้งานเร็วๆ นี้');
+    toast.info('ฟีเจอร์แชทพูดคุยจะเปิดใช้งานเร็วๆ นี้');
   };
   const sellerHref = buildSellerHref(store.slug);
 

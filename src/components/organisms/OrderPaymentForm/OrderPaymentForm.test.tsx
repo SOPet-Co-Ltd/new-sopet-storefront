@@ -675,7 +675,7 @@ describe('OrderPaymentForm', () => {
     expect(screen.queryByRole('button', { name: 'เปลี่ยนวิธีชำระเงิน' })).not.toBeInTheDocument();
   });
 
-  it('bank transfer pending shows back links to the order while waiting for admin approval', () => {
+  it('bank transfer pending has no back link while waiting for admin approval', () => {
     renderForm(
       <OrderPaymentForm
         payment={{
@@ -692,13 +692,10 @@ describe('OrderPaymentForm', () => {
       />,
     );
 
-    const orderHref = `/user/orders/${CHECKOUT_ORDER_ID}`;
-    const back = screen.getByTestId('payment-busy-back');
-    expect(back).toHaveAttribute('href', orderHref);
-    expect(back).toHaveTextContent('กลับไปที่คำสั่งซื้อ');
+    expect(screen.queryByTestId('payment-busy-back')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'กลับไปที่คำสั่งซื้อ' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /คัดลอกบัญชีธนาคาร/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ยืนยันชำระเงินแล้ว' })).toBeInTheDocument();
-    expect(screen.getByTestId('payment-busy-back')).toBeInTheDocument();
   });
 
   it('hides bank-transfer instructions while choosing a new payment method', async () => {

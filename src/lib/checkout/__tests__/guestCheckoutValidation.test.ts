@@ -5,6 +5,7 @@ import type { CartQuery } from '@/lib/graphql/generated/graphql';
 import {
   getCustomerContactPrefill,
   toCreateOrderInput,
+  validateAddressManagementShippingForm,
   validateAuthInlineShippingForm,
   validateGuestCheckoutForm,
   type CreateOrderCheckoutContext,
@@ -131,6 +132,29 @@ describe('validateGuestCheckoutForm', () => {
 
     expect(result.valid).toBe(false);
     expect(result.errors.email).toBe('รูปแบบอีเมลไม่ถูกต้อง');
+  });
+});
+
+describe('validateAddressManagementShippingForm', () => {
+  it('passes when shipping fields are valid even if contact phone is empty', () => {
+    const result = validateAddressManagementShippingForm({
+      ...validGuestForm,
+      contactPhone: '',
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual({});
+  });
+
+  it('returns a Thai error when recipient name is missing', () => {
+    const result = validateAddressManagementShippingForm({
+      ...validGuestForm,
+      contactPhone: '',
+      recipientFullName: '',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.recipientName).toBe('กรุณากรอกชื่อ / นามสกุล (ผู้รับสินค้า)');
   });
 });
 

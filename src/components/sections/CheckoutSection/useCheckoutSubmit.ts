@@ -67,7 +67,6 @@ export function useCheckoutSubmit(
     refetch,
     pruneDeselectedIds,
     isBuyNow,
-    clearBuyNow,
   } = useCheckoutCartSelection();
   const checkoutMutations = useCheckoutMutations();
   const {
@@ -219,9 +218,9 @@ export function useCheckoutSubmit(
           orderId: result.orderId,
           orderNumber: result.orderNumber,
         });
-        if (isBuyNow) {
-          clearBuyNow();
-        } else {
+        // Buy-now: keep session payload until checkout unmounts (CheckoutPageReset)
+        // so the summary does not flash the account cart before navigation.
+        if (!isBuyNow) {
           pruneDeselectedIds(checkedOutItemIds);
           await refetch();
         }
@@ -258,7 +257,6 @@ export function useCheckoutSubmit(
     [
       checkoutContext,
       checkoutMutations,
-      clearBuyNow,
       guestForm,
       isAuthenticated,
       isBuyNow,

@@ -538,7 +538,68 @@ describe('CheckoutAddressSection integration', () => {
     });
   });
 
-  describe('Test 3 — address modal selection confirm', () => {
+  describe('Test 3 — stale address list after cross-tab delete (AF-ADDR-14)', () => {
+    it('refetches on change and omits deleted addresses from the modal list', async () => {
+      const user = userEvent.setup();
+      let currentAddresses = [sampleSavedAddress, sampleSavedAddress2];
+
+      mockedUseAuth.mockReturnValue({
+        customer: { id: 'cust-1' } as never,
+        isAuthenticated: true,
+        isLoading: false,
+        pendingDeletion: false,
+        sendOtp: vi.fn(),
+        verifyOtp: vi.fn(),
+        changeCustomerPhone: vi.fn(),
+        reactivateAccount: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      server.use(
+        graphql.query('Addresses', () =>
+          HttpResponse.json({
+            data: { addresses: currentAddresses },
+          }),
+        ),
+      );
+
+      renderCheckoutAddressSection();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('address-summary-name')).toHaveTextContent(
+          sampleSavedAddress.fullName,
+        );
+      });
+
+      await user.click(screen.getByTestId('address-change-button'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('address-modal')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByTestId(`address-option-${sampleSavedAddress2.id}`));
+      await user.click(screen.getByTestId('address-confirm-button'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('address-summary-name')).toHaveTextContent(
+          sampleSavedAddress2.fullName,
+        );
+      });
+
+      currentAddresses = [sampleSavedAddress];
+
+      await user.click(screen.getByTestId('address-change-button'));
+
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId(`address-option-${sampleSavedAddress2.id}`),
+        ).not.toBeInTheDocument();
+      });
+      expect(screen.getByTestId(`address-option-${sampleSavedAddress.id}`)).toBeInTheDocument();
+    });
+  });
+
+  describe('Test 4 — address modal selection confirm', () => {
     it('updates selected address after modal confirm', async () => {
       const user = userEvent.setup();
 

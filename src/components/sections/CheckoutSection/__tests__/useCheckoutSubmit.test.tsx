@@ -13,6 +13,7 @@ const mockCreateOrder = vi.fn();
 const mockCreatePayment = vi.fn();
 const mockCreateAddress = vi.fn();
 const mockRefetch = vi.fn();
+const mockRefetchAddresses = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
@@ -150,6 +151,8 @@ describe('useCheckoutSubmit', () => {
     mockCreateAddress.mockReset();
     mockCreateOrder.mockReset();
     mockCreatePayment.mockReset();
+    mockRefetchAddresses.mockReset();
+    mockRefetchAddresses.mockResolvedValue(undefined);
   });
 
   it('shows toast when createAddress rejects long recipient name (SF-CHK-026)', async () => {
@@ -166,6 +169,7 @@ describe('useCheckoutSubmit', () => {
       useCheckoutSubmit(guestForm, {
         addressSubmitContext: {
           createAddress: mockCreateAddress,
+          refetchAddresses: mockRefetchAddresses,
           setAddress: vi.fn(),
           saveAddressChecked: true,
           setFieldErrors,
@@ -196,6 +200,7 @@ describe('useCheckoutSubmit', () => {
       useCheckoutSubmit(guestForm, {
         addressSubmitContext: {
           createAddress: mockCreateAddress,
+          refetchAddresses: mockRefetchAddresses,
           setAddress: vi.fn(),
           saveAddressChecked: true,
           setFieldErrors: vi.fn(),
@@ -224,6 +229,7 @@ describe('useCheckoutSubmit', () => {
       useCheckoutSubmit(guestForm, {
         addressSubmitContext: {
           createAddress: mockCreateAddress,
+          refetchAddresses: mockRefetchAddresses,
           setAddress: vi.fn(),
           saveAddressChecked: false,
           setFieldErrors: vi.fn(),
@@ -257,6 +263,7 @@ describe('useCheckoutSubmit', () => {
       useCheckoutSubmit(guestForm, {
         addressSubmitContext: {
           createAddress: mockCreateAddress,
+          refetchAddresses: mockRefetchAddresses,
           setAddress: vi.fn(),
           saveAddressChecked: false,
           setFieldErrors: vi.fn(),
@@ -310,6 +317,7 @@ describe('useCheckoutSubmit', () => {
       useCheckoutSubmit(guestForm, {
         addressSubmitContext: {
           createAddress: mockCreateAddress,
+          refetchAddresses: mockRefetchAddresses,
           setAddress: vi.fn(),
           saveAddressChecked: false,
           setFieldErrors: vi.fn(),
@@ -332,6 +340,43 @@ describe('useCheckoutSubmit', () => {
     expect(mockReplace).toHaveBeenCalledWith('/payment/pay-1');
   });
 
+  it('refetches addresses when saved address was deleted elsewhere (AF-ADDR-14)', async () => {
+    checkoutState.selectedAddressId = 'addr-deleted';
+    mockCreateOrder.mockRejectedValue({
+      graphQLErrors: [
+        {
+          extensions: { code: 'SAVED_ADDRESS_NOT_FOUND' },
+          message: 'Saved address not found',
+        },
+      ],
+    });
+
+    const { result } = renderHook(() =>
+      useCheckoutSubmit(null, {
+        addressSubmitContext: {
+          createAddress: mockCreateAddress,
+          refetchAddresses: mockRefetchAddresses,
+          setAddress: vi.fn(),
+          saveAddressChecked: false,
+          setFieldErrors: vi.fn(),
+          setShowFieldErrors: vi.fn(),
+          addressQueryError: undefined,
+          addressQueryLoading: false,
+          addressCount: 1,
+        },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(mockCreateOrder).toHaveBeenCalledTimes(1);
+    expect(mockRefetchAddresses).toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith('ไม่พบที่อยู่ที่บันทึกไว้');
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
   it('clears prior pending payment before create so reload cannot resume old QR (SF-CHK-110)', async () => {
     checkoutState.selectedAddressId = 'addr-1';
 
@@ -339,6 +384,7 @@ describe('useCheckoutSubmit', () => {
       useCheckoutSubmit(null, {
         addressSubmitContext: {
           createAddress: mockCreateAddress,
+          refetchAddresses: mockRefetchAddresses,
           setAddress: vi.fn(),
           saveAddressChecked: false,
           setFieldErrors: vi.fn(),
@@ -390,6 +436,7 @@ describe('useCheckoutSubmit', () => {
       useCheckoutSubmit(null, {
         addressSubmitContext: {
           createAddress: mockCreateAddress,
+          refetchAddresses: mockRefetchAddresses,
           setAddress: vi.fn(),
           saveAddressChecked: false,
           setFieldErrors: vi.fn(),

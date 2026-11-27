@@ -223,6 +223,13 @@ export function CheckoutAddressSection({
     }
   };
 
+  const handleOpenAddressModal = () => {
+    void (async () => {
+      await refetch();
+      setIsModalOpen(true);
+    })();
+  };
+
   return (
     <section
       className="px-sop-16px py-sop-20px"
@@ -285,7 +292,7 @@ export function CheckoutAddressSection({
           >
             <SavedAddressSummaryCard
               address={selectedAddress}
-              onChangeClick={() => setIsModalOpen(true)}
+              onChangeClick={handleOpenAddressModal}
               isModalOpen={isModalOpen}
               disabled={isSubmitting}
             />

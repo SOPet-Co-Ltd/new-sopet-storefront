@@ -44,6 +44,7 @@ import { ensureSessionId } from '@/lib/session';
 
 export type AddressSubmitContext = {
   createAddress: UseAddressesResult['createAddress'];
+  refetchAddresses: UseAddressesResult['refetch'];
   setAddress: (id: string | null) => void;
   saveAddressChecked: boolean;
   setFieldErrors: (errors: Partial<Record<GuestCheckoutField, string>>) => void;
@@ -241,6 +242,14 @@ export function useCheckoutSubmit(
           await refetch();
         }
 
+        if (
+          error instanceof SubmitCheckoutError &&
+          error.code === 'address_not_found' &&
+          addressSubmitContext?.refetchAddresses
+        ) {
+          await addressSubmitContext.refetchAddresses();
+        }
+
         const message =
           error instanceof SubmitCheckoutError
             ? error.message
@@ -255,6 +264,7 @@ export function useCheckoutSubmit(
       }
     },
     [
+      addressSubmitContext,
       checkoutContext,
       checkoutMutations,
       guestForm,

@@ -135,6 +135,23 @@ export function AddressManagementModal({
     [addresses],
   );
 
+  const effectivePendingSelectionId = useMemo(() => {
+    if (addresses.length === 0) {
+      return null;
+    }
+
+    const addressIds = new Set(addresses.map((address) => address.id));
+    if (pendingSelectionId && addressIds.has(pendingSelectionId)) {
+      return pendingSelectionId;
+    }
+
+    const fallback =
+      addresses.find((address) => address.id === selectedAddressId) ??
+      addresses.find((address) => address.isDefault) ??
+      addresses[0];
+    return fallback?.id ?? null;
+  }, [addresses, pendingSelectionId, selectedAddressId]);
+
   const handleFormChange = (field: keyof typeof formValues, value: string) => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
     if (showFieldErrors) {
@@ -277,7 +294,7 @@ export function AddressManagementModal({
         <div key={address.id} className="space-y-sop-8px">
           <AddressSelectBox
             address={address}
-            selectedId={pendingSelectionId}
+            selectedId={effectivePendingSelectionId}
             onSelect={setPendingSelectionId}
           />
           <div className="flex flex-wrap gap-sop-8px px-sop-4px">
@@ -467,11 +484,14 @@ export function AddressManagementModal({
               variant="primary"
               size="md"
               type="button"
-              disabled={pendingSelectionId === null || mutationLoading}
+              disabled={effectivePendingSelectionId === null || mutationLoading}
               data-testid="address-confirm-button"
               onClick={() => {
-                if (pendingSelectionId) {
-                  onConfirmSelection(pendingSelectionId);
+                if (
+                  effectivePendingSelectionId &&
+                  addresses.some((address) => address.id === effectivePendingSelectionId)
+                ) {
+                  onConfirmSelection(effectivePendingSelectionId);
                   onClose();
                 }
               }}

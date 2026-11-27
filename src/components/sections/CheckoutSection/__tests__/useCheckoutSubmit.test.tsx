@@ -71,25 +71,28 @@ vi.mock(
   },
 );
 
-vi.mock('@/lib/hooks/useCheckoutCartSelection', () => ({
-  useCheckoutCartSelection: () => ({
-    selectedItems: [
-      {
-        id: 'ci-1',
-        variantId: 'var-1',
-        quantity: 1,
-        productVariant: {
-          price: 100,
-          product: { id: 'prod-1' },
-        },
+const mockClearBuyNow = vi.fn();
+const cartSelectionState = {
+  selectedItems: [
+    {
+      id: 'ci-1',
+      variantId: 'var-1',
+      quantity: 1,
+      productVariant: {
+        price: 100,
+        product: { id: 'prod-1' },
       },
-    ],
-    selectedSubtotal: 100,
-    refetch: mockRefetch,
-    pruneDeselectedIds: vi.fn(),
-    isBuyNow: false,
-    clearBuyNow: vi.fn(),
-  }),
+    },
+  ],
+  selectedSubtotal: 100,
+  refetch: mockRefetch,
+  pruneDeselectedIds: vi.fn(),
+  isBuyNow: false,
+  clearBuyNow: mockClearBuyNow,
+};
+
+vi.mock('@/lib/hooks/useCheckoutCartSelection', () => ({
+  useCheckoutCartSelection: () => cartSelectionState,
 }));
 
 vi.mock('@/lib/hooks/useCheckout', () => ({
@@ -134,6 +137,7 @@ const guestForm: GuestCheckoutFormState = {
 describe('useCheckoutSubmit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    cartSelectionState.isBuyNow = false;
     authState.isAuthenticated = true;
     authState.customer = null;
     vi.mocked(hasClientSession).mockReturnValue(true);
@@ -278,6 +282,54 @@ describe('useCheckoutSubmit', () => {
     expect(orderInput.savedAddressId).toBeUndefined();
     expect(mockReplace).toHaveBeenCalledWith('/payment/pay-1');
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('does not clear buy-now session before navigating to payment', async () => {
+    cartSelectionState.isBuyNow = true;
+    cartSelectionState.selectedItems = [
+      {
+        id: 'buy-now:var-dog-food',
+        variantId: 'var-dog-food',
+        quantity: 1,
+        productVariant: {
+          price: 300,
+          product: { id: 'prod-dog-food', storeId: 'store-beam' },
+        },
+      },
+    ];
+    cartSelectionState.selectedSubtotal = 300;
+    checkoutState.selectedAddressId = 'addr-1';
+    mockCreateOrder.mockResolvedValue({
+      id: 'ord-1',
+      orderNumber: 'ORD-MWYOKOUM-2AEB',
+      paymentMethod: 'promptpay',
+    });
+    mockCreatePayment.mockResolvedValue({ id: 'pay-1' });
+
+    const { result } = renderHook(() =>
+      useCheckoutSubmit(guestForm, {
+        addressSubmitContext: {
+          createAddress: mockCreateAddress,
+          setAddress: vi.fn(),
+          saveAddressChecked: false,
+          setFieldErrors: vi.fn(),
+          setShowFieldErrors: vi.fn(),
+          addressQueryError: undefined,
+          addressQueryLoading: false,
+          addressCount: 1,
+        },
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(mockCreateOrder).toHaveBeenCalled();
+    expect(mockClearBuyNow).not.toHaveBeenCalled();
+    expect(cartSelectionState.pruneDeselectedIds).not.toHaveBeenCalled();
+    expect(mockRefetch).not.toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith('/payment/pay-1');
   });
 
   it('clears prior pending payment before create so reload cannot resume old QR (SF-CHK-110)', async () => {

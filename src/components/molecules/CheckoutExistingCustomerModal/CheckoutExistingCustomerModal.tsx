@@ -8,7 +8,8 @@ import { Modal } from '@/components/atoms/Modal';
 import { OtpCodeInput } from '@/components/atoms/OtpCodeInput/OtpCodeInput';
 import { ReactivateAccountModal } from '@/components/molecules/ReactivateAccountModal/ReactivateAccountModal';
 import { ERROR_CODES } from '@/lib/errors/errorCodes';
-import { extractErrorCode, getErrorMessage } from '@/lib/errors/getErrorMessage';
+import { ERROR_MESSAGES } from '@/lib/errors/errorMessages';
+import { extractErrorCode, getErrorMessage, isConnectionError } from '@/lib/errors/getErrorMessage';
 import { formatThaiPhoneNumber } from '@/lib/helpers/phone';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -124,6 +125,8 @@ function CheckoutExistingCustomerModalContent({
         const errorCode = extractErrorCode(verifyError);
         if (errorCode === ERROR_CODES.OTP_EXPIRED) {
           setError(OTP_EXPIRED_MESSAGE);
+        } else if (isConnectionError(verifyError)) {
+          setError(ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR]);
         } else {
           setError(getErrorMessage(verifyError, 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'));
         }
@@ -172,7 +175,9 @@ function CheckoutExistingCustomerModalContent({
 
   const formattedPhone = formatThaiPhoneNumber(phone);
   const isOtpStep = step === 'otp';
-  const isWrongOtpError = Boolean(error && error !== OTP_EXPIRED_MESSAGE);
+  const isWrongOtpError = Boolean(
+    error && error !== OTP_EXPIRED_MESSAGE && error !== ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR],
+  );
 
   return (
     <>

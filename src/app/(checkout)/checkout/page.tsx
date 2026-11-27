@@ -98,6 +98,7 @@ export default function CheckoutPage() {
     loading: addressesLoading,
     error: addressesError,
     createAddress,
+    refetch: refetchAddresses,
   } = useAddresses();
   const beginCheckoutTrackedRef = useRef(false);
 
@@ -129,6 +130,7 @@ export default function CheckoutPage() {
   const addressSubmitContext = useMemo<AddressSubmitContext>(
     () => ({
       createAddress,
+      refetchAddresses,
       setAddress,
       saveAddressChecked,
       setFieldErrors,
@@ -142,6 +144,7 @@ export default function CheckoutPage() {
       addressesError,
       addressesLoading,
       createAddress,
+      refetchAddresses,
       saveAddressChecked,
       setAddress,
     ],

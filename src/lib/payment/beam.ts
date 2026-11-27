@@ -1,7 +1,4 @@
-import {
-  cardPaymentNetworkAbortSignal,
-  toCardPaymentNetworkError,
-} from '@/lib/payment/cardPaymentNetwork';
+import { cardPaymentNetworkAbortSignal, toCardPaymentNetworkError } from './cardPaymentNetwork';
 
 export const BEAM_API_BASE_URL_DEFAULT = 'https://api.beamcheckout.com';
 export const BEAM_CARD_TOKENS_PATH = '/client/v1/card-tokens';

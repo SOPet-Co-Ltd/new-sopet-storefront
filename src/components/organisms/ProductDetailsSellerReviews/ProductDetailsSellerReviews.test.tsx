@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import ProductDetailsSellerReviews from './ProductDetailsSellerReviews';
-import { RANDOM_THAI_NAMES, getReviewerName } from './ProductReviewItem';
+import { getReviewerName, isReviewerAlias } from './ProductReviewItem';
 import {
   sampleProductReview,
   sampleProductReviewWithImages,
@@ -243,8 +243,11 @@ describe('ProductDetailsSellerReviews', () => {
     const expectedName1 = getReviewerName(reviewWithoutName);
     const expectedName2 = getReviewerName(reviewGenericName);
 
-    expect(RANDOM_THAI_NAMES).toContain(expectedName1);
-    expect(RANDOM_THAI_NAMES).toContain(expectedName2);
+    expect(isReviewerAlias(expectedName1)).toBe(true);
+    expect(isReviewerAlias(expectedName2)).toBe(true);
+    expect(getReviewerName(reviewWithoutName)).toBe(expectedName1);
+    expect(getReviewerName(reviewGenericName)).toBe(expectedName2);
+    expect(getReviewerName({ id: '', customerName: null })).toBe('สมชาย ก.');
 
     expect(screen.getByText(expectedName1)).toBeInTheDocument();
     expect(screen.getByText(expectedName2)).toBeInTheDocument();

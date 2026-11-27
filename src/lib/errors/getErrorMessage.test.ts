@@ -7,6 +7,7 @@ import {
   formatFallbackErrorMessage,
   getErrorMessage,
   getErrorMessageByCode,
+  isConnectionError,
 } from './getErrorMessage';
 import { ERROR_CODES } from './errorCodes';
 
@@ -83,5 +84,21 @@ describe('getErrorMessage', () => {
     expect(getErrorMessageByCode('NOPE_NOT_REAL', 'fallback')).toBe(
       formatFallbackErrorMessage('fallback', 'NOPE_NOT_REAL'),
     );
+  });
+});
+
+describe('isConnectionError', () => {
+  it('detects fetch failures without a GraphQL code', () => {
+    expect(isConnectionError(new TypeError('Failed to fetch'))).toBe(true);
+    expect(
+      isConnectionError(new TypeError('NetworkError when attempting to fetch resource.')),
+    ).toBe(true);
+    expect(isConnectionError(new TypeError('Load failed'))).toBe(true);
+  });
+
+  it('does not treat coded or generic errors as connection failures', () => {
+    expect(isConnectionError(gqlError('INVALID_OTP'))).toBe(false);
+    expect(isConnectionError(new Error('oops'))).toBe(false);
+    expect(isConnectionError({ code: 'INVALID_OTP', message: 'INVALID_OTP' })).toBe(false);
   });
 });

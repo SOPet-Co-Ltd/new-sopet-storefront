@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { ERROR_MESSAGES } from '@/lib/errors/errorMessages';
+import { ERROR_CODES } from '@/lib/errors/errorCodes';
 import { CheckoutExistingCustomerModal } from './CheckoutExistingCustomerModal';
 
 vi.mock('@/lib/hooks/useAuth', () => ({
@@ -113,6 +115,45 @@ describe('CheckoutExistingCustomerModal', () => {
     expect(screen.getByTestId('checkout-existing-customer-otp-reference')).toHaveTextContent(
       'รหัสอ้างอิง: 526547',
     );
+  });
+
+  it('AF-OTP-17: offline verify shows connection message, keeps digits, no invalid OTP styling', async () => {
+    const user = userEvent.setup();
+    sendOtp.mockResolvedValue({ message: 'ok', referenceCode: '526547' });
+    verifyOtp.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    render(
+      <CheckoutExistingCustomerModal
+        open
+        phone="0999999999"
+        onClose={onClose}
+        onLoginSuccess={onLoginSuccess}
+      />,
+    );
+
+    await user.click(screen.getByTestId('checkout-existing-customer-login-otp'));
+    await waitFor(() => {
+      expect(screen.getByTestId('checkout-existing-customer-otp-input')).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByTestId('checkout-existing-customer-otp-input-digit-1'), '000000');
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR],
+      );
+    });
+
+    expect(screen.getByRole('alert')).not.toHaveTextContent('รหัส OTP ไม่ถูกต้อง');
+    expect(screen.getByRole('alert')).not.toHaveTextContent('UNKNOWN_ERROR');
+    expect(screen.getByTestId('checkout-existing-customer-otp-input-digit-1')).toHaveValue('0');
+    expect(screen.getByTestId('checkout-existing-customer-otp-input-digit-6')).toHaveValue('0');
+    expect(screen.getByTestId('checkout-existing-customer-otp-input')).not.toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
+    expect(screen.getByTestId('checkout-existing-customer-otp')).toBeInTheDocument();
+    expect(onLoginSuccess).not.toHaveBeenCalled();
   });
 
   it('AF-OTP-18: wrong OTP keeps digits, shows error and cooldown, hides resend during cooldown', async () => {

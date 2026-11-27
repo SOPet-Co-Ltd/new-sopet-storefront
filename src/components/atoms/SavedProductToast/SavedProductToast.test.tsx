@@ -1,46 +1,36 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SavedProductToast, showSavedProductToast } from './SavedProductToast';
+import { showAddedToCartToast, showSavedProductToast } from './SavedProductToast';
 
 vi.mock('sonner', () => ({
   toast: {
-    custom: vi.fn(),
-    dismiss: vi.fn(),
+    success: vi.fn(),
   },
 }));
 
 describe('SavedProductToast', () => {
   beforeEach(() => {
-    vi.mocked(toast.custom).mockClear();
-    vi.mocked(toast.dismiss).mockClear();
+    vi.mocked(toast.success).mockClear();
   });
 
-  it('shows a saved-product banner with a close button', async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-
-    render(<SavedProductToast onClose={onClose} />);
-
-    expect(screen.getByText('บันทึกสินค้าแล้ว')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'ปิด' }));
-    expect(onClose).toHaveBeenCalledOnce();
-  });
-
-  it('opens the banner at the top right', () => {
+  it('opens the saved-product toast at the top right', () => {
     showSavedProductToast();
 
-    expect(toast.custom).toHaveBeenCalledOnce();
-    const [renderToast, options] = vi.mocked(toast.custom).mock.calls[0];
-    expect(options).toMatchObject({
+    expect(toast.success).toHaveBeenCalledOnce();
+    expect(toast.success).toHaveBeenCalledWith('บันทึกสินค้าแล้ว', {
       id: 'saved-product',
-      position: 'top-right',
       duration: 4000,
     });
+  });
 
-    render(renderToast('saved-product'));
-    expect(screen.getByText('บันทึกสินค้าแล้ว')).toBeInTheDocument();
+  it('opens the added-to-cart toast at the top right', () => {
+    showAddedToCartToast();
+
+    expect(toast.success).toHaveBeenCalledOnce();
+    expect(toast.success).toHaveBeenCalledWith('เพิ่มสินค้าลงตะกร้าแล้ว', {
+      id: 'added-to-cart',
+      duration: 4000,
+    });
   });
 });

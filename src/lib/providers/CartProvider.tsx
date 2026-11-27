@@ -205,7 +205,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
     quantityCapToastKeyRef.current = key;
-    toast.message(QUANTITY_CAPPED_TOAST_MESSAGE);
+    toast.warning(QUANTITY_CAPPED_TOAST_MESSAGE);
   }, [warnings]);
 
   const itemsByStore = useMemo(() => groupCartItemsByStore(items), [items]);

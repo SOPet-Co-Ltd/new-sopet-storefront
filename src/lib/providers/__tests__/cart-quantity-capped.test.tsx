@@ -30,7 +30,7 @@ vi.mock('@/lib/session', async (importOriginal) => {
 });
 
 vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), message: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), message: vi.fn() },
 }));
 
 vi.mock('@apollo/client/react', async (importOriginal) => {
@@ -82,7 +82,7 @@ describe('CartProvider quantity capped warning', () => {
     );
 
     await waitFor(() => {
-      expect(toast.message).toHaveBeenCalledWith('ปรับจำนวนสินค้าตามสต็อกที่มีแล้ว');
+      expect(toast.warning).toHaveBeenCalledWith('ปรับจำนวนสินค้าตามสต็อกที่มีแล้ว');
     });
   });
 });

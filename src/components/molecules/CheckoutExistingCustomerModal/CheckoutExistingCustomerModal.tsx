@@ -104,7 +104,6 @@ function CheckoutExistingCustomerModalContent({
 
       if (isOtpExpired) {
         setError(OTP_EXPIRED_MESSAGE);
-        setCode('');
         return;
       }
 
@@ -128,7 +127,6 @@ function CheckoutExistingCustomerModalContent({
         } else {
           setError(getErrorMessage(verifyError, 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'));
         }
-        setCode('');
       } finally {
         setVerifying(false);
         verifyingRef.current = false;
@@ -174,6 +172,7 @@ function CheckoutExistingCustomerModalContent({
 
   const formattedPhone = formatThaiPhoneNumber(phone);
   const isOtpStep = step === 'otp';
+  const isWrongOtpError = Boolean(error && error !== OTP_EXPIRED_MESSAGE);
 
   return (
     <>
@@ -275,35 +274,35 @@ function CheckoutExistingCustomerModalContent({
                 value={code}
                 onChange={handleCodeChange}
                 size="compact"
-                error={Boolean(error)}
+                error={isWrongOtpError}
                 ariaDescribedBy={error ? 'checkout-existing-customer-otp-error' : undefined}
                 disabled={verifying}
                 data-testid="checkout-existing-customer-otp-input"
               />
 
-              <div className="flex w-full flex-col items-center gap-sop-8px">
+              <div className="flex w-full flex-col items-center gap-0">
                 {error ? (
                   <p
                     id="checkout-existing-customer-otp-error"
                     role="alert"
-                    className="sop-body-md-regular text-center text-sop-system-error-400"
+                    className="sop-body-sm-regular text-center text-sop-system-error-400"
                   >
                     {error}
                   </p>
                 ) : null}
 
-                {cooldown > 0 && !error ? (
+                {cooldown > 0 ? (
                   <p className="sop-body-md-regular text-sop-neutral-gray-300">
                     ส่งรหัสใหม่ได้ใน {formatCooldown(cooldown)} น.
                   </p>
                 ) : (
                   <button
                     type="button"
-                    disabled={resending || !phone || (cooldown > 0 && !error)}
+                    disabled={resending || !phone}
                     onClick={() => void handleResend()}
                     data-testid="checkout-existing-customer-otp-resend"
                     className={cn(
-                      'inline-flex items-center justify-center gap-sop-8px sop-body-md-medium text-sop-primary-500',
+                      'inline-flex h-8 items-center justify-center gap-sop-8px px-sop-12px py-sop-8px sop-body-sm-medium text-sop-primary-500',
                       'cursor-pointer disabled:cursor-not-allowed disabled:opacity-40',
                     )}
                   >
